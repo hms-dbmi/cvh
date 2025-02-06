@@ -1,5 +1,7 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
+import LoginButton from "../features/navigation/components/LoginButton";
+import LogoutButton from "../features/navigation/components/LogoutButton";
 
 export const Route = createRootRoute({
   component: () => (
@@ -11,6 +13,11 @@ export const Route = createRootRoute({
         <Link to="/about" className="[&.active]:font-bold">
           About
         </Link>
+        <Link to="/profile" className="[&.active]:font-bold">
+          Profile
+        </Link>
+        <LoginButton />
+        <LogoutButton />
       </div>
       <hr />
       <Outlet />
