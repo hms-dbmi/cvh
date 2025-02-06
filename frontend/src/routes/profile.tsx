@@ -8,7 +8,6 @@ export const Route = createFileRoute("/profile")({
 function Profile() {
   const { user, isAuthenticated, isLoading } = useAuth0();
 
-  console.log(user, isLoading, isAuthenticated )
   if (isLoading) {
     return <div>Loading ...</div>;
   }

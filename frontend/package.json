@@ -11,6 +11,11 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/roboto": "^5.1.1",
+    "@mui/icons-material": "^6.4.3",
+    "@mui/material": "^6.4.3",
     "@tanstack/react-router": "^1.99.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -26,7 +31,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
-    "typescript": "~5.6.2",
+    "typescript": "~5.7.3",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5"
   }
