@@ -1,4 +1,5 @@
 from ninja import NinjaAPI
+from django.contrib.auth.models import User
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
@@ -7,7 +8,10 @@ from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
 from typing import Any
 from environs import env
+import requests
 
+from api.models import Project
+from api.schema import ProjectIn
 
 api = NinjaAPI()
 class UnauthorizedError(Exception):
@@ -44,7 +48,10 @@ class Authorized(HttpBearer):
             raise UnauthorizedError
         if self.required_permissions and not all(token.hasPermission(p) for p in self.required_permissions):
             raise ForbiddenError
-        return token
+        
+        user = token.get_user()
+        print(user)
+        return user
 
 
 class RequestToken(object):
@@ -53,22 +60,21 @@ class RequestToken(object):
 
         if token is not None:
             self._decoded: dict[str, Any] | None = self.__decode__(token)
+            self._user_info: dict[str, Any] | None = self.__get_user_info__(token)
         else:
             self._decoded = None
 
     def __decode__(self, token: str) -> dict[str, Any] | None:
         env.read_env()
         domain = env.str('AUTH0_DOMAIN')
-        identifier = env.str('AUTH0_API_IDENTIFIER')
+        identifier = env.str('AUTH0_IDENTIFIER')
+
 
         if domain is None or identifier is None:
             raise HttpError(500, "Error with authentication configuration.")
 
-
-        issuer: str = "https://{}/".format(domain)
-
         signingKey: Any = (
-            PyJWKClient(issuer + ".well-known/jwks.json")
+            PyJWKClient(domain + ".well-known/jwks.json")
             .get_signing_key_from_jwt(self._token)
             .key
         )
@@ -84,16 +90,46 @@ class RequestToken(object):
                 key=signingKey,
                 algorithms=["RS256"],
                 audience=identifier,
-                issuer=issuer,
+                issuer=domain,
             )
         except DecodeError:
             raise HttpError(400, "Could not decode the provided token.")
+
+    def __get_user_info__(self, token: str) -> dict[str, Any] | None:
+        env.read_env()
+        domain = env.str('AUTH0_DOMAIN')
+
+        try:
+            user_info = requests.get(f"{domain}userinfo", headers={'Authorization': f"Bearer {self._token}"})
+            return user_info.json()
+        except requests.exceptions.HTTPError:
+            return None
 
     def __str__(self) -> str:
         return self._token
 
     def __getattr__(self, name: str) -> Any:
         return self._decoded[name]
+    
+    def get_user(self) -> User:
+        username = self._user_info.get('sub')
+
+        if not username:
+            return None
+
+        # The format of user_id is
+        #    {identity provider id}|{unique id in the provider}
+        # The pipe character is invalid for the django username field
+        # The solution is to replace the pipe with a dash
+        username = username.replace('|', '_')
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            user = User(username=username)
+            user.save()
+
+        return user
 
     def hasPermission(self, permission: str) -> bool:
         return permission in self._decoded["permissions"]
@@ -114,4 +150,12 @@ def hello(request):
 
 @api.get("/secure", auth=Authorized())
 def secure(request):
+    print(request)
     return "Hello secure world"
+
+@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
+def create_project(request, project: ProjectIn):
+    user_key = { "user_key": request.auth}
+    print({**project.dict(), **user_key})
+    Project.objects.create(**project.dict(), **user_key)
+    return project
