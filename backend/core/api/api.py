@@ -1,3 +1,4 @@
+
 from ninja import NinjaAPI
 from django.contrib.auth.models import User
 
@@ -10,8 +11,8 @@ from typing import Any
 from environs import env
 import requests
 
-from api.models import Project
-from api.schema import ProjectIn
+from .models import Project
+from .schema import ProjectIn
 
 api = NinjaAPI()
 class UnauthorizedError(Exception):

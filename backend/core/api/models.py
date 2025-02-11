@@ -18,8 +18,8 @@ class Group(UserCreated):
 
 class Project(UserCreated):
     private = models.BooleanField(default=True)
-    group_key = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True)
-    user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
+    group_key = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
 class Dataset(UserCreated):
     source_url = models.URLField(max_length=100)
