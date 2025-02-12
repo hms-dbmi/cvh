@@ -7,12 +7,12 @@ from ninja.errors import HttpError
 
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
-from typing import Any
+from typing import Any, List
 from environs import env
 import requests
 
 from .models import Project
-from .schema import ProjectIn
+from .schema import ProjectIn, ProjectOut
 
 api = NinjaAPI()
 class UnauthorizedError(Exception):
@@ -157,6 +157,10 @@ def secure(request):
 @api.post("/projects", auth=Authorized(), response={201: ProjectIn})
 def create_project(request, project: ProjectIn):
     user_key = { "user_key": request.auth}
-    print({**project.dict(), **user_key})
     Project.objects.create(**project.dict(), **user_key)
     return project
+
+@api.get("/projects", auth=Authorized(), response=List[ProjectOut])
+def get_projects(request):
+    projects = Project.objects.filter(user_key=request.auth)
+    return projects

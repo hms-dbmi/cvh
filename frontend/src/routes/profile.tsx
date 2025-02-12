@@ -1,47 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAuth0, GenericError } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
+import { useAuthToken } from "../api/auth";
 
 export const Route = createFileRoute("/profile")({
   component: Profile,
 });
 
-const authParams = {
-  authorizationParams: {
-    audience: import.meta.env.VITE_API_AUDIENCE,
-    scope: "read:current_user",
-  },
-};
-
 function Profile() {
-  const {
-    user,
-    isAuthenticated,
-    isLoading,
-    getAccessTokenWithPopup,
-    getAccessTokenSilently,
-    loginWithRedirect,
-  } = useAuth0();
+  const { user, isAuthenticated, isLoading } = useAuth0();
+
+  const getToken = useAuthToken();
 
   useEffect(() => {
     async function f() {
-      try {
-        const token = await getAccessTokenSilently(authParams);
-        console.log(token);
-      } catch (e) {
-        if (e instanceof GenericError) {
-          if (e.error === "consent_required") {
-            const popup = window.open("");
-            const token = await getAccessTokenWithPopup(authParams, { popup });
-            console.log(token);
-          } else {
-            throw e;
-          }
-        }
-      }
+      const token = await getToken();
+      console.log(token);
     }
     f();
-  }, [getAccessTokenSilently, getAccessTokenWithPopup, loginWithRedirect]);
+  }, [getToken]);
 
   if (isLoading) {
     return <div>Loading ...</div>;

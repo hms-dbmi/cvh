@@ -16,6 +16,9 @@ export default function Header() {
           <Link to="/" sx={(theme) => ({ color: theme.palette.common.white })}>
             CVH
           </Link>
+          <Link to="/projects" sx={(theme) => ({ color: theme.palette.common.white })}>
+            Projects
+          </Link>
           {!isAuthenticated && <LoginButton />}
           {isAuthenticated && <LogoutButton />}
         </Toolbar>
