@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
-import { useFetcherWithToken } from "../../../api/fetcher"
+import useClient from "../../../api/client";
 
+/*
 function useProjects() {
     const url: string = `${import.meta.env.VITE_API_URL}/api/projects`
 
@@ -14,5 +14,11 @@ function useProjects() {
     return result;
 
   }
+*/
+  
+function useProjects(){
+  const client = useClient();
+  return client.useQuery("get", "/api/projects");
+}
 
 export default useProjects;
