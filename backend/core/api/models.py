@@ -25,12 +25,11 @@ class Dataset(UserCreated):
     source_url = models.URLField(max_length=100)
     file_type = models.CharField(max_length=50)
     data_type = models.CharField(max_length=50)
-    project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True)
-    user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
+    project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField()
     tool = models.CharField(max_length=50)
     tool_version = models.CharField(max_length=50, blank=True)
-    project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True)
-
+    project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)

@@ -4,40 +4,6 @@
  */
 
 export interface paths {
-    "/api/hello": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Hello */
-        get: operations["api_api_hello"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/secure": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Secure */
-        get: operations["api_api_secure"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects": {
         parameters: {
             query?: never;
@@ -63,8 +29,43 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Employee */
-        get: operations["api_api_get_employee"];
+        /** Get Project */
+        get: operations["api_api_get_project"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Datasets */
+        get: operations["api_api_get_user_datasets"];
+        put?: never;
+        /** Create Dataset */
+        post: operations["api_api_create_dataset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/{project_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Datasets */
+        get: operations["api_api_get_project_datasets"];
         put?: never;
         post?: never;
         delete?: never;
@@ -77,17 +78,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ProjectIn */
-        ProjectIn: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Private */
-            private: boolean;
-        };
         /** ProjectOut */
         ProjectOut: {
+            /**
+             * Private
+             * @default true
+             */
+            private: boolean;
             /**
              * Uuid
              * Format: uuid
@@ -98,10 +95,62 @@ export interface components {
             /** Description */
             description?: string | null;
             /**
-             * Private
-             * @default true
+             * Created Timestamp
+             * Format: time
              */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: time
+             */
+            last_viewed_timestamp: string;
+        };
+        /** ProjectIn */
+        ProjectIn: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Private */
             private: boolean;
+        };
+        /** DatasetIn */
+        DatasetIn: {
+            /** Project Uuid */
+            project_uuid?: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** File Type */
+            file_type: string;
+            /** Data Type */
+            data_type: string;
+        };
+        /** DatasetOut */
+        DatasetOut: {
+            /** Source Url */
+            source_url: string;
+            /** File Type */
+            file_type: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
             /**
              * Created Timestamp
              * Format: time
@@ -127,42 +176,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    api_api_hello: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_secure: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_api_get_projects: {
         parameters: {
             query?: never;
@@ -202,12 +215,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectIn"];
+                    "application/json": components["schemas"]["ProjectOut"];
                 };
             };
         };
     };
-    api_api_get_employee: {
+    api_api_get_project: {
         parameters: {
             query?: never;
             header?: never;
@@ -225,6 +238,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+        };
+    };
+    api_api_get_user_datasets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetOut"][];
+                };
+            };
+        };
+    };
+    api_api_create_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetIn"];
+                };
+            };
+        };
+    };
+    api_api_get_project_datasets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetOut"][];
                 };
             };
         };

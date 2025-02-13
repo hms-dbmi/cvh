@@ -12,8 +12,8 @@ from typing import Any, List
 from environs import env
 import requests
 
-from .models import Project
-from .schema import ProjectIn, ProjectOut
+from .models import Project, Dataset
+from .schema import ProjectIn, ProjectOut, DatasetIn, DatasetOut
 
 api = NinjaAPI()
 class UnauthorizedError(Exception):
@@ -146,16 +146,7 @@ class RequestToken(object):
         return self._decoded if self._decoded is not None else {}
 
 
-@api.get("/hello")
-def hello(request):
-    return "Hello world"
-
-@api.get("/secure", auth=Authorized())
-def secure(request):
-    print(request)
-    return "Hello secure world"
-
-@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
+@api.post("/projects", auth=Authorized(), response={201: ProjectOut})
 def create_project(request, project: ProjectIn):
     user_key = { "user_key": request.auth}
     Project.objects.create(**project.dict(), **user_key)
@@ -167,6 +158,30 @@ def get_projects(request):
     return projects
 
 @api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
-def get_employee(request, project_uuid: str):
+def get_project(request, project_uuid: str):
     project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
     return project
+
+@api.post("/datasets", auth=Authorized(), response={201: DatasetIn})
+def create_dataset(request, dataset: DatasetIn):
+    dataset_dict = dataset.dict()
+    project_uuid = dataset_dict.get('project_uuid')
+    del dataset_dict["project_uuid"]
+    if project_uuid:
+            project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+            Dataset.objects.create(**dataset_dict, project_key=project)
+            return dataset
+    Dataset.objects.create(**dataset_dict, user_key=request.auth)
+    return dataset
+
+
+@api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
+def get_user_datasets(request):
+    datasets = Dataset.objects.filter(user_key=request.auth)
+    return datasets
+
+@api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
+def get_project_datasets(request, project_uuid: str):
+    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    datasets = Dataset.objects.filter(project_key=project)
+    return datasets
