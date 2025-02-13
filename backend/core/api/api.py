@@ -1,6 +1,7 @@
 
 from ninja import NinjaAPI
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
@@ -164,3 +165,8 @@ def create_project(request, project: ProjectIn):
 def get_projects(request):
     projects = Project.objects.filter(user_key=request.auth)
     return projects
+
+@api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
+def get_employee(request, project_uuid: str):
+    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    return project

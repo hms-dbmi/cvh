@@ -17,7 +17,7 @@ function RouteComponent() {
   return (
     <div>
       <AddProjectButton />
-      <Stack>
+      <Stack spacing={2}>
         {data?.map((project) => (
           <ProjectCard project={project} key={project.uuid} />
         ))}

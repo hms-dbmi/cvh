@@ -3,21 +3,33 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 
 import type { components } from "../../../types/schema.d.ts";
+import { Link } from "../../navigation/components/Links.tsx";
 
 export default function ProjectCard({
   project,
 }: {
   project: components["schemas"]["ProjectOut"];
 }) {
+  if (!project?.uuid) {
+    return null;
+  }
   return (
     <Card sx={{ minWidth: 275, maxWidth: 200 }}>
       <CardContent>
-        <Typography variant="h5">Name: {project.name}</Typography>
+        <Link
+          to="/project/$projectId"
+          params={{ projectId: project.uuid }}
+          variant="h5"
+        >
+          Name: {project.name}
+        </Link>
         <Typography variant="body2">{project.uuid}</Typography>
         <Typography variant="body2">
           Description: {project.description}
         </Typography>
-        <Typography variant="body2">Private: {String(project.private)}</Typography>
+        <Typography variant="body2">
+          Private: {String(project.private)}
+        </Typography>
         <Typography variant="body2">
           Created: {project.created_timestamp}
         </Typography>

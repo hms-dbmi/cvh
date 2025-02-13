@@ -4,7 +4,7 @@ import uuid
 
 class UserCreated(models.Model):
     name = models.CharField(max_length=100)
-    uuid = id = models.UUIDField(default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     description = models.TextField(max_length=300, null=True)
     created_timestamp = models.TimeField(auto_now_add=True)
     modified_timestamp = models.TimeField(auto_now=True)
