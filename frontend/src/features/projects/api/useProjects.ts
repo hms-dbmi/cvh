@@ -1,4 +1,5 @@
 import useClient from "../../../api/client";
+import { useQueryClient } from '@tanstack/react-query'
 
 /*
 function useProjects() {
@@ -15,10 +16,19 @@ function useProjects() {
 
   }
 */
+
+const path = "/api/projects"
   
-function useProjects(){
+function useGetProjects(){
   const client = useClient();
-  return client.useQuery("get", "/api/projects");
+  return client.useQuery("get", path);
 }
 
-export default useProjects;
+function useCreateProject(){
+  const queryClient = useQueryClient()
+  const client = useClient();
+  return client.useMutation("post", path, {onSuccess: () => queryClient.invalidateQueries({queryKey:["get", path]})});
+}
+
+export {useCreateProject}
+export default useGetProjects;
