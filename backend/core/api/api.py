@@ -62,7 +62,6 @@ class RequestToken(object):
 
         if token is not None:
             self._decoded: dict[str, Any] | None = self.__decode__(token)
-            self._user_info: dict[str, Any] | None = self.__get_user_info__(token)
         else:
             self._decoded = None
 
@@ -114,20 +113,21 @@ class RequestToken(object):
         return self._decoded[name]
     
     def get_user(self) -> User:
-        username = self._user_info.get('sub')
-
-        if not username:
-            return None
-
-        # The format of user_id is
-        #    {identity provider id}|{unique id in the provider}
-        # The pipe character is invalid for the django username field
-        # The solution is to replace the pipe with a dash
-        username = username.replace('|', '_')
-
         try:
+            username = self._decoded.get("sub")
+            username = username.replace('|', '_')
             user = User.objects.get(username=username)
         except User.DoesNotExist:
+            user_info = self.__get_user_info__(self._token)
+            username = user_info.get('sub')
+            if not username:
+                return None
+
+            # The format of user_id is
+            #    {identity provider id}|{unique id in the provider}
+            # The pipe character is invalid for the django username field
+            # The solution is to replace the pipe with a dash
+            username = username.replace('|', '_')
             user = User(username=username)
             user.save()
 
