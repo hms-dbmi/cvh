@@ -33,7 +33,7 @@ function RouteComponent() {
       <Box>
         <Stack spacing={2}>
           <AddDatasetButton />
-          {d?.map((dataset) => <div key={dataset.uuid}>dataset.uuid</div>)}
+          {d?.map((dataset) => <div key={dataset.uuid}>{dataset.uuid}</div>)}
         </Stack>
       </Box>
     </Stack>

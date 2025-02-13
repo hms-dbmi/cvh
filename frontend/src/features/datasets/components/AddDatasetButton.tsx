@@ -56,7 +56,11 @@ const schema = z
   })
   .required();
 
-export default function AddDatasetButton() {
+export default function AddDatasetButton({
+  projectId,
+}: {
+  projectId?: string;
+}) {
   const { handleSubmit, control, formState } = useForm({
     defaultValues: {
       name: "",
@@ -74,9 +78,13 @@ export default function AddDatasetButton() {
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
+      if (projectId) {
+        mutate({ body: { ...formData, project_uuid: projectId } });
+        return;
+      }
       mutate({ body: formData });
     },
-    [mutate]
+    [mutate, projectId]
   );
 
   return (
