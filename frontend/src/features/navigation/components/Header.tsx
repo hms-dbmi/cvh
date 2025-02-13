@@ -1,6 +1,8 @@
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
+import Stack from "@mui/material/Stack";
+
 import { useAuth0 } from "@auth0/auth0-react";
 
 import { LoginButton, LogoutButton } from "./AuthButtons";
@@ -13,14 +15,24 @@ export default function Header() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
         <Toolbar>
-          <Link to="/" sx={(theme) => ({ color: theme.palette.common.white })}>
-            CVH
-          </Link>
-          <Link to="/projects" sx={(theme) => ({ color: theme.palette.common.white })}>
-            Projects
-          </Link>
-          {!isAuthenticated && <LoginButton />}
-          {isAuthenticated && <LogoutButton />}
+          <Stack direction="row" alignItems="center" width="100%" justifyContent="space-between">
+            <Stack direction="row" spacing={2}>
+              <Link
+                to="/"
+                sx={(theme) => ({ color: theme.palette.common.white })}
+              >
+                Home
+              </Link>
+              <Link
+                to="/projects"
+                sx={(theme) => ({ color: theme.palette.common.white })}
+              >
+                Projects
+              </Link>
+            </Stack>
+            {!isAuthenticated && <LoginButton />}
+            {isAuthenticated && <LogoutButton />}
+          </Stack>
         </Toolbar>
       </AppBar>
     </Box>
