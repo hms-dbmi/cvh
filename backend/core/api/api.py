@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
+from ninja.pagination import paginate
 
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
@@ -153,6 +154,7 @@ def create_project(request, project: ProjectIn):
     return project
 
 @api.get("/projects", auth=Authorized(), response=List[ProjectOut])
+@paginate
 def get_projects(request):
     projects = Project.objects.filter(user_key=request.auth)
     return projects
@@ -176,6 +178,7 @@ def create_dataset(request, dataset: DatasetIn):
 
 
 @api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
+@paginate
 def get_user_datasets(request):
     datasets = Dataset.objects.filter(user_key=request.auth)
     return datasets

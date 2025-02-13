@@ -1,11 +1,11 @@
-import useClient from "../../../api/client";
-import { useQueryClient } from "@tanstack/react-query";
+import useClient, { QueryOptions } from "../../../api/client";
+import { useQueryClient} from "@tanstack/react-query";
 
 const path = "/api/datasets";
 
-function useGetUserDatasets() {
+function useGetUserDatasets(options?: QueryOptions) {
   const client = useClient();
-  return client.useQuery("get", path);
+  return client.useQuery("get", path, options);
 }
 
 function useGetProjectDatasets(projectId: string) {

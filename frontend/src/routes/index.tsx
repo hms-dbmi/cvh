@@ -1,13 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
+import Stack from "@mui/material/Stack";
 
-export const Route = createFileRoute('/')({
-  component: Index,
-})
+import ProjectsList from "../features/projects/components/ProjectsList";
+import DatasetsList from "../features/datasets/components/DatasetsList";
 
-function Index() {
+export const Route = createFileRoute("/")({
+  component: RouteComponent,
+});
+
+function RouteComponent() {
   return (
-    <div className="p-2">
-      <h3>Welcome Home!</h3>
-    </div>
-  )
+    <Stack direction="row" spacing={4}>
+      <ProjectsList queryOptions={{ params: { query: { limit: 5 } } }} />
+      <DatasetsList queryOptions={{ params: { query: { limit: 5 } } }} />
+    </Stack>
+  );
 }

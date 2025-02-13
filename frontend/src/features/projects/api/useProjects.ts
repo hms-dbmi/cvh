@@ -1,5 +1,5 @@
-import useClient from "../../../api/client";
-import { useQueryClient } from '@tanstack/react-query'
+import useClient, { QueryOptions } from "../../../api/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 /*
 function useProjects() {
@@ -17,27 +17,29 @@ function useProjects() {
   }
 */
 
-const path = "/api/projects"
-  
-function useGetProjects(){
+const path = "/api/projects";
+
+function useGetProjects(options?: QueryOptions) {
   const client = useClient();
-  return client.useQuery("get", path);
+  return client.useQuery("get", path, options);
 }
 
-function useCreateProject(){
-  const queryClient = useQueryClient()
+function useCreateProject() {
+  const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("post", path, {onSuccess: () => queryClient.invalidateQueries({queryKey:["get", path]})});
+  return client.useMutation("post", path, {
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["get", path] }),
+  });
 }
 
-function useGetProject(projectId: string){
+function useGetProject(projectId: string) {
   const client = useClient();
-  return client.useQuery("get", "/api/projects/{project_uuid}",{
+  return client.useQuery("get", "/api/projects/{project_uuid}", {
     params: {
       path: { project_uuid: projectId },
     },
   });
 }
 
-export {useCreateProject, useGetProject}
+export { useCreateProject, useGetProject };
 export default useGetProjects;

@@ -119,6 +119,26 @@ export interface components {
             /** Private */
             private: boolean;
         };
+        /** Input */
+        Input: {
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+        };
+        /** PagedProjectOut */
+        PagedProjectOut: {
+            /** Items */
+            items: components["schemas"]["ProjectOut"][];
+            /** Count */
+            count: number;
+        };
         /** DatasetIn */
         DatasetIn: {
             /** Project Uuid */
@@ -167,6 +187,13 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
+        /** PagedDatasetOut */
+        PagedDatasetOut: {
+            /** Items */
+            items: components["schemas"]["DatasetOut"][];
+            /** Count */
+            count: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -178,7 +205,10 @@ export type $defs = Record<string, never>;
 export interface operations {
     api_api_get_projects: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -191,7 +221,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectOut"][];
+                    "application/json": components["schemas"]["PagedProjectOut"];
                 };
             };
         };
@@ -244,7 +274,10 @@ export interface operations {
     };
     api_api_get_user_datasets: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -257,7 +290,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatasetOut"][];
+                    "application/json": components["schemas"]["PagedDatasetOut"];
                 };
             };
         };

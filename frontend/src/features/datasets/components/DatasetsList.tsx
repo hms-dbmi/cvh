@@ -1,32 +1,40 @@
 import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 
 import AddDatasetButton from "./AddDatasetButton";
 import DatasetListItem from "./DatasetListItem";
 import { useGetUserDatasets } from "../api/useDatasets";
+import { LinkButton } from "../../navigation/components/Links";
+import { QueryOptions } from "../../../api/client";
 
-export default function DatasetsList() {
-  const { isLoading, isError, data } = useGetUserDatasets();
+export default function DatasetsList({
+  queryOptions,
+}: {
+  queryOptions?: QueryOptions;
+}) {
+  const { isLoading, isError, data } = useGetUserDatasets(queryOptions);
 
   if (isLoading || isError) {
     return null;
   }
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between">
+    <Stack>
+      <Stack direction="row" justifyContent="space-between" width="100%">
         <Typography variant="h5" component="h3">
           My Datasets
         </Typography>
         <AddDatasetButton />
       </Stack>
       <List>
-        {data?.map((dataset) => (
+        {data?.items?.map((dataset) => (
           <DatasetListItem dataset={dataset} key={dataset.uuid} />
         ))}
       </List>
-    </Box>
+      <LinkButton to="/datasets" variant="outlined">
+        View More Datasets
+      </LinkButton>
+    </Stack>
   );
 }

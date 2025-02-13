@@ -9,28 +9,33 @@ import { useAuthToken } from "./auth.ts";
 const API_URL: string = import.meta.env.VITE_API_URL;
 
 const fetchClient = createFetchClient<paths>({
-  baseUrl: API_URL
+  baseUrl: API_URL,
 });
 
-function useAuthMiddleware(){
-     const getToken = useAuthToken();
-     
-     const authMiddleware: Middleware = useMemo(() => ({
-        async onRequest({ request }) {
-            const token = await getToken();        
-            // add Authorization header to every request
-            request.headers.set("Authorization", `Bearer ${token}`);
-            return request;
-          },
-     }), [getToken])
-     
-     return authMiddleware
+type QueryOptions = Partial<{ params: { query: Record<string, unknown> } }>;
+
+function useAuthMiddleware() {
+  const getToken = useAuthToken();
+
+  const authMiddleware: Middleware = useMemo(
+    () => ({
+      async onRequest({ request }) {
+        const token = await getToken();
+        request.headers.set("Authorization", `Bearer ${token}`);
+        return request;
+      },
+    }),
+    [getToken]
+  );
+
+  return authMiddleware;
 }
 
-function useClient(){
-    const authMiddleware = useAuthMiddleware();
-    fetchClient.use(authMiddleware);
-    return createClient(fetchClient);
+function useClient() {
+  const authMiddleware = useAuthMiddleware();
+  fetchClient.use(authMiddleware);
+  return createClient(fetchClient);
 }
 
-export default useClient
+export type { QueryOptions };
+export default useClient;
