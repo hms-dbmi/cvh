@@ -2,7 +2,7 @@ from ninja import Schema, ModelSchema
 from pydantic import UUID4
 from typing import Optional
 
-from .models import Project, Dataset
+from .models import Project, Dataset, VisualizationConf
 
 shared_output_fields = ['uuid', 'name', 'description', 'created_timestamp', 'modified_timestamp', 'last_viewed_timestamp']
                  
@@ -29,6 +29,18 @@ class DatasetOut(ModelSchema):
         model = Dataset
         fields = ['source_url', 'file_type', 'data_type', *shared_output_fields]
 
+class VisualizationIn(ModelSchema):
+    project_uuid: UUID4
+    class Meta:
+        model = VisualizationConf
+        fields = ['name', 'description', 'conf', 'tool', 'tool_version']
 
-
+class VisualizationNoConfOut(ModelSchema):
+    class Meta:
+        model = VisualizationConf
+        fields = ['tool', 'tool_version', *shared_output_fields]
+class VisualizationOut(ModelSchema):
+    class Meta:
+        model = VisualizationConf
+        fields = ['conf', 'tool', 'tool_version', *shared_output_fields]
 

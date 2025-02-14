@@ -19,8 +19,6 @@ export default function ProjectsList({
     return null;
   }
 
-  console.log(data);
-
   return (
     <Stack>
       <Stack direction="row" justifyContent="space-between" width="100%">

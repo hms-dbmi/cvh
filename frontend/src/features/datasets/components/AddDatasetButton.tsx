@@ -61,7 +61,7 @@ export default function AddDatasetButton({
 }: {
   projectId?: string;
 }) {
-  const { handleSubmit, control, formState } = useForm({
+  const { handleSubmit, control } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -72,7 +72,6 @@ export default function AddDatasetButton({
     mode: "onChange",
     resolver: zodResolver(schema),
   });
-  console.log(formState.errors);
 
   const { mutate } = useCreateDataset();
 

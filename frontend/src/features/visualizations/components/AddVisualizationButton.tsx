@@ -1,26 +1,24 @@
-import { useCallback, ChangeEvent } from "react";
+import { useCallback } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Switch, { SwitchProps } from "@mui/material/Switch";
-import FormControlLabel, {
-  FormControlLabelProps,
-} from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
-import { useCreateProject } from "../api/useProjects";
+import { useCreateVisualization } from "../api/useVisualizations";
 
 const text = {
-  button: "Add Project",
-  title: "Add Project",
+  button: "Add Visualization",
+  title: "Add Visualization",
 };
 
 interface FormValues {
   name: string;
   description: string;
-  priv: boolean;
+  tool: string;
+  tool_version: string;
+  conf: string;
 }
 
 function FormTextField({
@@ -48,65 +46,42 @@ function FormTextField({
   );
 }
 
-function FormSwitch({
-  name,
-  label,
-  control,
-}: UseControllerProps<FormValues> &
-  Partial<SwitchProps> &
-  Pick<FormControlLabelProps, "label">) {
-  const { field } = useController({
-    name,
-    control,
-    rules: { required: true },
-  });
-
-  if (typeof field.value !== "boolean") {
-    return null;
-  }
-
-  return (
-    <FormControlLabel
-      label={label}
-      control={
-        <Switch
-          checked={field.value}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            field.onChange(e.target.checked)
-          }
-          inputProps={{ "aria-label": "controlled" }}
-        />
-      }
-    />
-  );
-}
-
 const schema = z
   .object({
     name: z.string(),
     description: z.string(),
-    priv: z.boolean(),
+    tool: z.string(),
+    tool_version: z.string(),
+    conf: z.string(),
   })
   .required();
 
-export default function AddProjectButton() {
+export default function AddVisualizationButton({
+  projectId,
+}: {
+  projectId: string;
+}) {
   const { handleSubmit, control } = useForm({
     defaultValues: {
       name: "",
       description: "",
-      priv: true,
+      tool: "",
+      tool_version: "",
+      conf: "",
     },
     mode: "onChange",
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useCreateProject();
+  const { mutate } = useCreateVisualization();
 
   const onSubmit = useCallback(
-    ({ name, description, priv }: FormValues) => {
-      mutate({ body: { name, description, private: priv } });
+    ({ conf, ...formData }: FormValues) => {
+      const c = JSON.parse(conf);
+      mutate({ body: { ...formData, conf: c, project_uuid: projectId } });
+      return;
     },
-    [mutate]
+    [mutate, projectId]
   );
 
   return (
@@ -118,7 +93,18 @@ export default function AddProjectButton() {
           label="Description"
           control={control}
         />
-        <FormSwitch name="priv" control={control} label="Private" />
+        <FormTextField name="tool" label="Tool" control={control} />
+        <FormTextField
+          name="tool_version"
+          label="Tool Version"
+          control={control}
+        />
+        <FormTextField
+          name="conf"
+          label="Configuration"
+          control={control}
+          multiline
+        />
       </Stack>
     </DialogButton>
   );

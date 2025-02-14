@@ -74,6 +74,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/visualizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Visualizations */
+        get: operations["api_api_get_project_visualizations"];
+        put?: never;
+        /** Create Visualization */
+        post: operations["api_api_create_visualization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/visualizations/{visualization_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Visualization */
+        get: operations["api_api_get_visualization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -193,6 +228,88 @@ export interface components {
             items: components["schemas"]["DatasetOut"][];
             /** Count */
             count: number;
+        };
+        /** VisualizationNoConfOut */
+        VisualizationNoConfOut: {
+            /** Tool */
+            tool: string;
+            /** Tool Version */
+            tool_version?: string | null;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: time
+             */
+            last_viewed_timestamp: string;
+        };
+        /** VisualizationIn */
+        VisualizationIn: {
+            /**
+             * Project Uuid
+             * Format: uuid4
+             */
+            project_uuid: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Conf */
+            conf: Record<string, never>;
+            /** Tool */
+            tool: string;
+            /** Tool Version */
+            tool_version?: string | null;
+        };
+        /** VisualizationOut */
+        VisualizationOut: {
+            /** Conf */
+            conf: Record<string, never>;
+            /** Tool */
+            tool: string;
+            /** Tool Version */
+            tool_version?: string | null;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: time
+             */
+            last_viewed_timestamp: string;
         };
     };
     responses: never;
@@ -337,6 +454,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetOut"][];
+                };
+            };
+        };
+    };
+    api_api_get_project_visualizations: {
+        parameters: {
+            query: {
+                project_uuid: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationNoConfOut"][];
+                };
+            };
+        };
+    };
+    api_api_create_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualizationIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationIn"];
+                };
+            };
+        };
+    };
+    api_api_get_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationOut"];
                 };
             };
         };

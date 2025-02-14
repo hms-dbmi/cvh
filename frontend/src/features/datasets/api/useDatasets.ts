@@ -21,9 +21,8 @@ function useCreateDataset() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: (data, variables, context) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["get", path] });
-      console.log(data, variables, context);
     },
   });
 }

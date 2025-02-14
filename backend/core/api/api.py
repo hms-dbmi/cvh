@@ -1,4 +1,3 @@
-
 from ninja import NinjaAPI
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
@@ -13,10 +12,20 @@ from typing import Any, List
 from environs import env
 import requests
 
-from .models import Project, Dataset
-from .schema import ProjectIn, ProjectOut, DatasetIn, DatasetOut
+from .models import Project, Dataset, VisualizationConf
+from .schema import (
+    ProjectIn,
+    ProjectOut,
+    DatasetIn,
+    DatasetOut,
+    VisualizationNoConfOut,
+    VisualizationIn,
+    VisualizationOut,
+)
 
 api = NinjaAPI()
+
+
 class UnauthorizedError(Exception):
     pass
 
@@ -29,8 +38,10 @@ def unauthorized_exception(request, _):
         status=401,
     )
 
+
 class ForbiddenError(Exception):
     pass
+
 
 @api.exception_handler(UnauthorizedError)
 def forbidden_exception(request, _):
@@ -49,9 +60,11 @@ class Authorized(HttpBearer):
         token: RequestToken = RequestToken(token)
         if token is None or token.isAuthorized() is False:
             raise UnauthorizedError
-        if self.required_permissions and not all(token.hasPermission(p) for p in self.required_permissions):
+        if self.required_permissions and not all(
+            token.hasPermission(p) for p in self.required_permissions
+        ):
             raise ForbiddenError
-        
+
         user = token.get_user()
         print(user)
         return user
@@ -68,9 +81,8 @@ class RequestToken(object):
 
     def __decode__(self, token: str) -> dict[str, Any] | None:
         env.read_env()
-        domain = env.str('AUTH0_DOMAIN')
-        identifier = env.str('AUTH0_IDENTIFIER')
-
+        domain = env.str("AUTH0_DOMAIN")
+        identifier = env.str("AUTH0_IDENTIFIER")
 
         if domain is None or identifier is None:
             raise HttpError(500, "Error with authentication configuration.")
@@ -82,8 +94,9 @@ class RequestToken(object):
         )
 
         if signingKey is None:
-            raise HttpError(400,
-                "Could not retrieve a matching public key for the provided token.", 
+            raise HttpError(
+                400,
+                "Could not retrieve a matching public key for the provided token.",
             )
 
         try:
@@ -99,10 +112,12 @@ class RequestToken(object):
 
     def __get_user_info__(self, token: str) -> dict[str, Any] | None:
         env.read_env()
-        domain = env.str('AUTH0_DOMAIN')
+        domain = env.str("AUTH0_DOMAIN")
 
         try:
-            user_info = requests.get(f"{domain}userinfo", headers={'Authorization': f"Bearer {self._token}"})
+            user_info = requests.get(
+                f"{domain}userinfo", headers={"Authorization": f"Bearer {self._token}"}
+            )
             return user_info.json()
         except requests.exceptions.HTTPError:
             return None
@@ -112,15 +127,15 @@ class RequestToken(object):
 
     def __getattr__(self, name: str) -> Any:
         return self._decoded[name]
-    
+
     def get_user(self) -> User:
         try:
             username = self._decoded.get("sub")
-            username = username.replace('|', '_')
+            username = username.replace("|", "_")
             user = User.objects.get(username=username)
         except User.DoesNotExist:
             user_info = self.__get_user_info__(self._token)
-            username = user_info.get('sub')
+            username = user_info.get("sub")
             if not username:
                 return None
 
@@ -128,7 +143,7 @@ class RequestToken(object):
             #    {identity provider id}|{unique id in the provider}
             # The pipe character is invalid for the django username field
             # The solution is to replace the pipe with a dash
-            username = username.replace('|', '_')
+            username = username.replace("|", "_")
             user = User(username=username)
             user.save()
 
@@ -149,9 +164,10 @@ class RequestToken(object):
 
 @api.post("/projects", auth=Authorized(), response={201: ProjectOut})
 def create_project(request, project: ProjectIn):
-    user_key = { "user_key": request.auth}
+    user_key = {"user_key": request.auth}
     Project.objects.create(**project.dict(), **user_key)
     return project
+
 
 @api.get("/projects", auth=Authorized(), response=List[ProjectOut])
 @paginate
@@ -159,20 +175,22 @@ def get_projects(request):
     projects = Project.objects.filter(user_key=request.auth)
     return projects
 
+
 @api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
 def get_project(request, project_uuid: str):
     project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
     return project
 
+
 @api.post("/datasets", auth=Authorized(), response={201: DatasetIn})
 def create_dataset(request, dataset: DatasetIn):
     dataset_dict = dataset.dict()
-    project_uuid = dataset_dict.get('project_uuid')
+    project_uuid = dataset_dict.get("project_uuid")
     del dataset_dict["project_uuid"]
     if project_uuid:
-            project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
-            Dataset.objects.create(**dataset_dict, project_key=project)
-            return dataset
+        project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+        Dataset.objects.create(**dataset_dict, project_key=project)
+        return dataset
     Dataset.objects.create(**dataset_dict, user_key=request.auth)
     return dataset
 
@@ -183,8 +201,34 @@ def get_user_datasets(request):
     datasets = Dataset.objects.filter(user_key=request.auth)
     return datasets
 
+
+# TODO: Convert to search param for project_uuid.
 @api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
 def get_project_datasets(request, project_uuid: str):
     project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
     datasets = Dataset.objects.filter(project_key=project)
     return datasets
+
+
+@api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
+def get_project_visualizations(request, project_uuid: str):
+    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    visualizations = VisualizationConf.objects.filter(project_key=project)
+    return visualizations
+
+
+@api.get("/visualizations/{visualization_uuid}", auth=Authorized(), response=VisualizationOut)
+def get_visualization(request, visualization_uuid: str):
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    return visualization
+
+
+@api.post("/visualizations", auth=Authorized(), response={201: VisualizationIn})
+def create_visualization(request, visualization: VisualizationIn):
+    visualization_dict = visualization.dict()
+    project_uuid = visualization_dict.get("project_uuid")
+    del visualization_dict["project_uuid"]
+
+    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    VisualizationConf.objects.create(**visualization_dict, project_key=project)
+    return visualization

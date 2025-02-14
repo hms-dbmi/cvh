@@ -1,9 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/datasets')({
+import DatasetsList from "../features/datasets/components/DatasetsList";
+
+export const Route = createFileRoute("/datasets")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  return <div>Hello "/datasets"!</div>
+  return <DatasetsList />;
 }
