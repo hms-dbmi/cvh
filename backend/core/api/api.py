@@ -1,6 +1,7 @@
 from ninja import NinjaAPI
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
@@ -172,13 +173,19 @@ def create_project(request, project: ProjectIn):
 @api.get("/projects", auth=Authorized(), response=List[ProjectOut])
 @paginate
 def get_projects(request):
-    projects = Project.objects.filter(user_key=request.auth)
+    projects = Project.objects.filter(user_key=request.auth).order_by('-modified_timestamp').values()
+    return projects
+
+@api.get("/public/projects", auth=Authorized(), response=List[ProjectOut])
+@paginate
+def get_public_projects(request):
+    projects = Project.objects.filter(private=False,).exclude(user_key=request.auth).order_by('-modified_timestamp').values()
     return projects
 
 
 @api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
 def get_project(request, project_uuid: str):
-    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    project = get_object_or_404(Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False)))
     return project
 
 
@@ -205,14 +212,14 @@ def get_user_datasets(request):
 # TODO: Convert to search param for project_uuid.
 @api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
 def get_project_datasets(request, project_uuid: str):
-    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    project = get_object_or_404(Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False)))
     datasets = Dataset.objects.filter(project_key=project)
     return datasets
 
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
 def get_project_visualizations(request, project_uuid: str):
-    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    project = get_object_or_404(Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False)))
     visualizations = VisualizationConf.objects.filter(project_key=project)
     return visualizations
 
@@ -229,6 +236,6 @@ def create_visualization(request, visualization: VisualizationIn):
     project_uuid = visualization_dict.get("project_uuid")
     del visualization_dict["project_uuid"]
 
-    project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
+    project = get_object_or_404(Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False)))
     VisualizationConf.objects.create(**visualization_dict, project_key=project)
     return visualization
