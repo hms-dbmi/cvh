@@ -12,6 +12,7 @@ import DatasetListItem from "../features/datasets/components/DatasetListItem";
 import VisualizationListItem from "../features/visualizations/components/VisualizationListItem";
 import AddVisualizationButton from "../features/visualizations/components/AddVisualizationButton";
 import VisualzationViewer from "../features/visualizations/components/VisualzationViewer";
+import AddDatasetButton from "../features/datasets/components/AddDatasetButton";
 
 export const Route = createFileRoute("/project/$projectId")({
   component: RouteComponent,
@@ -49,35 +50,67 @@ function RouteComponent() {
 
   return (
     <>
-    <Typography variant="h4" component="h1">{projectData?.name}</Typography>
-    <Typography variant="subtitle1">{projectData?.description}</Typography>
-      <Stack direction="row" spacing={4}>
-        <Stack>
-          <Box>
-            <Typography>Datasets</Typography>
-            <List>
-              {datasets?.map((dataset) => (
-                <DatasetListItem dataset={dataset} key={dataset.uuid} />
-              ))}
-            </List>
-          </Box>
-          <Box>
-            <Typography>Visualizations</Typography>
-            <AddVisualizationButton projectId={projectId} />
-            <List>
-              {visualizations?.map((visualization) => (
-                <VisualizationListItem
-                  visualization={visualization}
-                  key={visualization.uuid}
-                  listItemProps={{
-                    onClick: () => setSelectedViz(visualization.uuid),
-                  }}
-                />
-              ))}
-            </List>
-          </Box>
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="h4" component="h1">
+            {projectData?.name}
+          </Typography>
+          <Typography variant="subtitle1">
+            {projectData?.description}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={4}>
+          <Stack spacing={2}>
+            <Box mb={2}>
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                width="100%"
+              >
+                <Typography variant="h5" component="h3">
+                  Datasets
+                </Typography>
+                <AddDatasetButton projectId={projectId} />
+              </Stack>
+              <Box maxHeight={500} sx={{ overflowY: "scroll" }}>
+                <List>
+                  {datasets?.map((dataset) => (
+                    <DatasetListItem dataset={dataset} key={dataset.uuid} />
+                  ))}
+                </List>
+              </Box>
+            </Box>
+            <Box>
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                width="100%"
+              >
+                <Typography variant="h5" component="h3">
+                  Visualizations
+                </Typography>
+                <AddVisualizationButton projectId={projectId} />
+              </Stack>
+              <List>
+                {visualizations?.map((visualization) => (
+                  <VisualizationListItem
+                    visualization={visualization}
+                    key={visualization.uuid}
+                    listItemProps={{
+                      onClick: () => setSelectedViz(visualization.uuid),
+                    }}
+                  />
+                ))}
+              </List>
+            </Box>
+          </Stack>
+          {selectedViz && (
+            <Stack>
+              <Typography variant="subtitle1">{selectedViz}</Typography>
+              <VisualzationViewer visualizationId={selectedViz} />
+            </Stack>
+          )}
         </Stack>
-        {selectedViz && <VisualzationViewer visualizationId={selectedViz} />}
       </Stack>
     </>
   );

@@ -20,7 +20,7 @@ export default function DatasetsList({
   }
 
   return (
-    <Stack>
+    <Stack width={500}>
       <Stack direction="row" justifyContent="space-between" width="100%">
         <Typography variant="h5" component="h3">
           My Datasets

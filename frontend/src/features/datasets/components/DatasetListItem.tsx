@@ -1,5 +1,6 @@
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
+import Link from "@mui/material/Link";
 
 import type { components } from "../../../types/schema.d.ts";
 import EntityListItem from "../../../components/EntityListItem.tsx";
@@ -22,7 +23,7 @@ export default function DatasetListItem({
           </Typography>
           <Stack direction="row" spacing={2}>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Source: {dataset.source_url}
+              Source: <Link href={dataset.source_url}>{dataset.source_url}</Link>
             </Typography>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               File Type: {dataset.file_type}

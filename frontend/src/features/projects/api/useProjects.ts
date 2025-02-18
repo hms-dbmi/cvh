@@ -18,10 +18,17 @@ function useProjects() {
 */
 
 const path = "/api/projects";
+const publicPath = "/api/public/projects";
 
 function useGetProjects(options?: QueryOptions) {
   const client = useClient();
   return client.useQuery("get", path, options);
+}
+
+
+function useGetPublicProjects(options?: QueryOptions) {
+  const client = useClient();
+  return client.useQuery("get", publicPath, options);
 }
 
 function useCreateProject() {
@@ -41,5 +48,5 @@ function useGetProject(projectId: string) {
   });
 }
 
-export { useCreateProject, useGetProject };
+export { useCreateProject, useGetProject, useGetPublicProjects };
 export default useGetProjects;
