@@ -15,7 +15,12 @@ export default function Header() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
         <Toolbar>
-          <Stack direction="row" alignItems="center" width="100%" justifyContent="space-between">
+          <Stack
+            direction="row"
+            alignItems="center"
+            width="100%"
+            justifyContent="space-between"
+          >
             <Stack direction="row" spacing={2}>
               <Link
                 to="/"
@@ -30,8 +35,18 @@ export default function Header() {
                 Projects
               </Link>
             </Stack>
-            {!isAuthenticated && <LoginButton />}
-            {isAuthenticated && <LogoutButton />}
+            <Stack direction="row" spacing={2} alignItems="center">
+              {!isAuthenticated && <LoginButton />}
+              {isAuthenticated && (
+                <Link
+                  to="/profile"
+                  sx={(theme) => ({ color: theme.palette.common.white })}
+                >
+                  Profile
+                </Link>
+              )}
+              {isAuthenticated && <LogoutButton />}
+            </Stack>
           </Stack>
         </Toolbar>
       </AppBar>

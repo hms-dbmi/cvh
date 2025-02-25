@@ -69,6 +69,7 @@ export default function DialogButton({
           },
         }}
         fullWidth
+        maxWidth="lg"
       >
         <DialogTitle>{text.title}</DialogTitle>
         <DialogContent sx={{ p: 2 }}>

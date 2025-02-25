@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
+
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +26,7 @@ function FormTextField({
   name,
   control,
   label,
+  ...rest
 }: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
   const { field, fieldState } = useController({
     name,
@@ -42,6 +44,7 @@ function FormTextField({
       slotProps={{
         inputLabel: { shrink: true },
       }}
+      {...rest}
     />
   );
 }
@@ -86,24 +89,34 @@ export default function AddVisualizationButton({
 
   return (
     <DialogButton text={text} onSubmit={handleSubmit(onSubmit)}>
-      <Stack spacing={1} mt={2}>
-        <FormTextField name="name" label="Name" control={control} />
-        <FormTextField
-          name="description"
-          label="Description"
-          control={control}
-        />
-        <FormTextField name="tool" label="Tool" control={control} />
-        <FormTextField
-          name="tool_version"
-          label="Tool Version"
-          control={control}
-        />
+      <Stack direction="row" spacing={2} mt={2}>
+        <Stack spacing={1} minWidth={300}>
+          <FormTextField name="name" label="Name" control={control} />
+          <FormTextField
+            name="description"
+            label="Description"
+            control={control}
+          />
+          <FormTextField name="tool" label="Tool" control={control} />
+          <FormTextField
+            name="tool_version"
+            label="Tool Version"
+            control={control}
+          />
+        </Stack>
         <FormTextField
           name="conf"
           label="Configuration"
           control={control}
           multiline
+          sx={{
+            flexGrow: 1,
+            "& .MuiInputBase-root": {
+              minHeight: "100%",
+              display: "flex",
+              alignItems: "start",
+            },
+          }}
         />
       </Stack>
     </DialogButton>

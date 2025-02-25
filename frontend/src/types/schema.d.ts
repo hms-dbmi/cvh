@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/projects/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Project Member */
+        post: operations["api_api_add_project_member"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects": {
         parameters: {
             query?: never;
@@ -48,6 +65,23 @@ export interface paths {
         };
         /** Get Project */
         get: operations["api_api_get_project"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/members/{project_uuid}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Members */
+        get: operations["api_api_get_project_members"];
         put?: never;
         post?: never;
         delete?: never;
@@ -130,6 +164,48 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ProjectMemberIn */
+        ProjectMemberIn: {
+            /**
+             * Project Uuid
+             * Format: uuid4
+             */
+            project_uuid: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /** ProjectIn */
+        ProjectIn: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Private */
+            private: boolean;
+        };
+        /** Input */
+        Input: {
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+        };
+        /** PagedProjectOut */
+        PagedProjectOut: {
+            /** Items */
+            items: components["schemas"]["ProjectOut"][];
+            /** Count */
+            count: number;
+        };
         /** ProjectOut */
         ProjectOut: {
             /**
@@ -162,34 +238,19 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** ProjectIn */
-        ProjectIn: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Private */
-            private: boolean;
-        };
-        /** Input */
-        Input: {
+        /** ProjectMembersOut */
+        ProjectMembersOut: {
+            /** ID */
+            id?: number | null;
+            /** Project Key */
+            project_key?: number | null;
+            /** User Key */
+            user_key?: number | null;
             /**
-             * Limit
-             * @default 100
+             * Permissions
+             * @default 1
              */
-            limit: number;
-            /**
-             * Offset
-             * @default 0
-             */
-            offset: number;
-        };
-        /** PagedProjectOut */
-        PagedProjectOut: {
-            /** Items */
-            items: components["schemas"]["ProjectOut"][];
-            /** Count */
-            count: number;
+            permissions: number;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -337,6 +398,30 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    api_api_add_project_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectMemberIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMemberIn"];
+                };
+            };
+        };
+    };
     api_api_get_projects: {
         parameters: {
             query?: {
@@ -379,7 +464,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectOut"];
+                    "application/json": components["schemas"]["ProjectIn"];
                 };
             };
         };
@@ -425,6 +510,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+        };
+    };
+    api_api_get_project_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMembersOut"];
                 };
             };
         };

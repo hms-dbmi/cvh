@@ -13,7 +13,7 @@ from typing import Any, List
 from environs import env
 import requests
 
-from .models import Project, Dataset, VisualizationConf
+from .models import Project, Dataset, VisualizationConf, ProjectMember
 from .schema import (
     ProjectIn,
     ProjectOut,
@@ -22,6 +22,8 @@ from .schema import (
     VisualizationNoConfOut,
     VisualizationIn,
     VisualizationOut,
+    ProjectMemberIn,
+    ProjectMembersOut
 )
 
 api = NinjaAPI()
@@ -67,7 +69,6 @@ class Authorized(HttpBearer):
             raise ForbiddenError
 
         user = token.get_user()
-        print(user)
         return user
 
 
@@ -137,6 +138,7 @@ class RequestToken(object):
         except User.DoesNotExist:
             user_info = self.__get_user_info__(self._token)
             username = user_info.get("sub")
+            #username = user_info.get("sub")
             if not username:
                 return None
 
@@ -161,9 +163,17 @@ class RequestToken(object):
 
     def dict(self) -> dict[str, Any]:
         return self._decoded if self._decoded is not None else {}
+    
+
+@api.post("/projects/members", auth=Authorized(), response={201: ProjectMemberIn})
+def add_project_member(request, member: ProjectMemberIn):
+    project = get_object_or_404(Project, uuid=member.project_uuid, user_key=request.auth)
+    user = get_object_or_404(User, email=member.email)
+    ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
+    return project
 
 
-@api.post("/projects", auth=Authorized(), response={201: ProjectOut})
+@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     Project.objects.create(**project.dict(), **user_key)
@@ -173,7 +183,9 @@ def create_project(request, project: ProjectIn):
 @api.get("/projects", auth=Authorized(), response=List[ProjectOut])
 @paginate
 def get_projects(request):
-    projects = Project.objects.filter(user_key=request.auth).order_by('-modified_timestamp').values()
+    member_projects = ProjectMember.objects.filter(user_key=request.auth).values("project_key")
+    print(member_projects)
+    projects = Project.objects.filter(Q(user_key=request.auth) | Q(pk__in=member_projects)).order_by('-modified_timestamp').values()
     return projects
 
 @api.get("/public/projects", auth=Authorized(), response=List[ProjectOut])
@@ -187,6 +199,13 @@ def get_public_projects(request):
 def get_project(request, project_uuid: str):
     project = get_object_or_404(Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False)))
     return project
+
+
+@api.get("/projects/members/{project_uuid}/", auth=Authorized(), response=ProjectMembersOut)
+def get_project_members(request, project_uuid: str):
+    project = get_object_or_404(Project, Q(uuid=project_uuid) & Q(user_key=request.auth))
+    project_members = ProjectMember.objects.filter(project_key__uuid=project_uuid).values("project_key__email", "permissions")
+    return project_members
 
 
 @api.post("/datasets", auth=Authorized(), response={201: DatasetIn})

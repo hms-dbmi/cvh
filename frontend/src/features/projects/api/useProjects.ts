@@ -48,5 +48,11 @@ function useGetProject(projectId: string) {
   });
 }
 
-export { useCreateProject, useGetProject, useGetPublicProjects };
+function useAddProjectMember() {
+  const client = useClient();
+  return client.useMutation("post", "/api/projects/members")
+}
+
+
+export { useCreateProject, useGetProject, useGetPublicProjects, useAddProjectMember };
 export default useGetProjects;

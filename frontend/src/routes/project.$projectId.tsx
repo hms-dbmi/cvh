@@ -13,6 +13,7 @@ import VisualizationListItem from "../features/visualizations/components/Visuali
 import AddVisualizationButton from "../features/visualizations/components/AddVisualizationButton";
 import VisualzationViewer from "../features/visualizations/components/VisualzationViewer";
 import AddDatasetButton from "../features/datasets/components/AddDatasetButton";
+import ShareProjectButton from "../features/projects/components/ShareProjectButton";
 
 export const Route = createFileRoute("/project/$projectId")({
   component: RouteComponent,
@@ -58,6 +59,7 @@ function RouteComponent() {
           <Typography variant="subtitle1">
             {projectData?.description}
           </Typography>
+          <ShareProjectButton projectId={projectId} />
         </Box>
         <Stack direction="row" spacing={4}>
           <Stack spacing={2}>

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
 import uuid
 
 class UserCreated(models.Model):
@@ -33,3 +34,14 @@ class VisualizationConf(UserCreated):
     tool = models.CharField(max_length=50)
     tool_version = models.CharField(max_length=50, blank=True)
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+
+class ProjectMember(models.Model):
+    class Permissions(models.IntegerChoices):
+        read = 1, _("read")
+        write = 2, _("write")
+        admin = 3, _("admin")
+        owner = 4, _("owner")
+
+    project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    permissions = models.IntegerField(choices=Permissions, default=1)

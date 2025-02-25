@@ -1,8 +1,8 @@
 from ninja import Schema, ModelSchema
-from pydantic import UUID4
+from pydantic import UUID4, EmailStr
 from typing import Optional
 
-from .models import Project, Dataset, VisualizationConf
+from .models import Project, Dataset, VisualizationConf, ProjectMember
 
 shared_output_fields = ['uuid', 'name', 'description', 'created_timestamp', 'modified_timestamp', 'last_viewed_timestamp']
                  
@@ -44,3 +44,11 @@ class VisualizationOut(ModelSchema):
         model = VisualizationConf
         fields = ['conf', 'tool', 'tool_version', *shared_output_fields]
 
+class ProjectMemberIn(Schema):
+    project_uuid: UUID4
+    email: EmailStr
+
+class ProjectMembersOut(ModelSchema):
+    class Meta:
+        model = ProjectMember
+        fields = ["email", "permissions"]
