@@ -3,13 +3,14 @@ import { useState } from "react";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
-
+import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import DialogButton from "../../../components/DialogButton";
 import { useGetProjectMembers } from "../api/useProjects";
@@ -42,12 +43,14 @@ function PermissionsSelect({ initialPermission }: PermissionsSelectProps) {
 
   return (
     <FormControl sx={{ m: 1, minWidth: 120 }}>
-      <InputLabel id="member-permissions-select-label">Permission</InputLabel>
+      <InputLabel id="member-permissions-select-label">Role</InputLabel>
       <Select
         labelId="member-permissions-select-label"
         id="member-permissions-select"
         value={permission}
-        label="Permission"
+        label="Role"
+        inputProps={{ 'aria-label': 'Without label' }}
+
         onChange={handleChange}
       >
         {Object.entries(PERMISSIONS).map(([k, v]) => (
@@ -75,9 +78,20 @@ function ProjectSettings({ projectId }: Props) {
       <List>
         {data?.map((member) => (
           <ListItem key={member.email}>
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              width="100%"
+              spacing={2}
+            >
               <Typography>{member.email}</Typography>
-              <PermissionsSelect initialPermission={member.permissions} />
+              <Stack direction="row" spacing={1}>
+                <PermissionsSelect initialPermission={member.permissions} />
+                <IconButton size="medium">
+                  <DeleteIcon fontSize="inherit" color="error" />
+                </IconButton>
+              </Stack>
             </Stack>
           </ListItem>
         ))}

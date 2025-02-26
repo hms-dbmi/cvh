@@ -53,16 +53,22 @@ function RouteComponent() {
   return (
     <>
       <Stack spacing={2}>
-        <Box>
-          <Typography variant="h4" component="h1">
-            {projectData?.name}
-          </Typography>
-          <Typography variant="subtitle1">
-            {projectData?.description}
-          </Typography>
-          <ShareProjectButton projectId={projectId} />
-          <ProjectSettings projectId={projectId} />
-        </Box>
+        <Stack direction="row" justifyContent="space-between" spacing={2}>
+          <Box>
+            <Typography variant="h4" component="h1">
+              {projectData?.name}
+            </Typography>
+            <Typography variant="subtitle1">
+              {projectData?.description}
+            </Typography>
+          </Box>
+          <Box>
+            <Stack direction="row" spacing={2}>
+              <ShareProjectButton projectId={projectId} />
+              <ProjectSettings projectId={projectId} />
+            </Stack>
+          </Box>
+        </Stack>
         <Stack direction="row" spacing={4}>
           <Stack spacing={2}>
             <Box mb={2}>
