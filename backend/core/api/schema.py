@@ -49,6 +49,7 @@ class ProjectMemberIn(Schema):
     email: EmailStr
 
 class ProjectMembersOut(ModelSchema):
+    email: EmailStr
     class Meta:
         model = ProjectMember
-        fields = ["email", "permissions"]
+        fields = ["permissions"]

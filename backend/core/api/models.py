@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 import uuid
@@ -17,10 +18,43 @@ class UserCreated(models.Model):
 class Group(UserCreated):
     pass
 
+def get_user_projects_query(user, permission):
+    member_projects = ProjectMember.objects.filter(user_key=user, permissions__gte=permission).values("project_key")
+    return Q(Q(user_key=user) | Q(pk__in=member_projects))
+    
+class ProjectPermissionManager(models.Manager):
+    def get_project_with_permission(self, user: int, permission: int, project_uuid: str):
+        query = get_user_projects_query(user=user, permission=permission)
+        return super().get_queryset().get(query & Q(uuid=project_uuid))
+    
+    def get_projects_with_permission(self, user: int, permission: int):
+        query = get_user_projects_query(user=user, permission=permission)
+        return super().get_queryset().filter(query)
+    
+    def get_read_project(self, user: int, project_uuid: str):
+        return self.get_project_with_permission(user=user, project_uuid=project_uuid, permission=1)
+    
+    def get_write_project(self, user: int, project_uuid: str):
+        return self.get_project_with_permission(user=user, project_uuid=project_uuid, permission=2)
+    
+    def get_admin_project(self, user: int, project_uuid: str):
+        return self.get_project_with_permission(user=user, project_uuid=project_uuid, permission=3)
+
+    def get_read_projects(self, user: int):
+        return self.get_projects_with_permission(user=user, permission=1)
+    
+    def get_write_projects(self, user: int):
+        return self.get_projects_with_permission(user=user, permission=1)
+    
+    def get_admin_projects(self, user: int):
+        return self.get_projects_with_permission(user=user, permission=3)
+
 class Project(UserCreated):
     private = models.BooleanField(default=True)
     group_key = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+
+    objects = ProjectPermissionManager()
 
 class Dataset(UserCreated):
     source_url = models.URLField(max_length=100)
