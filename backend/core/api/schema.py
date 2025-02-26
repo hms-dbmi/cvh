@@ -48,7 +48,7 @@ class ProjectMemberIn(Schema):
     project_uuid: UUID4
     email: EmailStr
 
-class ProjectMembersOut(ModelSchema):
+class ProjectMemberOut(ModelSchema):
     email: EmailStr
     class Meta:
         model = ProjectMember

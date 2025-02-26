@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/members/{project_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Members */
+        get: operations["api_api_get_project_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects": {
         parameters: {
             query?: never;
@@ -65,23 +82,6 @@ export interface paths {
         };
         /** Get Project */
         get: operations["api_api_get_project"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/members/{project_uuid}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Project Members */
-        get: operations["api_api_get_project_members"];
         put?: never;
         post?: never;
         delete?: never;
@@ -177,6 +177,19 @@ export interface components {
              */
             email: string;
         };
+        /** ProjectMemberOut */
+        ProjectMemberOut: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /**
+             * Permissions
+             * @default 1
+             */
+            permissions: number;
+        };
         /** ProjectIn */
         ProjectIn: {
             /** Name */
@@ -237,20 +250,6 @@ export interface components {
              * Format: time
              */
             last_viewed_timestamp: string;
-        };
-        /** ProjectMembersOut */
-        ProjectMembersOut: {
-            /** ID */
-            id?: number | null;
-            /** Project Key */
-            project_key?: number | null;
-            /** User Key */
-            user_key?: number | null;
-            /**
-             * Permissions
-             * @default 1
-             */
-            permissions: number;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -422,6 +421,28 @@ export interface operations {
             };
         };
     };
+    api_api_get_project_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMemberOut"][];
+                };
+            };
+        };
+    };
     api_api_get_projects: {
         parameters: {
             query?: {
@@ -510,28 +531,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectOut"];
-                };
-            };
-        };
-    };
-    api_api_get_project_members: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectMembersOut"];
                 };
             };
         };

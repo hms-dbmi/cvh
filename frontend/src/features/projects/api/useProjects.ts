@@ -53,6 +53,16 @@ function useAddProjectMember() {
   return client.useMutation("post", "/api/projects/members")
 }
 
+function useGetProjectMembers(projectId: string) {
+  const client = useClient();
+  return client.useQuery("get", "/api/projects/members/{project_uuid}", {
+    params: {
+      path: { project_uuid: projectId },
+    },
+  });
+}
 
-export { useCreateProject, useGetProject, useGetPublicProjects, useAddProjectMember };
+
+
+export { useCreateProject, useGetProject, useGetPublicProjects, useAddProjectMember, useGetProjectMembers };
 export default useGetProjects;

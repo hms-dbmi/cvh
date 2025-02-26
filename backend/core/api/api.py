@@ -1,7 +1,7 @@
 from ninja import NinjaAPI
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, F
 from django.http import Http404
 
 from ninja.security import HttpBearer
@@ -24,7 +24,7 @@ from .schema import (
     VisualizationIn,
     VisualizationOut,
     ProjectMemberIn,
-    ProjectMembersOut
+    ProjectMemberOut
 )
 
 api = NinjaAPI()
@@ -182,10 +182,10 @@ def add_project_member(request, member: ProjectMemberIn):
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return project
 
-@api.get("/projects/members/{project_uuid}/", auth=Authorized(), response=ProjectMembersOut)
+@api.get("/projects/members/{project_uuid}", auth=Authorized(), response=List[ProjectMemberOut])
 def get_project_members(request, project_uuid: str):
-    project = Project.object.get_admin_project(user=request.auth, project_uuid=project_uuid)
-    project_members = ProjectMember.objects.filter(project_key=project).values("user_key__email", "permissions")
+    project = Project.objects.get_admin_project(user=request.auth, project_uuid=project_uuid)
+    project_members = ProjectMember.objects.filter(project_key=project).values("permissions", email=F("user_key__email"))
     return project_members
 
 
