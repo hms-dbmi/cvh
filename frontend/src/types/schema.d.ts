@@ -99,10 +99,27 @@ export interface paths {
         };
         /** Get User Datasets */
         get: operations["api_api_get_user_datasets"];
-        /** Update Employee */
-        put: operations["api_api_update_employee"];
+        /** Update Dataset */
+        put: operations["api_api_update_dataset"];
         /** Create Dataset */
         post: operations["api_api_create_dataset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Tag Dataset */
+        put: operations["api_api_tag_dataset"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -266,8 +283,6 @@ export interface components {
             file_type: string;
             /** Data Type */
             data_type: string;
-            /** Tags */
-            tags?: unknown[];
         };
         /** DatasetUpdate */
         DatasetUpdate: {
@@ -281,8 +296,6 @@ export interface components {
             file_type?: string;
             /** Data Type */
             data_type?: string;
-            /** Tags */
-            tags?: unknown[];
             /** Project Uuid */
             project_uuid?: string | null;
             /**
@@ -293,8 +306,8 @@ export interface components {
         };
         /** DatasetOut */
         DatasetOut: {
-            /** Tags */
-            tags: string[];
+            /** T */
+            t: string[];
             /** Source Url */
             source_url: string;
             /** File Type */
@@ -332,6 +345,18 @@ export interface components {
             items: components["schemas"]["DatasetOut"][];
             /** Count */
             count: number;
+        };
+        /** TagIn */
+        TagIn: {
+            /** Tag */
+            tag: string;
+            /**
+             * Uuid
+             * Format: uuid4
+             */
+            uuid: string;
+            /** Project Uuid */
+            project_uuid?: string | null;
         };
         /** VisualizationNoConfOut */
         VisualizationNoConfOut: {
@@ -583,7 +608,7 @@ export interface operations {
             };
         };
     };
-    api_api_update_employee: {
+    api_api_update_dataset: {
         parameters: {
             query?: never;
             header?: never;
@@ -626,6 +651,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DatasetIn"];
                 };
+            };
+        };
+    };
+    api_api_tag_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

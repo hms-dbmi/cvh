@@ -10,7 +10,7 @@ import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { useUpdateDataset } from "../api/useDatasets";
+import { useTagDataset } from "../api/useDatasets";
 
 interface FormValues {
   tag: string;
@@ -48,11 +48,9 @@ const schema = z
 export default function AddTagButton({
   projectId,
   datasetId,
-  tags,
 }: {
   datasetId: string;
   projectId?: string;
-  tags: string[];
 }) {
   const { handleSubmit, control } = useForm({
     defaultValues: {
@@ -62,7 +60,7 @@ export default function AddTagButton({
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useUpdateDataset();
+  const { mutate } = useTagDataset();
 
   const [showTextField, setShowTextField] = useState(false);
 
@@ -75,7 +73,7 @@ export default function AddTagButton({
       if (projectId) {
         mutate({
           body: {
-            tags: [...tags, formData.tag],
+            tag: formData.tag,
             uuid: datasetId,
             project_uuid: projectId,
           },
@@ -83,14 +81,14 @@ export default function AddTagButton({
         toggleTextField();
         return;
       }
-      mutate({ body: { tags: [...tags, formData.tag], uuid: datasetId } });
+      mutate({ body: { tag: formData.tag, uuid: datasetId } });
       toggleTextField();
     },
-    [mutate, toggleTextField, datasetId, projectId, tags]
+    [mutate, toggleTextField, datasetId, projectId]
   );
 
   return (
-    <Stack spacing={1} mt={2} direction="row" >
+    <Stack spacing={1} mt={2} direction="row">
       {showTextField && (
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           <FormTextField name="tag" control={control} />

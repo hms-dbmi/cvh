@@ -57,13 +57,16 @@ class Project(UserCreated):
 
     objects = ProjectPermissionManager()
 
+class Tag(models.Model):
+    tag = models.CharField(max_length = 50)
+
 class Dataset(UserCreated):
     source_url = models.URLField(max_length=100)
     file_type = models.CharField(max_length=50)
     data_type = models.CharField(max_length=50)
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-    tags = ArrayField(models.CharField(max_length=50), default=list, blank=True)
+    tags = models.ManyToManyField(Tag)
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField()
@@ -80,4 +83,4 @@ class ProjectMember(models.Model):
 
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-    permissions = models.IntegerField(choices=Permissions, default=1)
+    permissions = models.IntegerField(choices=Permissions, default=1)    

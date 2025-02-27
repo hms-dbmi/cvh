@@ -35,4 +35,12 @@ function useUpdateDataset() {
   });
 }
 
-export { useGetUserDatasets, useGetProjectDatasets, useCreateDataset, useUpdateDataset };
+function useTagDataset() {
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("put", `${path}/tags`, {
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["get", path] }),
+  });
+}
+
+export { useGetUserDatasets, useGetProjectDatasets, useCreateDataset, useUpdateDataset, useTagDataset };

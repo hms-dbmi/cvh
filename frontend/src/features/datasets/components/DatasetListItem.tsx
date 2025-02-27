@@ -9,8 +9,10 @@ import AddTagButton from "./AddTagButton.tsx";
 
 export default function DatasetListItem({
   dataset,
+  projectId,
 }: {
   dataset: components["schemas"]["DatasetOut"];
+  projectId?: string;
 }) {
   if (!dataset?.uuid) {
     return null;
@@ -36,10 +38,13 @@ export default function DatasetListItem({
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            {dataset?.tags?.map((tag) => (
+            {dataset?.t?.map((tag) => (
               <Chip key={tag} label={tag} variant="outlined" />
             ))}
-            <AddTagButton datasetId={dataset.uuid} tags={dataset.tags} />
+            <AddTagButton
+              datasetId={dataset.uuid}
+              projectId={projectId}
+            />
           </Stack>
           <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>

@@ -1,8 +1,10 @@
 from ninja import NinjaAPI
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F
+from django.db.models import Q, F, Value
+
 from django.http import Http404
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
@@ -14,7 +16,7 @@ from typing import Any, List
 from environs import env
 import requests
 
-from .models import Project, Dataset, VisualizationConf, ProjectMember
+from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 from .schema import (
     ProjectIn,
     ProjectOut,
@@ -25,7 +27,8 @@ from .schema import (
     VisualizationIn,
     VisualizationOut,
     ProjectMemberIn,
-    ProjectMemberOut
+    ProjectMemberOut,
+    TagIn,
 )
 
 api = NinjaAPI()
@@ -140,7 +143,7 @@ class RequestToken(object):
         except User.DoesNotExist:
             user_info = self.__get_user_info__(self._token)
             username = user_info.get("sub")
-            #username = user_info.get("sub")
+            # username = user_info.get("sub")
             if not username:
                 return None
 
@@ -165,29 +168,43 @@ class RequestToken(object):
 
     def dict(self) -> dict[str, Any]:
         return self._decoded if self._decoded is not None else {}
-    
+
+
 def _get_project(project_uuid: str, user: User, error_message: str):
     try:
         project = Project.objects.get(uuid=project_uuid, private=False)
     except Project.DoesNotExist:
         try:
-            project = Project.objects.get_read_project(user=user, project_uuid=project_uuid)
+            project = Project.objects.get_read_project(
+                user=user, project_uuid=project_uuid
+            )
         except Project.DoesNotExist:
             raise Http404(error_message)
     return project
 
+
 @api.post("/projects/members", auth=Authorized())
 def add_project_member(request, member: ProjectMemberIn):
-    project = Project.objects.get_admin_project(user=request.auth, project_uuid=member.project_uuid)
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=member.project_uuid
+    )
     user = get_object_or_404(User, email=member.email)
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
 
-@api.get("/projects/members/{project_uuid}", auth=Authorized(), response=List[ProjectMemberOut])
+@api.get(
+    "/projects/members/{project_uuid}",
+    auth=Authorized(),
+    response=List[ProjectMemberOut],
+)
 def get_project_members(request, project_uuid: str):
-    project = Project.objects.get_admin_project(user=request.auth, project_uuid=project_uuid)
-    project_members = ProjectMember.objects.filter(project_key=project).values("permissions", email=F("user_key__email"))
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=project_uuid
+    )
+    project_members = ProjectMember.objects.filter(project_key=project).values(
+        "permissions", email=F("user_key__email")
+    )
     return project_members
 
 
@@ -202,19 +219,28 @@ def create_project(request, project: ProjectIn):
 @api.get("/projects", auth=Authorized(), response=List[ProjectOut])
 @paginate
 def get_projects(request):
-    projects =  Project.objects.get_read_projects(user=request.auth).order_by('-modified_timestamp').values()
+    projects = (
+        Project.objects.get_read_projects(user=request.auth)
+        .order_by("-modified_timestamp")
+        .values()
+    )
     return projects
+
 
 @api.get("/public/projects", auth=Authorized(), response=List[ProjectOut])
 @paginate
 def get_public_projects(request):
-    projects = Project.objects.filter(private=False).order_by('-modified_timestamp').values()
+    projects = (
+        Project.objects.filter(private=False).order_by("-modified_timestamp").values()
+    )
     return projects
 
 
 @api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
 def get_project(request, project_uuid: str):
-    return _get_project(user=request.auth, project_uuid=project_uuid, error_message="Project not found.")
+    return _get_project(
+        user=request.auth, project_uuid=project_uuid, error_message="Project not found."
+    )
 
 
 @api.post("/datasets", auth=Authorized(), response={201: DatasetIn})
@@ -229,44 +255,100 @@ def create_dataset(request, dataset: DatasetIn):
     Dataset.objects.create(**dataset_dict, user_key=request.auth)
     return dataset
 
+
 @api.put("/datasets", auth=Authorized())
 def update_dataset(request, payload: DatasetUpdate):
     payload_dict = payload.dict(exclude_unset=True)
     if payload.project_uuid:
-        project = Project.object.get_write_project(uuid=payload.project_uuid, user_key=request.auth)
+        project = Project.objects.get_write_project(
+            project_uuid=payload.project_uuid, user=request.auth
+        )
         dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
         del payload_dict["project_uuid"]
     else:
         dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
-    
+
     del payload_dict["uuid"]
     for attr, value in payload_dict.items():
         setattr(dataset, attr, value)
     dataset.save()
     return {"success": True}
 
+
+@api.put("/datasets/tags", auth=Authorized())
+def tag_dataset(request, payload: TagIn):
+    if payload.project_uuid:
+        project = Project.objects.get_write_project(
+            project_uuid=payload.project_uuid, user=request.auth
+        )
+        dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
+    else:
+        dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
+
+    try:
+        tag = Tag.objects.get(tag=payload.tag)
+    except Tag.DoesNotExist:
+        tag = Tag.objects.create(tag=payload.tag)
+    dataset.tags.add(tag)
+    return {"success": True}
+
+
 @api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
 @paginate
 def get_user_datasets(request):
-    datasets = Dataset.objects.filter(user_key=request.auth)
+    datasets = Dataset.objects.filter(user_key=request.auth).values(
+        "source_url",
+        "file_type",
+        "data_type",
+        "uuid",
+        "name",
+        "description",
+        "created_timestamp",
+        "modified_timestamp",
+        "last_viewed_timestamp",
+        tags=F("tags__tag"),
+    )
     return datasets
 
 
 @api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
 def get_project_datasets(request, project_uuid: str):
-    project = _get_project(user=request.auth, project_uuid=project_uuid, error_message="Dataset not found.")
-    datasets = Dataset.objects.filter(project_key=project)
+    project = _get_project(
+        user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
+    )
+    datasets = (
+        Dataset.objects.filter(project_key=project)
+        .annotate(t=ArrayAgg("tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])))
+        .values(
+            "source_url",
+            "file_type",
+            "data_type",
+            "uuid",
+            "name",
+            "description",
+            "created_timestamp",
+            "modified_timestamp",
+            "last_viewed_timestamp",
+            "t",
+        )
+    )
     return datasets
 
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
 def get_project_visualizations(request, project_uuid: str):
-    project = _get_project(user=request.auth, project_uuid=project_uuid, error_message="Visualization not found.")
+    project = _get_project(
+        user=request.auth,
+        project_uuid=project_uuid,
+        error_message="Visualization not found.",
+    )
     visualizations = VisualizationConf.objects.filter(project_key=project)
     return visualizations
 
 
-@api.get("/visualizations/{visualization_uuid}", auth=Authorized(), response=VisualizationOut)
+@api.get(
+    "/visualizations/{visualization_uuid}", auth=Authorized(), response=VisualizationOut
+)
 def get_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     return visualization
@@ -278,6 +360,8 @@ def create_visualization(request, visualization: VisualizationIn):
     project_uuid = visualization_dict.get("project_uuid")
     del visualization_dict["project_uuid"]
 
-    project = get_object_or_404(Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False)))
+    project = get_object_or_404(
+        Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False))
+    )
     VisualizationConf.objects.create(**visualization_dict, project_key=project)
     return visualization

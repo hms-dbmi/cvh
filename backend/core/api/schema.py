@@ -31,22 +31,27 @@ class DatasetIn(ModelSchema):
     project_uuid: Optional[UUID4] = None
     class Meta:
         model = Dataset
-        fields = ['name', 'description', 'source_url', 'file_type', 'data_type', 'tags']
+        fields = ['name', 'description', 'source_url', 'file_type', 'data_type']
 
 class PartialDatasetIn(ModelSchema, OptionalSchema):
     class Meta:
         model = Dataset
-        fields = ['name', 'description', 'source_url', 'file_type', 'data_type', 'tags']
+        fields = ['name', 'description', 'source_url', 'file_type', 'data_type']
 
 class DatasetUpdate(PartialDatasetIn):
     project_uuid: Optional[UUID4] = None
     uuid: UUID4
 
 class DatasetOut(ModelSchema):
-    tags: List[str]
+    t: List[str]
     class Meta:
         model = Dataset
         fields = ['source_url', 'file_type', 'data_type', *shared_output_fields]
+
+class TagIn(Schema):
+    tag: str
+    uuid: UUID4
+    project_uuid: Optional[UUID4] = None
 
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4
