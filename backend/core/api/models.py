@@ -8,9 +8,9 @@ class UserCreated(models.Model):
     name = models.CharField(max_length=100)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     description = models.TextField(max_length=300, null=True)
-    created_timestamp = models.TimeField(auto_now_add=True)
-    modified_timestamp = models.TimeField(auto_now=True)
-    last_viewed_timestamp = models.TimeField(auto_now_add=True)
+    created_timestamp = models.DateTimeField(auto_now_add=True)
+    modified_timestamp = models.DateTimeField(auto_now=True)
+    last_viewed_timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         abstract = True
@@ -71,10 +71,10 @@ class VisualizationConf(UserCreated):
 
 class ProjectMember(models.Model):
     class Permissions(models.IntegerChoices):
-        read = 1, _("read")
-        write = 2, _("write")
-        admin = 3, _("admin")
-        owner = 4, _("owner")
+        read = 1, "read"
+        write = 2, "write"
+        admin = 3, "admin"
+        owner = 4, "owner"
 
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
