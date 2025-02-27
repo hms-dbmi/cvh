@@ -1,9 +1,11 @@
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
+import Chip from "@mui/material/Chip";
 
 import type { components } from "../../../types/schema.d.ts";
 import EntityListItem from "../../../components/EntityListItem.tsx";
+import AddTagButton from "./AddTagButton.tsx";
 
 export default function DatasetListItem({
   dataset,
@@ -23,7 +25,8 @@ export default function DatasetListItem({
           </Typography>
           <Stack direction="row" spacing={2}>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Source: <Link href={dataset.source_url}>{dataset.source_url}</Link>
+              Source:{" "}
+              <Link href={dataset.source_url}>{dataset.source_url}</Link>
             </Typography>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               File Type: {dataset.file_type}
@@ -31,6 +34,12 @@ export default function DatasetListItem({
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               Data Type: {dataset.data_type}
             </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1} alignItems="center">
+            {dataset?.tags?.map((tag) => (
+              <Chip key={tag} label={tag} variant="outlined" />
+            ))}
+            <AddTagButton datasetId={dataset.uuid} tags={dataset.tags} />
           </Stack>
           <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>

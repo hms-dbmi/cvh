@@ -39,6 +39,7 @@ function useCreateProject() {
   });
 }
 
+
 function useGetProject(projectId: string) {
   const client = useClient();
   return client.useQuery("get", "/api/projects/{project_uuid}", {

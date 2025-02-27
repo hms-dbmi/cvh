@@ -1,8 +1,18 @@
 from ninja import Schema, ModelSchema
 from pydantic import UUID4, EmailStr
-from typing import Optional
+from typing import Optional, Any, List
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember
+
+class OptionalSchema(Schema):
+    @classmethod
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+
+        for field in cls.model_fields.values():
+            field.default = None
+
+        cls.model_rebuild(force=True)
 
 shared_output_fields = ['uuid', 'name', 'description', 'created_timestamp', 'modified_timestamp', 'last_viewed_timestamp']
                  
@@ -21,10 +31,19 @@ class DatasetIn(ModelSchema):
     project_uuid: Optional[UUID4] = None
     class Meta:
         model = Dataset
-        fields = ['name', 'description', 'source_url', 'file_type', 'data_type']
+        fields = ['name', 'description', 'source_url', 'file_type', 'data_type', 'tags']
 
+class PartialDatasetIn(ModelSchema, OptionalSchema):
+    class Meta:
+        model = Dataset
+        fields = ['name', 'description', 'source_url', 'file_type', 'data_type', 'tags']
+
+class DatasetUpdate(PartialDatasetIn):
+    project_uuid: Optional[UUID4] = None
+    uuid: UUID4
 
 class DatasetOut(ModelSchema):
+    tags: List[str]
     class Meta:
         model = Dataset
         fields = ['source_url', 'file_type', 'data_type', *shared_output_fields]

@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 import uuid
 
@@ -62,6 +63,7 @@ class Dataset(UserCreated):
     data_type = models.CharField(max_length=50)
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    tags = ArrayField(models.CharField(max_length=50), default=list, blank=True)
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField()

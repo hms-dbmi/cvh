@@ -27,4 +27,12 @@ function useCreateDataset() {
   });
 }
 
-export { useGetUserDatasets, useGetProjectDatasets, useCreateDataset };
+function useUpdateDataset() {
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("put", path, {
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["get", path] }),
+  });
+}
+
+export { useGetUserDatasets, useGetProjectDatasets, useCreateDataset, useUpdateDataset };

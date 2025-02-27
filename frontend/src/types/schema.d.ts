@@ -99,7 +99,8 @@ export interface paths {
         };
         /** Get User Datasets */
         get: operations["api_api_get_user_datasets"];
-        put?: never;
+        /** Update Employee */
+        put: operations["api_api_update_employee"];
         /** Create Dataset */
         post: operations["api_api_create_dataset"];
         delete?: never;
@@ -190,6 +191,38 @@ export interface components {
              */
             permissions: number;
         };
+        /** ProjectOut */
+        ProjectOut: {
+            /**
+             * Private
+             * @default true
+             */
+            private: boolean;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: date-time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: date-time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: date-time
+             */
+            last_viewed_timestamp: string;
+        };
         /** ProjectIn */
         ProjectIn: {
             /** Name */
@@ -219,38 +252,6 @@ export interface components {
             /** Count */
             count: number;
         };
-        /** ProjectOut */
-        ProjectOut: {
-            /**
-             * Private
-             * @default true
-             */
-            private: boolean;
-            /**
-             * Uuid
-             * Format: uuid
-             */
-            uuid?: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Created Timestamp
-             * Format: time
-             */
-            created_timestamp: string;
-            /**
-             * Modified Timestamp
-             * Format: time
-             */
-            modified_timestamp: string;
-            /**
-             * Last Viewed Timestamp
-             * Format: time
-             */
-            last_viewed_timestamp: string;
-        };
         /** DatasetIn */
         DatasetIn: {
             /** Project Uuid */
@@ -265,9 +266,35 @@ export interface components {
             file_type: string;
             /** Data Type */
             data_type: string;
+            /** Tags */
+            tags?: unknown[];
+        };
+        /** DatasetUpdate */
+        DatasetUpdate: {
+            /** Name */
+            name?: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url?: string;
+            /** File Type */
+            file_type?: string;
+            /** Data Type */
+            data_type?: string;
+            /** Tags */
+            tags?: unknown[];
+            /** Project Uuid */
+            project_uuid?: string | null;
+            /**
+             * Uuid
+             * Format: uuid4
+             */
+            uuid?: string;
         };
         /** DatasetOut */
         DatasetOut: {
+            /** Tags */
+            tags: string[];
             /** Source Url */
             source_url: string;
             /** File Type */
@@ -285,17 +312,17 @@ export interface components {
             description?: string | null;
             /**
              * Created Timestamp
-             * Format: time
+             * Format: date-time
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
-             * Format: time
+             * Format: date-time
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
-             * Format: time
+             * Format: date-time
              */
             last_viewed_timestamp: string;
         };
@@ -323,17 +350,17 @@ export interface components {
             description?: string | null;
             /**
              * Created Timestamp
-             * Format: time
+             * Format: date-time
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
-             * Format: time
+             * Format: date-time
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
-             * Format: time
+             * Format: date-time
              */
             last_viewed_timestamp: string;
         };
@@ -374,17 +401,17 @@ export interface components {
             description?: string | null;
             /**
              * Created Timestamp
-             * Format: time
+             * Format: date-time
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
-             * Format: time
+             * Format: date-time
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
-             * Format: time
+             * Format: date-time
              */
             last_viewed_timestamp: string;
         };
@@ -410,14 +437,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
-            201: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProjectMemberIn"];
-                };
+                content?: never;
             };
         };
     };
@@ -485,7 +510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectIn"];
+                    "application/json": components["schemas"]["ProjectOut"];
                 };
             };
         };
@@ -555,6 +580,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedDatasetOut"];
                 };
+            };
+        };
+    };
+    api_api_update_employee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -20,6 +20,7 @@ from .schema import (
     ProjectOut,
     DatasetIn,
     DatasetOut,
+    DatasetUpdate,
     VisualizationNoConfOut,
     VisualizationIn,
     VisualizationOut,
@@ -175,12 +176,13 @@ def _get_project(project_uuid: str, user: User, error_message: str):
             raise Http404(error_message)
     return project
 
-@api.post("/projects/members", auth=Authorized(), response={201: ProjectMemberIn})
+@api.post("/projects/members", auth=Authorized())
 def add_project_member(request, member: ProjectMemberIn):
-    project = Project.object.get_admin_project(user=request.auth, project_uuid=member.project_uuid)
+    project = Project.objects.get_admin_project(user=request.auth, project_uuid=member.project_uuid)
     user = get_object_or_404(User, email=member.email)
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
-    return project
+    return {"success": True}
+
 
 @api.get("/projects/members/{project_uuid}", auth=Authorized(), response=List[ProjectMemberOut])
 def get_project_members(request, project_uuid: str):
@@ -189,11 +191,12 @@ def get_project_members(request, project_uuid: str):
     return project_members
 
 
-@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
+@api.post("/projects", auth=Authorized(), response={201: ProjectOut})
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
-    Project.objects.create(**project.dict(), **user_key)
-    return project
+    p = Project.objects.create(**project.dict(), **user_key)
+    ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=4)
+    return p
 
 
 @api.get("/projects", auth=Authorized(), response=List[ProjectOut])
@@ -226,6 +229,21 @@ def create_dataset(request, dataset: DatasetIn):
     Dataset.objects.create(**dataset_dict, user_key=request.auth)
     return dataset
 
+@api.put("/datasets", auth=Authorized())
+def update_dataset(request, payload: DatasetUpdate):
+    payload_dict = payload.dict(exclude_unset=True)
+    if payload.project_uuid:
+        project = Project.object.get_write_project(uuid=payload.project_uuid, user_key=request.auth)
+        dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
+        del payload_dict["project_uuid"]
+    else:
+        dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
+    
+    del payload_dict["uuid"]
+    for attr, value in payload_dict.items():
+        setattr(dataset, attr, value)
+    dataset.save()
+    return {"success": True}
 
 @api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
 @paginate
