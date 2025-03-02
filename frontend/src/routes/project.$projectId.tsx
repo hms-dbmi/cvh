@@ -15,6 +15,7 @@ import VisualzationViewer from "../features/visualizations/components/Visualzati
 import AddDatasetButton from "../features/datasets/components/AddDatasetButton";
 import ShareProjectButton from "../features/projects/components/ShareProjectButton";
 import ProjectSettings from "../features/projects/components/ProjectSettings";
+import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";
 
 export const Route = createFileRoute("/project/$projectId")({
   component: RouteComponent,
@@ -25,6 +26,8 @@ function RouteComponent() {
 
   const [selectedViz, setSelectedViz] = useState<string>();
 
+  const [selectedTags, setSelectedTags] = useState<{ tag: string }[]>([]);
+
   const {
     isLoading: isLoadingProject,
     isError: isErrorProject,
@@ -34,7 +37,7 @@ function RouteComponent() {
     isLoading: isLoadingDatasets,
     isError: isErrorDatasets,
     data: datasets,
-  } = useGetProjectDatasets(projectId);
+  } = useGetProjectDatasets(projectId, selectedTags);
 
   const {
     isLoading: isLoadingVisualizations,
@@ -69,6 +72,10 @@ function RouteComponent() {
             </Stack>
           </Box>
         </Stack>
+        <TagsAutocomplete
+          selectedTags={selectedTags}
+          setSelectedTags={setSelectedTags}
+        />
         <Stack direction="row" spacing={4}>
           <Stack spacing={2}>
             <Box mb={2}>

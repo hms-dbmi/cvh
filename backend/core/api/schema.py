@@ -2,7 +2,7 @@ from ninja import Schema, ModelSchema
 from pydantic import UUID4, EmailStr
 from typing import Optional, Any, List
 
-from .models import Project, Dataset, VisualizationConf, ProjectMember
+from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 
 class OptionalSchema(Schema):
     @classmethod
@@ -52,6 +52,11 @@ class TagIn(Schema):
     tag: str
     uuid: UUID4
     project_uuid: Optional[UUID4] = None
+
+class TagOut(ModelSchema):
+    class Meta:
+        model = Tag
+        fields = ["tag"]
 
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4

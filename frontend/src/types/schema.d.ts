@@ -143,6 +143,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tags */
+        get: operations["api_api_get_tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/visualizations": {
         parameters: {
             query?: never;
@@ -357,6 +374,23 @@ export interface components {
             uuid: string;
             /** Project Uuid */
             project_uuid?: string | null;
+        };
+        /** QuerySchema */
+        QuerySchema: {
+            /** Tags */
+            tags?: string[];
+        };
+        /** PagedTagOut */
+        PagedTagOut: {
+            /** Items */
+            items: components["schemas"]["TagOut"][];
+            /** Count */
+            count: number;
+        };
+        /** TagOut */
+        TagOut: {
+            /** Tag */
+            tag: string;
         };
         /** VisualizationNoConfOut */
         VisualizationNoConfOut: {
@@ -678,7 +712,9 @@ export interface operations {
     };
     api_api_get_project_datasets: {
         parameters: {
-            query?: never;
+            query?: {
+                tags?: string[];
+            };
             header?: never;
             path: {
                 project_uuid: string;
@@ -694,6 +730,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetOut"][];
+                };
+            };
+        };
+    };
+    api_api_get_tags: {
+        parameters: {
+            query?: {
+                sub_str?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedTagOut"];
                 };
             };
         };

@@ -1,4 +1,4 @@
-from ninja import NinjaAPI
+from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, F, Value
@@ -12,7 +12,7 @@ from ninja.pagination import paginate
 
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
-from typing import Any, List
+from typing import Any, List, Optional
 from environs import env
 import requests
 
@@ -29,6 +29,7 @@ from .schema import (
     ProjectMemberIn,
     ProjectMemberOut,
     TagIn,
+    TagOut,
 )
 
 api = NinjaAPI()
@@ -296,29 +297,13 @@ def tag_dataset(request, payload: TagIn):
 @api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
 @paginate
 def get_user_datasets(request):
-    datasets = Dataset.objects.filter(user_key=request.auth).values(
-        "source_url",
-        "file_type",
-        "data_type",
-        "uuid",
-        "name",
-        "description",
-        "created_timestamp",
-        "modified_timestamp",
-        "last_viewed_timestamp",
-        tags=F("tags__tag"),
-    )
-    return datasets
-
-
-@api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
-def get_project_datasets(request, project_uuid: str):
-    project = _get_project(
-        user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
-    )
     datasets = (
-        Dataset.objects.filter(project_key=project)
-        .annotate(t=ArrayAgg("tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])))
+        Dataset.objects.filter(user_key=request.auth)
+        .annotate(
+            t=ArrayAgg(
+                "tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])
+            )
+        )
         .values(
             "source_url",
             "file_type",
@@ -333,6 +318,51 @@ def get_project_datasets(request, project_uuid: str):
         )
     )
     return datasets
+
+class QuerySchema(Schema):
+    tags: List[str] = Field(None, alias='tags')
+
+@api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
+def get_project_datasets(request, project_uuid: str, query_filters: QuerySchema = Query(...)):
+    project = _get_project(
+        user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
+    )
+    q = Q()
+    if query_filters.tags:
+        t = Tag.objects.filter(tag__in=query_filters.tags)
+        q &= Q(tags__in=t)
+    datasets = (
+        Dataset.objects.filter(Q(project_key=project) & q)
+        .annotate(
+            t=ArrayAgg(
+                "tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])
+            )
+        )
+        .values(
+            "source_url",
+            "file_type",
+            "data_type",
+            "uuid",
+            "name",
+            "description",
+            "created_timestamp",
+            "modified_timestamp",
+            "last_viewed_timestamp",
+            "t",
+        )
+    )
+    return datasets
+
+
+@api.get("/tags", auth=Authorized(), response=List[TagOut])
+@paginate
+def get_tags(request, sub_str: str = None):
+    q = Q()
+    if sub_str:
+        q &= Q(tag__icontains=sub_str)
+
+    tags = Tag.objects.filter(q)
+    return tags
 
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
