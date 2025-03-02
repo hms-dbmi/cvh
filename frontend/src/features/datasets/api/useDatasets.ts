@@ -6,7 +6,7 @@ const path = "/api/datasets";
 function invalidateGetQuery(q: Query<unknown, Error, unknown, string[]>){
   const queryKey = q?.queryKey;
 
-  if(queryKey[0] === "get" && queryKey[1]?.startsWith("/api/datasets")){
+  if(queryKey[0] === "get" && (queryKey[1]?.startsWith("/api/datasets") || queryKey[1]?.startsWith("/api/tags"))){
     return true
   }
   return false;
@@ -28,6 +28,21 @@ function useGetProjectDatasets(projectId: string, tags: {tag: string}[]) {
       ...queryOptions,
     },
   });
+}
+
+function useScrollDatasets(projectId: string, tags: {tag: string}[]){
+  const queryOptions = tags.length ? {
+    query: { tags: tags.map((t) => t.tag) },
+} : {}
+
+const client = useClient();
+return client.useInfiniteQuery("get", `${path}/{project_uuid}`, {
+  params: {
+    path: { project_uuid: projectId },
+    ...queryOptions,
+  },
+});
+
 }
 
 function useCreateDataset() {

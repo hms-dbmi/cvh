@@ -8,7 +8,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
-from ninja.pagination import paginate
+from ninja.pagination import paginate, PageNumberPagination
 
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
@@ -323,6 +323,7 @@ class QuerySchema(Schema):
     tags: List[str] = Field(None, alias='tags')
 
 @api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
+@paginate(PageNumberPagination)
 def get_project_datasets(request, project_uuid: str, query_filters: QuerySchema = Query(...)):
     project = _get_project(
         user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
@@ -337,7 +338,7 @@ def get_project_datasets(request, project_uuid: str, query_filters: QuerySchema 
             t=ArrayAgg(
                 "tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])
             )
-        )
+        ).order_by("-modified_timestamp")
         .values(
             "source_url",
             "file_type",

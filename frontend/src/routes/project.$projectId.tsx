@@ -91,7 +91,7 @@ function RouteComponent() {
               </Stack>
               <Box maxHeight={500} sx={{ overflowY: "scroll" }}>
                 <List>
-                  {datasets?.map((dataset) => (
+                  {datasets?.items?.map((dataset) => (
                     <DatasetListItem
                       dataset={dataset}
                       key={dataset.uuid}

@@ -714,6 +714,7 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                page?: number;
             };
             header?: never;
             path: {
@@ -729,7 +730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatasetOut"][];
+                    "application/json": components["schemas"]["PagedDatasetOut"];
                 };
             };
         };
