@@ -1,6 +1,5 @@
-import useClient, { QueryOptions } from "../../../api/client";
+import useClient, { QueryOptions, buildInvalidateGetQuery } from "../../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
-
 /*
 function useProjects() {
     const url: string = `${import.meta.env.VITE_API_URL}/api/projects`
@@ -20,11 +19,13 @@ function useProjects() {
 const path = "/api/projects";
 const publicPath = "/api/public/projects";
 
+const invalidateGetQuery = buildInvalidateGetQuery([path, publicPath])
+
+
 function useGetProjects(options?: QueryOptions) {
   const client = useClient();
   return client.useQuery("get", path, options);
 }
-
 
 function useGetPublicProjects(options?: QueryOptions) {
   const client = useClient();
@@ -35,10 +36,10 @@ function useCreateProject() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["get", path] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
   });
 }
-
 
 function useGetProject(projectId: string) {
   const client = useClient();
@@ -50,8 +51,12 @@ function useGetProject(projectId: string) {
 }
 
 function useAddProjectMember() {
+  const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("post", "/api/projects/members")
+  return client.useMutation("post", "/api/projects/members", {
+    onSuccess: () =>
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+  });
 }
 
 function useGetProjectMembers(projectId: string) {
@@ -63,7 +68,11 @@ function useGetProjectMembers(projectId: string) {
   });
 }
 
-
-
-export { useCreateProject, useGetProject, useGetPublicProjects, useAddProjectMember, useGetProjectMembers };
+export {
+  useCreateProject,
+  useGetProject,
+  useGetPublicProjects,
+  useAddProjectMember,
+  useGetProjectMembers,
+};
 export default useGetProjects;

@@ -10,7 +10,7 @@ import { useAddProjectMember } from "../api/useProjects";
 
 const text = {
   button: "Share Project",
-  title: "Shared Project",
+  title: "Share Project",
 };
 
 interface FormValues {

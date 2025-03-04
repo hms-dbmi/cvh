@@ -72,12 +72,12 @@ function RouteComponent() {
             </Stack>
           </Box>
         </Stack>
-        <TagsAutocomplete
-          selectedTags={selectedTags}
-          setSelectedTags={setSelectedTags}
-        />
         <Stack direction="row" spacing={4}>
           <Stack spacing={2}>
+            <TagsAutocomplete
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+            />
             <Box mb={2}>
               <Stack
                 direction="row"
@@ -106,6 +106,7 @@ function RouteComponent() {
                 direction="row"
                 justifyContent="space-between"
                 width="100%"
+                overflow="scroll"
               >
                 <Typography variant="h5" component="h3">
                   Visualizations
@@ -127,7 +128,6 @@ function RouteComponent() {
           </Stack>
           {selectedViz && (
             <Stack>
-              <Typography variant="subtitle1">{selectedViz}</Typography>
               <VisualzationViewer visualizationId={selectedViz} />
             </Stack>
           )}
