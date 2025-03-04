@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useEffect } from "react";
-import { useAuthToken } from "../api/auth";
 
 export const Route = createFileRoute("/profile")({
   component: Profile,
@@ -9,16 +7,6 @@ export const Route = createFileRoute("/profile")({
 
 function Profile() {
   const { user, isAuthenticated, isLoading } = useAuth0();
-
-  const getToken = useAuthToken();
-
-  useEffect(() => {
-    async function f() {
-      const token = await getToken();
-      console.log(token);
-    }
-    f();
-  }, [getToken]);
 
   if (isLoading) {
     return <div>Loading ...</div>;

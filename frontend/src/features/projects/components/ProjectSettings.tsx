@@ -36,7 +36,6 @@ const text = {
 function PermissionsSelect({ initialPermission }: PermissionsSelectProps) {
   const [permission, setPermission] = useState<number>(initialPermission);
 
-  console.log(permission, initialPermission);
   const handleChange = (event: SelectChangeEvent<number>) => {
     setPermission(event.target.value as number);
   };

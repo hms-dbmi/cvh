@@ -19,8 +19,6 @@ class Command(BaseCommand):
 
         file_data = pq.read_table(datafile).to_pylist()
 
-        print(file_data[1])
-
         project = Project.objects.create(
             private=False,
             name="ENCODE + 4DN Biosamples",
