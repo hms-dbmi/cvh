@@ -50,6 +50,7 @@ class DatasetOut(ModelSchema):
 
 class TagIn(Schema):
     tag: str
+    key: Optional[str] = None
     uuid: UUID4
     project_uuid: Optional[UUID4] = None
 

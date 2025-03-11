@@ -1,7 +1,8 @@
 from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Value
+from django.db.models import Q, F, Value, Case, When, CharField
+from django.db.models.functions import Concat
 
 from django.http import Http404
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -12,7 +13,7 @@ from ninja.pagination import paginate, PageNumberPagination
 
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
-from typing import Any, List, Optional
+from typing import Any, List
 from environs import env
 import requests
 
@@ -285,11 +286,11 @@ def tag_dataset(request, payload: TagIn):
         dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
     else:
         dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
-
+    print(payload)
     try:
-        tag = Tag.objects.get(tag=payload.tag)
+        tag = Tag.objects.get(tag=payload.tag, key=payload.key)
     except Tag.DoesNotExist:
-        tag = Tag.objects.create(tag=payload.tag)
+        tag = Tag.objects.create(tag=payload.tag, key=payload.key)
     dataset.tags.add(tag)
     return {"success": True}
 
@@ -339,8 +340,17 @@ def get_project_datasets(
     datasets = (
         Dataset.objects.filter(Q(project_key=project) & q)
         .annotate(
+            combined_tag=Case(
+                When(
+                    tags__key__isnull=False, then=Concat("tags__key", Value(":"), "tags__tag")
+                ),
+                default="tags__tag",
+                output_field=CharField(),
+            )
+        )
+        .annotate(
             t=ArrayAgg(
-                "tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])
+                "combined_tag", filter=Q(combined_tag__isnull=False), default=Value([])
             )
         )
         .order_by("-modified_timestamp")

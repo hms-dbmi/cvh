@@ -50,15 +50,16 @@ class ProjectPermissionManager(models.Manager):
     def get_admin_projects(self, user: int):
         return self.get_projects_with_permission(user=user, permission=3)
 
+class Tag(models.Model):
+    tag = models.CharField(max_length = 50)
+    key = models.CharField(max_length = 50, blank=True, null=True)
+
 class Project(UserCreated):
     private = models.BooleanField(default=True)
     group_key = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-
+    tags = models.ManyToManyField(Tag)
     objects = ProjectPermissionManager()
-
-class Tag(models.Model):
-    tag = models.CharField(max_length = 50)
 
 class Dataset(UserCreated):
     source_url = models.URLField(max_length=100)
@@ -73,6 +74,7 @@ class VisualizationConf(UserCreated):
     tool = models.CharField(max_length=50)
     tool_version = models.CharField(max_length=50, blank=True)
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    tags = models.ManyToManyField(Tag)
 
 class ProjectMember(models.Model):
     class Permissions(models.IntegerChoices):
