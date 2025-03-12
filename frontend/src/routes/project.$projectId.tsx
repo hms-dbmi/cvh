@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
@@ -44,6 +44,34 @@ function RouteComponent() {
     isError: isErrorVisualizations,
     data: visualizations,
   } = useGetProjectVisualizations(projectId);
+
+  const vizRef = useRef<HTMLDivElement>(null);
+
+  const toggleViz = useCallback(
+    (vizId?: string) => {
+      setSelectedViz(vizId);
+      vizRef?.current?.requestFullscreen();
+    },
+    [vizRef, setSelectedViz]
+  );
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      if (document.fullscreenElement) {
+        setIsFullscreen(true);
+      } else {
+        setIsFullscreen(false);
+        setSelectedViz(undefined);
+      }
+    }
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
 
   const isLoading =
     isLoadingProject || isLoadingDatasets || isLoadingVisualizations;
@@ -119,20 +147,20 @@ function RouteComponent() {
                     visualization={visualization}
                     key={visualization.uuid}
                     listItemProps={{
-                      onClick: () => setSelectedViz(visualization.uuid),
+                      onClick: () => toggleViz(visualization?.uuid),
                     }}
                   />
                 ))}
               </List>
             </Box>
           </Stack>
-          {selectedViz && (
-            <Stack>
-              <VisualzationViewer visualizationId={selectedViz} />
-            </Stack>
-          )}
         </Stack>
       </Stack>
+      <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
+        {selectedViz && isFullscreen && (
+          <VisualzationViewer visualizationId={selectedViz} />
+        )}
+      </Box>
     </>
   );
 }
