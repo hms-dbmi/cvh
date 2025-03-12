@@ -323,8 +323,8 @@ export interface components {
         };
         /** DatasetOut */
         DatasetOut: {
-            /** T */
-            t: string[];
+            /** Combined Tags */
+            combined_tags: string[];
             /** Source Url */
             source_url: string;
             /** File Type */
@@ -367,6 +367,8 @@ export interface components {
         TagIn: {
             /** Tag */
             tag: string;
+            /** Key */
+            key?: string | null;
             /**
              * Uuid
              * Format: uuid4
