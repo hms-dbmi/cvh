@@ -21,7 +21,7 @@ export default function DatasetListItem({
     <EntityListItem
       primary={<Typography variant="subtitle1">{dataset.name}</Typography>}
       secondary={
-        <Stack>
+        <Stack spacing={0.5}>
           <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
             {dataset.description}
           </Typography>
@@ -38,7 +38,7 @@ export default function DatasetListItem({
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            {dataset?.t?.map((tag) => (
+            {dataset?.combined_tags?.map((tag) => (
               <Chip key={tag} label={tag} variant="outlined" />
             ))}
             <AddTagButton

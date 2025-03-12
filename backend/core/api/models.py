@@ -1,7 +1,9 @@
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Value, Case, When, CharField
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField
+from django.db.models.functions import Concat
+from django.contrib.postgres.aggregates import ArrayAgg
+
 from django.utils.translation import gettext_lazy as _
 import uuid
 
@@ -61,6 +63,23 @@ class Project(UserCreated):
     tags = models.ManyToManyField(Tag)
     objects = ProjectPermissionManager()
 
+
+class DatasetsManager(models.Manager):
+    def get_queryset(self):
+        return super(DatasetsManager, self).get_queryset().annotate(
+            combined_tag=Case(
+                When(
+                    tags__key__isnull=False, then=Concat("tags__key", Value(":"), "tags__tag")
+                ),
+                default="tags__tag",
+                output_field=CharField(),
+            )
+        ).annotate(
+            combined_tags=ArrayAgg(
+                "combined_tag", filter=Q(combined_tag__isnull=False), default=Value([])
+            )
+        )
+
 class Dataset(UserCreated):
     source_url = models.URLField(max_length=100)
     file_type = models.CharField(max_length=50)
@@ -68,6 +87,8 @@ class Dataset(UserCreated):
     project_key = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     tags = models.ManyToManyField(Tag)
+
+    objects = DatasetsManager()
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField()

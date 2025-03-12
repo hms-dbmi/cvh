@@ -43,7 +43,7 @@ class DatasetUpdate(PartialDatasetIn):
     uuid: UUID4
 
 class DatasetOut(ModelSchema):
-    t: List[str]
+    combined_tags: List[str]
     class Meta:
         model = Dataset
         fields = ['source_url', 'file_type', 'data_type', *shared_output_fields]

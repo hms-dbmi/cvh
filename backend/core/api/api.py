@@ -300,11 +300,6 @@ def tag_dataset(request, payload: TagIn):
 def get_user_datasets(request):
     datasets = (
         Dataset.objects.filter(user_key=request.auth)
-        .annotate(
-            t=ArrayAgg(
-                "tags__tag", filter=Q(tags__tag__isnull=False), default=Value([])
-            )
-        )
         .values(
             "source_url",
             "file_type",
@@ -315,7 +310,7 @@ def get_user_datasets(request):
             "created_timestamp",
             "modified_timestamp",
             "last_viewed_timestamp",
-            "t",
+            "combined_tags",
         )
     )
     return datasets
@@ -339,20 +334,6 @@ def get_project_datasets(
         q &= Q(tags__in=t)
     datasets = (
         Dataset.objects.filter(Q(project_key=project) & q)
-        .annotate(
-            combined_tag=Case(
-                When(
-                    tags__key__isnull=False, then=Concat("tags__key", Value(":"), "tags__tag")
-                ),
-                default="tags__tag",
-                output_field=CharField(),
-            )
-        )
-        .annotate(
-            t=ArrayAgg(
-                "combined_tag", filter=Q(combined_tag__isnull=False), default=Value([])
-            )
-        )
         .order_by("-modified_timestamp")
         .values(
             "source_url",
@@ -364,7 +345,7 @@ def get_project_datasets(
             "created_timestamp",
             "modified_timestamp",
             "last_viewed_timestamp",
-            "t",
+            "combined_tags",
         )
     )
     return datasets
