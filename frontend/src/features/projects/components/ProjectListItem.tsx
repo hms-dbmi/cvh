@@ -37,6 +37,14 @@ export default function ProjectListItem({
               Modified: {project.modified_timestamp}
             </Typography>
           </Stack>
+          <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
+            <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
+              Datasets: {project.datasets_count}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
+              Visualizations: {project.visualizations_count}
+            </Typography>
+          </Stack>
         </Stack>
       }
     />

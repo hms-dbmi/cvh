@@ -227,6 +227,10 @@ export interface components {
         };
         /** ProjectOut */
         ProjectOut: {
+            /** Datasets Count */
+            datasets_count: number;
+            /** Visualizations Count */
+            visualizations_count: number;
             /**
              * Private
              * @default true

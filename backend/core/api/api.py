@@ -1,11 +1,9 @@
 from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Value, Case, When, CharField
-from django.db.models.functions import Concat
+from django.db.models import Q, F, Count
 
 from django.http import Http404
-from django.contrib.postgres.aggregates import ArrayAgg
 
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
@@ -298,20 +296,17 @@ def tag_dataset(request, payload: TagIn):
 @api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
 @paginate
 def get_user_datasets(request):
-    datasets = (
-        Dataset.objects.filter(user_key=request.auth)
-        .values(
-            "source_url",
-            "file_type",
-            "data_type",
-            "uuid",
-            "name",
-            "description",
-            "created_timestamp",
-            "modified_timestamp",
-            "last_viewed_timestamp",
-            "combined_tags",
-        )
+    datasets = Dataset.objects.filter(user_key=request.auth).values(
+        "source_url",
+        "file_type",
+        "data_type",
+        "uuid",
+        "name",
+        "description",
+        "created_timestamp",
+        "modified_timestamp",
+        "last_viewed_timestamp",
+        "combined_tags",
     )
     return datasets
 

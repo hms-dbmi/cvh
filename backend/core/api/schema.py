@@ -23,6 +23,8 @@ class ProjectIn(Schema):
     # group_uuid: Optional[UUID4]
 
 class ProjectOut(ModelSchema):
+    datasets_count: int
+    visualizations_count: int
     class Meta:
         model = Project
         fields = ['private', *shared_output_fields]
