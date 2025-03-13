@@ -93,10 +93,10 @@ class Project(UserCreated):
     objects = ProjectsManager()
 
 
-class DatasetsManager(models.Manager):
+class TagsManager(models.Manager):
     def get_queryset(self):
         return (
-            super(DatasetsManager, self)
+            super(TagsManager, self)
             .get_queryset()
             .annotate(
                 combined_tag=Case(
@@ -128,7 +128,7 @@ class Dataset(UserCreated):
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     tags = models.ManyToManyField(Tag)
 
-    objects = DatasetsManager()
+    objects = TagsManager()
 
 
 class VisualizationConf(UserCreated):
@@ -140,6 +140,8 @@ class VisualizationConf(UserCreated):
     )
     tags = models.ManyToManyField(Tag)
     published = models.BooleanField(default=False)
+
+    objects = TagsManager()
 
 class ProjectMember(models.Model):
     class Permissions(models.IntegerChoices):

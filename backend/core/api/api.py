@@ -30,6 +30,7 @@ from .schema import (
     ProjectMemberOut,
     TagIn,
     TagOut,
+    VizTagIn,
 )
 
 api = NinjaAPI()
@@ -285,7 +286,6 @@ def tag_dataset(request, payload: TagIn):
         dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
     else:
         dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
-    print(payload)
     try:
         tag = Tag.objects.get(tag=payload.tag, key=payload.key)
     except Tag.DoesNotExist:
@@ -347,7 +347,7 @@ def get_project_datasets(
     return datasets
 
 
-@api.get("/tags", auth=Authorized(), response=List[TagOut])
+@api.get("/tags", response=List[TagOut])
 @paginate
 def get_tags(request, sub_str: str = None):
     q = Q()
@@ -360,22 +360,29 @@ def get_tags(request, sub_str: str = None):
 
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
 @paginate
-def get_published_visualizations(request):
-    print('zzzz')
+def get_published_visualizations(request,  query_filters: QuerySchema = Query(...)):
+    q = Q()
+    if query_filters.tags:
+        t = Tag.objects.filter(tag__in=query_filters.tags)
+        q &= Q(tags__in=t)
     visualizations = (
-        VisualizationConf.objects.filter(published=True).order_by("-modified_timestamp").values()
+        VisualizationConf.objects.filter(Q(published=True) & q).order_by("-modified_timestamp").values()
     )
     return visualizations
 
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
-def get_project_visualizations(request, project_uuid: str):
+def get_project_visualizations(request, project_uuid: str,  query_filters: QuerySchema = Query(...)):
+    q = Q()
+    if query_filters.tags:
+        t = Tag.objects.filter(tag__in=query_filters.tags)
+        q &= Q(tags__in=t)
     project = _get_project(
         user=request.auth,
         project_uuid=project_uuid,
         error_message="Visualization not found.",
     )
-    visualizations = VisualizationConf.objects.filter(project_key=project)
+    visualizations = VisualizationConf.objects.filter(Q(project_key=project) & q)
     return visualizations
 
 
@@ -414,6 +421,22 @@ def update_visualization(request, visualization_uuid: str, payload: PartialVisua
     for attr, value in payload_dict.items():
         setattr(visualization, attr, value)
     visualization.save()
+    return {"success": True}
+
+@api.put("/visualizations/{visualization_uuid}/tags", auth=Authorized())
+def tag_visualization(request, visualization_uuid: str, payload: VizTagIn):
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=visualization.project_key.uuid, user=request.auth
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to tag visualization.")
+    try:
+        tag = Tag.objects.get(tag=payload.tag, key=payload.key)
+    except Tag.DoesNotExist:
+        tag = Tag.objects.create(tag=payload.tag, key=payload.key)
+    visualization.tags.add(tag)
     return {"success": True}
 
 @api.post("/visualizations", auth=Authorized(), response={201: VisualizationIn})

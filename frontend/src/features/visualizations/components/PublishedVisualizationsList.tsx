@@ -8,18 +8,21 @@ import VisualizationListItem from "./VisualizationListItem";
 import { QueryOptions } from "../../../api/client";
 import { useGetPublishedVisualizations } from "../api/useVisualizations";
 import VisualzationViewer from "./VisualzationViewer";
+import TagsAutocomplete from "../../datasets/components/TagsAutocomplete";
 
 function PublishedVisualizationsList({
   queryOptions,
 }: {
   queryOptions?: QueryOptions;
 }) {
-  const { isLoading, isError, data } =
-    useGetPublishedVisualizations(queryOptions);
-
+  const [selectedTags, setSelectedTags] = useState<{ tag: string }[]>([]);
   const [selectedViz, setSelectedViz] = useState<string>();
   const vizRef = useRef<HTMLDivElement>(null);
 
+  const { isLoading, isError, data } = useGetPublishedVisualizations({
+    options: queryOptions,
+    tags: selectedTags,
+  });
   const toggleViz = useCallback(
     (vizId?: string) => {
       setSelectedViz(vizId);
@@ -57,6 +60,10 @@ function PublishedVisualizationsList({
           Published Visualizations
         </Typography>
       </Stack>
+      <TagsAutocomplete
+        selectedTags={selectedTags}
+        setSelectedTags={setSelectedTags}
+      />
       <List>
         {data?.items?.map((viz) => (
           <VisualizationListItem

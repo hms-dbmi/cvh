@@ -4,6 +4,7 @@ import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import PublishIcon from "@mui/icons-material/Publish";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import Chip from "@mui/material/Chip";
 
 import type { components } from "../../../types/schema.d.ts";
 import EntityListItem from "../../../components/EntityListItem.tsx";
@@ -15,6 +16,7 @@ import {
   useDeleteVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations.ts";
+import AddVizTagButton from "./AddVizTagButton.tsx";
 
 export default function VisualizationListItem({
   visualization,
@@ -85,6 +87,12 @@ export default function VisualizationListItem({
               <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
                 File Type: {visualization.tool_version}
               </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              {visualization?.combined_tags?.map((tag) => (
+                <Chip key={tag} label={tag} variant="outlined" />
+              ))}
+              <AddVizTagButton visualizationId={visualization.uuid} />
             </Stack>
             <EntityDates
               created={visualization.created_timestamp}

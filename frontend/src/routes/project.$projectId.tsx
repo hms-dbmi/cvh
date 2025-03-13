@@ -44,7 +44,7 @@ function RouteComponent() {
     isLoading: isLoadingVisualizations,
     isError: isErrorVisualizations,
     data: visualizations,
-  } = useGetProjectVisualizations(projectId);
+  } = useGetProjectVisualizations({projectId, tags: selectedTags});
 
   const vizRef = useRef<HTMLDivElement>(null);
 
@@ -151,7 +151,7 @@ function RouteComponent() {
                 <AddVisualizationButton projectId={projectId} />
               </Stack>
               <List>
-                {visualizations?.map((visualization) => (
+                {visualizations?.items?.map((visualization) => (
                   <VisualizationListItem
                     visualization={visualization}
                     key={visualization.uuid}

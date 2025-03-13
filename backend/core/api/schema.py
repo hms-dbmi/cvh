@@ -56,6 +56,10 @@ class TagIn(Schema):
     uuid: UUID4
     project_uuid: Optional[UUID4] = None
 
+class VizTagIn(Schema):
+    tag: str
+    key: Optional[str] = None
+
 class TagOut(ModelSchema):
     class Meta:
         model = Tag
@@ -68,10 +72,12 @@ class VisualizationIn(ModelSchema):
         fields = ['name', 'description', 'conf', 'tool', 'tool_version']
 
 class VisualizationNoConfOut(ModelSchema):
+    combined_tags: List[str]
     class Meta:
         model = VisualizationConf
         fields = ['tool', 'tool_version', 'published', *shared_output_fields]
 class VisualizationOut(ModelSchema):
+    combined_tags: List[str]
     class Meta:
         model = VisualizationConf
         fields = ['conf', 'tool', 'tool_version', 'published', *shared_output_fields]

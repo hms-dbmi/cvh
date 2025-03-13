@@ -214,6 +214,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/visualizations/{visualization_uuid}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Tag Visualization */
+        put: operations["api_api_tag_visualization"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -426,6 +443,8 @@ export interface components {
         };
         /** VisualizationNoConfOut */
         VisualizationNoConfOut: {
+            /** Combined Tags */
+            combined_tags: string[];
             /** Tool */
             tool: string;
             /** Tool Version */
@@ -480,6 +499,8 @@ export interface components {
         };
         /** VisualizationOut */
         VisualizationOut: {
+            /** Combined Tags */
+            combined_tags: string[];
             /** Conf */
             conf: Record<string, never>;
             /** Tool */
@@ -530,6 +551,13 @@ export interface components {
             tool_version?: string | null;
             /** Published */
             published?: boolean;
+        };
+        /** VizTagIn */
+        VizTagIn: {
+            /** Tag */
+            tag: string;
+            /** Key */
+            key?: string | null;
         };
     };
     responses: never;
@@ -819,6 +847,7 @@ export interface operations {
     api_api_get_published_visualizations: {
         parameters: {
             query?: {
+                tags?: string[];
                 limit?: number;
                 offset?: number;
             };
@@ -843,6 +872,7 @@ export interface operations {
         parameters: {
             query: {
                 project_uuid: string;
+                tags?: string[];
             };
             header?: never;
             path?: never;
@@ -941,6 +971,30 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_api_tag_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VizTagIn"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
