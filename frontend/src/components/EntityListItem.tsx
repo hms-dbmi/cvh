@@ -14,9 +14,8 @@ export default function EntityListItem({
         sx={(theme) => ({
           cursor: listItemProps?.onClick ? "pointer" : "auto",
           minWidth: 500,
-          "&:nth-of-type(odd)": {
-            backgroundColor: theme.palette.grey[300],
-          },
+          borderBottom: 1,
+          borderColor: theme.palette.grey[400],
         })}
         {...listItemProps}
       >

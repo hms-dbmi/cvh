@@ -6,6 +6,7 @@ import Chip from "@mui/material/Chip";
 import type { components } from "../../../types/schema.d.ts";
 import EntityListItem from "../../../components/EntityListItem.tsx";
 import AddTagButton from "./AddTagButton.tsx";
+import EntityDates from "../../../components/EntityDates.tsx";
 
 export default function DatasetListItem({
   dataset,
@@ -46,14 +47,10 @@ export default function DatasetListItem({
               projectId={projectId}
             />
           </Stack>
-          <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
-            <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Created: {dataset.created_timestamp}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Modified: {dataset.modified_timestamp}
-            </Typography>
-          </Stack>
+          <EntityDates
+            created={dataset.created_timestamp}
+            modified={dataset.modified_timestamp}
+          />
         </Stack>
       }
     />

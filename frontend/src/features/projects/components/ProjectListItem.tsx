@@ -4,6 +4,15 @@ import Stack from "@mui/material/Stack";
 import type { components } from "../../../types/schema.d.ts";
 import { Link } from "../../navigation/components/Links.tsx";
 import EntityListItem from "../../../components/EntityListItem.tsx";
+import EntityDates from "../../../components/EntityDates.tsx";
+
+function buildCountLabel({ count, label }: { count: number; label: string }) {
+  if (count === 1) {
+    return label.substring(0, label.length - 1);
+  }
+
+  return label;
+}
 
 export default function ProjectListItem({
   project,
@@ -29,21 +38,24 @@ export default function ProjectListItem({
           <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
             {project.description}
           </Typography>
+          <EntityDates
+            created={project.created_timestamp}
+            modified={project.modified_timestamp}
+          />
           <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Created: {project.created_timestamp}
+              {`${project.datasets_count} ${buildCountLabel({
+                count: project.datasets_count,
+                label: "Datasets",
+              })}
+              `}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Modified: {project.modified_timestamp}
-            </Typography>
-          </Stack>
-          <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
-            <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Datasets: {project.datasets_count}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Visualizations: {project.visualizations_count}
-            </Typography>
+            {`${project.visualizations_count} ${buildCountLabel({
+                count: project.visualizations_count,
+                label: "Visualizations",
+              })}
+              `}            </Typography>
           </Stack>
         </Stack>
       }
