@@ -116,8 +116,8 @@ function RouteComponent() {
                 justifyContent="space-between"
                 width="100%"
               >
-                <Typography variant="h5" component="h3">
-                  Datasets
+                <Typography variant="h5">
+                  Data Sources
                 </Typography>
                 <AddDatasetButton projectId={projectId} />
               </Stack>
@@ -145,7 +145,7 @@ function RouteComponent() {
                 width="100%"
                 overflow="scroll"
               >
-                <Typography variant="h5" component="h3">
+                <Typography variant="h5">
                   Visualizations
                 </Typography>
                 <AddVisualizationButton projectId={projectId} />

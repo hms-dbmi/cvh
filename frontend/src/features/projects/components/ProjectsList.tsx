@@ -22,7 +22,7 @@ export function PublicProjectsList({
   return (
     <Stack width={500}>
       <Stack direction="row" justifyContent="space-between" width="100%">
-        <Typography variant="h5" component="h3">
+        <Typography variant="h5">
           Public Projects
         </Typography>
         <AddProjectButton />
@@ -53,8 +53,8 @@ export default function ProjectsList({
   return (
     <Stack width={500}>
       <Stack direction="row" justifyContent="space-between" width="100%">
-        <Typography variant="h5" component="h3">
-          My Projects
+        <Typography variant="h5">
+          Private Projects
         </Typography>
         <AddProjectButton />
       </Stack>
