@@ -20,9 +20,11 @@ export default function VisualizationListItem({
   visualization,
   listItemProps,
   openViz,
+  showActions = false,
 }: {
   visualization: components["schemas"]["VisualizationNoConfOut"];
   listItemProps?: Partial<ListItemProps>;
+  showActions?: boolean;
   openViz?: (id: string) => void;
 }) {
   const handleOpenViz = useCallback(() => {
@@ -100,37 +102,41 @@ export default function VisualizationListItem({
             >
               <FullscreenIcon />
             </TooltipIconButton>
-            <TooltipIconButton
-              tooltip="Publish Visualization"
-              iconButtonProps={{
-                disabled: visualization?.published,
-                color: "primary",
-                size: "large",
-                onClick: handlePublishViz,
-              }}
-            >
-              <PublishIcon />
-            </TooltipIconButton>
-            <TooltipIconButton
-              tooltip="Edit Visualization"
-              iconButtonProps={{
-                color: "primary",
-                size: "large",
-                onClick: handleOpenViz,
-              }}
-            >
-              <EditIcon />
-            </TooltipIconButton>
-            <TooltipIconButton
-              tooltip="Delete Visualization"
-              iconButtonProps={{
-                color: "error",
-                size: "large",
-                onClick: handleDeleteViz,
-              }}
-            >
-              <DeleteIcon />
-            </TooltipIconButton>
+            {showActions && (
+              <>
+                <TooltipIconButton
+                  tooltip="Publish Visualization"
+                  iconButtonProps={{
+                    disabled: visualization?.published,
+                    color: "primary",
+                    size: "large",
+                    onClick: handlePublishViz,
+                  }}
+                >
+                  <PublishIcon />
+                </TooltipIconButton>
+                <TooltipIconButton
+                  tooltip="Edit Visualization"
+                  iconButtonProps={{
+                    color: "primary",
+                    size: "large",
+                    onClick: handleOpenViz,
+                  }}
+                >
+                  <EditIcon />
+                </TooltipIconButton>
+                <TooltipIconButton
+                  tooltip="Delete Visualization"
+                  iconButtonProps={{
+                    color: "error",
+                    size: "large",
+                    onClick: handleDeleteViz,
+                  }}
+                >
+                  <DeleteIcon />
+                </TooltipIconButton>
+              </>
+            )}
           </Stack>
         </Stack>
       }

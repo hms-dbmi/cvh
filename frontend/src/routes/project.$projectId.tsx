@@ -156,6 +156,7 @@ function RouteComponent() {
                     visualization={visualization}
                     key={visualization.uuid}
                     openViz={toggleViz}
+                    showActions
                   />
                 ))}
               </List>

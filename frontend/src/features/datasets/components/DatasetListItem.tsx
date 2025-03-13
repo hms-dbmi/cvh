@@ -32,7 +32,7 @@ export default function DatasetListItem({
 
   return (
     <EntityListItem
-      selectItem={handleSelectItem}
+      selectItem={selectItem ? handleSelectItem : undefined}
       isSelected={isSelected}
       primary={<Typography variant="subtitle1">{dataset.name}</Typography>}
       secondary={
