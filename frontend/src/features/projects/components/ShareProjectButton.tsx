@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
@@ -8,6 +8,7 @@ import ShareIcon from "@mui/icons-material/Share";
 
 import DialogButton from "../../../components/DialogButton";
 import { useAddProjectMember } from "../api/useProjects";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const text = {
   button: "Share Project",
@@ -62,8 +63,17 @@ export default function ShareProjectButton({
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useAddProjectMember();
+  const { mutate, isError, isSuccess } = useAddProjectMember();
+  const { toastError, toastSuccess } = useSnackbarActions();
 
+  useEffect(() => {
+    if (isError) {
+      toastError("Failed to share project.");
+    }
+    if (isSuccess) {
+      toastSuccess("Successfully shared project.");
+    }
+  }, [isSuccess, isError, toastError, toastSuccess]);
   const onSubmit = useCallback(
     ({ email }: FormValues) => {
       mutate({ body: { project_uuid: projectId, email } });

@@ -1,4 +1,4 @@
-import { useCallback, ChangeEvent } from "react";
+import { useCallback, ChangeEvent, useEffect } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Switch, { SwitchProps } from "@mui/material/Switch";
 import FormControlLabel, {
@@ -11,6 +11,7 @@ import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateProject } from "../api/useProjects";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const text = {
   button: "Add Project",
@@ -100,8 +101,17 @@ export default function AddProjectButton() {
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useCreateProject();
+  const { mutate, isError, isSuccess } = useCreateProject();
+  const { toastError, toastSuccess } = useSnackbarActions();
 
+  useEffect(() => {
+    if (isError) {
+      toastError("Failed to create project.");
+    }
+    if (isSuccess) {
+      toastSuccess("Successfully created project.");
+    }
+  }, [isSuccess, isError, toastError, toastSuccess]);
   const onSubmit = useCallback(
     ({ name, description, priv }: FormValues) => {
       mutate({ body: { name, description, private: priv } });

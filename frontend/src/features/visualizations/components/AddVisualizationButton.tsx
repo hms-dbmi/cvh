@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const text = {
   button: "Add Visualization",
@@ -76,7 +77,17 @@ export default function AddVisualizationButton({
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useCreateVisualization();
+  const { mutate, isError, isSuccess } = useCreateVisualization();
+  const { toastError, toastSuccess } = useSnackbarActions();
+
+  useEffect(() => {
+    if (isError) {
+      toastError("Failed to create visualization.");
+    }
+    if (isSuccess) {
+      toastSuccess("Successfully created visualization.");
+    }
+  }, [isSuccess, isError, toastError, toastSuccess]);
 
   const onSubmit = useCallback(
     ({ conf, ...formData }: FormValues) => {
