@@ -31,4 +31,25 @@ function useCreateVisualization() {
   });
 }
 
-export { useGetProjectVisualizations, useGetVisualization, useCreateVisualization };
+function useUpdateVisualization() {
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("put", `${path}/{visualization_uuid}`, {
+    onSuccess: () =>{
+      queryClient.invalidateQueries({ queryKey: ["get", path] });
+    }
+  });
+}
+
+
+function useDeleteVisualization() {
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("delete", `${path}/{visualization_uuid}`, {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["get", path] });
+    },
+  });
+}
+
+export { useGetProjectVisualizations, useGetVisualization, useCreateVisualization, useUpdateVisualization, useDeleteVisualization };

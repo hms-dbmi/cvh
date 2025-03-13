@@ -84,8 +84,6 @@ function RouteComponent() {
     return null;
   }
 
-  console.log(selectedItems)
-
   return (
     <>
       <Stack spacing={2}>
@@ -156,9 +154,7 @@ function RouteComponent() {
                   <VisualizationListItem
                     visualization={visualization}
                     key={visualization.uuid}
-                    listItemProps={{
-                      onClick: () => toggleViz(visualization?.uuid),
-                    }}
+                    openViz={toggleViz}
                   />
                 ))}
               </List>

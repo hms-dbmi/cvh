@@ -187,9 +187,11 @@ export interface paths {
         };
         /** Get Visualization */
         get: operations["api_api_get_visualization"];
-        put?: never;
+        /** Update Visualization */
+        put: operations["api_api_update_visualization"];
         post?: never;
-        delete?: never;
+        /** Delete Visualization */
+        delete: operations["api_api_delete_visualization"];
         options?: never;
         head?: never;
         patch?: never;
@@ -405,6 +407,11 @@ export interface components {
             /** Tool Version */
             tool_version?: string | null;
             /**
+             * Published
+             * @default false
+             */
+            published: boolean;
+            /**
              * Uuid
              * Format: uuid
              */
@@ -456,6 +463,11 @@ export interface components {
             /** Tool Version */
             tool_version?: string | null;
             /**
+             * Published
+             * @default false
+             */
+            published: boolean;
+            /**
              * Uuid
              * Format: uuid
              */
@@ -479,6 +491,21 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
+        };
+        /** PartialVisualizationUpdate */
+        PartialVisualizationUpdate: {
+            /** Name */
+            name?: string;
+            /** Description */
+            description?: string | null;
+            /** Conf */
+            conf?: Record<string, never>;
+            /** Tool */
+            tool?: string;
+            /** Tool Version */
+            tool_version?: string | null;
+            /** Published */
+            published?: boolean;
         };
     };
     responses: never;
@@ -830,6 +857,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["VisualizationOut"];
                 };
+            };
+        };
+    };
+    api_api_update_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartialVisualizationUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_api_delete_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -4,7 +4,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Stack from "@mui/material/Stack";
 import Checkbox from "@mui/material/Checkbox";
-import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import { PropsWithChildren } from "react";
 
@@ -19,7 +19,11 @@ function Wrapper({
   isSelected?: boolean;
 }>) {
   if (!selectItem) {
-    return <Stack direction="row">{children}</Stack>;
+    return (
+      <Stack direction="row" sx={{ width: "100%" }}>
+        {children}
+      </Stack>
+    );
   }
 
   return (
@@ -31,7 +35,7 @@ function Wrapper({
           tabIndex={-1}
           disableRipple
           inputProps={{ "aria-labelledby": labelId }}
-          icon={<CheckCircleOutlineRoundedIcon />}
+          icon={<RadioButtonUncheckedRoundedIcon />}
           checkedIcon={<CheckCircleRoundedIcon />}
         />
       </ListItemIcon>
@@ -63,7 +67,11 @@ export default function EntityListItem({
       })}
       {...listItemProps}
     >
-      <Wrapper selectItem={selectItem} isSelected={isSelected} labelId={labelId}>
+      <Wrapper
+        selectItem={selectItem}
+        isSelected={isSelected}
+        labelId={labelId}
+      >
         <ListItemText id={labelId} primary={primary} secondary={secondary} />
       </Wrapper>
     </ListItem>

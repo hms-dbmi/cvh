@@ -139,7 +139,7 @@ class VisualizationConf(UserCreated):
         Project, on_delete=models.CASCADE, blank=True, null=True
     )
     tags = models.ManyToManyField(Tag)
-
+    published = models.BooleanField(default=False)
 
 class ProjectMember(models.Model):
     class Permissions(models.IntegerChoices):

@@ -25,6 +25,7 @@ from .schema import (
     VisualizationNoConfOut,
     VisualizationIn,
     VisualizationOut,
+    PartialVisualizationUpdate,
     ProjectMemberIn,
     ProjectMemberOut,
     TagIn,
@@ -375,6 +376,35 @@ def get_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     return visualization
 
+
+@api.delete("/visualizations/{visualization_uuid}", auth=Authorized())
+def delete_visualization(request, visualization_uuid: str):
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=visualization.project_key.uuid, user=request.auth
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to delete visualization.")
+
+    visualization.delete()
+    return {"success": True}
+
+@api.put("/visualizations/{visualization_uuid}", auth=Authorized())
+def update_visualization(request, visualization_uuid: str, payload: PartialVisualizationUpdate):
+    payload_dict = payload.dict(exclude_unset=True)
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=visualization.project_key.uuid, user=request.auth
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to update visualization.")
+
+    for attr, value in payload_dict.items():
+        setattr(visualization, attr, value)
+    visualization.save()
+    return {"success": True}
 
 @api.post("/visualizations", auth=Authorized(), response={201: VisualizationIn})
 def create_visualization(request, visualization: VisualizationIn):

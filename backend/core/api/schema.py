@@ -70,12 +70,16 @@ class VisualizationIn(ModelSchema):
 class VisualizationNoConfOut(ModelSchema):
     class Meta:
         model = VisualizationConf
-        fields = ['tool', 'tool_version', *shared_output_fields]
+        fields = ['tool', 'tool_version', 'published', *shared_output_fields]
 class VisualizationOut(ModelSchema):
     class Meta:
         model = VisualizationConf
-        fields = ['conf', 'tool', 'tool_version', *shared_output_fields]
+        fields = ['conf', 'tool', 'tool_version', 'published', *shared_output_fields]
 
+class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
+    class Meta:
+        model = VisualizationConf
+        fields = ['name', 'description', 'conf', 'tool', 'tool_version', 'published']
 class ProjectMemberIn(Schema):
     project_uuid: UUID4
     email: EmailStr
