@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
@@ -11,15 +12,28 @@ import EntityDates from "../../../components/EntityDates.tsx";
 export default function DatasetListItem({
   dataset,
   projectId,
+  selectItem,
+  isSelected,
 }: {
   dataset: components["schemas"]["DatasetOut"];
   projectId?: string;
+  selectItem?: (id: string) => void;
+  isSelected?: boolean;
 }) {
+  const handleSelectItem = useCallback(() => {
+    if (selectItem && dataset.uuid) {
+      selectItem(dataset.uuid);
+    }
+  }, [dataset.uuid, selectItem]);
+
   if (!dataset?.uuid) {
     return null;
   }
+
   return (
     <EntityListItem
+      selectItem={handleSelectItem}
+      isSelected={isSelected}
       primary={<Typography variant="subtitle1">{dataset.name}</Typography>}
       secondary={
         <Stack spacing={0.5}>
@@ -42,10 +56,7 @@ export default function DatasetListItem({
             {dataset?.combined_tags?.map((tag) => (
               <Chip key={tag} label={tag} variant="outlined" />
             ))}
-            <AddTagButton
-              datasetId={dataset.uuid}
-              projectId={projectId}
-            />
+            <AddTagButton datasetId={dataset.uuid} projectId={projectId} />
           </Stack>
           <EntityDates
             created={dataset.created_timestamp}

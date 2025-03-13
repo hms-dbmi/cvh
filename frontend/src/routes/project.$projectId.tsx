@@ -16,6 +16,7 @@ import AddDatasetButton from "../features/datasets/components/AddDatasetButton";
 import ShareProjectButton from "../features/projects/components/ShareProjectButton";
 import ProjectSettings from "../features/projects/components/ProjectSettings";
 import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";
+import { useSelectItems } from "../hooks/useSelectItems";
 
 export const Route = createFileRoute("/project/$projectId")({
   component: RouteComponent,
@@ -73,6 +74,8 @@ function RouteComponent() {
       document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
+  const { toggleItem, selectedItems } = useSelectItems();
+
   const isLoading =
     isLoadingProject || isLoadingDatasets || isLoadingVisualizations;
   const isError = isErrorProject || isErrorDatasets || isErrorVisualizations;
@@ -80,6 +83,8 @@ function RouteComponent() {
   if (isLoading || isError) {
     return null;
   }
+
+  console.log(selectedItems)
 
   return (
     <>
@@ -119,13 +124,18 @@ function RouteComponent() {
               </Stack>
               <Box maxHeight={500} sx={{ overflowY: "scroll" }}>
                 <List>
-                  {datasets?.items?.map((dataset) => (
-                    <DatasetListItem
-                      dataset={dataset}
-                      key={dataset.uuid}
-                      projectId={projectId}
-                    />
-                  ))}
+                  {datasets?.items?.map(
+                    (dataset) =>
+                      dataset?.uuid && (
+                        <DatasetListItem
+                          dataset={dataset}
+                          key={dataset.uuid}
+                          projectId={projectId}
+                          selectItem={toggleItem}
+                          isSelected={selectedItems.has(dataset.uuid)}
+                        />
+                      )
+                  )}
                 </List>
               </Box>
             </Box>
