@@ -14,7 +14,6 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as ProjectsImport } from './routes/projects'
 import { Route as ProfileImport } from './routes/profile'
 import { Route as DatasetsImport } from './routes/datasets'
-import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProjectProjectIdImport } from './routes/project.$projectId'
 
@@ -35,12 +34,6 @@ const ProfileRoute = ProfileImport.update({
 const DatasetsRoute = DatasetsImport.update({
   id: '/datasets',
   path: '/datasets',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const AboutRoute = AboutImport.update({
-  id: '/about',
-  path: '/about',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -65,13 +58,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutImport
       parentRoute: typeof rootRoute
     }
     '/datasets': {
@@ -109,7 +95,6 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
@@ -118,7 +103,6 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
@@ -128,7 +112,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
@@ -139,23 +122,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
     | '/datasets'
     | '/profile'
     | '/projects'
     | '/project/$projectId'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/about'
-    | '/datasets'
-    | '/profile'
-    | '/projects'
-    | '/project/$projectId'
+  to: '/' | '/datasets' | '/profile' | '/projects' | '/project/$projectId'
   id:
     | '__root__'
     | '/'
-    | '/about'
     | '/datasets'
     | '/profile'
     | '/projects'
@@ -165,7 +140,6 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
   DatasetsRoute: typeof DatasetsRoute
   ProfileRoute: typeof ProfileRoute
   ProjectsRoute: typeof ProjectsRoute
@@ -174,7 +148,6 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
   DatasetsRoute: DatasetsRoute,
   ProfileRoute: ProfileRoute,
   ProjectsRoute: ProjectsRoute,
@@ -192,7 +165,6 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/about",
         "/datasets",
         "/profile",
         "/projects",
@@ -201,9 +173,6 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
-    },
-    "/about": {
-      "filePath": "about.tsx"
     },
     "/datasets": {
       "filePath": "datasets.tsx"

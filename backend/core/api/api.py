@@ -358,6 +358,16 @@ def get_tags(request, sub_str: str = None):
     return tags
 
 
+@api.get("/public/visualizations", response=List[VisualizationNoConfOut])
+@paginate
+def get_published_visualizations(request):
+    print('zzzz')
+    visualizations = (
+        VisualizationConf.objects.filter(published=True).order_by("-modified_timestamp").values()
+    )
+    return visualizations
+
+
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
 def get_project_visualizations(request, project_uuid: str):
     project = _get_project(
@@ -370,7 +380,7 @@ def get_project_visualizations(request, project_uuid: str):
 
 
 @api.get(
-    "/visualizations/{visualization_uuid}", auth=Authorized(), response=VisualizationOut
+    "/visualizations/{visualization_uuid}", response=VisualizationOut
 )
 def get_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)

@@ -48,6 +48,7 @@ function RouteComponent() {
 
   const vizRef = useRef<HTMLDivElement>(null);
 
+  
   const toggleViz = useCallback(
     (vizId?: string) => {
       setSelectedViz(vizId);
