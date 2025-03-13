@@ -6,7 +6,7 @@ import {
   FormEvent,
 } from "react";
 
-import Button from "@mui/material/Button";
+import Button, { ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -25,12 +25,14 @@ interface FormDialogProps {
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onClose?: () => void;
   text: DialogText;
+  buttonProps?: Partial<ButtonProps>;
 }
 
 export default function DialogButton({
   text,
   onSubmit,
   onClose,
+  buttonProps,
   children,
 }: PropsWithChildren<FormDialogProps>) {
   const [open, setOpen] = useState(false);
@@ -56,7 +58,7 @@ export default function DialogButton({
 
   return (
     <>
-      <Button variant="outlined" onClick={handleClickOpen}>
+      <Button variant="outlined" onClick={handleClickOpen} {...buttonProps}>
         {text.button}
       </Button>
       <Dialog

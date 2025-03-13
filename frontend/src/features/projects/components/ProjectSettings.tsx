@@ -11,6 +11,7 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import DeleteIcon from "@mui/icons-material/Delete";
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import DialogButton from "../../../components/DialogButton";
 import { useGetProjectMembers } from "../api/useProjects";
@@ -48,8 +49,7 @@ function PermissionsSelect({ initialPermission }: PermissionsSelectProps) {
         id="member-permissions-select"
         value={permission}
         label="Role"
-        inputProps={{ 'aria-label': 'Without label' }}
-
+        inputProps={{ "aria-label": "Without label" }}
         onChange={handleChange}
       >
         {Object.entries(PERMISSIONS).map(([k, v]) => (
@@ -70,7 +70,11 @@ function ProjectSettings({ projectId }: Props) {
   }
 
   return (
-    <DialogButton text={text} onSubmit={() => {}}>
+    <DialogButton
+      text={text}
+      onSubmit={() => {}}
+      buttonProps={{ endIcon: <SettingsIcon /> }}
+    >
       <Box p={2}>
         <Typography variant="h6">Project Members</Typography>
       </Box>
