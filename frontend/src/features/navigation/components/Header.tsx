@@ -28,12 +28,14 @@ export default function Header() {
               >
                 Home
               </Link>
-              <Link
-                to="/projects"
-                sx={(theme) => ({ color: theme.palette.common.white })}
-              >
-                Projects
-              </Link>
+              {isAuthenticated && (
+                <Link
+                  to="/projects"
+                  sx={(theme) => ({ color: theme.palette.common.white })}
+                >
+                  Projects
+                </Link>
+              )}
             </Stack>
             <Stack direction="row" spacing={2} alignItems="center">
               {!isAuthenticated && <LoginButton />}
