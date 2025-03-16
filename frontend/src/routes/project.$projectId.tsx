@@ -18,6 +18,14 @@ import ProjectSettings from "../features/projects/components/ProjectSettings";
 import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";
 import { useSelectItems } from "../hooks/useSelectItems";
 
+function buildCountLabel({ count, label }: { count?: number; label: string }) {
+  if (count === 1) {
+    return label.substring(0, label.length - 1);
+  }
+
+  return label;
+}
+
 export const Route = createFileRoute("/project/$projectId")({
   component: RouteComponent,
 });
@@ -44,11 +52,10 @@ function RouteComponent() {
     isLoading: isLoadingVisualizations,
     isError: isErrorVisualizations,
     data: visualizations,
-  } = useGetProjectVisualizations({projectId, tags: selectedTags});
+  } = useGetProjectVisualizations({ projectId, tags: selectedTags });
 
   const vizRef = useRef<HTMLDivElement>(null);
 
-  
   const toggleViz = useCallback(
     (vizId?: string) => {
       setSelectedViz(vizId);
@@ -117,7 +124,12 @@ function RouteComponent() {
                 width="100%"
               >
                 <Typography variant="h5">
-                  Data Sources
+                  {projectData?.datasets_count}{" "}
+                  {buildCountLabel({
+                    count: projectData?.datasets_count,
+                    label: "Datasets",
+                  })}{" "}
+                  ({selectedItems.size} selected)
                 </Typography>
                 <AddDatasetButton projectId={projectId} />
               </Stack>
@@ -146,7 +158,11 @@ function RouteComponent() {
                 overflow="scroll"
               >
                 <Typography variant="h5">
-                  Visualizations
+                  {projectData?.visualizations_count}{" "}
+                  {buildCountLabel({
+                    count: projectData?.visualizations_count,
+                    label: "Visualizations",
+                  })}
                 </Typography>
                 <AddVisualizationButton projectId={projectId} />
               </Stack>
