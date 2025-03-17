@@ -15,7 +15,6 @@ from environs import env
 from pathlib import Path
 
 env.read_env()
-
 # Override in .env for local development
 DEBUG = env.bool("DEBUG", default=False)
 
@@ -33,7 +32,7 @@ SECRET_KEY = env.str('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(',')
 
 
 # Application definition
@@ -86,7 +85,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": env.str("DB_ENGINE"),
         'NAME': env.str("DB_NAME"),
         'USER': env.str("DB_USER"),
         'PASSWORD': env.str("DB_PASSWORD"),
