@@ -145,6 +145,7 @@ class RequestToken(object):
         except User.DoesNotExist:
             user_info = self.__get_user_info__(self._token)
             username = user_info.get("sub")
+            email = user_info.get("email")
             # username = user_info.get("sub")
             if not username:
                 return None
@@ -154,7 +155,7 @@ class RequestToken(object):
             # The pipe character is invalid for the django username field
             # The solution is to replace the pipe with a dash
             username = username.replace("|", "_")
-            user = User(username=username)
+            user = User(username=username, email=email)
             user.save()
 
         return user
