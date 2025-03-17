@@ -5,12 +5,16 @@
 ### Installs
 
 - `git`: Suggest [installing Apple XCode](https://developer.apple.com/xcode/).
-- `PostgreSQL`
+
 - In the backend directory:
-    - [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) using any supported installation method.
-    - Create a `uv` virtual environment with the appropriate python version via `uv venv --python $(cat .python-version)`.
-    - Activate the environment with `source .venv/bin/activate`.
-    - Install requirements with `uv sync`.
+    - With docker
+        - `docker compose --env-file ./core/.env up`
+    - Without docker
+        - Install PostgreSQL
+        - [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) using any supported installation method.
+        - Create a `uv` virtual environment with the appropriate python version via `uv venv --python $(cat .python-version)`.
+        - Activate the environment with `source .venv/bin/activate`.
+        - Install requirements with `uv sync`.
 - In the frontend directory:
   - `nodejs/npm`: Suggest [installing nvm](https://github.com/nvm-sh/nvm#installing-and-updating) and then using it to install the appropriate node version: `nvm install`.
     - `` nvm install `cat .nvmrc`  ``
