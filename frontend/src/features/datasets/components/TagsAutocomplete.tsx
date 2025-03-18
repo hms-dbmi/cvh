@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, SyntheticEvent, SetStateAction, Dispatch } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { useGetTags } from "../api/useTags";
 
 type Props = {
   selectedTags: { tag: string }[];
-  setSelectedTags: React.Dispatch<
-    React.SetStateAction<
+  setSelectedTags: Dispatch<
+    SetStateAction<
       {
         tag: string;
       }[]
@@ -22,11 +22,11 @@ function TagsAutocomplete({ selectedTags, setSelectedTags }: Props) {
     <Autocomplete
       multiple
       value={selectedTags}
-      onChange={(event: any, newValue: { tag: string }[]) => {
+      onChange={(_: SyntheticEvent, newValue: { tag: string }[]) => {
         setSelectedTags(newValue);
       }}
       inputValue={inputValue}
-      onInputChange={(event, newInputValue) => {
+      onInputChange={(_: SyntheticEvent, newInputValue) => {
         setInputValue(newInputValue);
       }}
       id="tags-autocomplete"
