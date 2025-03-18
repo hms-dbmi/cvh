@@ -11,12 +11,12 @@ jobs:
     permissions:
         id-token: write
         contents: read
+    defaults:
+      run:
+        working-directory: ./frontend
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Navigate to front-end directory
-      run: cd frontend
 
     - name: Set up Node
       uses: actions/setup-node@v4
