@@ -16,21 +16,29 @@ import {
   useUpdateVisualization,
 } from "../api/useVisualizations.ts";
 import AddVizTagButton from "./AddVizTagButton.tsx";
+import { EditAttributes } from "@mui/icons-material";
 
 export default function VisualizationListItem({
   visualization,
   listItemProps,
   openViz,
+  editViz,
   showActions = false,
 }: {
   visualization: components["schemas"]["VisualizationNoConfOut"];
   listItemProps?: Partial<ListItemProps>;
   showActions?: boolean;
   openViz?: (id: string) => void;
+  editViz?: (id: string) => void;
 }) {
+  const handleEditViz = useCallback(() => {
+    if (editViz && visualization?.uuid) {
+      editViz(visualization.uuid);
+    }
+  }, [editViz, visualization.uuid]);
+
   const handleOpenViz = useCallback(() => {
     if (openViz && visualization?.uuid) {
-      console.log("a");
       openViz(visualization.uuid);
     }
   }, [openViz, visualization.uuid]);
@@ -101,6 +109,16 @@ export default function VisualizationListItem({
             />
           </Stack>
           <Stack direction="row" spacing={1.5}>
+            <TooltipIconButton
+              tooltip="Edit in Gosling Designer"
+              iconButtonProps={{
+                color: "primary",
+                size: "large",
+                onClick: handleEditViz,
+              }}
+            >
+              <EditAttributes />
+            </TooltipIconButton>
             <TooltipIconButton
               tooltip="View in Gosling Designer"
               iconButtonProps={{
