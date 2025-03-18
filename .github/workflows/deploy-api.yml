@@ -5,15 +5,15 @@ on: ['push']
 jobs:
   build:
     if: github.repository == 'hms-dbmi/cvh'
-      # Available versions:
-      # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
-      runs-on: ubuntu-24.04
-      defaults:
-        run:
-          working-directory: ./backend
-      permissions:
-          id-token: write
-          contents: read
+    # Available versions:
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./backend
+    permissions:
+        id-token: write
+        contents: read
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
