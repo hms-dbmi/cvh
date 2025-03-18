@@ -7,7 +7,7 @@ import Typography from "@mui/material/Typography";
 
 import { useGetProject } from "../features/projects/api/useProjects";
 import { useGetProjectDatasets } from "../features/datasets/api/useDatasets";
-import { useGetProjectVisualizations } from "../features/visualizations/api/useVisualizations";
+import { useGetProjectVisualizations, useUpdateVisualization } from "../features/visualizations/api/useVisualizations";
 import DatasetListItem from "../features/datasets/components/DatasetListItem";
 import VisualizationListItem from "../features/visualizations/components/VisualizationListItem";
 import AddVisualizationButton from "../features/visualizations/components/AddVisualizationButton";
@@ -56,6 +56,10 @@ function RouteComponent() {
     data: visualizations,
   } = useGetProjectVisualizations({ projectId, tags: selectedTags });
 
+  const {
+    mutate: updateViz,
+  } = useUpdateVisualization();
+
   const vizRef = useRef<HTMLDivElement>(null);
 
   const toggleViz = useCallback(
@@ -76,13 +80,18 @@ function RouteComponent() {
   );
 
   const onSave = useCallback(
-    (_newConf: string) => {
-      // TODO: Implement "edit visualization" functionality
+    (uuid: string ) => (newConf: string) => {
       setIsEditing(false);
       setSelectedViz(undefined);
+      updateViz({
+        body: { conf: JSON.parse(newConf) },
+        params: {
+          path: { visualization_uuid: uuid },
+        },
+      });
 
     },
-    [setSelectedViz, setIsEditing]
+    [setSelectedViz, setIsEditing, updateViz]
   );
 
   const { isFullscreen, close } = useFullscreen((fullscreen) => {
@@ -193,7 +202,7 @@ function RouteComponent() {
       </Stack>
       <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
         {selectedViz && isFullscreen && (
-          <VisualizationViewer visualizationId={selectedViz} close={close} datasets={datasets} onSave={isEditing ? onSave : undefined} />
+          <VisualizationViewer visualizationId={selectedViz} close={close} datasets={datasets} onSave={isEditing ? onSave(selectedViz) : undefined} />
         )}
       </Box>
     </>
