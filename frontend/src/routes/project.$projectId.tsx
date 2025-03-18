@@ -18,6 +18,7 @@ import ProjectSettings from "../features/projects/components/ProjectSettings";
 import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";
 import { useSelectItems } from "../hooks/useSelectItems";
 import useFullscreen from "../hooks/useFullscreen";
+import { useSnackbarActions } from "../components/Snackbar/useSnackbarStore";
 
 function buildCountLabel({ count, label }: { count?: number; label: string }) {
   if (count === 1) {
@@ -79,19 +80,27 @@ function RouteComponent() {
     [vizRef, setSelectedViz]
   );
 
+  const { toastError } = useSnackbarActions();
+
   const onSave = useCallback(
     (uuid: string ) => (newConf: string) => {
       setIsEditing(false);
       setSelectedViz(undefined);
-      updateViz({
-        body: { conf: JSON.parse(newConf) },
-        params: {
-          path: { visualization_uuid: uuid },
-        },
-      });
-
+      try {
+        const conf = JSON.parse(newConf);
+        updateViz({
+          body: { conf },
+          params: {
+            path: { visualization_uuid: uuid },
+          },
+        });
+      }
+      catch (e) {
+        toastError("Error saving visualization");
+        console.error(e);
+      }
     },
-    [setSelectedViz, setIsEditing, updateViz]
+    [updateViz, toastError]
   );
 
   const { isFullscreen, close } = useFullscreen((fullscreen) => {
