@@ -10,8 +10,8 @@ import { useCreateDataset } from "../api/useDatasets";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const text = {
-  button: "Add Dataset",
-  title: "Add Dataset",
+  button: "Add Data Source",
+  title: "Add Data Source",
 };
 
 interface FormValues {
