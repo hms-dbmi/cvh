@@ -1,8 +1,6 @@
 name: Deploy to S3
 
-on:
-  push:
-    paths: 'front-end/**'
+on: ['push']
 
 jobs:
   build:
