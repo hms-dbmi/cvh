@@ -1,0 +1,171 @@
+Description: Deploy a static website
+
+Parameters:
+    RootDomainName:
+        Description: Domain name for the cvh website
+        Type: String
+
+Resources:
+    # Two buckets are created for website hosting - the RootBucket hosts the content,
+    # The Logging bucket hosts the access logs.
+    RootBucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Retain
+        Properties:
+            BucketName: !Ref RootDomainName
+            BucketEncryption:
+                ServerSideEncryptionConfiguration:
+                - ServerSideEncryptionByDefault:
+                    SSEAlgorithm: AES256
+            LoggingConfiguration:
+                DestinationBucketName: !Ref LoggingBucket
+                LogFilePrefix: !Sub
+                    - ${Domain}-logs
+                    - Domain: !Ref RootDomainName
+            Tags:
+                - Key: Environment
+                  Value: Production
+                - Key: Owner
+                  Value: hidive@hms.harvard.edu
+                - Key: Name
+                  Value: !Ref RootDomainName
+
+    LoggingBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            AccessControl: Private
+            BucketEncryption:
+                ServerSideEncryptionConfiguration:
+                - ServerSideEncryptionByDefault:
+                    SSEAlgorithm: AES256
+            BucketName: !Sub
+                - logs.${Domain}
+                - Domain: !Ref RootDomainName
+            LifecycleConfiguration:
+                Rules:
+                    - ExpirationInDays: 90
+                      Status: Enabled
+            OwnershipControls:
+                Rules:
+                - ObjectOwnership: BucketOwnerPreferred
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true           
+
+    RootBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket: !Ref RootBucket
+            PolicyDocument:
+                Id: CFOAIForGetBucketObjects
+                Version: 2012-10-17
+                Statement:
+                - Action: 's3:GetObject'
+                  Effect: Allow
+                  Principal: 
+                    CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+                  Resource: !Join 
+                        - ''
+                        - - 'arn:aws:s3:::'
+                          - !Ref RootBucket
+                          - /*
+
+    LogBucketPolicy:
+        Type: 'AWS::S3::BucketPolicy'
+        Properties:
+            Bucket: !Ref LoggingBucket
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    -   Action: 's3:PutObject'
+                        Effect: Allow
+                        Principal:
+                            Service: logging.s3.amazonaws.com
+                        Resource: !Join 
+                            - ''
+                            - - 'arn:aws:s3:::'
+                              - !Ref LoggingBucket
+                              - /s3/*
+                        Condition:
+                            ArnLike:
+                                'aws:SourceArn': !GetAtt 
+                                - RootBucket
+                                - Arn
+                            StringEquals:
+                                'aws:SourceAccount': !Sub '${AWS::AccountId}'
+
+    CloudFrontDistribution:
+        Type: AWS::CloudFront::Distribution
+        Properties:
+            DistributionConfig:
+                CustomErrorResponses:
+                    - ErrorCachingMinTTL: 60
+                      ErrorCode: 404
+                      ResponseCode: 404
+                      ResponsePagePath: '/index.html'
+                DefaultCacheBehavior:
+                    AllowedMethods:
+                        - GET
+                        - HEAD
+                        - OPTIONS
+                    CachedMethods:
+                        - GET
+                        - HEAD
+                        - OPTIONS
+                    Compress: true
+                    DefaultTTL: 86400
+                    ForwardedValues:
+                        Cookies:
+                            Forward: none
+                        QueryString: true
+                    SmoothStreaming: false
+                    TargetOriginId: !Ref RootBucket
+                    ViewerProtocolPolicy: 'allow-all'
+                    ResponseHeadersPolicyId: e61eb60c-9c35-4d20-a928-2b84e02af89c 
+                    CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
+                DefaultRootObject: 'index.html'
+                Enabled: true
+                HttpVersion: http2
+                IPV6Enabled: true
+                Logging:
+                    Bucket: !GetAtt LoggingBucket.DomainName
+                    IncludeCookies: false
+                    Prefix: cdn/
+                Origins:
+                    - DomainName: !Join ['', [!Ref RootBucket, '.s3.amazonaws.com']]
+                      Id: !Ref RootBucket
+                      S3OriginConfig:
+                        OriginAccessIdentity:
+                            !Join ['', ['origin-access-identity/cloudfront/', !Ref CloudFrontOriginAccessIdentity]]
+                PriceClass: PriceClass_All
+                ViewerCertificate:
+                  CloudFrontDefaultCertificate: true
+                  MinimumProtocolVersion: 'TLSv1.2_2021'
+            Tags:
+                - Key: Domain
+                  Value: !Ref RootDomainName
+
+    CloudFrontOriginAccessIdentity:
+        Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+        Properties:
+            CloudFrontOriginAccessIdentityConfig:
+                Comment: !Sub 'CloudFront OAI for cvh'
+
+Outputs:
+    CloudFrontDistribution:
+        Description: CloudFront distribution
+        Value: !Ref CloudFrontDistribution
+    RootDomainBucket:
+        Description: Website bucket
+        Value: !Ref RootBucket
+    RootDomainBucketArn:
+        Description: Website bucket locator
+        Value: !GetAtt RootBucket.Arn
+    S3BucketBucketLogs:
+        Description: Logging bucket
+        Value: !Ref LoggingBucket
+    S3BucketBucketLogsArn:
+        Description: Logging bucket
+        Value: !GetAtt LoggingBucket.Arn
