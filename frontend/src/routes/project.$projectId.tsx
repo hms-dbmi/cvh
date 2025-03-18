@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
@@ -11,12 +11,13 @@ import { useGetProjectVisualizations } from "../features/visualizations/api/useV
 import DatasetListItem from "../features/datasets/components/DatasetListItem";
 import VisualizationListItem from "../features/visualizations/components/VisualizationListItem";
 import AddVisualizationButton from "../features/visualizations/components/AddVisualizationButton";
-import VisualzationViewer from "../features/visualizations/components/VisualzationViewer";
+import VisualizationViewer from "../features/visualizations/components/VisualizationViewer";
 import AddDatasetButton from "../features/datasets/components/AddDatasetButton";
 import ShareProjectButton from "../features/projects/components/ShareProjectButton";
 import ProjectSettings from "../features/projects/components/ProjectSettings";
 import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";
 import { useSelectItems } from "../hooks/useSelectItems";
+import useFullscreen from "../hooks/useFullscreen";
 
 function buildCountLabel({ count, label }: { count?: number; label: string }) {
   if (count === 1) {
@@ -34,6 +35,7 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
 
   const [selectedViz, setSelectedViz] = useState<string>();
+  const [isEditing, setIsEditing] = useState<boolean>();
 
   const [selectedTags, setSelectedTags] = useState<{ tag: string }[]>([]);
 
@@ -64,28 +66,36 @@ function RouteComponent() {
     [vizRef, setSelectedViz]
   );
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const editViz = useCallback(
+    (vizId?: string) => {
+      setSelectedViz(vizId);
+      setIsEditing(true);
+      vizRef?.current?.requestFullscreen();
+    },
+    [vizRef, setSelectedViz]
+  );
 
-  useEffect(() => {
-    function onFullscreenChange() {
-      if (document.fullscreenElement) {
-        setIsFullscreen(true);
-      } else {
-        setIsFullscreen(false);
-        setSelectedViz(undefined);
-      }
+  const onSave = useCallback(
+    (_newConf: string) => {
+      // TODO: Implement "edit visualization" functionality
+      setIsEditing(false);
+      setSelectedViz(undefined);
+
+    },
+    [setSelectedViz, setIsEditing]
+  );
+
+  const { isFullscreen, close } = useFullscreen((fullscreen) => {
+    if (!fullscreen) {
+      setSelectedViz(undefined);
     }
-
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-
-    return () =>
-      document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
+  });
 
   const { toggleItem, selectedItems } = useSelectItems();
 
   const isLoading =
     isLoadingProject || isLoadingDatasets || isLoadingVisualizations;
+
   const isError = isErrorProject || isErrorDatasets || isErrorVisualizations;
 
   if (isLoading || isError) {
@@ -172,6 +182,7 @@ function RouteComponent() {
                     visualization={visualization}
                     key={visualization.uuid}
                     openViz={toggleViz}
+                    editViz={editViz}
                     showActions
                   />
                 ))}
@@ -182,7 +193,7 @@ function RouteComponent() {
       </Stack>
       <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
         {selectedViz && isFullscreen && (
-          <VisualzationViewer visualizationId={selectedViz} />
+          <VisualizationViewer visualizationId={selectedViz} close={close} datasets={datasets} onSave={isEditing ? onSave : undefined} />
         )}
       </Box>
     </>

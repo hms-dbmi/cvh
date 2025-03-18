@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
@@ -7,8 +7,9 @@ import Box from "@mui/material/Box";
 import VisualizationListItem from "./VisualizationListItem";
 import { QueryOptions } from "../../../api/client";
 import { useGetPublishedVisualizations } from "../api/useVisualizations";
-import VisualzationViewer from "./VisualzationViewer";
+import VisualizationViewer from "./VisualizationViewer";
 import TagsAutocomplete from "../../datasets/components/TagsAutocomplete";
+import useFullscreen from "../../../hooks/useFullscreen";
 
 function PublishedVisualizationsList({
   queryOptions,
@@ -31,23 +32,12 @@ function PublishedVisualizationsList({
     [vizRef, setSelectedViz]
   );
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    function onFullscreenChange() {
-      if (document.fullscreenElement) {
-        setIsFullscreen(true);
-      } else {
-        setIsFullscreen(false);
-        setSelectedViz(undefined);
-      }
+  const {isFullscreen, close} = useFullscreen((fullscreen) => {
+    if (!fullscreen) {
+      setSelectedViz(undefined);
     }
+  });
 
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-
-    return () =>
-      document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
 
   if (isLoading || isError) {
     return null;
@@ -75,7 +65,7 @@ function PublishedVisualizationsList({
       </List>
       <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
         {selectedViz && isFullscreen && (
-          <VisualzationViewer visualizationId={selectedViz} />
+          <VisualizationViewer visualizationId={selectedViz} close={close} />
         )}
       </Box>
     </Stack>
