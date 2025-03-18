@@ -167,7 +167,7 @@ function RouteComponent() {
                 <AddVisualizationButton projectId={projectId} />
               </Stack>
               <List>
-                {visualizations?.items?.map((visualization) => (
+                {visualizations?.map((visualization) => (
                   <VisualizationListItem
                     visualization={visualization}
                     key={visualization.uuid}

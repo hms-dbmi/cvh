@@ -22,7 +22,7 @@ function useGetProjectVisualizations({
 }) {
   const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
   const client = useClient();
-  return client.useQuery("get", publicPath, {
+  return client.useQuery("get", path, {
     params: {
       query: {
         project_uuid: projectId,

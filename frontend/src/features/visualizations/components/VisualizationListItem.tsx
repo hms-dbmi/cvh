@@ -2,7 +2,6 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import PublishIcon from "@mui/icons-material/Publish";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Chip from "@mui/material/Chip";
 
@@ -88,11 +87,13 @@ export default function VisualizationListItem({
                 File Type: {visualization.tool_version}
               </Typography>
             </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center" mt={1}>
               {visualization?.combined_tags?.map((tag) => (
                 <Chip key={tag} label={tag} variant="outlined" />
               ))}
-              <AddVizTagButton visualizationId={visualization.uuid} />
+              {showActions && (
+                <AddVizTagButton visualizationId={visualization.uuid} />
+              )}
             </Stack>
             <EntityDates
               created={visualization.created_timestamp}
@@ -122,16 +123,6 @@ export default function VisualizationListItem({
                   }}
                 >
                   <PublishIcon />
-                </TooltipIconButton>
-                <TooltipIconButton
-                  tooltip="Edit Visualization"
-                  iconButtonProps={{
-                    color: "primary",
-                    size: "large",
-                    onClick: handleOpenViz,
-                  }}
-                >
-                  <EditIcon />
                 </TooltipIconButton>
                 <TooltipIconButton
                   tooltip="Delete Visualization"
