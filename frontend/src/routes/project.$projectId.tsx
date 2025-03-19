@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, } from "react";
+import { useState, useRef, useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
@@ -7,7 +7,10 @@ import Typography from "@mui/material/Typography";
 
 import { useGetProject } from "../features/projects/api/useProjects";
 import { useGetProjectDatasets } from "../features/datasets/api/useDatasets";
-import { useGetProjectVisualizations, useUpdateVisualization } from "../features/visualizations/api/useVisualizations";
+import {
+  useGetProjectVisualizations,
+  useUpdateVisualization,
+} from "../features/visualizations/api/useVisualizations";
 import DatasetListItem from "../features/datasets/components/DatasetListItem";
 import VisualizationListItem from "../features/visualizations/components/VisualizationListItem";
 import AddVisualizationButton from "../features/visualizations/components/AddVisualizationButton";
@@ -57,9 +60,7 @@ function RouteComponent() {
     data: visualizations,
   } = useGetProjectVisualizations({ projectId, tags: selectedTags });
 
-  const {
-    mutate: updateViz,
-  } = useUpdateVisualization();
+  const { mutate: updateViz } = useUpdateVisualization();
 
   const vizRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +84,7 @@ function RouteComponent() {
   const { toastError } = useSnackbarActions();
 
   const onSave = useCallback(
-    (uuid: string ) => (newConf: string) => {
+    (uuid: string) => (newConf: string) => {
       setIsEditing(false);
       setSelectedViz(undefined);
       try {
@@ -94,8 +95,7 @@ function RouteComponent() {
             path: { visualization_uuid: uuid },
           },
         });
-      }
-      catch (e) {
+      } catch (e) {
         toastError("Error saving visualization");
         console.error(e);
       }
@@ -120,6 +120,10 @@ function RouteComponent() {
     return null;
   }
 
+  const permissions = projectData?.permissions;
+  const hasAdmin = Boolean(permissions && permissions >= 3);
+  const hasWrite = Boolean(permissions && permissions >= 2);
+
   return (
     <>
       <Stack spacing={2}>
@@ -132,12 +136,14 @@ function RouteComponent() {
               {projectData?.description}
             </Typography>
           </Box>
-          <Box>
-            <Stack direction="row" spacing={2}>
-              <ShareProjectButton projectId={projectId} />
-              <ProjectSettings projectId={projectId} />
-            </Stack>
-          </Box>
+          {hasAdmin && (
+            <Box>
+              <Stack direction="row" spacing={2}>
+                <ShareProjectButton projectId={projectId} />
+                <ProjectSettings projectId={projectId} />
+              </Stack>
+            </Box>
+          )}
         </Stack>
         <Stack direction="row" spacing={4}>
           <Stack spacing={2}>
@@ -159,7 +165,7 @@ function RouteComponent() {
                   })}{" "}
                   ({selectedItems.size} selected)
                 </Typography>
-                <AddDatasetButton projectId={projectId} />
+                {hasWrite && <AddDatasetButton projectId={projectId} />}
               </Stack>
               <Box maxHeight={500} sx={{ overflowY: "scroll" }}>
                 <List>
@@ -192,7 +198,7 @@ function RouteComponent() {
                     label: "Visualizations",
                   })}
                 </Typography>
-                <AddVisualizationButton projectId={projectId} />
+                {hasWrite && <AddVisualizationButton projectId={projectId} />}
               </Stack>
               <List>
                 {visualizations?.map((visualization) => (
@@ -200,8 +206,8 @@ function RouteComponent() {
                     visualization={visualization}
                     key={visualization.uuid}
                     openViz={toggleViz}
-                    editViz={editViz}
-                    showActions
+                    editViz={hasWrite ? editViz : undefined}
+                    showActions={hasWrite}
                   />
                 ))}
               </List>
@@ -211,7 +217,12 @@ function RouteComponent() {
       </Stack>
       <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
         {selectedViz && isFullscreen && (
-          <VisualizationViewer visualizationId={selectedViz} close={close} datasets={datasets} onSave={isEditing ? onSave(selectedViz) : undefined} />
+          <VisualizationViewer
+            visualizationId={selectedViz}
+            close={close}
+            datasets={datasets}
+            onSave={isEditing ? onSave(selectedViz) : undefined}
+          />
         )}
       </Box>
     </>

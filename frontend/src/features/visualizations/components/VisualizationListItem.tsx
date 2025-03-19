@@ -109,16 +109,18 @@ export default function VisualizationListItem({
             />
           </Stack>
           <Stack direction="row" spacing={1.5}>
-            <TooltipIconButton
-              tooltip="Edit in Gosling Designer"
-              iconButtonProps={{
-                color: "primary",
-                size: "large",
-                onClick: handleEditViz,
-              }}
-            >
-              <EditAttributes />
-            </TooltipIconButton>
+            {editViz && (
+              <TooltipIconButton
+                tooltip="Edit in Gosling Designer"
+                iconButtonProps={{
+                  color: "primary",
+                  size: "large",
+                  onClick: handleEditViz,
+                }}
+              >
+                <EditAttributes />
+              </TooltipIconButton>
+            )}
             <TooltipIconButton
               tooltip="View in Gosling Designer"
               iconButtonProps={{
