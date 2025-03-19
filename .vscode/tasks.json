@@ -1,0 +1,83 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Backend",
+            "type": "shell",
+            "command": "docker compose --env-file ./core/.env up",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": [
+                    {
+                        "regexp": ".*Listening at: http://0\\.0\\.0\\.0:8000.*",
+                        "file": 1,
+                        "location": 2,
+                        "message": 0
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*Attaching to db-1, django-docker*",
+                    "endsPattern": ".*Listening at: http://0\\.0\\.0\\.0:8000.*"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": true
+        },
+        {
+            "label": "Start Frontend",
+            "type": "npm",
+            "script": "dev",
+            "path": "/frontend",
+            "problemMatcher": ["$eslint-stylish"],
+            "group": {
+            "kind": "build",
+            "isDefault": true
+            }
+        },
+        {
+            "label": "Install Frontend Dependencies",
+            "type": "npm",
+            "script": "install",
+            "path": "/frontend",  
+            "problemMatcher": ["$eslint-stylish"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Generate Frontend Types",
+            "type": "npm",
+            "script": "gen-api-types",
+            "path": "/frontend",
+            "problemMatcher": ["$eslint-stylish"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": [
+                "Install Frontend Dependencies",
+                "Start Backend"
+            ]
+        },
+        {
+            "label": "Start Dev Environment",
+            "dependsOn": [
+                "Start Backend",
+                "Generate Frontend Types",
+                "Start Frontend",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
