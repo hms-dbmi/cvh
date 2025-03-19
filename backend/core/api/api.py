@@ -1,7 +1,7 @@
 from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Count
+from django.db.models import Q, F
 
 from django.http import Http404
 
@@ -241,9 +241,15 @@ def get_public_projects(request):
 
 @api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
 def get_project(request, project_uuid: str):
-    return _get_project(
+    project = _get_project(
         user=request.auth, project_uuid=project_uuid, error_message="Project not found."
     )
+    permissions = None
+    try:
+        permissions = ProjectMember.objects.get(project_key=project, user_key=request.auth).permissions
+    except ProjectMember.DoesNotExist:
+        pass
+    return {**project.__dict__, "permissions": permissions}
 
 
 @api.post("/datasets", auth=Authorized(), response={201: DatasetIn})
@@ -361,19 +367,23 @@ def get_tags(request, sub_str: str = None):
 
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
 @paginate
-def get_published_visualizations(request,  query_filters: QuerySchema = Query(...)):
+def get_published_visualizations(request, query_filters: QuerySchema = Query(...)):
     q = Q()
     if query_filters.tags:
         t = Tag.objects.filter(tag__in=query_filters.tags)
         q &= Q(tags__in=t)
     visualizations = (
-        VisualizationConf.objects.filter(Q(published=True) & q).order_by("-modified_timestamp").values()
+        VisualizationConf.objects.filter(Q(published=True) & q)
+        .order_by("-modified_timestamp")
+        .values()
     )
     return visualizations
 
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
-def get_project_visualizations(request, project_uuid: str,  query_filters: QuerySchema = Query(...)):
+def get_project_visualizations(
+    request, project_uuid: str, query_filters: QuerySchema = Query(...)
+):
     q = Q()
     if query_filters.tags:
         t = Tag.objects.filter(tag__in=query_filters.tags)
@@ -387,9 +397,7 @@ def get_project_visualizations(request, project_uuid: str,  query_filters: Query
     return visualizations
 
 
-@api.get(
-    "/visualizations/{visualization_uuid}", response=VisualizationOut
-)
+@api.get("/visualizations/{visualization_uuid}", response=VisualizationOut)
 def get_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     return visualization
@@ -408,8 +416,11 @@ def delete_visualization(request, visualization_uuid: str):
     visualization.delete()
     return {"success": True}
 
+
 @api.put("/visualizations/{visualization_uuid}", auth=Authorized())
-def update_visualization(request, visualization_uuid: str, payload: PartialVisualizationUpdate):
+def update_visualization(
+    request, visualization_uuid: str, payload: PartialVisualizationUpdate
+):
     payload_dict = payload.dict(exclude_unset=True)
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
@@ -423,6 +434,7 @@ def update_visualization(request, visualization_uuid: str, payload: PartialVisua
         setattr(visualization, attr, value)
     visualization.save()
     return {"success": True}
+
 
 @api.put("/visualizations/{visualization_uuid}/tags", auth=Authorized())
 def tag_visualization(request, visualization_uuid: str, payload: VizTagIn):
@@ -439,6 +451,7 @@ def tag_visualization(request, visualization_uuid: str, payload: VizTagIn):
         tag = Tag.objects.create(tag=payload.tag, key=payload.key)
     visualization.tags.add(tag)
     return {"success": True}
+
 
 @api.post("/visualizations", auth=Authorized(), response={201: VisualizationIn})
 def create_visualization(request, visualization: VisualizationIn):
