@@ -267,6 +267,8 @@ export interface components {
             datasets_count: number;
             /** Visualizations Count */
             visualizations_count: number;
+            /** Permissions */
+            permissions?: number | null;
             /**
              * Private
              * @default true
