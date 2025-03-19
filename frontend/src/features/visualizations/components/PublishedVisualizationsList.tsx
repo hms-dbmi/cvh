@@ -10,6 +10,9 @@ import { useGetPublishedVisualizations } from "../api/useVisualizations";
 import VisualizationViewer from "./VisualizationViewer";
 import TagsAutocomplete from "../../datasets/components/TagsAutocomplete";
 import useFullscreen from "../../../hooks/useFullscreen";
+import type { components } from "../../../types/schema";
+
+type Visualization = components["schemas"]["VisualizationNoConfOut"];
 
 function PublishedVisualizationsList({
   queryOptions,
@@ -17,7 +20,7 @@ function PublishedVisualizationsList({
   queryOptions?: QueryOptions;
 }) {
   const [selectedTags, setSelectedTags] = useState<{ tag: string }[]>([]);
-  const [selectedViz, setSelectedViz] = useState<string>();
+  const [selectedViz, setSelectedViz] = useState<Visualization>();
   const vizRef = useRef<HTMLDivElement>(null);
 
   const { isLoading, isError, data } = useGetPublishedVisualizations({
@@ -25,8 +28,8 @@ function PublishedVisualizationsList({
     tags: selectedTags,
   });
   const toggleViz = useCallback(
-    (vizId?: string) => {
-      setSelectedViz(vizId);
+    (viz?: Visualization) => {
+      setSelectedViz(viz);
       vizRef?.current?.requestFullscreen();
     },
     [vizRef, setSelectedViz]
@@ -64,8 +67,8 @@ function PublishedVisualizationsList({
         ))}
       </List>
       <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
-        {selectedViz && isFullscreen && (
-          <VisualizationViewer visualizationId={selectedViz} close={close} />
+        {selectedViz?.uuid && isFullscreen && (
+          <VisualizationViewer visualizationId={selectedViz.uuid} visualizationType={selectedViz.tool} close={close} />
         )}
       </Box>
     </Stack>

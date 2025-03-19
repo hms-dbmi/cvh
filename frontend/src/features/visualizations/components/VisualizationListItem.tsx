@@ -18,6 +18,8 @@ import {
 import AddVizTagButton from "./AddVizTagButton.tsx";
 import { EditAttributes } from "@mui/icons-material";
 
+type Visualization = components["schemas"]["VisualizationNoConfOut"];
+
 export default function VisualizationListItem({
   visualization,
   listItemProps,
@@ -25,23 +27,23 @@ export default function VisualizationListItem({
   editViz,
   showActions = false,
 }: {
-  visualization: components["schemas"]["VisualizationNoConfOut"];
+  visualization: Visualization;
   listItemProps?: Partial<ListItemProps>;
   showActions?: boolean;
-  openViz?: (id: string) => void;
-  editViz?: (id: string) => void;
+  openViz?: (viz?: Visualization) => void;
+  editViz?: (viz?: Visualization) => void;
 }) {
   const handleEditViz = useCallback(() => {
     if (editViz && visualization?.uuid) {
-      editViz(visualization.uuid);
+      editViz(visualization);
     }
-  }, [editViz, visualization.uuid]);
+  }, [editViz, visualization]);
 
   const handleOpenViz = useCallback(() => {
-    if (openViz && visualization?.uuid) {
-      openViz(visualization.uuid);
+    if (openViz && visualization) {
+      openViz(visualization);
     }
-  }, [openViz, visualization.uuid]);
+  }, [openViz, visualization]);
 
   const { mutate: deleteViz } = useDeleteVisualization();
 

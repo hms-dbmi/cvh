@@ -1,105 +1,26 @@
-import { ComponentProps, useCallback, useMemo, useState } from "react";
-import { Frame } from "@hms-dbmi/gosling-designer-cvh";
 import "@hms-dbmi/gosling-designer-cvh/build/style.css";
 
-import { useGetVisualization } from "../api/useVisualizations.ts";
-import { Button, Stack } from "@mui/material";
 import type { components } from "../../../types/schema";
+import GoslingViewer from "./GoslingViewer.tsx";
+import VitessceViewer from "./VitessceViewer.tsx";
 
-type VisualizationViewerProps = {
+
+interface VisualizationViewerProps {
   visualizationId: string;
   close: () => void;
+  visualizationType: string;
   datasets?: {items: components["schemas"]["DatasetOut"][]};
   readonly?: boolean;
   onSave?: (newConf: string) => void;
 };
 
-const readonlyStatusOfPanelsAndModes = {
-  data: false,
-  'track-selection': true,
-  customization: false,
-  templates: false,
-  editor: false,
-  'natural-language': false,
-  history: false,
-  delta: false,
-  explore: true,
-  readonly: true
-}
-
-const defaultStatusOfPanelsAndModes = {
-  data: false,
-  'track-selection': true,
-  customization: true,
-  templates: true,
-  editor: true,
-  'natural-language': false,
-  history: true,
-  delta: false,
-  explore: false,
-  readonly: true,
-}
-
-// TODO: This needs to be revisited to support fields etc
-const formatCvhDatasetsAsGoslingDatasets = (datasets: {items: components["schemas"]["DatasetOut"][]}) => {
-  return datasets.items.map((dataset) => ({
-    datatype: dataset.data_type,
-    name: dataset.name,
-    id: dataset.name,
-    file: {
-      url: dataset.source_url,
-      name: dataset.source_url.replace(/^.*[\\\/]/, ""),
-    }
-  })) as ComponentProps<typeof Frame>['initialDatasets'];
-}
-
-const useFormattedDatasets = (datasets: {items: components["schemas"]["DatasetOut"][]}) => {
-  return useMemo(() => {
-    if (!datasets.items) {
-      return [];
-    }
-    return formatCvhDatasetsAsGoslingDatasets(datasets);
-  }, [datasets]);
-}
-
-
-function VisualizationViewer({ visualizationId, close, onSave, datasets = {items: []} }: VisualizationViewerProps) {
-  const readonly = onSave === undefined;
-  const { isLoading, isError, data } = useGetVisualization(visualizationId);
-
-  const [changedCode, setChangedCode] = useState("");
-
-  const saveVisualization = useCallback(() => {
-    if (changedCode) {
-      onSave?.(changedCode);
-    }
-    close();
-  }, [onSave, close, changedCode]);
-
-  const formattedDatasets = useFormattedDatasets(datasets);
-
-  if (isLoading || isError || !data?.conf || !formattedDatasets) {
-    return null;
+function VisualizationViewer({ visualizationType, ...props }: VisualizationViewerProps) {
+  switch( visualizationType.toLowerCase() ) {
+    case 'vitessce':
+      return <VitessceViewer {...props} />
+    default:
+      return <GoslingViewer {...props} />
   }
-
-
-  return (
-    <Stack direction='column'>
-      <Stack direction='row' justifyContent='center' width='100%'>
-        {!readonly && <Button onClick={saveVisualization} aria-label="Save Visualization" variant='contained'>Save Visualization</Button>}
-        <Button onClick={close} aria-label="Close Visualization" variant='contained'>Close Visualization</Button>
-        </Stack>
-      <Frame 
-        key={visualizationId}
-        initialSpec={data.conf} 
-        initialDatasets={formattedDatasets} 
-        initialActiveStatusOfPanelsAndModes={
-          readonly ? readonlyStatusOfPanelsAndModes : defaultStatusOfPanelsAndModes
-        }
-        onCodeChange={setChangedCode}
-      />
-    </Stack>
-  );
 }
 
 export default VisualizationViewer;
