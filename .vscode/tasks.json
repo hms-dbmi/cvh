@@ -38,7 +38,8 @@
             "problemMatcher": ["$eslint-stylish"],
             "group": {
             "kind": "build",
-            "isDefault": true
+            "isDefault": true,
+            "dependsOn": ["Install Frontend Dependencies"]
             }
         },
         {
@@ -69,6 +70,7 @@
         },
         {
             "label": "Start Dev Environment",
+            "dependsOrder": "sequence",
             "dependsOn": [
                 "Start Backend",
                 "Generate Frontend Types",
