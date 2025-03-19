@@ -1,4 +1,4 @@
-import { ComponentProps, useCallback, useState } from "react";
+import { ComponentProps, useCallback, useMemo, useState } from "react";
 import { Frame } from "@hms-dbmi/gosling-designer-cvh";
 import "@hms-dbmi/gosling-designer-cvh/build/style.css";
 
@@ -53,27 +53,35 @@ const formatCvhDatasetsAsGoslingDatasets = (datasets: {items: components["schema
   })) as ComponentProps<typeof Frame>['initialDatasets'];
 }
 
+const useFormattedDatasets = (datasets: {items: components["schemas"]["DatasetOut"][]}) => {
+  return useMemo(() => {
+    if (!datasets.items) {
+      return [];
+    }
+    return formatCvhDatasetsAsGoslingDatasets(datasets);
+  }, [datasets]);
+}
+
 
 function VisualizationViewer({ visualizationId, close, onSave, datasets = {items: []} }: VisualizationViewerProps) {
   const readonly = onSave === undefined;
   const { isLoading, isError, data } = useGetVisualization(visualizationId);
 
-
-  const [changedCode, setChangedCode] = useState<string>();
+  const [changedCode, setChangedCode] = useState("");
 
   const saveVisualization = useCallback(() => {
-    console.log("Save visualization");
     if (changedCode) {
       onSave?.(changedCode);
     }
     close();
   }, [onSave, close, changedCode]);
 
-  if (isLoading || isError || !data?.conf || !datasets) {
+  const formattedDatasets = useFormattedDatasets(datasets);
+
+  if (isLoading || isError || !data?.conf || !formattedDatasets) {
     return null;
   }
 
-  const formattedDatasets = formatCvhDatasetsAsGoslingDatasets(datasets);
 
   return (
     <Stack direction='column'>
@@ -81,9 +89,13 @@ function VisualizationViewer({ visualizationId, close, onSave, datasets = {items
         {!readonly && <Button onClick={saveVisualization} aria-label="Save Visualization" variant='contained'>Save Visualization</Button>}
         <Button onClick={close} aria-label="Close Visualization" variant='contained'>Close Visualization</Button>
         </Stack>
-      <Frame initialSpec={data.conf} initialDatasets={formattedDatasets} initialActiveStatusOfPanelsAndModes={
-        readonly ? readonlyStatusOfPanelsAndModes : defaultStatusOfPanelsAndModes
-      }
+      <Frame 
+        key={visualizationId}
+        initialSpec={data.conf} 
+        initialDatasets={formattedDatasets} 
+        initialActiveStatusOfPanelsAndModes={
+          readonly ? readonlyStatusOfPanelsAndModes : defaultStatusOfPanelsAndModes
+        }
         onCodeChange={setChangedCode}
       />
     </Stack>

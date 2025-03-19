@@ -106,6 +106,7 @@ function RouteComponent() {
   const { isFullscreen, close } = useFullscreen((fullscreen) => {
     if (!fullscreen) {
       setSelectedViz(undefined);
+      setIsEditing(false);
     }
   });
 
