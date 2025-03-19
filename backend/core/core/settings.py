@@ -38,7 +38,6 @@ ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(',')
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -136,6 +135,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-]
+CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(',')
