@@ -25,6 +25,7 @@ class ProjectIn(Schema):
 class ProjectOut(ModelSchema):
     datasets_count: int
     visualizations_count: int
+    permissions: Optional[int] = None
     class Meta:
         model = Project
         fields = ['private', *shared_output_fields]
