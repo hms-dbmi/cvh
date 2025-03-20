@@ -241,7 +241,7 @@ def get_project_members(request, project_uuid: str):
     return project_members
 
 
-@api.post("/projects", auth=Authorized(), response={201: ProjectOut})
+@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)
