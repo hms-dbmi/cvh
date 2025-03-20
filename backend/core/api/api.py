@@ -1,8 +1,9 @@
 from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F
+from django.db.models import Q, F, Value, CharField
 from django.core.exceptions import PermissionDenied
+from django.db.models.functions import Concat
 
 from django.http import Http404
 
@@ -197,6 +198,7 @@ def add_project_member(request, member: ProjectMemberIn):
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
+
 @api.put("/projects/members", auth=Authorized())
 def update_project_member(request, member: ProjectMemberUpdate):
     member_dict = member.dict(exclude_unset=True)
@@ -204,7 +206,9 @@ def update_project_member(request, member: ProjectMemberUpdate):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=member.project_uuid
     )
-    project_member = get_object_or_404(ProjectMember, user_key__email=member.email, project_key=project)
+    project_member = get_object_or_404(
+        ProjectMember, user_key__email=member.email, project_key=project
+    )
 
     del member_dict["project_uuid"]
     for attr, value in member_dict.items():
@@ -218,8 +222,10 @@ def delete_project_member(request, member: ProjectMemberIn):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=member.project_uuid
     )
-    project_member = get_object_or_404(ProjectMember, user_key__email=member.email, project_key=project)
-    
+    project_member = get_object_or_404(
+        ProjectMember, user_key__email=member.email, project_key=project
+    )
+
     if project_member.permissions >= 4:
         raise PermissionDenied()
     project_member.delete()
@@ -254,10 +260,18 @@ def create_project(request, project: ProjectIn):
 def get_projects(request):
     projects = (
         Project.objects.get_read_projects(user=request.auth)
+        .filter(private=True)
         .order_by("-modified_timestamp")
         .values()
     )
     return projects
+
+
+@api.delete("/projects/{project_uuid}", auth=Authorized())
+def delete_project(request, project_uuid: str):
+    project = Project.objects.get_admin_project(user=request.auth, project_uuid=project_uuid)
+    project.delete()
+    return {"success": True}
 
 
 @api.get("/public/projects", auth=Authorized(), response=List[ProjectOut])
@@ -276,7 +290,9 @@ def get_project(request, project_uuid: str):
     )
     permissions = None
     try:
-        permissions = ProjectMember.objects.get(project_key=project, user_key=request.auth).permissions
+        permissions = ProjectMember.objects.get(
+            project_key=project, user_key=request.auth
+        ).permissions
     except ProjectMember.DoesNotExist:
         pass
     return {**project.__dict__, "permissions": permissions}
@@ -389,9 +405,11 @@ def get_project_datasets(
 def get_tags(request, sub_str: str = None):
     q = Q()
     if sub_str:
-        q &= Q(tag__icontains=sub_str)
+        q &= Q(combined_tag__icontains=sub_str)
 
-    tags = Tag.objects.filter(q)
+    tags = Tag.objects.annotate(
+        full_name=Concat("key", Value(":"), "tag", combined_tag=CharField())
+    ).filter(q)
     return tags
 
 

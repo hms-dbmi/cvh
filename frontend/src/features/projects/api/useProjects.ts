@@ -109,6 +109,22 @@ function useRemoveProjectMember() {
   });
 }
 
+function useDeleteProject() {
+  const { toastError, toastSuccess } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("delete", "/api/projects/{project_uuid}", {
+    onSuccess: () =>{
+      toastSuccess('Deleted project.');
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to delete project.")
+    }
+
+  });
+}
+
 
 
 function useGetProjectMembers(projectId: string) {
@@ -127,6 +143,7 @@ export {
   useAddProjectMember,
   useGetProjectMembers,
   useUpdateProjectMember,
-  useRemoveProjectMember
+  useRemoveProjectMember,
+  useDeleteProject
 };
 export default useGetProjects;
