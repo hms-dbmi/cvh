@@ -1,5 +1,6 @@
 import useClient, { QueryOptions, buildInvalidateGetQuery } from "../../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 /*
 function useProjects() {
     const url: string = `${import.meta.env.VITE_API_URL}/api/projects`
@@ -59,6 +60,23 @@ function useAddProjectMember() {
   });
 }
 
+function useUpdateProjectMember() {
+  const { toastError, toastSuccess } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("put", "/api/projects/members", {
+    onSuccess: () =>{
+      toastSuccess('Updated permissions.');
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to update permissions.")
+    }
+
+  });
+}
+
+
 function useGetProjectMembers(projectId: string) {
   const client = useClient();
   return client.useQuery("get", "/api/projects/members/{project_uuid}", {
@@ -74,5 +92,6 @@ export {
   useGetPublicProjects,
   useAddProjectMember,
   useGetProjectMembers,
+  useUpdateProjectMember,
 };
 export default useGetProjects;
