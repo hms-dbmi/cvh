@@ -3,6 +3,7 @@ import useClient, {
   QueryOptions,
   buildInvalidateGetQuery,
 } from "../../../api/client";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const path = "/api/visualizations";
 const publicPath = "/api/public/visualizations";
@@ -42,29 +43,47 @@ function useGetVisualization(visualizationId: string) {
 }
 
 function useCreateVisualization() {
+  const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onSuccess: () =>{
+      toastSuccess("Successfully created visualization.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to create visualization.");
+    }
   });
 }
 
 function useUpdateVisualization() {
+  const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("put", `${path}/{visualization_uuid}`, {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onSuccess: () =>{
+      toastSuccess("Successfully updated visualization.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to update visualization.");
+    }
   });
 }
 
 function useDeleteVisualization() {
+  const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("delete", `${path}/{visualization_uuid}`, {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onSuccess: () =>{
+      toastSuccess("Successfully deleted visualization.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to delete visualization.");
+    }
   });
 }
 

@@ -2,6 +2,7 @@ from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, F
+from django.core.exceptions import PermissionDenied
 
 from django.http import Http404
 
@@ -28,6 +29,7 @@ from .schema import (
     PartialVisualizationUpdate,
     ProjectMemberIn,
     ProjectMemberOut,
+    ProjectMemberUpdate,
     TagIn,
     TagOut,
     VizTagIn,
@@ -195,6 +197,34 @@ def add_project_member(request, member: ProjectMemberIn):
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
+@api.put("/projects/members", auth=Authorized())
+def update_project_member(request, member: ProjectMemberUpdate):
+    member_dict = member.dict(exclude_unset=True)
+
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=member.project_uuid
+    )
+    project_member = get_object_or_404(ProjectMember, user_key__email=member.email, project_key=project)
+
+    del member_dict["project_uuid"]
+    for attr, value in member_dict.items():
+        setattr(project_member, attr, value)
+    project_member.save()
+    return {"success": True}
+
+
+@api.delete("/projects/members", auth=Authorized())
+def delete_project_member(request, member: ProjectMemberIn):
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=member.project_uuid
+    )
+    project_member = get_object_or_404(ProjectMember, user_key__email=member.email, project_key=project)
+    
+    if project_member.permissions >= 4:
+        raise PermissionDenied()
+    project_member.delete()
+    return {"success": True}
+
 
 @api.get(
     "/projects/members/{project_uuid}",
@@ -211,7 +241,7 @@ def get_project_members(request, project_uuid: str):
     return project_members
 
 
-@api.post("/projects", auth=Authorized(), response={201: ProjectOut})
+@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)

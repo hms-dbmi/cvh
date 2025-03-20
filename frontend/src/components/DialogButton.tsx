@@ -21,12 +21,18 @@ interface DialogText {
   submitButton?: ReactNode;
 }
 
-interface FormDialogProps {
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+interface CoreFormDialogProps {
   onClose?: () => void;
   text: DialogText;
   buttonProps?: Partial<ButtonProps>;
 }
+
+type DialogProps =
+  | (CoreFormDialogProps & {
+      onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+      isForm?: true;
+    })
+  | (CoreFormDialogProps & { isForm: false; onSubmit?: undefined });
 
 export default function DialogButton({
   text,
@@ -34,7 +40,8 @@ export default function DialogButton({
   onClose,
   buttonProps,
   children,
-}: PropsWithChildren<FormDialogProps>) {
+  isForm = true,
+}: PropsWithChildren<DialogProps>) {
   const [open, setOpen] = useState(false);
 
   const handleClickOpen = useCallback(() => {
@@ -50,8 +57,10 @@ export default function DialogButton({
 
   const submit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
-      onSubmit(e);
-      handleClose();
+      if (onSubmit) {
+        onSubmit(e);
+        handleClose();
+      }
     },
     [onSubmit, handleClose]
   );
@@ -64,12 +73,16 @@ export default function DialogButton({
       <Dialog
         open={open}
         onClose={handleClose}
-        slotProps={{
-          paper: {
-            component: "form",
-            onSubmit: submit,
-          },
-        }}
+        slotProps={
+          isForm
+            ? {
+                paper: {
+                  component: "form",
+                  onSubmit: submit,
+                },
+              }
+            : {}
+        }
         fullWidth
         maxWidth="lg"
       >
@@ -82,7 +95,9 @@ export default function DialogButton({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>{text.cancelButton ?? "Cancel"}</Button>
-          <Button type="submit">{text.submitButton ?? "Submit"}</Button>
+          {isForm && (
+            <Button type="submit">{text.submitButton ?? "Submit"}</Button>
+          )}
         </DialogActions>
       </Dialog>
     </>

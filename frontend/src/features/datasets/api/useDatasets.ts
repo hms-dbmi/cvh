@@ -1,5 +1,6 @@
 import useClient, { QueryOptions, buildInvalidateGetQuery } from "../../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const path = "/api/datasets";
 
@@ -26,21 +27,32 @@ function useGetProjectDatasets(projectId: string, tags: { tag: string }[]) {
 }
 
 function useCreateDataset() {
+  const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () => {
+    onSuccess: () =>{
+      toastSuccess("Successfully created dataset.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
+    onError: () => {
+      toastError("Failed to create dataset.");
+    }
   });
 }
 
 function useUpdateDataset() {
+  const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("put", path, {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onSuccess: () =>{
+      toastSuccess("Successfully updated dataset.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to update dataset.");
+    }
   });
 }
 

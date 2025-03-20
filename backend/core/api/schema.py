@@ -87,9 +87,17 @@ class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
         fields = ['name', 'description', 'conf', 'tool', 'tool_version', 'published']
+
 class ProjectMemberIn(Schema):
     project_uuid: UUID4
     email: EmailStr
+
+class ProjectMemberUpdate(ModelSchema):
+    project_uuid: UUID4
+    email: EmailStr
+    class Meta:
+        model = ProjectMember
+        fields = ["permissions"]
 
 class ProjectMemberOut(ModelSchema):
     email: EmailStr

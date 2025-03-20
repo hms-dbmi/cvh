@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
@@ -7,7 +7,6 @@ import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateDataset } from "../api/useDatasets";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const text = {
   button: "Add Data Source",
@@ -73,17 +72,7 @@ export default function AddDatasetButton({
     mode: "onChange",
     resolver: zodResolver(schema),
   });
-  const { mutate, isError, isSuccess } = useCreateDataset();
-  const { toastError, toastSuccess } = useSnackbarActions();
-
-  useEffect(() => {
-    if (isError) {
-      toastError("Failed to create dataset.");
-    }
-    if (isSuccess) {
-      toastSuccess("Successfully created dataset.");
-    }
-  }, [isSuccess, isError, toastError, toastSuccess]);
+  const { mutate } = useCreateDataset();
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
