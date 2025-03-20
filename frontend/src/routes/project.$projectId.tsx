@@ -165,7 +165,7 @@ function RouteComponent() {
                   {projectData?.datasets_count}{" "}
                   {buildCountLabel({
                     count: projectData?.datasets_count,
-                    label: "Datasets",
+                    label: "Data Sources",
                   })}{" "}
                   ({selectedItems.size} selected)
                 </Typography>

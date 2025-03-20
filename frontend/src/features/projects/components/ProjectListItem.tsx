@@ -46,7 +46,7 @@ export default function ProjectListItem({
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               {`${project.datasets_count} ${buildCountLabel({
                 count: project.datasets_count,
-                label: "Datasets",
+                label: "Data Sources",
               })}
               `}
             </Typography>
