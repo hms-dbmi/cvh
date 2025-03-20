@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback } from "react";
 
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -14,9 +14,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import DialogButton from "../../../components/DialogButton";
-import { useGetProjectMembers } from "../api/useProjects";
-
-type Props = { projectId: string };
+import {
+  useGetProjectMembers,
+  useUpdateProjectMember,
+} from "../api/useProjects";
 
 const PERMISSIONS: Record<number, string> = {
   1: "Read",
@@ -27,6 +28,8 @@ const PERMISSIONS: Record<number, string> = {
 
 interface PermissionsSelectProps {
   initialPermission: keyof typeof PERMISSIONS;
+  projectId: string;
+  email: string;
 }
 
 const text = {
@@ -34,12 +37,25 @@ const text = {
   title: "Project Settings",
 };
 
-function PermissionsSelect({ initialPermission }: PermissionsSelectProps) {
-  const [permission, setPermission] = useState<number>(initialPermission);
+function PermissionsSelect({
+  initialPermission,
+  projectId,
+  email,
+}: PermissionsSelectProps) {
+  const { mutate } = useUpdateProjectMember();
 
-  const handleChange = (event: SelectChangeEvent<number>) => {
-    setPermission(event.target.value as number);
-  };
+  const handleChange = useCallback(
+    (event: SelectChangeEvent<number>) => {
+      mutate({
+        body: {
+          permissions: event.target.value as number,
+          project_uuid: projectId,
+          email,
+        },
+      });
+    },
+    [mutate, projectId, email]
+  );
 
   return (
     <FormControl sx={{ m: 1, minWidth: 120 }}>
@@ -47,11 +63,11 @@ function PermissionsSelect({ initialPermission }: PermissionsSelectProps) {
       <Select
         labelId="member-permissions-select-label"
         id="member-permissions-select"
-        value={permission}
+        value={initialPermission}
         label="Role"
         inputProps={{ "aria-label": "Without label" }}
         onChange={handleChange}
-        disabled={permission === 4}
+        disabled={initialPermission === 4}
       >
         {Object.entries(PERMISSIONS).map(([k, v]) => (
           <MenuItem key={v} value={k}>
@@ -63,24 +79,23 @@ function PermissionsSelect({ initialPermission }: PermissionsSelectProps) {
   );
 }
 
-function ProjectSettings({ projectId }: Props) {
+function ProjectSettings({ projectId }: { projectId: string }) {
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
 
-  if (isLoading || isError) {
+  if (isLoading || isError || !data) {
     return null;
   }
-
   return (
     <DialogButton
       text={text}
-      onSubmit={() => {}}
       buttonProps={{ endIcon: <SettingsIcon /> }}
+      isForm={false}
     >
       <Box p={2}>
         <Typography variant="h6">Project Members</Typography>
       </Box>
       <List>
-        {data?.map((member) => (
+        {data.map((member) => (
           <ListItem key={member.email}>
             <Stack
               direction="row"
@@ -91,7 +106,11 @@ function ProjectSettings({ projectId }: Props) {
             >
               <Typography>{member.email}</Typography>
               <Stack direction="row" spacing={1}>
-                <PermissionsSelect initialPermission={member.permissions} />
+                <PermissionsSelect
+                  initialPermission={member.permissions}
+                  projectId={projectId}
+                  email={member.email}
+                />
                 <IconButton
                   size="medium"
                   disabled={member.permissions === 4}
