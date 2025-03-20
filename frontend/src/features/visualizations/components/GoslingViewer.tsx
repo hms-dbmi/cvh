@@ -41,6 +41,7 @@ const useFormattedDatasets = (datasets: {items: components["schemas"]["DatasetOu
 
 const readonlyStatusOfPanelsAndModes = {
   data: false,
+  'add-data': false,
   'track-selection': true,
   customization: false,
   templates: false,
@@ -48,12 +49,13 @@ const readonlyStatusOfPanelsAndModes = {
   'natural-language': false,
   history: false,
   delta: false,
-  explore: true,
+  explore: false,
   readonly: true
 }
 
 const defaultStatusOfPanelsAndModes = {
-  data: false,
+  data: true,
+  'add-data': false,
   'track-selection': true,
   customization: true,
   templates: true,
