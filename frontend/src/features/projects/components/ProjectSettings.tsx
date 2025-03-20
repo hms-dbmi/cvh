@@ -13,9 +13,11 @@ import Box from "@mui/material/Box";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SettingsIcon from "@mui/icons-material/Settings";
 
+import type { components } from "../../../types/schema";
 import DialogButton from "../../../components/DialogButton";
 import {
   useGetProjectMembers,
+  useRemoveProjectMember,
   useUpdateProjectMember,
 } from "../api/useProjects";
 
@@ -79,6 +81,49 @@ function PermissionsSelect({
   );
 }
 
+function MemberSettings({
+  member,
+  projectId,
+}: {
+  member: components["schemas"]["ProjectMemberOut"];
+  projectId: string;
+}) {
+  const { mutate } = useRemoveProjectMember();
+
+  const handleRemoveProjectMember = useCallback(() => {
+    mutate({ body: { project_uuid: projectId, email: member.email } });
+  }, [mutate, projectId, member.email]);
+
+  return (
+    <ListItem key={member.email}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        width="100%"
+        spacing={2}
+      >
+        <Typography>{member.email}</Typography>
+        <Stack direction="row" spacing={1}>
+          <PermissionsSelect
+            initialPermission={member.permissions}
+            projectId={projectId}
+            email={member.email}
+          />
+          <IconButton
+            size="medium"
+            disabled={member.permissions === 4}
+            color="error"
+            onClick={handleRemoveProjectMember}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </Stack>
+      </Stack>
+    </ListItem>
+  );
+}
+
 function ProjectSettings({ projectId }: { projectId: string }) {
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
 
@@ -96,31 +141,11 @@ function ProjectSettings({ projectId }: { projectId: string }) {
       </Box>
       <List>
         {data.map((member) => (
-          <ListItem key={member.email}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              width="100%"
-              spacing={2}
-            >
-              <Typography>{member.email}</Typography>
-              <Stack direction="row" spacing={1}>
-                <PermissionsSelect
-                  initialPermission={member.permissions}
-                  projectId={projectId}
-                  email={member.email}
-                />
-                <IconButton
-                  size="medium"
-                  disabled={member.permissions === 4}
-                  color="error"
-                >
-                  <DeleteIcon fontSize="inherit" />
-                </IconButton>
-              </Stack>
-            </Stack>
-          </ListItem>
+          <MemberSettings
+            key={member.email}
+            member={member}
+            projectId={projectId}
+          />
         ))}
       </List>
     </DialogButton>

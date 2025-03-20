@@ -76,6 +76,23 @@ function useUpdateProjectMember() {
   });
 }
 
+function useRemoveProjectMember() {
+  const { toastError, toastSuccess } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("delete", "/api/projects/members", {
+    onSuccess: () =>{
+      toastSuccess('Removed project member.');
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to remove project member.")
+    }
+
+  });
+}
+
+
 
 function useGetProjectMembers(projectId: string) {
   const client = useClient();
@@ -93,5 +110,6 @@ export {
   useAddProjectMember,
   useGetProjectMembers,
   useUpdateProjectMember,
+  useRemoveProjectMember
 };
 export default useGetProjects;
