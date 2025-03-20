@@ -28,6 +28,7 @@ from .schema import (
     PartialVisualizationUpdate,
     ProjectMemberIn,
     ProjectMemberOut,
+    ProjectMemberUpdate,
     TagIn,
     TagOut,
     VizTagIn,
@@ -193,6 +194,21 @@ def add_project_member(request, member: ProjectMemberIn):
     )
     user = get_object_or_404(User, email=member.email)
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
+    return {"success": True}
+
+@api.put("/projects/members", auth=Authorized())
+def update_project_member(request, member: ProjectMemberUpdate):
+    member_dict = member.dict(exclude_unset=True)
+
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=member.project_uuid
+    )
+    project_member = get_object_or_404(ProjectMember, user_key__email=member.email, project_key=project)
+
+    del member_dict["project_uuid"]
+    for attr, value in member_dict.items():
+        setattr(project_member, attr, value)
+    project_member.save()
     return {"success": True}
 
 
