@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from environs import env
-
+import requests
 from pathlib import Path
 
 env.read_env()
@@ -32,7 +32,18 @@ SECRET_KEY = env.str('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(',')
+ALLOWED_HOSTS = []
+METADATA_URI = env.str('ECS_CONTAINER_METADATA_URI')
+
+if METADATA_URI:
+    container_metadata = requests.get(METADATA_URI).json()
+    ALLOWED_HOSTS.append(container_metadata['Networks'][0]['IPv4Addresses'][0])
+
+ENV_ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(',')
+
+if ENV_ALLOWED_HOSTS:
+    ALLOWED_HOSTS.extend(ENV_ALLOWED_HOSTS)
+
 
 
 # Application definition
