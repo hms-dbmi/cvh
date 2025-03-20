@@ -64,7 +64,7 @@ class VizTagIn(Schema):
 class TagOut(ModelSchema):
     class Meta:
         model = Tag
-        fields = ["tag"]
+        fields = ["tag", "key"]
 
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4
