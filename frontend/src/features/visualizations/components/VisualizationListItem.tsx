@@ -1,6 +1,5 @@
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
-import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import PublishIcon from "@mui/icons-material/Publish";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Chip from "@mui/material/Chip";
@@ -16,7 +15,8 @@ import {
   useUpdateVisualization,
 } from "../api/useVisualizations.ts";
 import AddVizTagButton from "./AddVizTagButton.tsx";
-import { EditAttributes } from "@mui/icons-material";
+import IconEye from "@mui/icons-material/Visibility";
+import IconEdit from "@mui/icons-material/Edit";
 
 type Visualization = components["schemas"]["VisualizationNoConfOut"];
 
@@ -117,7 +117,7 @@ export default function VisualizationListItem({
                   onClick: handleEditViz,
                 }}
               >
-                <EditAttributes />
+                <IconEdit />
               </TooltipIconButton>
             )}
             <TooltipIconButton
@@ -128,7 +128,7 @@ export default function VisualizationListItem({
                 onClick: handleOpenViz,
               }}
             >
-              <FullscreenIcon />
+              <IconEye />
             </TooltipIconButton>
             {showActions && (
               <>
