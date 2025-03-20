@@ -2,6 +2,7 @@ from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, F
+from django.core.exceptions import PermissionDenied
 
 from django.http import Http404
 
@@ -209,6 +210,19 @@ def update_project_member(request, member: ProjectMemberUpdate):
     for attr, value in member_dict.items():
         setattr(project_member, attr, value)
     project_member.save()
+    return {"success": True}
+
+
+@api.delete("/projects/members", auth=Authorized())
+def delete_project_member(request, member: ProjectMemberIn):
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=member.project_uuid
+    )
+    project_member = get_object_or_404(ProjectMember, user_key__email=member.email, project_key=project)
+    
+    if project_member.permissions >= 4:
+        raise PermissionDenied()
+    project_member.delete()
     return {"success": True}
 
 

@@ -16,7 +16,8 @@ export interface paths {
         put: operations["api_api_update_project_member"];
         /** Add Project Member */
         post: operations["api_api_add_project_member"];
-        delete?: never;
+        /** Delete Project Member */
+        delete: operations["api_api_delete_project_member"];
         options?: never;
         head?: never;
         patch?: never;
@@ -612,6 +613,28 @@ export interface operations {
         };
     };
     api_api_add_project_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectMemberIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_api_delete_project_member: {
         parameters: {
             query?: never;
             header?: never;
