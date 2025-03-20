@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {Vitessce} from 'vitessce';
 
 import { useGetVisualization } from "../api/useVisualizations.ts";
@@ -11,13 +11,27 @@ interface VitessceViewerProps {
     onSave?: (newConf: string) => void;
 }
 
+export default function VitessceViewer({visualizationId, close, onSave}: VitessceViewerProps) {
+    const readOnly = onSave === undefined
 
-
-export default function VitessceViewer({visualizationId, close}: VitessceViewerProps) {
     const visualization = useGetVisualization(visualizationId)
-    const buttonRef = useRef<HTMLButtonElement>(null)
-    const buttonDimensions = useRefDimensions(buttonRef)
-    const { height: buttonHeight } = buttonDimensions;
+
+    const [updatedConf, setUpdatedConf] = useState<string | undefined>(undefined)
+
+    const handleSave = useCallback(() => {
+        if (onSave && updatedConf) {
+            onSave(updatedConf)
+        }
+        close()
+    }, [onSave, updatedConf, close])
+
+    const handleUpdate = useCallback((newConf: string) => {
+        setUpdatedConf(JSON.stringify(newConf))
+    }, [])
+    
+    const controlsContainerRef = useRef<HTMLDivElement>(null)
+    const controlsContainerDimensions = useRefDimensions(controlsContainerRef)
+    const { height: buttonHeight } = controlsContainerDimensions;
     const vitessce = useMemo(() => {
         if (!visualization.data?.conf) {
             return <Skeleton />
@@ -27,18 +41,24 @@ export default function VitessceViewer({visualizationId, close}: VitessceViewerP
                 <Box sx={{ width: '100%', height }}>
                     <Vitessce 
                         config={visualization.data?.conf} 
-                        height={window.innerHeight - buttonHeight} />
+                        height={window.innerHeight - buttonHeight}
+                        onConfigChange={handleUpdate}
+                    />
                 </Box>
             )
         }
-    }, [visualization.data?.conf, buttonHeight])
+    }, [visualization.data?.conf, buttonHeight, handleUpdate])
+
     return (
         <Stack 
             flexDirection='column' 
             alignItems='center' 
             sx={(theme) => ({ width: '100%', height: '100%', backgroundColor: theme.palette.background.paper })}
         >
-            <Button ref={buttonRef} onClick={close}>Close</Button>
+            <Stack flexDirection='row' ref={controlsContainerRef}>
+                <Button onClick={close}>Close</Button>
+                {!readOnly && <Button onClick={handleSave}>Save</Button>}
+            </Stack>
             {vitessce}
         </Stack>
         )
