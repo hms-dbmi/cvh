@@ -12,10 +12,12 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SettingsIcon from "@mui/icons-material/Settings";
+import Button from "@mui/material/Button";
 
 import type { components } from "../../../types/schema";
 import DialogButton from "../../../components/DialogButton";
 import {
+  useDeleteProject,
   useGetProjectMembers,
   useRemoveProjectMember,
   useUpdateProjectMember,
@@ -126,6 +128,11 @@ function MemberSettings({
 
 function ProjectSettings({ projectId }: { projectId: string }) {
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
+  const { mutate } = useDeleteProject();
+
+  const handleDeleteProject = useCallback(() => {
+    mutate({ params: { path: { project_uuid: projectId } } });
+  }, [mutate, projectId]);
 
   if (isLoading || isError || !data) {
     return null;
@@ -148,6 +155,9 @@ function ProjectSettings({ projectId }: { projectId: string }) {
           />
         ))}
       </List>
+      <Button onClick={handleDeleteProject} color="error">
+        Delete Project
+      </Button>
     </DialogButton>
   );
 }
