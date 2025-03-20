@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
+import MenuItem from "@mui/material/MenuItem";
 
 const text = {
   button: "Add Visualization",
@@ -49,6 +50,47 @@ function FormTextField({
   );
 }
 
+function FormSelectField({
+  name,
+  control,
+  label,
+  options,
+  ...rest
+}: UseControllerProps<FormValues> & Partial<TextFieldProps> & { options: string[] }) {
+  const { field, fieldState } = useController({
+    name,
+    control,
+    rules: { required: true },
+  });
+
+  return (
+    <TextField
+      select
+      label={label || name}
+      fullWidth
+      error={fieldState.error !== undefined}
+      helperText={fieldState?.error?.message}
+      {...field}
+      slotProps={{
+        inputLabel: { shrink: true },
+      }}
+      {...rest}
+    >
+      {options.map((option) => (
+        <MenuItem key={option} value={option}>
+          {option}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
+}
+
+// TODO: Move this to a more appropriate place
+const SUPPORTED_TOOLS = [
+  "Gosling",
+  "Vitessce"
+]
+
 const schema = z
   .object({
     name: z.string(),
@@ -68,7 +110,7 @@ export default function AddVisualizationButton({
     defaultValues: {
       name: "",
       description: "",
-      tool: "",
+      tool: SUPPORTED_TOOLS[0],
       tool_version: "",
       conf: "",
     },
@@ -97,7 +139,13 @@ export default function AddVisualizationButton({
             label="Description"
             control={control}
           />
-          <FormTextField name="tool" label="Tool" control={control} />
+          <FormSelectField
+            name="tool"
+            label="Tool"
+            control={control}
+            options={SUPPORTED_TOOLS}
+            sx={{ flexGrow: 1 }}
+          />
           <FormTextField
             name="tool_version"
             label="Tool Version"
