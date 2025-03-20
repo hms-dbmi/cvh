@@ -19,8 +19,9 @@ function useProjects() {
 
 const path = "/api/projects";
 const publicPath = "/api/public/projects";
+const membersPath = "/api/projects/members/{project_uuid}";
 
-const invalidateGetQuery = buildInvalidateGetQuery([path, publicPath])
+const invalidateGetQuery = buildInvalidateGetQuery([path, publicPath, membersPath])
 
 
 function useGetProjects(options?: QueryOptions) {
@@ -35,10 +36,17 @@ function useGetPublicProjects(options?: QueryOptions) {
 
 function useCreateProject() {
   const queryClient = useQueryClient();
+  const { toastError, toastSuccess } = useSnackbarActions();
+
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onSuccess: () =>{
+      toastSuccess("Successfully created project.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to create project.");
+    }
   });
 }
 
@@ -52,13 +60,22 @@ function useGetProject(projectId: string) {
 }
 
 function useAddProjectMember() {
+  const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", "/api/projects/members", {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onSuccess: () =>{
+      toastSuccess("Successfully shared project.");
+
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to share project.");
+    }
+
   });
 }
+
 
 function useUpdateProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
@@ -96,7 +113,7 @@ function useRemoveProjectMember() {
 
 function useGetProjectMembers(projectId: string) {
   const client = useClient();
-  return client.useQuery("get", "/api/projects/members/{project_uuid}", {
+  return client.useQuery("get", membersPath, {
     params: {
       path: { project_uuid: projectId },
     },
