@@ -22,6 +22,7 @@ import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";
 import { useSelectItems } from "../hooks/useSelectItems";
 import useFullscreen from "../hooks/useFullscreen";
 import { useSnackbarActions } from "../components/Snackbar/useSnackbarStore";
+import { components } from "../types/schema";
 
 function buildCountLabel({ count, label }: { count?: number; label: string }) {
   if (count === 1) {
@@ -35,10 +36,12 @@ export const Route = createFileRoute("/project/$projectId")({
   component: RouteComponent,
 });
 
+type Visualization = components["schemas"]["VisualizationNoConfOut"];
+
 function RouteComponent() {
   const { projectId } = Route.useParams();
 
-  const [selectedViz, setSelectedViz] = useState<string>();
+  const [selectedViz, setSelectedViz] = useState<Visualization>();
   const [isEditing, setIsEditing] = useState<boolean>();
 
   const [selectedTags, setSelectedTags] = useState<{ tag: string }[]>([]);
@@ -65,16 +68,16 @@ function RouteComponent() {
   const vizRef = useRef<HTMLDivElement>(null);
 
   const toggleViz = useCallback(
-    (vizId?: string) => {
-      setSelectedViz(vizId);
+    (viz?: Visualization) => {
+      setSelectedViz(viz);
       vizRef?.current?.requestFullscreen();
     },
     [vizRef, setSelectedViz]
   );
 
   const editViz = useCallback(
-    (vizId?: string) => {
-      setSelectedViz(vizId);
+    (viz?: Visualization) => {
+      setSelectedViz(viz);
       setIsEditing(true);
       vizRef?.current?.requestFullscreen();
     },
@@ -106,6 +109,7 @@ function RouteComponent() {
   const { isFullscreen, close } = useFullscreen((fullscreen) => {
     if (!fullscreen) {
       setSelectedViz(undefined);
+      setIsEditing(false);
     }
   });
 
@@ -218,10 +222,11 @@ function RouteComponent() {
       <Box ref={vizRef} sx={{ overflowY: "scroll" }}>
         {selectedViz && isFullscreen && (
           <VisualizationViewer
-            visualizationId={selectedViz}
+            visualizationId={selectedViz.uuid!}
+            visualizationType={selectedViz.tool}
             close={close}
             datasets={datasets}
-            onSave={isEditing ? onSave(selectedViz) : undefined}
+            onSave={isEditing ? onSave(selectedViz.uuid!) : undefined}
           />
         )}
       </Box>
