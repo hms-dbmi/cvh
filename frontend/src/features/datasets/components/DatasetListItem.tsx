@@ -49,7 +49,7 @@ export default function DatasetListItem({
               File Type: {dataset.file_type}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-              Data Type: {dataset.data_type}
+              Assay Type: {dataset.data_type}
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">

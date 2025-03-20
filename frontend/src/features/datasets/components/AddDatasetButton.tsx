@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
+import MenuItem from "@mui/material/MenuItem";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,6 +46,53 @@ function FormTextField({
     />
   );
 }
+
+function FormSelectField({
+  name,
+  control,
+  label,
+  options,
+  ...rest
+}: UseControllerProps<FormValues> &
+  Partial<TextFieldProps> & { options: string[] }) {
+  const { field, fieldState } = useController({
+    name,
+    control,
+    rules: { required: true },
+  });
+
+  return (
+    <TextField
+      select
+      label={label || name}
+      fullWidth
+      error={fieldState.error !== undefined}
+      helperText={fieldState?.error?.message}
+      {...field}
+      slotProps={{
+        inputLabel: { shrink: true },
+      }}
+      {...rest}
+    >
+      {options.map((option) => (
+        <MenuItem key={option} value={option}>
+          {option}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
+}
+
+// TODO: Move this to a more appropriate place
+const SUPPORTED_FILE_TYPES = [
+  "CSV",
+  "GFF3",
+  "VCF",
+  "JSON",
+  "BigWig",
+  "BAM",
+  "BED",
+];
 
 const schema = z
   .object({
@@ -95,8 +143,14 @@ export default function AddDatasetButton({
           control={control}
         />
         <FormTextField name="source_url" label="Source URL" control={control} />
-        <FormTextField name="data_type" label="Data Type" control={control} />
-        <FormTextField name="file_type" label="File Type" control={control} />
+        <FormSelectField
+          name="file_type"
+          label="File Type"
+          control={control}
+          options={SUPPORTED_FILE_TYPES}
+          sx={{ flexGrow: 1 }}
+        />
+        <FormTextField name="data_type" label="Assay Type" control={control} />
       </Stack>
     </DialogButton>
   );

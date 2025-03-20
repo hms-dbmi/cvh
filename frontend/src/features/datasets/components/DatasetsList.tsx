@@ -33,7 +33,7 @@ export default function DatasetsList({
         ))}
       </List>
       <LinkButton to="/datasets" variant="outlined">
-        View More Datasets
+        View More Data Sources
       </LinkButton>
     </Stack>
   );

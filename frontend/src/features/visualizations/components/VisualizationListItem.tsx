@@ -93,9 +93,6 @@ export default function VisualizationListItem({
               <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
                 Source: {visualization.tool}
               </Typography>
-              <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-                File Type: {visualization.tool_version}
-              </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center" mt={1}>
               {visualization?.combined_tags?.map((tag) => (

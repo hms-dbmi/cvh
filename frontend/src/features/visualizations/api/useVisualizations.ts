@@ -11,6 +11,7 @@ const publicPath = "/api/public/visualizations";
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
   publicPath,
+  "/api/projects",
   "/api/tags",
 ]);
 
