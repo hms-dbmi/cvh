@@ -58,23 +58,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/public/projects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Public Projects */
-        get: operations["api_api_get_public_projects"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects/{project_uuid}": {
         parameters: {
             query?: never;
@@ -84,6 +67,24 @@ export interface paths {
         };
         /** Get Project */
         get: operations["api_api_get_project"];
+        put?: never;
+        post?: never;
+        /** Delete Project */
+        delete: operations["api_api_delete_project"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Projects */
+        get: operations["api_api_get_public_projects"];
         put?: never;
         post?: never;
         delete?: never;
@@ -281,6 +282,35 @@ export interface components {
              */
             permissions: number;
         };
+        /** ProjectIn */
+        ProjectIn: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Private */
+            private: boolean;
+        };
+        /** Input */
+        Input: {
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+        };
+        /** PagedProjectOut */
+        PagedProjectOut: {
+            /** Items */
+            items: components["schemas"]["ProjectOut"][];
+            /** Count */
+            count: number;
+        };
         /** ProjectOut */
         ProjectOut: {
             /** Datasets Count */
@@ -318,35 +348,6 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
-        };
-        /** ProjectIn */
-        ProjectIn: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Private */
-            private: boolean;
-        };
-        /** Input */
-        Input: {
-            /**
-             * Limit
-             * @default 100
-             */
-            limit: number;
-            /**
-             * Offset
-             * @default 0
-             */
-            offset: number;
-        };
-        /** PagedProjectOut */
-        PagedProjectOut: {
-            /** Items */
-            items: components["schemas"]["ProjectOut"][];
-            /** Count */
-            count: number;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -455,6 +456,8 @@ export interface components {
         TagOut: {
             /** Tag */
             tag: string;
+            /** Key */
+            key?: string | null;
         };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
@@ -720,30 +723,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectOut"];
-                };
-            };
-        };
-    };
-    api_api_get_public_projects: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedProjectOut"];
+                    "application/json": components["schemas"]["ProjectIn"];
                 };
             };
         };
@@ -766,6 +746,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+        };
+    };
+    api_api_delete_project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_api_get_public_projects: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedProjectOut"];
                 };
             };
         };
