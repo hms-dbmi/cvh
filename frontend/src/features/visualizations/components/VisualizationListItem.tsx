@@ -91,7 +91,7 @@ export default function VisualizationListItem({
             </Typography>
             <Stack direction="row" spacing={2}>
               <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-                Source: {visualization.tool}
+                Tool: {visualization.tool}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center" mt={1}>
