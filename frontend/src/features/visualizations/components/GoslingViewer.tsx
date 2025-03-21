@@ -10,15 +10,15 @@ import type { components } from "../../../types/schema";
 interface GoslingViewerProps {
     visualizationId: string;
     close: () => void;
-    datasets?: {items: components["schemas"]["DatasetOut"][]};
+    datasets?: components["schemas"]["DatasetOut"][];
     readonly?: boolean;
     onSave?: (newConf: string) => void;
 };
   
 
 // TODO: This needs to be revisited to support fields etc
-const formatCvhDatasetsAsGoslingDatasets = (datasets: {items: components["schemas"]["DatasetOut"][]}) => {
-  return datasets.items.map((dataset) => ({
+const formatCvhDatasetsAsGoslingDatasets = (datasets: components["schemas"]["DatasetOut"][]) => {
+  return datasets.map((dataset) => ({
     datatype: dataset.data_type,
     name: dataset.name,
     id: dataset.name,
@@ -29,9 +29,9 @@ const formatCvhDatasetsAsGoslingDatasets = (datasets: {items: components["schema
   })) as ComponentProps<typeof Frame>['initialDatasets'];
 }
 
-const useFormattedDatasets = (datasets: {items: components["schemas"]["DatasetOut"][]}) => {
+const useFormattedDatasets = (datasets: components["schemas"]["DatasetOut"][]) => {
   return useMemo(() => {
-    if (!datasets.items) {
+    if (!datasets) {
       return [];
     }
     return formatCvhDatasetsAsGoslingDatasets(datasets);
@@ -68,7 +68,7 @@ const defaultStatusOfPanelsAndModes = {
 }
 
 
-function GoslingViewer({ visualizationId, close, onSave, datasets = {items: []} }: GoslingViewerProps) {
+function GoslingViewer({ visualizationId, close, onSave, datasets = [] }: GoslingViewerProps) {
   const readonly = onSave === undefined;
   const { isLoading, isError, data } = useGetVisualization(visualizationId);
 
