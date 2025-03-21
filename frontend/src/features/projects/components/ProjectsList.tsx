@@ -20,7 +20,7 @@ export function PublicProjectsList({
   }
 
   return (
-    <Stack width={500}>
+    <Stack>
       <Stack direction="row" justifyContent="space-between" width="100%">
         <Typography variant="h5">
           Public Projects
@@ -51,7 +51,7 @@ export default function ProjectsList({
   }
 
   return (
-    <Stack width={500}>
+    <Stack>
       <Stack direction="row" justifyContent="space-between" width="100%">
         <Typography variant="h5">
           Private Projects

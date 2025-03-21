@@ -27,13 +27,16 @@ function RouteComponent() {
 
 function AuthenticatedRouteComponent() {
   return (
-    <Stack spacing={4}>
-      <Stack direction="row" spacing={4}>
-        <ProjectsList queryOptions={{ params: { query: { limit: 5 } } }} />
-        <PublicProjectsList />
-      </Stack>
+    <Box sx={{
+      display: 'grid',
+      gridTemplateColumns: { xs: '1fr',  lg: 'repeat(3, 1fr)' },
+      gap: 2,
+      padding: 2,
+    }}>
+      <ProjectsList queryOptions={{ params: { query: { limit: 5 } } }} />
+      <PublicProjectsList />
       <DatasetsList queryOptions={{ params: { query: { limit: 5 } } }} />
-    </Stack>
+    </Box>
   );
 }
 
