@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as ProjectsImport } from './routes/projects'
 import { Route as ProfileImport } from './routes/profile'
 import { Route as DatasetsImport } from './routes/datasets'
+import { Route as DataSourcesImport } from './routes/data-sources'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProjectProjectIdImport } from './routes/project.$projectId'
 
@@ -34,6 +35,12 @@ const ProfileRoute = ProfileImport.update({
 const DatasetsRoute = DatasetsImport.update({
   id: '/datasets',
   path: '/datasets',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DataSourcesRoute = DataSourcesImport.update({
+  id: '/data-sources',
+  path: '/data-sources',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -58,6 +65,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/data-sources': {
+      id: '/data-sources'
+      path: '/data-sources'
+      fullPath: '/data-sources'
+      preLoaderRoute: typeof DataSourcesImport
       parentRoute: typeof rootRoute
     }
     '/datasets': {
@@ -95,6 +109,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/data-sources': typeof DataSourcesRoute
   '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
@@ -103,6 +118,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/data-sources': typeof DataSourcesRoute
   '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
@@ -112,6 +128,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/data-sources': typeof DataSourcesRoute
   '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
@@ -122,15 +139,23 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/data-sources'
     | '/datasets'
     | '/profile'
     | '/projects'
     | '/project/$projectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/datasets' | '/profile' | '/projects' | '/project/$projectId'
+  to:
+    | '/'
+    | '/data-sources'
+    | '/datasets'
+    | '/profile'
+    | '/projects'
+    | '/project/$projectId'
   id:
     | '__root__'
     | '/'
+    | '/data-sources'
     | '/datasets'
     | '/profile'
     | '/projects'
@@ -140,6 +165,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DataSourcesRoute: typeof DataSourcesRoute
   DatasetsRoute: typeof DatasetsRoute
   ProfileRoute: typeof ProfileRoute
   ProjectsRoute: typeof ProjectsRoute
@@ -148,6 +174,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DataSourcesRoute: DataSourcesRoute,
   DatasetsRoute: DatasetsRoute,
   ProfileRoute: ProfileRoute,
   ProjectsRoute: ProjectsRoute,
@@ -165,6 +192,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/data-sources",
         "/datasets",
         "/profile",
         "/projects",
@@ -173,6 +201,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/data-sources": {
+      "filePath": "data-sources.tsx"
     },
     "/datasets": {
       "filePath": "datasets.tsx"
