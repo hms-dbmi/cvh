@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, ChangeEvent } from "react";
 
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -7,6 +7,8 @@ import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -18,8 +20,10 @@ import type { components } from "../../../types/schema";
 import DialogButton from "../../../components/DialogButton";
 import {
   useDeleteProject,
+  useGetProject,
   useGetProjectMembers,
   useRemoveProjectMember,
+  useUpdateProject,
   useUpdateProjectMember,
 } from "../api/useProjects";
 
@@ -126,15 +130,63 @@ function MemberSettings({
   );
 }
 
+function UpdateAccessSwitch({
+  projectId,
+  isPrivate,
+}: {
+  projectId: string;
+  isPrivate: boolean;
+}) {
+  const { mutate } = useUpdateProject();
+
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      mutate({
+        params: { path: { project_uuid: projectId } },
+
+        body: {
+          private: event.target.checked,
+        },
+      });
+    },
+    [mutate, projectId]
+  );
+  return (
+    <FormControlLabel
+      label="Private"
+      control={
+        <Switch
+          checked={isPrivate}
+          onChange={handleChange}
+          inputProps={{ "aria-label": "Private" }}
+        />
+      }
+    />
+  );
+}
+
 function ProjectSettings({ projectId }: { projectId: string }) {
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
+  const {
+    data: projectData,
+    isLoading: isLoadingProject,
+    isError: isErrorProject,
+  } = useGetProject(projectId);
+
   const { mutate } = useDeleteProject();
 
   const handleDeleteProject = useCallback(() => {
     mutate({ params: { path: { project_uuid: projectId } } });
   }, [mutate, projectId]);
 
-  if (isLoading || isError || !data) {
+  if (
+    isLoading ||
+    isError ||
+    !data ||
+    isLoadingProject ||
+    isErrorProject ||
+    !projectData
+  ) {
     return null;
   }
   return (
@@ -143,6 +195,13 @@ function ProjectSettings({ projectId }: { projectId: string }) {
       buttonProps={{ endIcon: <SettingsIcon /> }}
       isForm={false}
     >
+      <Box p={2}>
+        <Typography variant="h6">Project Access</Typography>
+        <UpdateAccessSwitch
+          projectId={projectId}
+          isPrivate={projectData.private}
+        />
+      </Box>
       <Box p={2}>
         <Typography variant="h6">Project Members</Typography>
       </Box>
@@ -155,9 +214,11 @@ function ProjectSettings({ projectId }: { projectId: string }) {
           />
         ))}
       </List>
-      <Button onClick={handleDeleteProject} color="error">
-        Delete Project
-      </Button>
+      <Box p={2}>
+        <Button onClick={handleDeleteProject} color="error" variant="contained">
+          Delete Project
+        </Button>
+      </Box>
     </DialogButton>
   );
 }
