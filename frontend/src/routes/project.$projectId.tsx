@@ -239,7 +239,7 @@ function RouteComponent() {
             visualizationId={selectedViz.uuid!}
             visualizationType={selectedViz.tool}
             close={close}
-            datasets={datasets?.pages.flatMap(page => page.items) ?? []}
+            datasets={allDatasets}
             onSave={isEditing ? onSave(selectedViz.uuid!) : undefined}
           />
         )}
