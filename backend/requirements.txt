@@ -6,6 +6,12 @@ asgiref==3.8.1
     # via
     #   django
     #   django-cors-headers
+boto3==1.37.17
+    # via backend (pyproject.toml)
+botocore==1.37.17
+    # via
+    #   boto3
+    #   s3transfer
 certifi==2025.1.31
     # via requests
 cffi==1.17.1
@@ -35,6 +41,10 @@ idna==3.10
     # via
     #   email-validator
     #   requests
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 marshmallow==3.26.1
     # via environs
 packaging==24.2
@@ -55,12 +65,18 @@ pydantic-core==2.27.2
     # via pydantic
 pyjwt==2.10.1
     # via backend (pyproject.toml)
+python-dateutil==2.9.0.post0
+    # via botocore
 python-dotenv==1.0.1
     # via environs
 requests==2.32.3
     # via backend (pyproject.toml)
 ruff==0.11.0
     # via backend (pyproject.toml)
+s3transfer==0.11.4
+    # via boto3
+six==1.17.0
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
 typing-extensions==4.12.2
@@ -68,4 +84,6 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
 urllib3==2.3.0
-    # via requests
+    # via
+    #   botocore
+    #   requests

@@ -2,6 +2,8 @@ from datetime import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
 import pyarrow.parquet as pq
+from environs import env
+import boto3
 
 from api.models import Project, Dataset, Tag, User, ProjectMember
 
@@ -22,6 +24,12 @@ def tag_datasets(datasets, table):
                 dataset.tags.add(tag)
 
 
+files = [
+    "metadata.consortia_ENCODE+4DN.biosamples_all.assays_CTCF+ATAC.parquet",
+    "metadata.consortia_ENCODE+4DN.biosamples_HCT116.assays_all.parquet",
+]
+
+
 class Command(BaseCommand):
     help = "Create datasets from parquet file"
 
@@ -29,40 +37,44 @@ class Command(BaseCommand):
         parser.add_argument("--email", type=str, help="Project creator email")
 
     def handle(self, *args, **kwargs):
-        datafile = (
-            settings.BASE_DIR
-            / "data"
-            / "metadata.consortia_ENCODE+4DN.biosamples_all.assays_CTCF+ATAC.parquet"
-        )
-        assert datafile.exists()
+        for file in files:
+            datafile = settings.BASE_DIR / "data" / file
 
-        email_arg = kwargs['email']
-        file_data = pq.read_table(datafile).to_pylist()
+            METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI")
 
-        creator = User.objects.get(email=email_arg)
+            if METADATA_URI:
+                s3 = boto3.client("s3")
+                s3.download_file("cvh-seed-data", file, datafile)
 
-        project = Project.objects.create(
-            private=False,
-            name="ENCODE + 4DN Biosamples",
-            description="CTCF and ATAC data from Encode and 4DN",
-            user_key=creator,
-        )
+            assert datafile.exists()
 
-        ProjectMember.objects.create(
-            project_key=project, user_key=creator, permissions=4
-        )
+            email_arg = kwargs["email"]
+            file_data = pq.read_table(datafile).to_pylist()
 
-        datasets = [
-            Dataset(
-                **{
-                    "name": d["File Accession"] + "." + d["File Format"],
-                    "source_url": d["Portal URL"],
-                    "file_type": d["File Format"],
-                    "data_type": d["Assay"],
-                },
-                project_key=project,
+            creator = User.objects.get(email=email_arg)
+
+            project = Project.objects.create(
+                private=False,
+                name="ENCODE + 4DN Biosamples",
+                description="CTCF and ATAC data from Encode and 4DN",
+                user_key=creator,
             )
-            for d in file_data
-        ]
-        created_datasets = Dataset.objects.bulk_create(datasets)
-        tag_datasets(created_datasets, file_data)
+
+            ProjectMember.objects.create(
+                project_key=project, user_key=creator, permissions=4
+            )
+
+            datasets = [
+                Dataset(
+                    **{
+                        "name": d["File Accession"] + "." + d["File Format"],
+                        "source_url": d["Portal URL"],
+                        "file_type": d["File Format"],
+                        "data_type": d["Assay"],
+                    },
+                    project_key=project,
+                )
+                for d in file_data
+            ]
+            created_datasets = Dataset.objects.bulk_create(datasets)
+            tag_datasets(created_datasets, file_data)
