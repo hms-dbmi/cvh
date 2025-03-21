@@ -10,6 +10,7 @@ import PublishedVisualizationsList from "../features/visualizations/components/P
 import DatasetsList from "../features/datasets/components/DatasetsList";
 import { LoginButton } from "../features/navigation/components/AuthButtons";
 import { Typography } from "@mui/material";
+import CFDEIcon from "../assets/cfde-vector.svg?react";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -46,14 +47,23 @@ function UnauthenticatedRouteComponent() {
       justifyContent="center"
       alignItems="center"
     >
-      <Stack spacing={2}>
-        <Typography variant="h5" component="p">
-          Log in to view projects, data sources and visualizations.
-        </Typography>
-        <Box>
-          <LoginButton variant="contained" color="primary" />
-        </Box>
+      <Stack spacing={5}>
+        <CFDEIcon height={250} />
+        <Stack spacing={2} maxWidth={1000}>
+          <Typography variant="h4" component="h1">
+            The CFDE Community Visualization Hub enables visualization-guided
+            evaluation of predictions, model refinement, and hypothesis
+            generation, fueling deeper insights into biological mechanisms
+          </Typography>
+          <Typography variant="h5" component="p">
+            Log in to view projects, data sources and visualizations
+          </Typography>
+          <Box>
+            <LoginButton variant="contained" color="primary" />
+          </Box>
+        </Stack>
       </Stack>
+
       <Stack direction="row" spacing={4}>
         <PublishedVisualizationsList
           queryOptions={{ params: { query: { limit: 5 } } }}
