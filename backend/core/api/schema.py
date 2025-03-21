@@ -22,6 +22,9 @@ class ProjectIn(Schema):
     private: bool
     # group_uuid: Optional[UUID4]
 
+class PartialProjectIn(ProjectIn, OptionalSchema):
+    pass
+
 class ProjectOut(ModelSchema):
     datasets_count: int
     visualizations_count: int

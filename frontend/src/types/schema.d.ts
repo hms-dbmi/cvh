@@ -67,7 +67,8 @@ export interface paths {
         };
         /** Get Project */
         get: operations["api_api_get_project"];
-        put?: never;
+        /** Update Project */
+        put: operations["api_api_update_project"];
         post?: never;
         /** Delete Project */
         delete: operations["api_api_delete_project"];
@@ -348,6 +349,15 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
+        };
+        /** PartialProjectIn */
+        PartialProjectIn: {
+            /** Name */
+            name?: string;
+            /** Description */
+            description?: string;
+            /** Private */
+            private?: boolean;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -747,6 +757,30 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProjectOut"];
                 };
+            };
+        };
+    };
+    api_api_update_project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartialProjectIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
