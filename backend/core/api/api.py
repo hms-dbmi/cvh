@@ -31,6 +31,7 @@ from .schema import (
     ProjectMemberIn,
     ProjectMemberOut,
     ProjectMemberUpdate,
+    PartialProjectIn,
     TagIn,
     TagOut,
     VizTagIn,
@@ -296,6 +297,18 @@ def get_project(request, project_uuid: str):
     except ProjectMember.DoesNotExist:
         pass
     return {**project.__dict__, "permissions": permissions}
+
+
+@api.put("/projects/{project_uuid}", auth=Authorized())
+def update_project(request, project_uuid: str, payload: PartialProjectIn):
+    payload_dict = payload.dict(exclude_unset=True)
+    project = Project.objects.get_admin_project(
+        project_uuid=project_uuid, user=request.auth
+    )
+    for attr, value in payload_dict.items():
+        setattr(project, attr, value)
+    project.save()
+    return {"success": True}
 
 
 @api.post("/datasets", auth=Authorized(), response={201: DatasetIn})
