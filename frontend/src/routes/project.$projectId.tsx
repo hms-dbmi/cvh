@@ -6,7 +6,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 import { useGetProject } from "../features/projects/api/useProjects";
-import { useGetProjectDatasets } from "../features/datasets/api/useDatasets";
+import { useGetPaginatedProjectDatasets } from "../features/datasets/api/useDatasets";
 import {
   useGetProjectVisualizations,
   useUpdateVisualization,
@@ -23,6 +23,7 @@ import { useSelectItems } from "../hooks/useSelectItems";
 import useFullscreen from "../hooks/useFullscreen";
 import { useSnackbarActions } from "../components/Snackbar/useSnackbarStore";
 import { components } from "../types/schema";
+import InfiniteScrollList from "../components/InfiniteScrollList";
 
 function buildCountLabel({ count, label }: { count?: number; label: string }) {
   if (count === 1) {
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/project/$projectId")({
 });
 
 type Visualization = components["schemas"]["VisualizationNoConfOut"];
+type Dataset = components["schemas"]["DatasetOut"];
 
 function RouteComponent() {
   const { projectId } = Route.useParams();
@@ -55,7 +57,18 @@ function RouteComponent() {
     isLoading: isLoadingDatasets,
     isError: isErrorDatasets,
     data: datasets,
-  } = useGetProjectDatasets(projectId, selectedTags);
+    hasNextPage: hasMoreDatasets,
+    fetchNextPage: loadMoreDatasets,
+    isFetchingNextPage: isLoadingMoreDatasets,
+  } = useGetPaginatedProjectDatasets(projectId, selectedTags);
+
+  const totalDatasetsCount = datasets?.pages.reduce(
+    (_, page) => page.count,
+    0
+  ) ?? 0;
+
+  const allDatasets: Required<Dataset>[] =
+    datasets?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
 
   const {
     isLoading: isLoadingVisualizations,
@@ -120,6 +133,7 @@ function RouteComponent() {
 
   const isError = isErrorProject || isErrorDatasets || isErrorVisualizations;
 
+
   if (isLoading || isError) {
     return null;
   }
@@ -156,37 +170,37 @@ function RouteComponent() {
               setSelectedTags={setSelectedTags}
             />
             <Box mb={2}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                width="100%"
-              >
-                <Typography variant="h5">
-                  {projectData?.datasets_count}{" "}
-                  {buildCountLabel({
-                    count: projectData?.datasets_count,
-                    label: "Data Sources",
-                  })}{" "}
-                  ({selectedItems.size} selected)
-                </Typography>
-                {hasWrite && <AddDatasetButton projectId={projectId} />}
-              </Stack>
-              <Box maxHeight={500} sx={{ overflowY: "scroll" }}>
-                <List>
-                  {datasets?.items?.map(
-                    (dataset) =>
-                      dataset?.uuid && (
-                        <DatasetListItem
-                          dataset={dataset}
-                          key={dataset.uuid}
-                          projectId={projectId}
-                          selectItem={toggleItem}
-                          isSelected={selectedItems.has(dataset.uuid)}
-                        />
-                      )
-                  )}
-                </List>
-              </Box>
+              <InfiniteScrollList<Required<Dataset>>
+                Header={<Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  width="100%"
+                >
+                  <Typography variant="h5">
+                    {projectData?.datasets_count}{" "}
+                    {buildCountLabel({
+                      count: projectData?.datasets_count,
+                      label: "Data Sources",
+                    })}{" "}
+                    ({selectedItems.size} selected)
+                  </Typography>
+                  {hasWrite && <AddDatasetButton projectId={projectId} />}
+                </Stack>}
+                count={totalDatasetsCount}
+                items={allDatasets}
+                loadMoreItems={loadMoreDatasets}
+                hasMoreItems={hasMoreDatasets}
+                isLoading={isLoadingMoreDatasets}
+                isError={isErrorDatasets}
+                ListItem={dataset => (
+                  <DatasetListItem dataset={dataset}
+                    projectId={projectId}
+                    selectItem={toggleItem}
+                    isSelected={selectedItems.has(dataset.uuid)}
+                  />)}
+                estimateSize={() => 200}
+                overscan={5}
+              />
             </Box>
             <Box>
               <Stack
@@ -225,7 +239,7 @@ function RouteComponent() {
             visualizationId={selectedViz.uuid!}
             visualizationType={selectedViz.tool}
             close={close}
-            datasets={datasets}
+            datasets={allDatasets}
             onSave={isEditing ? onSave(selectedViz.uuid!) : undefined}
           />
         )}

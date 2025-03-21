@@ -18,10 +18,18 @@ function useGetUserDatasets(options?: QueryOptions) {
   return client.useQuery("get", path, options);
 }
 
-function useGetProjectDatasets(projectId: string, tags: { tag: string }[]) {
+interface Tag {
+  tag: string;
+}
+
+function formatTagsForQuery(tags: Tag[]) {
+  return tags.map((tag) => tag.tag);
+}
+
+function useGetProjectDatasets(projectId: string, tags: Tag[]) {
   const queryOptions = tags.length
     ? {
-        query: { tags: tags.map((t) => t.tag) },
+        query: { tags: formatTagsForQuery(tags) },
       }
     : {};
   const client = useClient();
@@ -31,6 +39,43 @@ function useGetProjectDatasets(projectId: string, tags: { tag: string }[]) {
       ...queryOptions,
     },
   });
+}
+
+/**
+ * Fetches paginated datasets for a specific project, optionally filtered by tags.
+ *
+ * @param {string} projectId - The ID of the project to fetch datasets for.
+ * @param {Tag[]} tags - An array of tags to filter the datasets.
+ * @returns {object} - A React Query infinite query hook for paginated datasets.
+ */
+function useGetPaginatedProjectDatasets(projectId: string, tags: Tag[]) {
+  const queryOptions = tags.length
+    ? {
+        query: { tags: formatTagsForQuery(tags) },
+      }
+    : {};
+  const client = useClient();
+  return client.useInfiniteQuery("get", `${path}/{project_uuid}`,
+    {
+      params: {
+        path: { project_uuid: projectId },
+        ...queryOptions,
+      },
+    },
+    {
+      pageParamName: "page",
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, pages) => {
+        const allItems = pages.flatMap(page => page.items);
+        if (lastPage.count <= allItems.length) {
+          return undefined;
+        }
+        const pageLength = lastPage.items.length;
+        const nextPageNumber = Math.floor(allItems.length / pageLength) + 1;
+        return nextPageNumber;
+      }
+    }
+  );
 }
 
 function useCreateDataset() {
@@ -75,6 +120,7 @@ function useTagDataset() {
 export {
   useGetUserDatasets,
   useGetProjectDatasets,
+  useGetPaginatedProjectDatasets,
   useCreateDataset,
   useUpdateDataset,
   useTagDataset,

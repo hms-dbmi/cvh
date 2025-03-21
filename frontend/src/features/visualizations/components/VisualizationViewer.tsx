@@ -9,7 +9,7 @@ interface VisualizationViewerProps {
   visualizationId: string;
   close: () => void;
   visualizationType: string;
-  datasets?: {items: components["schemas"]["DatasetOut"][]};
+  datasets?: components["schemas"]["DatasetOut"][];
   readonly?: boolean;
   onSave?: (newConf: string) => void;
 };

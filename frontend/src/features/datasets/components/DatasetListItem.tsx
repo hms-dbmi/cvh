@@ -40,7 +40,7 @@ export default function DatasetListItem({
           <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
             {dataset.description}
           </Typography>
-          <Stack direction="row" spacing={2}>
+          <Stack direction="column">
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               Source:{" "}
               <Link href={dataset.source_url}>{dataset.source_url}</Link>
