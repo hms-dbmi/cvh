@@ -15,6 +15,7 @@ import requests
 from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
+import json
 
 env.read_env()
 # Override in .env for local development
@@ -116,7 +117,7 @@ def get_db_secret():
         # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
         raise e
 
-    return get_secret_value_response['SecretString']
+    return json.loads(get_secret_value_response['SecretString'])
 
 DB_USER = env.str("DB_USER")
 DB_PASSWORD = env.str("DB_PASSWORD")
