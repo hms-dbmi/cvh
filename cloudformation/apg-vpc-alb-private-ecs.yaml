@@ -29,6 +29,10 @@ Parameters:
     Type: String
     Description: The ARN of the database secret
     NoEcho: true
+  DbSG:
+    Type: String
+    Description: The security group ID attached to the database
+    Default: "sg-081c800846aca6d1c"
 
 Resources:
   # Security Group for the Load Balancer
@@ -79,6 +83,24 @@ Resources:
         - Key: project
           Value: 'cvh'
       VpcId: !Ref VpcId
+
+  # Access to RDS from ECS Security Group
+  RDSOutboundRule:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+      DestinationSecurityGroupId: !Ref DbSG
+      GroupId: !GetAtt ECSSecurityGroup.GroupId
+  InboundRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
+      GroupId: !Ref DbSG
 
   # Target Group for ECS Service
   LoadBalancerListenerTargetGroupECS:
@@ -175,7 +197,66 @@ Resources:
           Value: !Sub
             - '${StackName}:ECSTaskDef'
             - StackName: !Ref AWS::StackName
+      TaskRoleArn: !Ref TaskContainerRole
+    DependsOn:
+      - TaskContainerRole
       
+  TaskContainerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: cvh-api-container
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucket                  
+                Resource: [
+                  !Ref TaskEnvFile,
+                  "arn:aws:s3:::cvh-seed-data",
+                  "arn:aws:s3:::cvh-seed-data/*"
+                ]
+              - Sid: RdsAccess
+                Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref DbInfo
+              - Sid: ECR
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: "*"
+              - Sid: Logging
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: ["arn:aws:logs:*:*:*"]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - '${StackName}:TaskContainerRole'
+            - StackName: !Ref AWS::StackName
+
   ECSExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -221,13 +302,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:GetObject
-                Resource: "arn:aws:s3:::cvh-api-env/cvh-api.env"
-              - Sid: RdsAccess
-                Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource:
-                  - !Ref DbInfo
+                Resource: !Ref TaskEnvFile
       Tags:
         - Key: Name
           Value: !Sub
@@ -241,6 +316,10 @@ Resources:
       Name: APIGWVpcLinkToPrivateHTTPEndpoint-2
       SubnetIds: !Ref PrivateSubnetIds
       SecurityGroupIds: []
+    DependsOn:
+      - TaskContainerRole
+      - ECSServiceTaskDefinition
+
   # Create the API Gateway HTTP endpoint
   APIGWHTTPEndpoint:
     Type: 'AWS::ApiGatewayV2::Api'
