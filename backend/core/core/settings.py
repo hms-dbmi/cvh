@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from environs import env
 import requests
 from pathlib import Path
+import boto3
+from botocore.exceptions import ClientError
 
 env.read_env()
 # Override in .env for local development
@@ -93,12 +95,43 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+def get_db_secret():
+
+    secret_name = env.str("DB_SECRET_NAME")
+    region_name = "us-east-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        # For a list of exceptions thrown, see
+        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        raise e
+
+    return get_secret_value_response['SecretString']
+
+DB_USER = env.str("DB_USER")
+DB_PASSWORD = env.str("DB_PASSWORD")
+
+if METADATA_URI:
+    db_secrets = get_db_secret()
+    DB_USER = db_secrets['username']
+    DB_PASSWORD = db_secrets['password']
+
 DATABASES = {
     "default": {
         "ENGINE": env.str("DB_ENGINE"),
         'NAME': env.str("DB_NAME"),
-        'USER': env.str("DB_USER"),
-        'PASSWORD': env.str("DB_PASSWORD"),
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
         'HOST': env.str("DB_HOST"),
         'PORT': env.int("DB_PORT"),
     }
