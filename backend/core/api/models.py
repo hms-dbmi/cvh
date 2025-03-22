@@ -7,6 +7,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.translation import gettext_lazy as _
 import uuid
 
+from pydantic import ValidationError
+
 
 class UserCreated(models.Model):
     name = models.CharField(max_length=100)
@@ -130,6 +132,95 @@ class Dataset(UserCreated):
 
     objects = TagsManager()
 
+class DataTypeSpecificFields(models.Model):
+    dataset_key = models.ForeignKey(
+        Dataset, on_delete=models.CASCADE, blank=True, null=True
+    )
+    field_name = models.CharField(max_length=100)
+
+    class Meta:
+        abstract = True
+
+# https://gosling-lang.org/docs/data/#csv-no-higlass-server
+# GoslingCSVDataset
+# Represents the fields necessary for a Gosling visualization to render a CSV file.
+class GoslingCSVDataset(DataTypeSpecificFields):
+    separator = models.CharField(max_length=5)
+    sample_length = models.IntegerField(default=1000)
+    longToWideId = models.CharField(max_length=100)
+    headerNames = models.JSONField() # list of strings
+    genomicFieldsToConvert = models.JSONField() # list of objects, each object follows the format {"chromosomeField":"string","genomicFields":"string[]"} ( )
+    genomicFields = models.JSONField() # list of strings
+    chromosomePrefix = models.CharField(max_length=50)
+    chromosomeField = models.CharField(max_length=50)
+
+# https://gosling-lang.org/docs/data/#gff3-no-higlass-server
+# GoslingGFF3Dataset
+# Represents the fields necessary for a Gosling visualization to render a GFF3 file.
+class GoslingGGF3Dataset(DataTypeSpecificFields):
+    index_url = models.URLField(max_length=100)
+    sample_length = models.IntegerField(default=1000)
+    attributes_to_fields = models.JSONField() # list of objects, each object follows the format {"attribute":"string","defaultValue":"string"}
+
+# https://gosling-lang.org/docs/data/#vcf-no-higlass-server
+# GoslingVCFDataset
+# Represents the fields necessary for a Gosling visualization to render a VCF file.
+class GoslingVCFDataset(DataTypeSpecificFields):
+    index_url = models.URLField(max_length=100)
+    sample_length = models.IntegerField(default=1000)
+
+# https://gosling-lang.org/docs/data/#json-no-higlass-server
+# GoslingJSONDataset
+# Represents the fields necessary for a Gosling visualization to render a JSON file.
+class GoslingJSONDataset(DataTypeSpecificFields):
+    sample_length = models.IntegerField(default=1000)
+    genomic_fields_to_convert = models.JSONField() # Experimental Proerty. Each object follows the format {"chromosomeField":"string","genomicFields":"string[]"}
+    genomic_fields = models.JSONField() # list of strings
+    chromosome_field = models.CharField(max_length=50)
+
+# BigWig aggregation validation - https://gosling-lang.org/docs/data/#bigwig-no-higlass-server
+# Allowed aggregations per docs are "mean" and "sum"
+def validate_bigwig_aggregation(value):
+    allowed_aggregations = ["mean", "sum"]
+    if value not in allowed_aggregations:
+        raise ValidationError(_("Invalid value,"), f"Invalid aggregation method: {value}. Allowed methods are: {allowed_aggregations}")
+
+# https://gosling-lang.org/docs/data/#bigwig-no-higlass-server
+# GoslingBigWigDataset
+# Represents the fields necessary for a Gosling visualization to render a BigWig file.
+class GoslingBigWigDataset(DataTypeSpecificFields):
+    value = models.CharField(max_length=100, default="value")
+    start = models.CharField(max_length=100, default="start")
+    end = models.CharField(max_length=100, default="end")
+    column = models.CharField(max_length=100, default="position")
+    binSize = models.IntegerField(default=1) # Binning the genomic interval in tiles (unit size: 256).
+    aggregation = models.CharField(max_length=100, default="mean", validators=[validate_bigwig_aggregation]) # Aggregation method for the values in each tile. Options: "mean", "sum"
+
+
+# https://gosling-lang.org/docs/data/#bam-no-higlass-server
+# GoslingBAMDataset
+# Represents the fields necessary for a Gosling visualization to render a BAM file.
+class GoslingBAMDataset(DataTypeSpecificFields):
+    index_url = models.URLField(max_length=100)
+    max_insert_size = models.IntegerField(default=5000)
+    load_mates = models.BooleanField(default=False)
+    junction_min_coverage = models.IntegerField(default=1)
+    extract_junction = models.BooleanField(default=False)
+
+
+# https://gosling-lang.org/docs/data/#bed-no-higlass-server
+# GoslingBEDDataset
+# Represents the fields necessary for a Gosling visualization to render a BED file.
+class GoslingBEDDataset(DataTypeSpecificFields):
+    index_url = models.URLField(max_length=100)
+    sample_length = models.IntegerField(default=1000)
+    custom_fields = models.JSONField() # An array of strings, where each string is the name of a non-standard field in the BED file.
+
+# TODO: Vitessce dataset-specific fields (https://vitessce.io/docs/data-types-file-types/)
+# Relevant questions to answer:
+# - Since the data sources refer to single URLs, how do we handle datasets with multiple files? 
+#       Should we only support single-file datasets as a limitation for the time being?
+#       Should we have users add the first file as a "must" and then add the other files in additional fields?
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField()
