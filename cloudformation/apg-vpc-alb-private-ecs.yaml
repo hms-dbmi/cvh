@@ -106,8 +106,14 @@ Resources:
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      HealthCheckPath: /health     
       Port: 80
       Protocol: HTTP
+      Tags:
+        - Key: project
+          Value: 'cvh'
+        - Key: component
+          Value: 'cvh-api'
       TargetType: ip
       VpcId: !Ref VpcId
 
@@ -125,6 +131,10 @@ Resources:
   # ECS Cluster
   ECSFargateCluster:
     Type: AWS::ECS::Cluster
+    Properties:
+      Tags: 
+        - Key: project
+          Value: 'cvh'
 
   # ECS Service
   ECSService:
@@ -173,7 +183,7 @@ Resources:
           EnvironmentFiles: 
             - Type: s3
               Value: !Ref TaskEnvFile
-          Essential: false
+          Essential: true
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -197,6 +207,10 @@ Resources:
           Value: !Sub
             - '${StackName}:ECSTaskDef'
             - StackName: !Ref AWS::StackName
+        - Key: project
+          Value: 'cvh'
+        - Key: component
+          Value: 'cvh-api'
       TaskRoleArn: !Ref TaskContainerRole
     DependsOn:
       - TaskContainerRole
@@ -256,6 +270,10 @@ Resources:
           Value: !Sub
             - '${StackName}:TaskContainerRole'
             - StackName: !Ref AWS::StackName
+        - Key: project
+          Value: 'cvh'
+        - Key: component
+          Value: 'cvh-api'
 
   ECSExecutionRole:
     Type: AWS::IAM::Role
