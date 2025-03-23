@@ -132,7 +132,7 @@ Resources:
     Properties:
       Cluster: !Ref ECSFargateCluster
       DeploymentConfiguration:
-        MaximumPercent: 200
+        MaximumPercent: 100
         MinimumHealthyPercent: 50
       DesiredCount: 2
       EnableECSManagedTags: true
@@ -140,7 +140,7 @@ Resources:
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: !Ref TaskName
-          ContainerPort: 8081
+          ContainerPort: 8000
           TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
       NetworkConfiguration:
         AwsvpcConfiguration:
@@ -168,12 +168,12 @@ Resources:
         - Name: !Ref TaskName
           Image: !Ref ImageURI 
           PortMappings:
-            - ContainerPort: 8081
+            - ContainerPort: 8000
               Protocol: tcp
           EnvironmentFiles: 
             - Type: s3
               Value: !Ref TaskEnvFile
-          Essential: true
+          Essential: false
           LogConfiguration:
             LogDriver: awslogs
             Options:
