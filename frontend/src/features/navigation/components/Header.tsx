@@ -29,12 +29,19 @@ export default function Header() {
                 Home
               </Link>
               {isAuthenticated && (
+                <>
                 <Link
                   to="/projects"
                   sx={(theme) => ({ color: theme.palette.common.white })}
                 >
                   Projects
                 </Link>
+                <Link
+                  to="/data-sources"
+                  sx={(theme) => ({ color: theme.palette.common.white })}>
+                    Data Sources
+                  </Link>
+                </>
               )}
             </Stack>
             <Stack direction="row" spacing={2} alignItems="center">
