@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.db.models.functions import Concat
 from django.contrib.postgres.aggregates import ArrayAgg
 
-from django.utils.translation import gettext_lazy as _
 import uuid
 
 

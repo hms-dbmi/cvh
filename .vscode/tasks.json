@@ -80,6 +80,30 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Lint/Fix Backend",
+            "type": "shell",
+            "command": "ruff check . --fix",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "problemMatcher": ["$python"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Lint/Fix Frontend",
+            "type": "npm",
+            "script": "lint:fix",
+            "path": "/frontend",
+            "problemMatcher": ["$eslint-stylish"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }
