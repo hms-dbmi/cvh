@@ -29,6 +29,7 @@ services:
      DB_PASSWORD: ${DB_PASSWORD}
      DB_HOST: ${DB_HOST}
      DB_PORT: ${DB_PORT}
+     ECS_CONTAINER_METADATA_URI: ${ECS_CONTAINER_METADATA_URI}
    env_file:
      - ./core/.env
 volumes:
