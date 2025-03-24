@@ -1,36 +1,42 @@
 services:
- db:
-   image: postgres:17
-   environment:
-     POSTGRES_DB: ${DB_NAME}
-     POSTGRES_USER: ${DB_USER}
-     POSTGRES_PASSWORD: ${DB_PASSWORD}
-   ports:
-     - "5432:5432"
-   volumes:
-     - postgres_data:/var/lib/postgresql/data
-   env_file:
-     - ./core/.env
- 
- django-web:
-   build: .
-   container_name: django-docker
-   ports:
-     - "8000:8000"
-   depends_on:
-     - db
-   environment:
-     SECRET_KEY: ${SECRET_KEY}
-     DEBUG: ${DEBUG}
-     ALLOWED_HOSTS: ${ALLOWED_HOSTS}
-     DB_ENGINE: ${DB_ENGINE}
-     DB_NAME: ${DB_NAME}
-     DB_USER: ${DB_USER}
-     DB_PASSWORD: ${DB_PASSWORD}
-     DB_HOST: ${DB_HOST}
-     DB_PORT: ${DB_PORT}
-     ECS_CONTAINER_METADATA_URI: ${ECS_CONTAINER_METADATA_URI}
-   env_file:
-     - ./core/.env
-volumes:
-   postgres_data:
+  backend:
+    build: .
+    container_name: django-docker
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_IDENTIFIER: ${AUTH0_IDENTIFIER}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      DB_ENGINE: ${DB_ENGINE}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_SECRET_NAME: ${DB_SECRET_NAME}
+      ECS_CONTAINER_METADATA_URI: ${ECS_CONTAINER_METADATA_URI}
+    env_file:
+      - ./core/.env
+    
+    nginx:
+      image: nginx:alpine
+      ports:
+        - "80:80"
+        - "443:443"
+      volumes:
+        - /var/www/static/:/var/www/static/
+        - ./nginx/conf.d/:/etc/nginx/conf.d/
+      depends_on:
+        - backend
+
+    certbot:
+      image: certbot/certbot:latest
+      volumes:
+        - /var/certbot/conf:/etc/letsencrypt/:rw
+        - /var/certbot/www/:/var/www/certbot/:rw
+      depends_on:
+        - nginx
