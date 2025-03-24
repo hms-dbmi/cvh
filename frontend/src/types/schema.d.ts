@@ -4,1128 +4,1128 @@
  */
 
 export interface paths {
-    "/api/projects/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update Project Member */
-        put: operations["api_api_update_project_member"];
-        /** Add Project Member */
-        post: operations["api_api_add_project_member"];
-        /** Delete Project Member */
-        delete: operations["api_api_delete_project_member"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/members/{project_uuid}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Project Members */
-        get: operations["api_api_get_project_members"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Projects */
-        get: operations["api_api_get_projects"];
-        put?: never;
-        /** Create Project */
-        post: operations["api_api_create_project"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{project_uuid}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Project */
-        get: operations["api_api_get_project"];
-        /** Update Project */
-        put: operations["api_api_update_project"];
-        post?: never;
-        /** Delete Project */
-        delete: operations["api_api_delete_project"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/public/projects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Public Projects */
-        get: operations["api_api_get_public_projects"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/datasets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get User Datasets */
-        get: operations["api_api_get_user_datasets"];
-        /** Update Dataset */
-        put: operations["api_api_update_dataset"];
-        /** Create Dataset */
-        post: operations["api_api_create_dataset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/datasets/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Tag Dataset */
-        put: operations["api_api_tag_dataset"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/datasets/{project_uuid}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Project Datasets */
-        get: operations["api_api_get_project_datasets"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Tags */
-        get: operations["api_api_get_tags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/public/visualizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Published Visualizations */
-        get: operations["api_api_get_published_visualizations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/visualizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Project Visualizations */
-        get: operations["api_api_get_project_visualizations"];
-        put?: never;
-        /** Create Visualization */
-        post: operations["api_api_create_visualization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/visualizations/{visualization_uuid}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Visualization */
-        get: operations["api_api_get_visualization"];
-        /** Update Visualization */
-        put: operations["api_api_update_visualization"];
-        post?: never;
-        /** Delete Visualization */
-        delete: operations["api_api_delete_visualization"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/visualizations/{visualization_uuid}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Tag Visualization */
-        put: operations["api_api_tag_visualization"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+	"/api/projects/members": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/** Update Project Member */
+		put: operations["api_api_update_project_member"];
+		/** Add Project Member */
+		post: operations["api_api_add_project_member"];
+		/** Delete Project Member */
+		delete: operations["api_api_delete_project_member"];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/projects/members/{project_uuid}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Project Members */
+		get: operations["api_api_get_project_members"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/projects": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Projects */
+		get: operations["api_api_get_projects"];
+		put?: never;
+		/** Create Project */
+		post: operations["api_api_create_project"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/projects/{project_uuid}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Project */
+		get: operations["api_api_get_project"];
+		/** Update Project */
+		put: operations["api_api_update_project"];
+		post?: never;
+		/** Delete Project */
+		delete: operations["api_api_delete_project"];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/public/projects": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Public Projects */
+		get: operations["api_api_get_public_projects"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/datasets": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get User Datasets */
+		get: operations["api_api_get_user_datasets"];
+		/** Update Dataset */
+		put: operations["api_api_update_dataset"];
+		/** Create Dataset */
+		post: operations["api_api_create_dataset"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/datasets/tags": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/** Tag Dataset */
+		put: operations["api_api_tag_dataset"];
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/datasets/{project_uuid}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Project Datasets */
+		get: operations["api_api_get_project_datasets"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/tags": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Tags */
+		get: operations["api_api_get_tags"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/public/visualizations": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Published Visualizations */
+		get: operations["api_api_get_published_visualizations"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/visualizations": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Project Visualizations */
+		get: operations["api_api_get_project_visualizations"];
+		put?: never;
+		/** Create Visualization */
+		post: operations["api_api_create_visualization"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/visualizations/{visualization_uuid}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get Visualization */
+		get: operations["api_api_get_visualization"];
+		/** Update Visualization */
+		put: operations["api_api_update_visualization"];
+		post?: never;
+		/** Delete Visualization */
+		delete: operations["api_api_delete_visualization"];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/api/visualizations/{visualization_uuid}/tags": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/** Tag Visualization */
+		put: operations["api_api_tag_visualization"];
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** ProjectMemberIn */
-        ProjectMemberIn: {
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-        };
-        /** ProjectMemberUpdate */
-        ProjectMemberUpdate: {
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /**
-             * Permissions
-             * @default 1
-             */
-            permissions: number;
-        };
-        /** ProjectMemberOut */
-        ProjectMemberOut: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /**
-             * Permissions
-             * @default 1
-             */
-            permissions: number;
-        };
-        /** ProjectIn */
-        ProjectIn: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Private */
-            private: boolean;
-        };
-        /** Input */
-        Input: {
-            /**
-             * Limit
-             * @default 100
-             */
-            limit: number;
-            /**
-             * Offset
-             * @default 0
-             */
-            offset: number;
-        };
-        /** PagedProjectOut */
-        PagedProjectOut: {
-            /** Items */
-            items: components["schemas"]["ProjectOut"][];
-            /** Count */
-            count: number;
-        };
-        /** ProjectOut */
-        ProjectOut: {
-            /** Datasets Count */
-            datasets_count: number;
-            /** Visualizations Count */
-            visualizations_count: number;
-            /** Permissions */
-            permissions?: number | null;
-            /**
-             * Private
-             * @default true
-             */
-            private: boolean;
-            /**
-             * Uuid
-             * Format: uuid
-             */
-            uuid?: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Created Timestamp
-             * Format: date-time
-             */
-            created_timestamp: string;
-            /**
-             * Modified Timestamp
-             * Format: date-time
-             */
-            modified_timestamp: string;
-            /**
-             * Last Viewed Timestamp
-             * Format: date-time
-             */
-            last_viewed_timestamp: string;
-        };
-        /** PartialProjectIn */
-        PartialProjectIn: {
-            /** Name */
-            name?: string;
-            /** Description */
-            description?: string;
-            /** Private */
-            private?: boolean;
-        };
-        /** DatasetIn */
-        DatasetIn: {
-            /** Project Uuid */
-            project_uuid?: string | null;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Source Url */
-            source_url: string;
-            /** File Type */
-            file_type: string;
-            /** Data Type */
-            data_type: string;
-        };
-        /** DatasetUpdate */
-        DatasetUpdate: {
-            /** Name */
-            name?: string;
-            /** Description */
-            description?: string | null;
-            /** Source Url */
-            source_url?: string;
-            /** File Type */
-            file_type?: string;
-            /** Data Type */
-            data_type?: string;
-            /** Project Uuid */
-            project_uuid?: string | null;
-            /**
-             * Uuid
-             * Format: uuid4
-             */
-            uuid?: string;
-        };
-        /** DatasetOut */
-        DatasetOut: {
-            /** Combined Tags */
-            combined_tags: string[];
-            /** Source Url */
-            source_url: string;
-            /** File Type */
-            file_type: string;
-            /** Data Type */
-            data_type: string;
-            /**
-             * Uuid
-             * Format: uuid
-             */
-            uuid?: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Created Timestamp
-             * Format: date-time
-             */
-            created_timestamp: string;
-            /**
-             * Modified Timestamp
-             * Format: date-time
-             */
-            modified_timestamp: string;
-            /**
-             * Last Viewed Timestamp
-             * Format: date-time
-             */
-            last_viewed_timestamp: string;
-        };
-        /** PagedDatasetOut */
-        PagedDatasetOut: {
-            /** Items */
-            items: components["schemas"]["DatasetOut"][];
-            /** Count */
-            count: number;
-        };
-        /** TagIn */
-        TagIn: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key?: string | null;
-            /**
-             * Uuid
-             * Format: uuid4
-             */
-            uuid: string;
-            /** Project Uuid */
-            project_uuid?: string | null;
-        };
-        /** QuerySchema */
-        QuerySchema: {
-            /** Tags */
-            tags?: string[];
-        };
-        /** PagedTagOut */
-        PagedTagOut: {
-            /** Items */
-            items: components["schemas"]["TagOut"][];
-            /** Count */
-            count: number;
-        };
-        /** TagOut */
-        TagOut: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key?: string | null;
-        };
-        /** PagedVisualizationNoConfOut */
-        PagedVisualizationNoConfOut: {
-            /** Items */
-            items: components["schemas"]["VisualizationNoConfOut"][];
-            /** Count */
-            count: number;
-        };
-        /** VisualizationNoConfOut */
-        VisualizationNoConfOut: {
-            /** Combined Tags */
-            combined_tags: string[];
-            /** Tool */
-            tool: string;
-            /** Tool Version */
-            tool_version?: string | null;
-            /**
-             * Published
-             * @default false
-             */
-            published: boolean;
-            /**
-             * Uuid
-             * Format: uuid
-             */
-            uuid?: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Created Timestamp
-             * Format: date-time
-             */
-            created_timestamp: string;
-            /**
-             * Modified Timestamp
-             * Format: date-time
-             */
-            modified_timestamp: string;
-            /**
-             * Last Viewed Timestamp
-             * Format: date-time
-             */
-            last_viewed_timestamp: string;
-        };
-        /** VisualizationIn */
-        VisualizationIn: {
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Conf */
-            conf: Record<string, never>;
-            /** Tool */
-            tool: string;
-            /** Tool Version */
-            tool_version?: string | null;
-        };
-        /** VisualizationOut */
-        VisualizationOut: {
-            /** Combined Tags */
-            combined_tags: string[];
-            /** Conf */
-            conf: Record<string, never>;
-            /** Tool */
-            tool: string;
-            /** Tool Version */
-            tool_version?: string | null;
-            /**
-             * Published
-             * @default false
-             */
-            published: boolean;
-            /**
-             * Uuid
-             * Format: uuid
-             */
-            uuid?: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Created Timestamp
-             * Format: date-time
-             */
-            created_timestamp: string;
-            /**
-             * Modified Timestamp
-             * Format: date-time
-             */
-            modified_timestamp: string;
-            /**
-             * Last Viewed Timestamp
-             * Format: date-time
-             */
-            last_viewed_timestamp: string;
-        };
-        /** PartialVisualizationUpdate */
-        PartialVisualizationUpdate: {
-            /** Name */
-            name?: string;
-            /** Description */
-            description?: string | null;
-            /** Conf */
-            conf?: Record<string, never>;
-            /** Tool */
-            tool?: string;
-            /** Tool Version */
-            tool_version?: string | null;
-            /** Published */
-            published?: boolean;
-        };
-        /** VizTagIn */
-        VizTagIn: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key?: string | null;
-        };
-    };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+	schemas: {
+		/** ProjectMemberIn */
+		ProjectMemberIn: {
+			/**
+			 * Project Uuid
+			 * Format: uuid4
+			 */
+			project_uuid: string;
+			/**
+			 * Email
+			 * Format: email
+			 */
+			email: string;
+		};
+		/** ProjectMemberUpdate */
+		ProjectMemberUpdate: {
+			/**
+			 * Project Uuid
+			 * Format: uuid4
+			 */
+			project_uuid: string;
+			/**
+			 * Email
+			 * Format: email
+			 */
+			email: string;
+			/**
+			 * Permissions
+			 * @default 1
+			 */
+			permissions: number;
+		};
+		/** ProjectMemberOut */
+		ProjectMemberOut: {
+			/**
+			 * Email
+			 * Format: email
+			 */
+			email: string;
+			/**
+			 * Permissions
+			 * @default 1
+			 */
+			permissions: number;
+		};
+		/** ProjectIn */
+		ProjectIn: {
+			/** Name */
+			name: string;
+			/** Description */
+			description: string;
+			/** Private */
+			private: boolean;
+		};
+		/** Input */
+		Input: {
+			/**
+			 * Limit
+			 * @default 100
+			 */
+			limit: number;
+			/**
+			 * Offset
+			 * @default 0
+			 */
+			offset: number;
+		};
+		/** PagedProjectOut */
+		PagedProjectOut: {
+			/** Items */
+			items: components["schemas"]["ProjectOut"][];
+			/** Count */
+			count: number;
+		};
+		/** ProjectOut */
+		ProjectOut: {
+			/** Datasets Count */
+			datasets_count: number;
+			/** Visualizations Count */
+			visualizations_count: number;
+			/** Permissions */
+			permissions?: number | null;
+			/**
+			 * Private
+			 * @default true
+			 */
+			private: boolean;
+			/**
+			 * Uuid
+			 * Format: uuid
+			 */
+			uuid?: string;
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string | null;
+			/**
+			 * Created Timestamp
+			 * Format: date-time
+			 */
+			created_timestamp: string;
+			/**
+			 * Modified Timestamp
+			 * Format: date-time
+			 */
+			modified_timestamp: string;
+			/**
+			 * Last Viewed Timestamp
+			 * Format: date-time
+			 */
+			last_viewed_timestamp: string;
+		};
+		/** PartialProjectIn */
+		PartialProjectIn: {
+			/** Name */
+			name?: string;
+			/** Description */
+			description?: string;
+			/** Private */
+			private?: boolean;
+		};
+		/** DatasetIn */
+		DatasetIn: {
+			/** Project Uuid */
+			project_uuid?: string | null;
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string | null;
+			/** Source Url */
+			source_url: string;
+			/** File Type */
+			file_type: string;
+			/** Data Type */
+			data_type: string;
+		};
+		/** DatasetUpdate */
+		DatasetUpdate: {
+			/** Name */
+			name?: string;
+			/** Description */
+			description?: string | null;
+			/** Source Url */
+			source_url?: string;
+			/** File Type */
+			file_type?: string;
+			/** Data Type */
+			data_type?: string;
+			/** Project Uuid */
+			project_uuid?: string | null;
+			/**
+			 * Uuid
+			 * Format: uuid4
+			 */
+			uuid?: string;
+		};
+		/** DatasetOut */
+		DatasetOut: {
+			/** Combined Tags */
+			combined_tags: string[];
+			/** Source Url */
+			source_url: string;
+			/** File Type */
+			file_type: string;
+			/** Data Type */
+			data_type: string;
+			/**
+			 * Uuid
+			 * Format: uuid
+			 */
+			uuid?: string;
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string | null;
+			/**
+			 * Created Timestamp
+			 * Format: date-time
+			 */
+			created_timestamp: string;
+			/**
+			 * Modified Timestamp
+			 * Format: date-time
+			 */
+			modified_timestamp: string;
+			/**
+			 * Last Viewed Timestamp
+			 * Format: date-time
+			 */
+			last_viewed_timestamp: string;
+		};
+		/** PagedDatasetOut */
+		PagedDatasetOut: {
+			/** Items */
+			items: components["schemas"]["DatasetOut"][];
+			/** Count */
+			count: number;
+		};
+		/** TagIn */
+		TagIn: {
+			/** Tag */
+			tag: string;
+			/** Key */
+			key?: string | null;
+			/**
+			 * Uuid
+			 * Format: uuid4
+			 */
+			uuid: string;
+			/** Project Uuid */
+			project_uuid?: string | null;
+		};
+		/** QuerySchema */
+		QuerySchema: {
+			/** Tags */
+			tags?: string[];
+		};
+		/** PagedTagOut */
+		PagedTagOut: {
+			/** Items */
+			items: components["schemas"]["TagOut"][];
+			/** Count */
+			count: number;
+		};
+		/** TagOut */
+		TagOut: {
+			/** Tag */
+			tag: string;
+			/** Key */
+			key?: string | null;
+		};
+		/** PagedVisualizationNoConfOut */
+		PagedVisualizationNoConfOut: {
+			/** Items */
+			items: components["schemas"]["VisualizationNoConfOut"][];
+			/** Count */
+			count: number;
+		};
+		/** VisualizationNoConfOut */
+		VisualizationNoConfOut: {
+			/** Combined Tags */
+			combined_tags: string[];
+			/** Tool */
+			tool: string;
+			/** Tool Version */
+			tool_version?: string | null;
+			/**
+			 * Published
+			 * @default false
+			 */
+			published: boolean;
+			/**
+			 * Uuid
+			 * Format: uuid
+			 */
+			uuid?: string;
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string | null;
+			/**
+			 * Created Timestamp
+			 * Format: date-time
+			 */
+			created_timestamp: string;
+			/**
+			 * Modified Timestamp
+			 * Format: date-time
+			 */
+			modified_timestamp: string;
+			/**
+			 * Last Viewed Timestamp
+			 * Format: date-time
+			 */
+			last_viewed_timestamp: string;
+		};
+		/** VisualizationIn */
+		VisualizationIn: {
+			/**
+			 * Project Uuid
+			 * Format: uuid4
+			 */
+			project_uuid: string;
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string | null;
+			/** Conf */
+			conf: Record<string, never>;
+			/** Tool */
+			tool: string;
+			/** Tool Version */
+			tool_version?: string | null;
+		};
+		/** VisualizationOut */
+		VisualizationOut: {
+			/** Combined Tags */
+			combined_tags: string[];
+			/** Conf */
+			conf: Record<string, never>;
+			/** Tool */
+			tool: string;
+			/** Tool Version */
+			tool_version?: string | null;
+			/**
+			 * Published
+			 * @default false
+			 */
+			published: boolean;
+			/**
+			 * Uuid
+			 * Format: uuid
+			 */
+			uuid?: string;
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string | null;
+			/**
+			 * Created Timestamp
+			 * Format: date-time
+			 */
+			created_timestamp: string;
+			/**
+			 * Modified Timestamp
+			 * Format: date-time
+			 */
+			modified_timestamp: string;
+			/**
+			 * Last Viewed Timestamp
+			 * Format: date-time
+			 */
+			last_viewed_timestamp: string;
+		};
+		/** PartialVisualizationUpdate */
+		PartialVisualizationUpdate: {
+			/** Name */
+			name?: string;
+			/** Description */
+			description?: string | null;
+			/** Conf */
+			conf?: Record<string, never>;
+			/** Tool */
+			tool?: string;
+			/** Tool Version */
+			tool_version?: string | null;
+			/** Published */
+			published?: boolean;
+		};
+		/** VizTagIn */
+		VizTagIn: {
+			/** Tag */
+			tag: string;
+			/** Key */
+			key?: string | null;
+		};
+	};
+	responses: never;
+	parameters: never;
+	requestBodies: never;
+	headers: never;
+	pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    api_api_update_project_member: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectMemberUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_add_project_member: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectMemberIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_delete_project_member: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectMemberIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_get_project_members: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectMemberOut"][];
-                };
-            };
-        };
-    };
-    api_api_get_projects: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedProjectOut"];
-                };
-            };
-        };
-    };
-    api_api_create_project: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectIn"];
-                };
-            };
-        };
-    };
-    api_api_get_project: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectOut"];
-                };
-            };
-        };
-    };
-    api_api_update_project: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PartialProjectIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_delete_project: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_get_public_projects: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedProjectOut"];
-                };
-            };
-        };
-    };
-    api_api_get_user_datasets: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedDatasetOut"];
-                };
-            };
-        };
-    };
-    api_api_update_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DatasetUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_create_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DatasetIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DatasetIn"];
-                };
-            };
-        };
-    };
-    api_api_tag_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_get_project_datasets: {
-        parameters: {
-            query?: {
-                tags?: string[];
-                page?: number;
-            };
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedDatasetOut"];
-                };
-            };
-        };
-    };
-    api_api_get_tags: {
-        parameters: {
-            query?: {
-                sub_str?: string;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedTagOut"];
-                };
-            };
-        };
-    };
-    api_api_get_published_visualizations: {
-        parameters: {
-            query?: {
-                tags?: string[];
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedVisualizationNoConfOut"];
-                };
-            };
-        };
-    };
-    api_api_get_project_visualizations: {
-        parameters: {
-            query: {
-                project_uuid: string;
-                tags?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationNoConfOut"][];
-                };
-            };
-        };
-    };
-    api_api_create_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VisualizationIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationIn"];
-                };
-            };
-        };
-    };
-    api_api_get_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationOut"];
-                };
-            };
-        };
-    };
-    api_api_update_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PartialVisualizationUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_delete_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_tag_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VizTagIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
+	api_api_update_project_member: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ProjectMemberUpdate"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_add_project_member: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ProjectMemberIn"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_delete_project_member: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ProjectMemberIn"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_get_project_members: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				project_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ProjectMemberOut"][];
+				};
+			};
+		};
+	};
+	api_api_get_projects: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["PagedProjectOut"];
+				};
+			};
+		};
+	};
+	api_api_create_project: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ProjectIn"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ProjectIn"];
+				};
+			};
+		};
+	};
+	api_api_get_project: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				project_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ProjectOut"];
+				};
+			};
+		};
+	};
+	api_api_update_project: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				project_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["PartialProjectIn"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_delete_project: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				project_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_get_public_projects: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["PagedProjectOut"];
+				};
+			};
+		};
+	};
+	api_api_get_user_datasets: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["PagedDatasetOut"];
+				};
+			};
+		};
+	};
+	api_api_update_dataset: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["DatasetUpdate"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_create_dataset: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["DatasetIn"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["DatasetIn"];
+				};
+			};
+		};
+	};
+	api_api_tag_dataset: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["TagIn"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_get_project_datasets: {
+		parameters: {
+			query?: {
+				tags?: string[];
+				page?: number;
+			};
+			header?: never;
+			path: {
+				project_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["PagedDatasetOut"];
+				};
+			};
+		};
+	};
+	api_api_get_tags: {
+		parameters: {
+			query?: {
+				sub_str?: string;
+				limit?: number;
+				offset?: number;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["PagedTagOut"];
+				};
+			};
+		};
+	};
+	api_api_get_published_visualizations: {
+		parameters: {
+			query?: {
+				tags?: string[];
+				limit?: number;
+				offset?: number;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["PagedVisualizationNoConfOut"];
+				};
+			};
+		};
+	};
+	api_api_get_project_visualizations: {
+		parameters: {
+			query: {
+				project_uuid: string;
+				tags?: string[];
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["VisualizationNoConfOut"][];
+				};
+			};
+		};
+	};
+	api_api_create_visualization: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["VisualizationIn"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["VisualizationIn"];
+				};
+			};
+		};
+	};
+	api_api_get_visualization: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				visualization_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["VisualizationOut"];
+				};
+			};
+		};
+	};
+	api_api_update_visualization: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				visualization_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["PartialVisualizationUpdate"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_delete_visualization: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				visualization_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	api_api_tag_visualization: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				visualization_uuid: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["VizTagIn"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
 }

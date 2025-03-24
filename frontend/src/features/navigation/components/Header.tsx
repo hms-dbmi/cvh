@@ -1,7 +1,7 @@
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
 import Stack from "@mui/material/Stack";
+import Toolbar from "@mui/material/Toolbar";
 
 import { useAuth0 } from "@auth0/auth0-react";
 
@@ -9,56 +9,57 @@ import { LoginButton, LogoutButton } from "./AuthButtons";
 import { Link } from "./Links";
 
 export default function Header() {
-  const { isAuthenticated } = useAuth0();
+	const { isAuthenticated } = useAuth0();
 
-  return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Stack
-            direction="row"
-            alignItems="center"
-            width="100%"
-            justifyContent="space-between"
-          >
-            <Stack direction="row" spacing={2}>
-              <Link
-                to="/"
-                sx={(theme) => ({ color: theme.palette.common.white })}
-              >
-                Home
-              </Link>
-              {isAuthenticated && (
-                <>
-                <Link
-                  to="/projects"
-                  sx={(theme) => ({ color: theme.palette.common.white })}
-                >
-                  Projects
-                </Link>
-                <Link
-                  to="/data-sources"
-                  sx={(theme) => ({ color: theme.palette.common.white })}>
-                    Data Sources
-                  </Link>
-                </>
-              )}
-            </Stack>
-            <Stack direction="row" spacing={2} alignItems="center">
-              {!isAuthenticated && <LoginButton />}
-              {isAuthenticated && (
-                <Link
-                  to="/profile"
-                  sx={(theme) => ({ color: theme.palette.common.white })}
-                >
-                  Profile
-                </Link>
-              )}
-              {isAuthenticated && <LogoutButton />}
-            </Stack>
-          </Stack>
-        </Toolbar>
-      </AppBar>
-    </Box>
-  );
+	return (
+		<Box sx={{ flexGrow: 1 }}>
+			<AppBar position="static">
+				<Toolbar>
+					<Stack
+						direction="row"
+						alignItems="center"
+						width="100%"
+						justifyContent="space-between"
+					>
+						<Stack direction="row" spacing={2}>
+							<Link
+								to="/"
+								sx={(theme) => ({ color: theme.palette.common.white })}
+							>
+								Home
+							</Link>
+							{isAuthenticated && (
+								<>
+									<Link
+										to="/projects"
+										sx={(theme) => ({ color: theme.palette.common.white })}
+									>
+										Projects
+									</Link>
+									<Link
+										to="/data-sources"
+										sx={(theme) => ({ color: theme.palette.common.white })}
+									>
+										Data Sources
+									</Link>
+								</>
+							)}
+						</Stack>
+						<Stack direction="row" spacing={2} alignItems="center">
+							{!isAuthenticated && <LoginButton />}
+							{isAuthenticated && (
+								<Link
+									to="/profile"
+									sx={(theme) => ({ color: theme.palette.common.white })}
+								>
+									Profile
+								</Link>
+							)}
+							{isAuthenticated && <LogoutButton />}
+						</Stack>
+					</Stack>
+				</Toolbar>
+			</AppBar>
+		</Box>
+	);
 }

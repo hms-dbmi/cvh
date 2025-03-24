@@ -3,9 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import ProjectsList from "../features/projects/components/ProjectsList";
 
 export const Route = createFileRoute("/projects")({
-  component: RouteComponent,
+	component: RouteComponent,
 });
 
 function RouteComponent() {
-  return <ProjectsList />;
+	return <ProjectsList />;
 }

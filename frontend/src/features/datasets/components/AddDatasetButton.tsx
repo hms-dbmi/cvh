@@ -1,157 +1,161 @@
-import { useCallback } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import MenuItem from "@mui/material/MenuItem";
-import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import { useCallback } from "react";
+import {
+	type UseControllerProps,
+	useController,
+	useForm,
+} from "react-hook-form";
 import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateDataset } from "../api/useDatasets";
 
 const text = {
-  button: "Add Data Source",
-  title: "Add Data Source",
+	button: "Add Data Source",
+	title: "Add Data Source",
 };
 
 interface FormValues {
-  name: string;
-  description: string;
-  source_url: string;
-  file_type: string;
-  data_type: string;
+	name: string;
+	description: string;
+	source_url: string;
+	file_type: string;
+	data_type: string;
 }
 
 function FormTextField({
-  name,
-  control,
-  label,
+	name,
+	control,
+	label,
 }: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
-  const { field, fieldState } = useController({
-    name,
-    control,
-    rules: { required: true },
-  });
+	const { field, fieldState } = useController({
+		name,
+		control,
+		rules: { required: true },
+	});
 
-  return (
-    <TextField
-      label={label || name}
-      fullWidth
-      error={fieldState.error !== undefined}
-      helperText={fieldState?.error?.message}
-      {...field}
-      slotProps={{
-        inputLabel: { shrink: true },
-      }}
-    />
-  );
+	return (
+		<TextField
+			label={label || name}
+			fullWidth
+			error={fieldState.error !== undefined}
+			helperText={fieldState?.error?.message}
+			{...field}
+			slotProps={{
+				inputLabel: { shrink: true },
+			}}
+		/>
+	);
 }
 
 function FormSelectField({
-  name,
-  control,
-  label,
-  options,
-  ...rest
+	name,
+	control,
+	label,
+	options,
+	...rest
 }: UseControllerProps<FormValues> &
-  Partial<TextFieldProps> & { options: string[] }) {
-  const { field, fieldState } = useController({
-    name,
-    control,
-    rules: { required: true },
-  });
+	Partial<TextFieldProps> & { options: string[] }) {
+	const { field, fieldState } = useController({
+		name,
+		control,
+		rules: { required: true },
+	});
 
-  return (
-    <TextField
-      select
-      label={label || name}
-      fullWidth
-      error={fieldState.error !== undefined}
-      helperText={fieldState?.error?.message}
-      {...field}
-      slotProps={{
-        inputLabel: { shrink: true },
-      }}
-      {...rest}
-    >
-      {options.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
+	return (
+		<TextField
+			select
+			label={label || name}
+			fullWidth
+			error={fieldState.error !== undefined}
+			helperText={fieldState?.error?.message}
+			{...field}
+			slotProps={{
+				inputLabel: { shrink: true },
+			}}
+			{...rest}
+		>
+			{options.map((option) => (
+				<MenuItem key={option} value={option}>
+					{option}
+				</MenuItem>
+			))}
+		</TextField>
+	);
 }
 
 // TODO: Move this to a more appropriate place
 const SUPPORTED_FILE_TYPES = [
-  "CSV",
-  "GFF3",
-  "VCF",
-  "JSON",
-  "BigWig",
-  "BAM",
-  "BED",
+	"CSV",
+	"GFF3",
+	"VCF",
+	"JSON",
+	"BigWig",
+	"BAM",
+	"BED",
 ];
 
 const schema = z
-  .object({
-    name: z.string(),
-    description: z.string(),
-    source_url: z.string(),
-    file_type: z.string(),
-    data_type: z.string(),
-  })
-  .required();
+	.object({
+		name: z.string(),
+		description: z.string(),
+		source_url: z.string(),
+		file_type: z.string(),
+		data_type: z.string(),
+	})
+	.required();
 
 export default function AddDatasetButton({
-  projectId,
+	projectId,
 }: {
-  projectId?: string;
+	projectId?: string;
 }) {
-  const { handleSubmit, control } = useForm({
-    defaultValues: {
-      name: "",
-      description: "",
-      source_url: "",
-      file_type: "",
-      data_type: "",
-    },
-    mode: "onChange",
-    resolver: zodResolver(schema),
-  });
-  const { mutate } = useCreateDataset();
+	const { handleSubmit, control } = useForm({
+		defaultValues: {
+			name: "",
+			description: "",
+			source_url: "",
+			file_type: "",
+			data_type: "",
+		},
+		mode: "onChange",
+		resolver: zodResolver(schema),
+	});
+	const { mutate } = useCreateDataset();
 
-  const onSubmit = useCallback(
-    (formData: FormValues) => {
-      if (projectId) {
-        mutate({ body: { ...formData, project_uuid: projectId } });
-        return;
-      }
-      mutate({ body: formData });
-    },
-    [mutate, projectId]
-  );
+	const onSubmit = useCallback(
+		(formData: FormValues) => {
+			if (projectId) {
+				mutate({ body: { ...formData, project_uuid: projectId } });
+				return;
+			}
+			mutate({ body: formData });
+		},
+		[mutate, projectId],
+	);
 
-  return (
-    <DialogButton text={text} onSubmit={handleSubmit(onSubmit)}>
-      <Stack spacing={1} mt={2}>
-        <FormTextField name="name" label="Name" control={control} />
-        <FormTextField
-          name="description"
-          label="Description"
-          control={control}
-        />
-        <FormTextField name="source_url" label="Source URL" control={control} />
-        <FormSelectField
-          name="file_type"
-          label="File Type"
-          control={control}
-          options={SUPPORTED_FILE_TYPES}
-          sx={{ flexGrow: 1 }}
-        />
-        <FormTextField name="data_type" label="Assay Type" control={control} />
-      </Stack>
-    </DialogButton>
-  );
+	return (
+		<DialogButton text={text} onSubmit={handleSubmit(onSubmit)}>
+			<Stack spacing={1} mt={2}>
+				<FormTextField name="name" label="Name" control={control} />
+				<FormTextField
+					name="description"
+					label="Description"
+					control={control}
+				/>
+				<FormTextField name="source_url" label="Source URL" control={control} />
+				<FormSelectField
+					name="file_type"
+					label="File Type"
+					control={control}
+					options={SUPPORTED_FILE_TYPES}
+					sx={{ flexGrow: 1 }}
+				/>
+				<FormTextField name="data_type" label="Assay Type" control={control} />
+			</Stack>
+		</DialogButton>
+	);
 }

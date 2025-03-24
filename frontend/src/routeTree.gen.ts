@@ -10,180 +10,180 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as ProjectsImport } from './routes/projects'
-import { Route as ProfileImport } from './routes/profile'
-import { Route as DatasetsImport } from './routes/datasets'
-import { Route as DataSourcesImport } from './routes/data-sources'
-import { Route as IndexImport } from './routes/index'
-import { Route as ProjectProjectIdImport } from './routes/project.$projectId'
+import { Route as rootRoute } from "./routes/__root";
+import { Route as DataSourcesImport } from "./routes/data-sources";
+import { Route as DatasetsImport } from "./routes/datasets";
+import { Route as IndexImport } from "./routes/index";
+import { Route as ProfileImport } from "./routes/profile";
+import { Route as ProjectProjectIdImport } from "./routes/project.$projectId";
+import { Route as ProjectsImport } from "./routes/projects";
 
 // Create/Update Routes
 
 const ProjectsRoute = ProjectsImport.update({
-  id: '/projects',
-  path: '/projects',
-  getParentRoute: () => rootRoute,
-} as any)
+	id: "/projects",
+	path: "/projects",
+	getParentRoute: () => rootRoute,
+} as any);
 
 const ProfileRoute = ProfileImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRoute,
-} as any)
+	id: "/profile",
+	path: "/profile",
+	getParentRoute: () => rootRoute,
+} as any);
 
 const DatasetsRoute = DatasetsImport.update({
-  id: '/datasets',
-  path: '/datasets',
-  getParentRoute: () => rootRoute,
-} as any)
+	id: "/datasets",
+	path: "/datasets",
+	getParentRoute: () => rootRoute,
+} as any);
 
 const DataSourcesRoute = DataSourcesImport.update({
-  id: '/data-sources',
-  path: '/data-sources',
-  getParentRoute: () => rootRoute,
-} as any)
+	id: "/data-sources",
+	path: "/data-sources",
+	getParentRoute: () => rootRoute,
+} as any);
 
 const IndexRoute = IndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRoute,
-} as any)
+	id: "/",
+	path: "/",
+	getParentRoute: () => rootRoute,
+} as any);
 
 const ProjectProjectIdRoute = ProjectProjectIdImport.update({
-  id: '/project/$projectId',
-  path: '/project/$projectId',
-  getParentRoute: () => rootRoute,
-} as any)
+	id: "/project/$projectId",
+	path: "/project/$projectId",
+	getParentRoute: () => rootRoute,
+} as any);
 
 // Populate the FileRoutesByPath interface
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/data-sources': {
-      id: '/data-sources'
-      path: '/data-sources'
-      fullPath: '/data-sources'
-      preLoaderRoute: typeof DataSourcesImport
-      parentRoute: typeof rootRoute
-    }
-    '/datasets': {
-      id: '/datasets'
-      path: '/datasets'
-      fullPath: '/datasets'
-      preLoaderRoute: typeof DatasetsImport
-      parentRoute: typeof rootRoute
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileImport
-      parentRoute: typeof rootRoute
-    }
-    '/projects': {
-      id: '/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof ProjectsImport
-      parentRoute: typeof rootRoute
-    }
-    '/project/$projectId': {
-      id: '/project/$projectId'
-      path: '/project/$projectId'
-      fullPath: '/project/$projectId'
-      preLoaderRoute: typeof ProjectProjectIdImport
-      parentRoute: typeof rootRoute
-    }
-  }
+declare module "@tanstack/react-router" {
+	interface FileRoutesByPath {
+		"/": {
+			id: "/";
+			path: "/";
+			fullPath: "/";
+			preLoaderRoute: typeof IndexImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/data-sources": {
+			id: "/data-sources";
+			path: "/data-sources";
+			fullPath: "/data-sources";
+			preLoaderRoute: typeof DataSourcesImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/datasets": {
+			id: "/datasets";
+			path: "/datasets";
+			fullPath: "/datasets";
+			preLoaderRoute: typeof DatasetsImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/profile": {
+			id: "/profile";
+			path: "/profile";
+			fullPath: "/profile";
+			preLoaderRoute: typeof ProfileImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/projects": {
+			id: "/projects";
+			path: "/projects";
+			fullPath: "/projects";
+			preLoaderRoute: typeof ProjectsImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/project/$projectId": {
+			id: "/project/$projectId";
+			path: "/project/$projectId";
+			fullPath: "/project/$projectId";
+			preLoaderRoute: typeof ProjectProjectIdImport;
+			parentRoute: typeof rootRoute;
+		};
+	}
 }
 
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/data-sources': typeof DataSourcesRoute
-  '/datasets': typeof DatasetsRoute
-  '/profile': typeof ProfileRoute
-  '/projects': typeof ProjectsRoute
-  '/project/$projectId': typeof ProjectProjectIdRoute
+	"/": typeof IndexRoute;
+	"/data-sources": typeof DataSourcesRoute;
+	"/datasets": typeof DatasetsRoute;
+	"/profile": typeof ProfileRoute;
+	"/projects": typeof ProjectsRoute;
+	"/project/$projectId": typeof ProjectProjectIdRoute;
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/data-sources': typeof DataSourcesRoute
-  '/datasets': typeof DatasetsRoute
-  '/profile': typeof ProfileRoute
-  '/projects': typeof ProjectsRoute
-  '/project/$projectId': typeof ProjectProjectIdRoute
+	"/": typeof IndexRoute;
+	"/data-sources": typeof DataSourcesRoute;
+	"/datasets": typeof DatasetsRoute;
+	"/profile": typeof ProfileRoute;
+	"/projects": typeof ProjectsRoute;
+	"/project/$projectId": typeof ProjectProjectIdRoute;
 }
 
 export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/': typeof IndexRoute
-  '/data-sources': typeof DataSourcesRoute
-  '/datasets': typeof DatasetsRoute
-  '/profile': typeof ProfileRoute
-  '/projects': typeof ProjectsRoute
-  '/project/$projectId': typeof ProjectProjectIdRoute
+	__root__: typeof rootRoute;
+	"/": typeof IndexRoute;
+	"/data-sources": typeof DataSourcesRoute;
+	"/datasets": typeof DatasetsRoute;
+	"/profile": typeof ProfileRoute;
+	"/projects": typeof ProjectsRoute;
+	"/project/$projectId": typeof ProjectProjectIdRoute;
 }
 
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/data-sources'
-    | '/datasets'
-    | '/profile'
-    | '/projects'
-    | '/project/$projectId'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/data-sources'
-    | '/datasets'
-    | '/profile'
-    | '/projects'
-    | '/project/$projectId'
-  id:
-    | '__root__'
-    | '/'
-    | '/data-sources'
-    | '/datasets'
-    | '/profile'
-    | '/projects'
-    | '/project/$projectId'
-  fileRoutesById: FileRoutesById
+	fileRoutesByFullPath: FileRoutesByFullPath;
+	fullPaths:
+		| "/"
+		| "/data-sources"
+		| "/datasets"
+		| "/profile"
+		| "/projects"
+		| "/project/$projectId";
+	fileRoutesByTo: FileRoutesByTo;
+	to:
+		| "/"
+		| "/data-sources"
+		| "/datasets"
+		| "/profile"
+		| "/projects"
+		| "/project/$projectId";
+	id:
+		| "__root__"
+		| "/"
+		| "/data-sources"
+		| "/datasets"
+		| "/profile"
+		| "/projects"
+		| "/project/$projectId";
+	fileRoutesById: FileRoutesById;
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  DataSourcesRoute: typeof DataSourcesRoute
-  DatasetsRoute: typeof DatasetsRoute
-  ProfileRoute: typeof ProfileRoute
-  ProjectsRoute: typeof ProjectsRoute
-  ProjectProjectIdRoute: typeof ProjectProjectIdRoute
+	IndexRoute: typeof IndexRoute;
+	DataSourcesRoute: typeof DataSourcesRoute;
+	DatasetsRoute: typeof DatasetsRoute;
+	ProfileRoute: typeof ProfileRoute;
+	ProjectsRoute: typeof ProjectsRoute;
+	ProjectProjectIdRoute: typeof ProjectProjectIdRoute;
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  DataSourcesRoute: DataSourcesRoute,
-  DatasetsRoute: DatasetsRoute,
-  ProfileRoute: ProfileRoute,
-  ProjectsRoute: ProjectsRoute,
-  ProjectProjectIdRoute: ProjectProjectIdRoute,
-}
+	IndexRoute: IndexRoute,
+	DataSourcesRoute: DataSourcesRoute,
+	DatasetsRoute: DatasetsRoute,
+	ProfileRoute: ProfileRoute,
+	ProjectsRoute: ProjectsRoute,
+	ProjectProjectIdRoute: ProjectProjectIdRoute,
+};
 
 export const routeTree = rootRoute
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+	._addFileChildren(rootRouteChildren)
+	._addFileTypes<FileRouteTypes>();
 
 /* ROUTE_MANIFEST_START
 {

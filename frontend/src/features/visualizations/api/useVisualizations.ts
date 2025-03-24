@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import useClient, {
-  QueryOptions,
-  buildInvalidateGetQuery,
+	type QueryOptions,
+	buildInvalidateGetQuery,
 } from "../../../api/client";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
@@ -9,119 +9,119 @@ const path = "/api/visualizations";
 const publicPath = "/api/public/visualizations";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
-  path,
-  publicPath,
-  "/api/projects",
-  "/api/tags",
+	path,
+	publicPath,
+	"/api/projects",
+	"/api/tags",
 ]);
 
 function useGetProjectVisualizations({
-  tags,
-  projectId,
+	tags,
+	projectId,
 }: {
-  tags: { tag: string }[];
-  projectId: string;
+	tags: { tag: string }[];
+	projectId: string;
 }) {
-  const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
-  const client = useClient();
-  return client.useQuery("get", path, {
-    params: {
-      query: {
-        project_uuid: projectId,
-        ...queryOptions,
-      },
-    },
-  });
+	const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
+	const client = useClient();
+	return client.useQuery("get", path, {
+		params: {
+			query: {
+				project_uuid: projectId,
+				...queryOptions,
+			},
+		},
+	});
 }
 
 function useGetVisualization(visualizationId: string) {
-  const client = useClient();
-  return client.useQuery("get", `${path}/{visualization_uuid}`, {
-    params: {
-      path: { visualization_uuid: visualizationId },
-    },
-  });
+	const client = useClient();
+	return client.useQuery("get", `${path}/{visualization_uuid}`, {
+		params: {
+			path: { visualization_uuid: visualizationId },
+		},
+	});
 }
 
 function useCreateVisualization() {
-  const {toastSuccess, toastError} = useSnackbarActions()
-  const queryClient = useQueryClient();
-  const client = useClient();
-  return client.useMutation("post", path, {
-    onSuccess: () =>{
-      toastSuccess("Successfully created visualization.");
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
-    },
-    onError: () => {
-      toastError("Failed to create visualization.");
-    }
-  });
+	const { toastSuccess, toastError } = useSnackbarActions();
+	const queryClient = useQueryClient();
+	const client = useClient();
+	return client.useMutation("post", path, {
+		onSuccess: () => {
+			toastSuccess("Successfully created visualization.");
+			queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+		},
+		onError: () => {
+			toastError("Failed to create visualization.");
+		},
+	});
 }
 
 function useUpdateVisualization() {
-  const {toastSuccess, toastError} = useSnackbarActions()
-  const queryClient = useQueryClient();
-  const client = useClient();
-  return client.useMutation("put", `${path}/{visualization_uuid}`, {
-    onSuccess: () =>{
-      toastSuccess("Successfully updated visualization.");
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
-    },
-    onError: () => {
-      toastError("Failed to update visualization.");
-    }
-  });
+	const { toastSuccess, toastError } = useSnackbarActions();
+	const queryClient = useQueryClient();
+	const client = useClient();
+	return client.useMutation("put", `${path}/{visualization_uuid}`, {
+		onSuccess: () => {
+			toastSuccess("Successfully updated visualization.");
+			queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+		},
+		onError: () => {
+			toastError("Failed to update visualization.");
+		},
+	});
 }
 
 function useDeleteVisualization() {
-  const {toastSuccess, toastError} = useSnackbarActions()
-  const queryClient = useQueryClient();
-  const client = useClient();
-  return client.useMutation("delete", `${path}/{visualization_uuid}`, {
-    onSuccess: () =>{
-      toastSuccess("Successfully deleted visualization.");
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
-    },
-    onError: () => {
-      toastError("Failed to delete visualization.");
-    }
-  });
+	const { toastSuccess, toastError } = useSnackbarActions();
+	const queryClient = useQueryClient();
+	const client = useClient();
+	return client.useMutation("delete", `${path}/{visualization_uuid}`, {
+		onSuccess: () => {
+			toastSuccess("Successfully deleted visualization.");
+			queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+		},
+		onError: () => {
+			toastError("Failed to delete visualization.");
+		},
+	});
 }
 
 function useGetPublishedVisualizations({
-  tags,
-  options,
+	tags,
+	options,
 }: {
-  tags: { tag: string }[];
-  options?: QueryOptions;
+	tags: { tag: string }[];
+	options?: QueryOptions;
 }) {
-  const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
-  const client = useClient();
-  return client.useQuery("get", publicPath, {
-    params: {
-      query: {
-        ...(options?.params?.query ?? {}),
-        ...queryOptions,
-      },
-    },
-  });
+	const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
+	const client = useClient();
+	return client.useQuery("get", publicPath, {
+		params: {
+			query: {
+				...(options?.params?.query ?? {}),
+				...queryOptions,
+			},
+		},
+	});
 }
 
 function useTagVisualization() {
-  const queryClient = useQueryClient();
-  const client = useClient();
-  return client.useMutation("put", `${path}/{visualization_uuid}/tags`, {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
-  });
+	const queryClient = useQueryClient();
+	const client = useClient();
+	return client.useMutation("put", `${path}/{visualization_uuid}/tags`, {
+		onSuccess: () =>
+			queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+	});
 }
 
 export {
-  useGetProjectVisualizations,
-  useGetVisualization,
-  useCreateVisualization,
-  useUpdateVisualization,
-  useDeleteVisualization,
-  useGetPublishedVisualizations,
-  useTagVisualization,
+	useGetProjectVisualizations,
+	useGetVisualization,
+	useCreateVisualization,
+	useUpdateVisualization,
+	useDeleteVisualization,
+	useGetPublishedVisualizations,
+	useTagVisualization,
 };
