@@ -363,6 +363,7 @@ export interface components {
         DatasetIn: {
             /** Project Uuid */
             project_uuid?: string | null;
+            gosling?: components["schemas"]["GoslingSpecificSourceConfigDTO"] | null;
             /** Name */
             name: string;
             /** Description */
@@ -374,8 +375,28 @@ export interface components {
             /** Data Type */
             data_type: string;
         };
+        /** GoslingSpecificSourceConfigDTO */
+        GoslingSpecificSourceConfigDTO: {
+            /** Separator */
+            separator?: string | null;
+            /** Sample Length */
+            sample_length?: number | null;
+            /** Long To Wide Id */
+            long_to_wide_id?: string | null;
+            /** Header Names */
+            header_names?: string[] | null;
+            /** Genomic Fields To Convert */
+            genomic_fields_to_convert?: Record<string, never>[] | null;
+            /** Genomic Fields */
+            genomic_fields?: string[] | null;
+            /** Chromosome Prefix */
+            chromosome_prefix?: string | null;
+            /** Chromosome Field */
+            chromosome_field?: string | null;
+        };
         /** DatasetUpdate */
         DatasetUpdate: {
+            gosling?: components["schemas"]["GoslingSpecificSourceConfigDTO"] | null;
             /** Name */
             name?: string;
             /** Description */
@@ -398,6 +419,7 @@ export interface components {
         DatasetOut: {
             /** Combined Tags */
             combined_tags: string[];
+            gosling?: components["schemas"]["GoslingSpecificSourceConfigDTO"] | null;
             /** Source Url */
             source_url: string;
             /** File Type */

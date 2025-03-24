@@ -2,7 +2,7 @@ from ninja import Schema, ModelSchema
 from pydantic import UUID4, EmailStr
 from typing import Optional, Any, List
 
-from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
+from .models import GoslingSpecificSourceConfig, Project, Dataset, VisualizationConf, ProjectMember, Tag
 
 class OptionalSchema(Schema):
     @classmethod
@@ -33,16 +33,35 @@ class ProjectOut(ModelSchema):
         model = Project
         fields = ['private', *shared_output_fields]
 
+
+# This includes every field from every implementation of the abstract GoslingSpecificSourceConfig class
+class GoslingSpecificSourceConfigDTO(Schema):
+    separator: Optional[str] = None
+    sample_length: Optional[int] = None
+    long_to_wide_id: Optional[str] = None
+    header_names: Optional[List[str]] = None
+    genomic_fields_to_convert: Optional[List[dict]] = None
+    genomic_fields: Optional[List[str]] = None
+    chromosome_prefix: Optional[str] = None
+    chromosome_field: Optional[str] = None
+
+    class Meta:
+        model = GoslingSpecificSourceConfig
+        fields = '__all__'
+
 class DatasetIn(ModelSchema):
     project_uuid: Optional[UUID4] = None
+    gosling: Optional[GoslingSpecificSourceConfigDTO] = None
     class Meta:
         model = Dataset
         fields = ['name', 'description', 'source_url', 'file_type', 'data_type']
 
+
 class PartialDatasetIn(ModelSchema, OptionalSchema):
+    gosling: Optional[GoslingSpecificSourceConfigDTO] = None
     class Meta:
         model = Dataset
-        fields = ['name', 'description', 'source_url', 'file_type', 'data_type']
+        fields = ['name', 'description', 'source_url', 'file_type', 'data_type']    
 
 class DatasetUpdate(PartialDatasetIn):
     project_uuid: Optional[UUID4] = None
@@ -50,6 +69,7 @@ class DatasetUpdate(PartialDatasetIn):
 
 class DatasetOut(ModelSchema):
     combined_tags: List[str]
+    gosling: Optional[GoslingSpecificSourceConfigDTO] = None
     class Meta:
         model = Dataset
         fields = ['source_url', 'file_type', 'data_type', *shared_output_fields]

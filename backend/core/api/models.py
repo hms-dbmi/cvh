@@ -133,6 +133,7 @@ class Dataset(UserCreated):
     objects = TagsManager()
 
 
+# If any additional implementations of this abstract class are addded, GoslingSpecificSourceConfigDTO in schema.py will also need to be updated
 class GoslingSpecificSourceConfig(models.Model):
     dataset = models.OneToOneField(
         Dataset, on_delete=models.CASCADE, blank=True, primary_key=True
