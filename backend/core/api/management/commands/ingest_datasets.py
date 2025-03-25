@@ -40,11 +40,8 @@ class Command(BaseCommand):
         for file in files:
             datafile = settings.BASE_DIR / "data" / file
 
-            METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI")
-
-            if METADATA_URI:
-                s3 = boto3.client("s3")
-                s3.download_file("cvh-seed-data", file, datafile)
+            s3 = boto3.client("s3")
+            s3.download_file("cvh-seed-data", file, datafile)
 
             assert datafile.exists()
 
