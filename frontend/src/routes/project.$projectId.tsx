@@ -15,7 +15,7 @@ import DatasetListItem from "../features/datasets/components/DatasetListItem";
 import VisualizationListItem from "../features/visualizations/components/VisualizationListItem";
 import AddVisualizationButton from "../features/visualizations/components/AddVisualizationButton";
 import VisualizationViewer from "../features/visualizations/components/VisualizationViewer";
-import AddDatasetButton from "../features/datasets/components/AddDatasetButton";
+import AddDatasetButton from "../features/datasets/components/AddDataSourceButton/AddDataSourceButton";
 import ShareProjectButton from "../features/projects/components/ShareProjectButton";
 import ProjectSettings from "../features/projects/components/ProjectSettings";
 import TagsAutocomplete from "../features/datasets/components/TagsAutocomplete";

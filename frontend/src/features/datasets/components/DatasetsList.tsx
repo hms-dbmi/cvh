@@ -2,7 +2,7 @@ import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 
-import AddDatasetButton from "./AddDatasetButton";
+import AddDatasetButton from "./AddDataSourceButton/AddDataSourceButton";
 import DatasetListItem from "./DatasetListItem";
 import { useGetUserDatasets } from "../api/useDatasets";
 import { LinkButton } from "../../navigation/components/Links";
