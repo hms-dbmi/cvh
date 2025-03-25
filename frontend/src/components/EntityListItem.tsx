@@ -1,6 +1,5 @@
 import ListItem, { ListItemProps } from "@mui/material/ListItem";
 import ListItemText, { ListItemTextProps } from "@mui/material/ListItemText";
-import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Stack from "@mui/material/Stack";
 import Checkbox from "@mui/material/Checkbox";
@@ -27,20 +26,20 @@ function Wrapper({
   }
 
   return (
-    <ListItemButton role={undefined} onClick={selectItem}>
+    <>
       <ListItemIcon>
         <Checkbox
+          onClick={selectItem}
           edge="start"
           checked={isSelected}
           tabIndex={-1}
-          disableRipple
           inputProps={{ "aria-labelledby": labelId }}
           icon={<RadioButtonUncheckedRoundedIcon />}
           checkedIcon={<CheckCircleRoundedIcon />}
         />
       </ListItemIcon>
       {children}
-    </ListItemButton>
+    </>
   );
 }
 
@@ -60,7 +59,6 @@ export default function EntityListItem({
   return (
     <ListItem
       sx={(theme) => ({
-        cursor: listItemProps?.onClick ? "pointer" : "auto",
         minWidth: 500,
         borderBottom: 1,
         borderColor: theme.palette.grey[400],
