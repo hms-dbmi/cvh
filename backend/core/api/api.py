@@ -421,7 +421,7 @@ def get_tags(request, sub_str: str = None):
         q &= Q(combined_tag__icontains=sub_str)
 
     tags = Tag.objects.annotate(
-        full_name=Concat("key", Value(":"), "tag", combined_tag=CharField())
+        combined_tag=Concat("key", Value(":"), "tag", output_field=CharField())
     ).filter(q)
     return tags
 
@@ -520,8 +520,8 @@ def create_visualization(request, visualization: VisualizationIn):
     project_uuid = visualization_dict.get("project_uuid")
     del visualization_dict["project_uuid"]
 
-    project = get_object_or_404(
-        Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False))
-    )
+    project = Project.objects.get_write_project(
+            project_uuid=project_uuid, user=request.auth
+        )
     VisualizationConf.objects.create(**visualization_dict, project_key=project)
     return visualization
