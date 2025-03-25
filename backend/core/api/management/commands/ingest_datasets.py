@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         for file in files:
-            datafile = settings.BASE_DIR / "data" / file
+            datafile = "." / "data" / file
 
             s3 = boto3.client("s3")
             s3.download_file("cvh-seed-data", file, datafile)
