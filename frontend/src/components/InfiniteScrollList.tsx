@@ -75,7 +75,10 @@ export default function InfiniteScrollList<T extends { uuid: string }>({
   return (
     <Stack>
       {Header}
-      <div ref={parentRef} style={{ height: listHeight, overflowY: "auto" }}>
+      <div
+        ref={parentRef}
+        style={{ height: count === 0 ? 200 : listHeight, overflowY: "auto" }}
+      >
         <List>
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const isLoaderRow = virtualRow.index > items.length - 1;

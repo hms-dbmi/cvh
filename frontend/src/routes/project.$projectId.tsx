@@ -164,7 +164,7 @@ function RouteComponent() {
           )}
         </Stack>
         <Stack direction="row" spacing={4}>
-          <Stack spacing={2}>
+          <Stack spacing={2} width={1200}>
             <TagsAutocomplete
               selectedTags={selectedTags}
               setSelectedTags={setSelectedTags}
