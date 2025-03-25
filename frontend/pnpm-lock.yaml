@@ -21,8 +21,8 @@ importers:
         specifier: ^5.1.1
         version: 5.2.5
       '@hms-dbmi/gosling-designer-cvh':
-        specifier: ^0.0.17
-        version: 0.0.17(@rjsf/utils@5.24.8(react@18.3.1))(@types/node-fetch@2.6.12)(@types/node@20.17.24)(@types/react@18.3.18)(enzyme@3.11.0)(rollup@4.36.0)(typescript@5.7.3)(vite@6.2.2(@types/node@20.17.24)(jiti@2.4.2)(lightningcss@1.29.2)(tsx@4.19.3))
+        specifier: ^0.0.18
+        version: 0.0.18(@rjsf/utils@5.24.8(react@18.3.1))(@types/node-fetch@2.6.12)(@types/node@20.17.24)(@types/react@18.3.18)(enzyme@3.11.0)(rollup@4.36.0)(typescript@5.7.3)(vite@6.2.2(@types/node@20.17.24)(jiti@2.4.2)(lightningcss@1.29.2)(tsx@4.19.3))
       '@hookform/resolvers':
         specifier: ^4.0.0
         version: 4.1.3(react-hook-form@7.54.2(react@18.3.1))
@@ -771,8 +771,8 @@ packages:
     resolution: {integrity: sha512-o7QuPcOeXlJpzwQaFmgojhNvJE4yB9fhrfVEDKpkDjV27pAqwMy89367vtXu4JfBFE9t4zZ6sQRkqYaJ+cIheg==}
     engines: {node: '>=6'}
 
-  '@hms-dbmi/gosling-designer-cvh@0.0.17':
-    resolution: {integrity: sha512-VilboBu9N6Z4bnjAQZLSDgsvUf22foDmOTmj6iXNt4MId3dsC6roA+Vdm6sQ9AtMRaF+gIbNe2zWBVy/Y1CiJA==}
+  '@hms-dbmi/gosling-designer-cvh@0.0.18':
+    resolution: {integrity: sha512-CZcUJZckLJGNcrGcUah5XEgYiXI47AK2Vb68/Ipi5ZXkun1I6S+qnz53oa6sbQ8imJcFeYwYRVVdYp4itKF+UA==}
 
   '@hms-dbmi/viv@0.16.1':
     resolution: {integrity: sha512-jHl7pczz4CU2PWALIEirVH7e6vLSG/lJMe2ougi/v45dTHd4LMS1Fo48gqAGfrgJZD1Q6TjWoSFQW5zTKaN05Q==}
@@ -8765,7 +8765,7 @@ snapshots:
 
   '@gmod/vcf@5.0.10': {}
 
-  '@hms-dbmi/gosling-designer-cvh@0.0.17(@rjsf/utils@5.24.8(react@18.3.1))(@types/node-fetch@2.6.12)(@types/node@20.17.24)(@types/react@18.3.18)(enzyme@3.11.0)(rollup@4.36.0)(typescript@5.7.3)(vite@6.2.2(@types/node@20.17.24)(jiti@2.4.2)(lightningcss@1.29.2)(tsx@4.19.3))':
+  '@hms-dbmi/gosling-designer-cvh@0.0.18(@rjsf/utils@5.24.8(react@18.3.1))(@types/node-fetch@2.6.12)(@types/node@20.17.24)(@types/react@18.3.18)(enzyme@3.11.0)(rollup@4.36.0)(typescript@5.7.3)(vite@6.2.2(@types/node@20.17.24)(jiti@2.4.2)(lightningcss@1.29.2)(tsx@4.19.3))':
     dependencies:
       '@aws-sdk/client-s3': 3.758.0
       '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
