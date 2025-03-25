@@ -38,10 +38,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         for file in files:
-            datafile = "./data/" + file
+            datafile = settings.BASE_DIR / "data" / file
 
-            s3 = boto3.client("s3")
-            s3.download_file("cvh-seed-data", file, datafile)
+            METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI")
+
+            if METADATA_URI:
+                s3 = boto3.client("s3")
+                s3.download_file("cvh-seed-data", file, datafile)
 
             assert datafile.exists()
 
