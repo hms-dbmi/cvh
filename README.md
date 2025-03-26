@@ -35,3 +35,6 @@
     - To run the server
         - `npm run dev`
 
+### Acknowledgements
+
+The Community Visualization Hub is funded by the National Institutes of Health (NIH) [Common Fund Data Ecosystem (CFDE)](https://commonfund.nih.gov/dataecosystem) program under award [U24OD038421](https://reporter.nih.gov/project-details/10993963). The project was inspired by the Reservoir Genomics Platform (resgen) created by Peter Kerpedjiev & Nezar Abdennur.
