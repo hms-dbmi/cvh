@@ -1,6 +1,3 @@
-# This template contains additional resources which are intended to make the full ECS Cluster stack.
-# This is still a work in progress and will not successfully launch. 
-# 
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   API Gateway to Private HTTP Endpoint via VPC Link.
@@ -9,7 +6,7 @@ Parameters:
   EcsClusterName:
     Type: String
     Description: The name of the ECS Cluster
-    Default: "cvh-api"
+    Default: "cvh-api-may"    
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: The VPC
@@ -17,17 +14,13 @@ Parameters:
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Default: "subnet-0b59e016d9ecf5765,subnet-0066917fbf176ead0" 
-  PrivateSubnetIds:
-    Type: List<AWS::EC2::Subnet::Id>
-    Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
-  # Referencing cluster was unsuccessful. Commenting out and building cluster in stack.
-  # ECSFargateCluster: 
-  #   Type : AWS::ECS::Cluster
-  #   Description: ARN to the ECS cluster
+  # PrivateSubnetIds:
+  #   Type: List<AWS::EC2::Subnet::Id>
+  #   Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
   TaskName:
     Type: String
     Description: The name of the service task
-    Default: "cvh-api-2"
+    Default: "cvh-api-may"
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3 
@@ -38,7 +31,7 @@ Parameters:
     Default: "605134458779.dkr.ecr.us-east-1.amazonaws.com/cvh-api:latest"
   DbInfo:
     Type: String
-    Description: The ARN of the database secret
+    Description: The ARN of the database secret in Secrets Manager
     NoEcho: true
   DbSG:
     Type: String
@@ -69,7 +62,7 @@ Resources:
       
 
   # Load Balancer
-  # Internal version
+  # Internal load balancer
   # LoadBalancer:
   #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
   #   Properties:
@@ -81,8 +74,8 @@ Resources:
   #       - Key: project
   #         Value: 'cvh'
   #     Type: application
-  #
-  # External LB
+  # 
+  # External load balancer - as alternate to above internal version
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -108,7 +101,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -154,7 +148,7 @@ Resources:
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckPath: /     
+      HealthCheckPath: /health     
       Port: 80
       Protocol: HTTP
       Tags:
@@ -223,49 +217,57 @@ Resources:
   #     - LoadBalancerListener
 
   # ECS Task Definition
-  # ECSServiceTaskDefinition:
-  #   Type: AWS::ECS::TaskDefinition
-  #   Properties:
-  #     ContainerDefinitions:
-  #       - Name: !Ref TaskName
-  #         Image: !Ref ImageURI 
-  #         PortMappings:
-  #           - ContainerPort: 8000
-  #             Protocol: tcp
-  #         EnvironmentFiles: 
-  #           - Type: s3
-  #             Value: !Ref TaskEnvFile
-  #         Essential: true
-  #         LogConfiguration:
-  #           LogDriver: awslogs
-  #           Options:
-  #             awslogs-create-group: true
-  #             awslogs-group: !Sub
-  #               - "/ecs/${Task}-task-definition"
-  #               - Task: !Ref TaskName
-  #             awslogs-region: !Ref AWS::Region
-  #             awslogs-stream-prefix: ecs
-  #     Cpu: '1024'
-  #     ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
-  #     Family: !Sub
-  #       - "${Task}-task-definition"
-  #       - Task: !Ref TaskName
-  #     Memory: '2048'
-  #     NetworkMode: awsvpc
-  #     RequiresCompatibilities:
-  #       - FARGATE
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub
-  #           - '${StackName}:ECSTaskDef'
-  #           - StackName: !Ref AWS::StackName
-  #       - Key: project
-  #         Value: 'cvh'
-  #       - Key: component
-  #         Value: 'cvh-api'
-  #     TaskRoleArn: !Ref TaskContainerRole
-  #   DependsOn:
-  #     - TaskContainerRole
+  ECSServiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: !Ref TaskName
+          Image: !Ref ImageURI 
+          PortMappings:
+            - ContainerPort: 8000
+              Protocol: tcp
+          EnvironmentFiles: 
+            - Type: s3
+              Value: !Ref TaskEnvFile
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: !Sub
+                - "/ecs/${Task}-task-definition"
+                - Task: !Ref TaskName
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          HealthCheck:
+            Command: 
+              - "CMD-SHELL"
+              - "curl -f http://localhost:8000/health || exit 1"
+                
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+      Cpu: '1024'
+      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      Family: !Sub
+        - "${Task}-task-definition"
+        - Task: !Ref TaskName
+      Memory: '2048'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - '${StackName}:ECSTaskDef'
+            - StackName: !Ref AWS::StackName
+        - Key: project
+          Value: 'cvh'
+        - Key: component
+          Value: 'cvh-api'
+      TaskRoleArn: !Ref TaskContainerRole
+    DependsOn:
+      - TaskContainerRole
       
   TaskContainerRole:
     Type: AWS::IAM::Role
@@ -354,6 +356,11 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
+              - Sid: RdsAccess
+                Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref DbInfo
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
             Version: 2012-10-17
@@ -371,17 +378,20 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetBucketLocation
                   - s3:GetObject
-                Resource: !Ref TaskEnvFile
+                  - s3:GetObjectVersion
+                  - s3:ListBucket                  
+                Resource: [
+                  !Ref TaskEnvFile,
+                  "arn:aws:s3:::cvh-seed-data",
+                  "arn:aws:s3:::cvh-seed-data/*"
+                ]
       Tags:
         - Key: Name
           Value: !Sub
             - '${StackName}:ECSExecutionRole'
             - StackName: !Ref AWS::StackName
-        - Key: project
-          Value: 'cvh'
-        - Key: component
-          Value: 'cvh-api'
 
   # # Create the VPC Link configured with the private subnets. Security groups are kept empty here, but can be configured as required.
   # VpcLink:
@@ -449,9 +459,9 @@ Outputs:
     Description: A reference to the ECS cluster
     Value: !Ref ECSFargateCluster
 
-  # ECSClusterTaskDef: 
-  #   Description: The ECS cluster task definition
-  #   Value: !Ref ECSServiceTaskDefinition
+  ECSClusterTaskDef: 
+    Description: The ECS cluster task definition
+    Value: !Ref ECSServiceTaskDefinition
 
   # ECSClusterService: 
   #   Description: The ECS cluster service definition
