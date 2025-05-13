@@ -49,7 +49,7 @@ const readonlyStatusOfPanelsAndModes = {
   'natural-language': false,
   history: false,
   delta: false,
-  explore: false,
+  explore: true,
   readonly: true
 }
 

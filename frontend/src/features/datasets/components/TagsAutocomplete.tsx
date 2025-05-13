@@ -13,9 +13,9 @@ type Props = {
 };
 
 function TagsAutocomplete({ selectedTags, setSelectedTags }: Props) {
-  const { data } = useGetTags();
-
   const [inputValue, setInputValue] = useState("");
+  const { data } = useGetTags(inputValue);
+
   return (
     <Autocomplete
       multiple
