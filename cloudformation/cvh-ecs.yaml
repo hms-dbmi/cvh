@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  API Gateway to Private HTTP Endpoint via VPC Link.
+  ECS Fargate Cluster and Task Definition
 
 Parameters:
   EcsClusterName:
     Type: String
     Description: The name of the ECS Cluster
-    Default: "cvh-api-may"    
+    Default: "cvh-api-no-lb"    
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: The VPC
@@ -20,7 +20,7 @@ Parameters:
   TaskName:
     Type: String
     Description: The name of the service task
-    Default: "cvh-api-may"
+    Default: "cvh-api-no-lb"
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3 
@@ -40,25 +40,25 @@ Parameters:
 
 Resources:
   # Security Group for the Load Balancer
-  LoadBalancerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: "LoadBalancer Security Group"
-      SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: -1
-          # Description: Allow from anyone on port 80
-          # FromPort: 80
-          # IpProtocol: tcp
-          # ToPort: 80
-      Tags: 
-        - Key: Name
-          Value: !Sub
-            - '${StackName}:ECSService'
-            - StackName: !Ref AWS::StackName
-        - Key: project
-          Value: 'cvh'
-      VpcId: !Ref VpcId
+  # LoadBalancerSG:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: "LoadBalancer Security Group"
+  #     SecurityGroupIngress:
+  #       - CidrIp: 0.0.0.0/0
+  #         IpProtocol: -1
+  #         # Description: Allow from anyone on port 80
+  #         # FromPort: 80
+  #         # IpProtocol: tcp
+  #         # ToPort: 80
+  #     Tags: 
+  #       - Key: Name
+  #         Value: !Sub
+  #           - '${StackName}:ECSService'
+  #           - StackName: !Ref AWS::StackName
+  #       - Key: project
+  #         Value: 'cvh'
+  #     VpcId: !Ref VpcId
       
 
   # Load Balancer
@@ -76,20 +76,20 @@ Resources:
   #     Type: application
   # 
   # External load balancer - as alternate to above internal version
-  LoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      LoadBalancerAttributes:
-        - Key: idle_timeout.timeout_seconds
-          Value: '30'
-      Scheme: internet-facing
-      SecurityGroups:
-        - !GetAtt LoadBalancerSG.GroupId
-      Subnets: !Ref PublicSubnetIds
-      Tags: 
-        - Key: project
-          Value: 'cvh'
-      Type: application
+  # LoadBalancer:
+  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  #   Properties:
+  #     LoadBalancerAttributes:
+  #       - Key: idle_timeout.timeout_seconds
+  #         Value: '30'
+  #     Scheme: internet-facing
+  #     SecurityGroups:
+  #       - !GetAtt LoadBalancerSG.GroupId
+  #     Subnets: !Ref PublicSubnetIds
+  #     Tags: 
+  #       - Key: project
+  #         Value: 'cvh'
+  #     Type: application
 
 
   # ECS Security Group
@@ -145,32 +145,32 @@ Resources:
   #     TargetType: ip
   #     VpcId: !Ref VpcId
   # Dummy
-  LoadBalancerListenerTargetGroupECS:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckPath: /health     
-      Port: 80
-      Protocol: HTTP
-      Tags:
-        - Key: project
-          Value: 'cvh'
-        - Key: component
-          Value: 'cvh-api'
-      # TargetType: ip
-      VpcId: !Ref VpcId  
+  # LoadBalancerListenerTargetGroupECS:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     HealthCheckPath: /health     
+  #     Port: 80
+  #     Protocol: HTTP
+  #     Tags:
+  #       - Key: project
+  #         Value: 'cvh'
+  #       - Key: component
+  #         Value: 'cvh-api'
+  #     # TargetType: ip
+  #     VpcId: !Ref VpcId  
 
   # Load Balancer Listener
-  LoadBalancerListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-          Type: 'forward'
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
-    DependsOn:
-      - LoadBalancer
+  # LoadBalancerListener:
+  #   Type: AWS::ElasticLoadBalancingV2::Listener
+  #   Properties:
+  #     DefaultActions:
+  #       - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
+  #         Type: 'forward'
+  #     LoadBalancerArn: !Ref LoadBalancer
+  #     Port: 80
+  #     Protocol: HTTP
+  #   DependsOn:
+  #     - LoadBalancer
 
   # ECS Cluster
   ECSFargateCluster:
@@ -242,7 +242,7 @@ Resources:
           HealthCheck:
             Command: 
               - "CMD-SHELL"
-              - "curl -f http://localhost:8000/health || exit 1"
+              - "curl -f http://127.0.0.1:8000/health || exit 1"
                 
             Interval: 30
             Timeout: 5
@@ -471,10 +471,10 @@ Outputs:
     Description: The ECS execution role
     Value: !Ref ECSExecutionRole
 
-  LoadBalancerDNSName:
-    Description: "DNS name of the load balancer"
-    Value: !GetAtt LoadBalancer.DNSName
+  # LoadBalancerDNSName:
+  #   Description: "DNS name of the load balancer"
+  #   Value: !GetAtt LoadBalancer.DNSName
 
-  ExternalUrl:
-    Description: The url of the external load balancer
-    Value: !Sub http://${LoadBalancer.DNSName}
+  # ExternalUrl:
+  #   Description: The url of the external load balancer
+  #   Value: !Sub http://${LoadBalancer.DNSName}
