@@ -69,7 +69,7 @@ python-dateutil==2.9.0.post0
     # via botocore
 python-dotenv==1.0.1
     # via environs
-requests==2.32.3
+requests==2.32.4
     # via backend (pyproject.toml)
 ruff==0.11.0
     # via backend (pyproject.toml)
