@@ -88,7 +88,6 @@ function FormSelectField({
 // TODO: Move this to a more appropriate place
 const SUPPORTED_TOOLS = [
   "Gosling",
-  "Vitessce"
 ]
 
 const schema = z
