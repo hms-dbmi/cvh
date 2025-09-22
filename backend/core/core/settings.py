@@ -100,7 +100,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 def get_db_secret():
 
     secret_name = env.str("DB_SECRET_NAME")
-    region_name = "us-east-1"
+    region_name = "us-east-2"
 
     # Create a Secrets Manager client
     session = boto3.session.Session()

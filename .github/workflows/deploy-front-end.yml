@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    if: github.repository == 'hms-dbmi/cvh'
+    if: github.repository == 'gosling-lang/gosling-designer-dmc'
     # Available versions:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-24.04
@@ -45,12 +45,12 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-        aws-region: us-east-1
+        aws-region: us-east-2
 
     - name: Upload to S3
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
       run: |
-        aws s3 sync ./dist s3://vis.cfde.cloud
+        aws s3 sync ./dist s3://gosling-dmc
     
     - name: Invalidate Cache
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
