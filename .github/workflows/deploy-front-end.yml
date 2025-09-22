@@ -45,7 +45,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-        aws-region: us-east-1
+        aws-region: us-east-2
 
     - name: Upload to S3
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
