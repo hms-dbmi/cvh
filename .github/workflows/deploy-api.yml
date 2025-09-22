@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    if: github.repository == 'hms-dbmi/cvh'
+    if: github.repository == 'gosling-lang/gosling-designer-dmc'
     # Available versions:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-24.04
@@ -36,7 +36,7 @@ jobs:
       - name: Push to ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: cvh-api
+          REPOSITORY: gosling/dmc
           IMAGE_TAG: latest
         run: |
             docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
