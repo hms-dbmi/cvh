@@ -38,17 +38,18 @@ DEBUG = True
 ALLOWED_HOSTS = []
 METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI")
 
-logger.info(METADATA_URI)
+logger.info(f"Metadata URI: {METADATA_URI}")
 if METADATA_URI:
     container_metadata = requests.get(METADATA_URI).json()
     ALLOWED_HOSTS.append(container_metadata["Networks"][0]["IPv4Addresses"][0])
+    logger.info(f"CONTAINER IP: {container_metadata["Networks"][0]["IPv4Addresses"][0]}")
 
 ENV_ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(",")
-logger.info(env.str("ALLOWED_HOSTS"))
+logger.info(f"Allowed hosts: {env.str("ALLOWED_HOSTS")}")
 
 if ENV_ALLOWED_HOSTS:
     ALLOWED_HOSTS.extend(ENV_ALLOWED_HOSTS)
-logger.info(ALLOWED_HOSTS)
+logger.info(f"Allowed hosts: {ALLOWED_HOSTS}")
 
 
 # Application definition
