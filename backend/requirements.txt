@@ -24,8 +24,11 @@ django==5.1.7
     # via
     #   backend (pyproject.toml)
     #   django-cors-headers
+    #   django-health-check
     #   django-ninja
 django-cors-headers==4.7.0
+    # via backend (pyproject.toml)
+django-health-check==3.20.0
     # via backend (pyproject.toml)
 django-ninja==1.3.0
     # via backend (pyproject.toml)
@@ -81,6 +84,7 @@ sqlparse==0.5.3
     # via django
 typing-extensions==4.12.2
     # via
+    #   psycopg
     #   pydantic
     #   pydantic-core
 urllib3==2.3.0

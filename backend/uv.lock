@@ -27,6 +27,7 @@ dependencies = [
     { name = "boto3" },
     { name = "django" },
     { name = "django-cors-headers" },
+    { name = "django-health-check" },
     { name = "django-ninja" },
     { name = "email-validator" },
     { name = "environs" },
@@ -43,6 +44,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.37.17" },
     { name = "django", specifier = ">=5.1.5" },
     { name = "django-cors-headers", specifier = ">=4.7.0" },
+    { name = "django-health-check", specifier = ">=3.20.0" },
     { name = "django-ninja", specifier = ">=1.3.0" },
     { name = "email-validator", specifier = ">=2.2.0" },
     { name = "environs", specifier = ">=14.1.0" },
@@ -194,6 +196,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/93/6c/16f6cb6064c63074fd5b2bd494eb319afd846236d9c1a6c765946df2c289/django_cors_headers-4.7.0.tar.gz", hash = "sha256:6fdf31bf9c6d6448ba09ef57157db2268d515d94fc5c89a0a1028e1fc03ee52b", size = 21037 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/a2/7bcfff86314bd9dd698180e31ba00604001606efb518a06cca6833a54285/django_cors_headers-4.7.0-py3-none-any.whl", hash = "sha256:f1c125dcd58479fe7a67fe2499c16ee38b81b397463cf025f0e2c42937421070", size = 12794 },
+]
+
+[[package]]
+name = "django-health-check"
+version = "3.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1e/a5/5c33c7dc834df3351f9acf448e8fec97b096db32c94265885a1062841199/django_health_check-3.20.0.tar.gz", hash = "sha256:cd69ac5facf73fe7241d9492d939b57bd20e24f46c4edea91e6a900bf22c2d8e", size = 20641 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/7f/49ba63f078015b0a52e09651b94ba16b41154ac7079c83153edd14e15ca0/django_health_check-3.20.0-py3-none-any.whl", hash = "sha256:bcb2b8f36f463cead0564a028345c5b17e2a2d18e9cc88ecd611b13a26521926", size = 31788 },
 ]
 
 [[package]]
