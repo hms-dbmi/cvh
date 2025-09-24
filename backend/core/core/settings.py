@@ -45,7 +45,7 @@ def get_ecs_allowed_hosts(uri):
     ec2_client = session.client(service_name="ec2", region_name=region_name)
 
     container_metadata = requests.get(uri).json()
-    container_ip = (container_metadata["Networks"][0]["IPv4Addresses"][0],)
+    container_ip = container_metadata["Networks"][0]["IPv4Addresses"][0]
 
     task_metadata = requests.get(f"{uri}/task").json()
 
