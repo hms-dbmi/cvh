@@ -132,7 +132,7 @@ class Dataset(UserCreated):
 
 
 class VisualizationConf(UserCreated):
-    conf = models.JSONField()
+    conf = models.JSONField(null=True)
     tool = models.CharField(max_length=50)
     tool_version = models.CharField(max_length=50, blank=True)
     project_key = models.ForeignKey(
