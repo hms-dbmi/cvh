@@ -308,6 +308,12 @@ Resources:
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
                 Resource: "*"
+              - Sid: GetIP
+                Effect: Allow
+                Action:
+                  - ec2:DescribeNetworkInterfaces
+                  - ecs:DescribeTaskDefinition
+                Resource: '*'
               - Sid: Logging
                 Effect: Allow
                 Action:
