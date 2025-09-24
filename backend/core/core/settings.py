@@ -16,12 +16,10 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 import json
-import logging
 
 env.read_env()
 # Override in .env for local development
 DEBUG = env.bool("DEBUG", default=False)
-logger = logging.getLogger(__name__)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,20 +34,16 @@ SECRET_KEY = env.str("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = []
-METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI")
+METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI_V4")
 
-logger.info(f"Metadata URI: {METADATA_URI}")
 if METADATA_URI:
     container_metadata = requests.get(METADATA_URI).json()
     ALLOWED_HOSTS.append(container_metadata["Networks"][0]["IPv4Addresses"][0])
-    logger.info(f"CONTAINER IP: {container_metadata["Networks"][0]["IPv4Addresses"][0]}")
 
 ENV_ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(",")
-logger.info(f"Allowed hosts: {env.str("ALLOWED_HOSTS")}")
 
 if ENV_ALLOWED_HOSTS:
     ALLOWED_HOSTS.extend(ENV_ALLOWED_HOSTS)
-logger.info(f"Allowed hosts: {ALLOWED_HOSTS}")
 
 
 # Application definition
