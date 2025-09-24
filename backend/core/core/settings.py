@@ -36,9 +36,50 @@ DEBUG = True
 ALLOWED_HOSTS = []
 METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI_V4")
 
+
+def get_ecs_allowed_hosts(uri):
+    region_name = "us-east-2"
+
+    session = boto3.session.Session()
+    ecs_client = session.client(service_name="ecs", region_name=region_name)
+    ec2_client = session.client(service_name="ecs", region_name=region_name)
+
+    container_metadata = requests.get(uri).json()
+    task_metadata = requests.get("f{uri}/task").json()
+
+    cluster = container_metadata["cluster"]
+
+    try:
+        ecs_reponse = ecs_client.describe_tasks(
+            cluster=cluster, tasks=[task_metadata["TaskARN"]]
+        )
+    except ClientError as e:
+        raise e
+
+    tasks = json.loads(ecs_reponse)
+    
+    try:
+        ec2_response = ec2_client.describe_network_interfaces(
+            MaxResults=1,
+            NetworkInterfaceIds=[
+               tasks["tasks"][0]["containers"][0]["networkInterfaces"][0]["attachmentId"]
+            ],
+        )
+    except ClientError as e:
+        raise e 
+    
+    network_interfaces = json.loads(ec2_response)
+
+    return [
+        container_metadata["Networks"][0]["IPv4Addresses"][0],
+        network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"]
+    ]
+
+
 if METADATA_URI:
-    container_metadata = requests.get(METADATA_URI).json()
-    ALLOWED_HOSTS.append(container_metadata["Networks"][0]["IPv4Addresses"][0])
+    ecs_hosts = get_ecs_allowed_hosts(METADATA_URI)
+    ALLOWED_HOSTS.extend(ecs_hosts)
+
 
 ENV_ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(",")
 
@@ -56,7 +97,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "api",
-    "health_check"
+    "health_check",
 ]
 
 MIDDLEWARE = [
