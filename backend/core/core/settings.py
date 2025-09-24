@@ -45,7 +45,7 @@ def get_ecs_allowed_hosts(uri):
     ec2_client = session.client(service_name="ecs", region_name=region_name)
 
     container_metadata = requests.get(uri).json()
-    task_metadata = requests.get("f{uri}/task").json()
+    task_metadata = requests.get(f"{uri}/task").json()
 
     cluster = container_metadata["cluster"]
 
