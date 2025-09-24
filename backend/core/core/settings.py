@@ -56,7 +56,6 @@ def get_ecs_allowed_hosts(uri):
 
     try:
         network_interfaces = ec2_client.describe_network_interfaces(
-            MaxResults=5,
             NetworkInterfaceIds=[
                 tasks["tasks"][0]["containers"][0]["networkInterfaces"][0][
                     "attachmentId"
