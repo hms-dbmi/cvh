@@ -42,7 +42,7 @@ def get_ecs_allowed_hosts(uri):
 
     session = boto3.session.Session()
     ecs_client = session.client(service_name="ecs", region_name=region_name)
-    ec2_client = session.client(service_name="ecs", region_name=region_name)
+    ec2_client = session.client(service_name="ec2", region_name=region_name)
 
     container_metadata = requests.get(uri).json()
     task_metadata = requests.get(f"{uri}/task").json()
