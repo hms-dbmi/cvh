@@ -45,6 +45,8 @@ def get_ecs_allowed_hosts(uri):
     ec2_client = session.client(service_name="ec2", region_name=region_name)
 
     container_metadata = requests.get(uri).json()
+    container_ip = container_metadata["Networks"][0]["IPv4Addresses"][0]
+
     task_metadata = requests.get(f"{uri}/task").json()
 
     cluster = task_metadata["Cluster"]
@@ -54,21 +56,33 @@ def get_ecs_allowed_hosts(uri):
     except ClientError as e:
         raise e
 
-    try:
-        network_interfaces = ec2_client.describe_network_interfaces(
-            NetworkInterfaceIds=[
-                tasks["tasks"][0]["containers"][0]["networkInterfaces"][0][
-                    "attachmentId"
-                ]
-            ],
-        )
-    except ClientError as e:
-        raise e
+    task = tasks[0]
+    attachments = task.get("attachments", [])
+    eni_id = None
 
-    return [
-        container_metadata["Networks"][0]["IPv4Addresses"][0],
-        network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"],
-    ]
+    for attachment in attachments:
+        if attachment.get("type") == "ElasticNetworkInterface":
+            details = attachment.get("details", [])
+            for detail in details:
+                if detail.get("name") == "networkInterfaceId":
+                    eni_id = detail.get("value")
+    if eni_id:
+        try:
+            network_interfaces = ec2_client.describe_network_interfaces(
+                NetworkInterfaceIds=[
+                    tasks["tasks"][0]["containers"][0]["networkInterfaces"][0][
+                        "attachmentId"
+                    ]
+                ],
+            )
+        except ClientError as e:
+            raise e
+
+        return [
+            container_ip,
+            network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"],
+        ]
+    return [container_ip]
 
 
 if METADATA_URI:
