@@ -47,7 +47,7 @@ def get_ecs_allowed_hosts(uri):
     container_metadata = requests.get(uri).json()
     task_metadata = requests.get(f"{uri}/task").json()
 
-    cluster = task_metadata["cluster"]
+    cluster = task_metadata["Cluster"]
     task = task_metadata["TaskARN"]
     try:
         ecs_reponse = ecs_client.describe_tasks(cluster=cluster, tasks=[task])
