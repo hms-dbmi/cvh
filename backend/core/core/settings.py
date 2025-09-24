@@ -47,32 +47,32 @@ def get_ecs_allowed_hosts(uri):
     container_metadata = requests.get(uri).json()
     task_metadata = requests.get(f"{uri}/task").json()
 
-    cluster = container_metadata["cluster"]
-
+    cluster = task_metadata["cluster"]
+    task = task_metadata["TaskARN"]
     try:
-        ecs_reponse = ecs_client.describe_tasks(
-            cluster=cluster, tasks=[task_metadata["TaskARN"]]
-        )
+        ecs_reponse = ecs_client.describe_tasks(cluster=cluster, tasks=[task])
     except ClientError as e:
         raise e
 
     tasks = json.loads(ecs_reponse)
-    
+
     try:
         ec2_response = ec2_client.describe_network_interfaces(
             MaxResults=1,
             NetworkInterfaceIds=[
-               tasks["tasks"][0]["containers"][0]["networkInterfaces"][0]["attachmentId"]
+                tasks["tasks"][0]["containers"][0]["networkInterfaces"][0][
+                    "attachmentId"
+                ]
             ],
         )
     except ClientError as e:
-        raise e 
-    
+        raise e
+
     network_interfaces = json.loads(ec2_response)
 
     return [
         container_metadata["Networks"][0]["IPv4Addresses"][0],
-        network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"]
+        network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"],
     ]
 
 
