@@ -1,4 +1,4 @@
-import { ComponentProps, useMemo, useState } from "react";
+import { ComponentProps, useCallback, useMemo, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -13,7 +13,7 @@ import { useGetVisualization } from "../api/useVisualizations.ts";
 import { Box, Button, IconButton, Stack } from "@mui/material";
 import type { components } from "../../../types/schema";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import {
+import useGetProjects, {
   useGetProjectMembers,
   useGetProject,
 } from "../../projects/api/useProjects";
@@ -42,20 +42,36 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
 }
 
 function WorkspaceMenu({ projectId }: { projectId: string }) {
-  const { data: projectData } = useGetProject(projectId);
+  const { data: projectsData } = useGetProjects();
+
+  const currentProject = projectsData?.items.find((p) => p.uuid === projectId);
+
+  if (!currentProject) {
+    return;
+  }
+
+  const name = currentProject?.name;
+  const firstLetter = name?.length ? name[0] : null;
 
   return (
     <Button
       variant="outlined"
       sx={{ color: "black", borderColor: "gray", padding: "8px" }}
     >
-      <Avatar
-        sx={{ backgroundColor: "pink", width: 24, height: 24, marginRight: 1 }}
-        variant="square"
-      >
-        B
-      </Avatar>
-      {projectData && projectData.name}
+      {firstLetter && (
+        <Avatar
+          sx={{
+            backgroundColor: "pink",
+            width: 24,
+            height: 24,
+            marginRight: 1,
+          }}
+          variant="square"
+        >
+          {firstLetter}
+        </Avatar>
+      )}
+      {name}
     </Button>
   );
 }
@@ -109,20 +125,19 @@ const formatVisualization = (
   } as ComponentProps<typeof GoslingDesignerVEC>["visualization"];
 };
 
-/*
-const readonlyStatusOfPanelsAndModes = {
-  data: false,
-  "add-data": false,
-  "track-selection": true,
-  customization: false,
-  templates: false,
-  editor: false,
-  "natural-language": false,
-  history: false,
-  delta: false,
-  explore: true,
-  readonly: true,
-};
+// const readonlyStatusOfPanelsAndModes = {
+//   data: false,
+//   "add-data": false,
+//   "track-selection": true,
+//   customization: false,
+//   templates: false,
+//   editor: false,
+//   "natural-language": false,
+//   history: false,
+//   delta: false,
+//   explore: true,
+//   readonly: true,
+// };
 
 const defaultStatusOfPanelsAndModes = {
   data: true,
@@ -137,7 +152,6 @@ const defaultStatusOfPanelsAndModes = {
   explore: false,
   readonly: true,
 };
-*/
 
 function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
   const [selectedVizId, setSelectedVizId] = useState<string>();
@@ -156,14 +170,15 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
   const formattedDatasets = useFormattedDatasets(datasets);
   const formattedVisualization = formatVisualization(data);
 
-  const topOptions = ["calc(3rem + 600px)", "calc(3rem + 60px)"];
-  const [top] = useState(topOptions[0]);
+  const selectViz = useCallback(
+    (id: string) => setSelectedVizId(id),
+    [setSelectedVizId]
+  );
 
-  console.log(formattedDatasets)
   if (!formattedDatasets) {
     return null;
   }
-  console.log('z')
+
   return (
     <Stack direction="column">
       <AppBar
@@ -209,36 +224,25 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
           Close Visualization
         </Button> */}
       </Stack>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          height: "calc(100vh - 3rem)",
-          width: "100%",
-          flex: "500px 1",
-        }}
-      >
-        <Box
-          sx={{
-            width: "500px",
-            height: "600px",
-            background: "#FFF",
-          }}
-          overflow="scroll"
+      <Box sx={{ minWidth: 0 }}>
+        <GoslingDesignerVEC
+          visualization={formattedVisualization} // or `undefined`
+          data={formattedDatasets} // or `undefined`
+          initialActiveStatusOfPanelsAndModes={defaultStatusOfPanelsAndModes}
+          onCodeChange={setChangedCode}
         >
-          <VisualizationsList projectId={projectId} />
-          <DataList projectId={projectId} datasets={datasets} />
-        </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <GoslingDesignerVEC
-            visualization={formattedVisualization} // or `undefined`
-            data={formattedDatasets} // or `undefined`
-            experimental={{
-              dataPanelLayout: { top }, // determines the top position of the VEC's data panel
+          <Box
+            sx={{
+              background: "#FFF",
             }}
-            onCodeChange={setChangedCode}
-          />
-        </Box>
+          >
+            <VisualizationsList
+              projectId={projectId}
+              setSelectedVizId={selectViz}
+            />
+            <DataList projectId={projectId} datasets={datasets} />
+          </Box>
+        </GoslingDesignerVEC>
       </Box>
     </Stack>
   );

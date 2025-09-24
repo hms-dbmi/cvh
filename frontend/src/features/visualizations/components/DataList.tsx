@@ -30,14 +30,12 @@ function ActionsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    console.log("aaa");
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
   };
 
-  console.log(open);
   return (
     <div>
       <IconButton
@@ -133,7 +131,7 @@ function DataList({
               <ListItemButton>
                 <ListItemText
                   primary={v.name}
-                  secondary={["updated 2 hours ago"].map((t) => (
+                  secondary={[v.source_url, "updated 2 hours ago"].map((t) => (
                     <>{t} &middot; </>
                   ))}
                 />
@@ -153,16 +151,21 @@ export default function DataAccordion({
   datasets?: components["schemas"]["DatasetOut"][];
 }) {
   return (
-    <Accordion>
+    <Accordion disableGutters>
       <AccordionSummary
         expandIcon={<ArrowDropDownIcon />}
         aria-controls="panel1-content"
         id="panel1-header"
       >
-        <DescriptionOutlinedIcon />
-        <Typography ml={1} component="span">
-          Datasets
-        </Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <DescriptionOutlinedIcon />
+          <Typography variant="h6" ml={1} component="span" >
+            DATASETS
+          </Typography>
+          <Typography variant="body2" component="span" color="textSecondary">
+            {datasets?.length} dataset{datasets?.length === 1 ? "" : "s"}
+          </Typography>
+        </Stack>
       </AccordionSummary>
       <AccordionDetails>
         <DataList projectId={projectId} datasets={datasets} />

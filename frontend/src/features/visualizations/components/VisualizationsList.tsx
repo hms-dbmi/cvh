@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -26,18 +26,17 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 
+import type { components } from "../../../types/schema";
+
 function ActionsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    console.log("aaa");
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  console.log(open);
   return (
     <div>
       <IconButton
@@ -79,17 +78,59 @@ function ActionsMenu() {
   );
 }
 
-function VisualizationList({ projectId }: { projectId: string }) {
-  const { data: visualizations } = useGetProjectVisualizations({
-    projectId,
-    tags: [],
-  });
+function VisualizationListItem({
+  v,
+  setSelectedVizId,
+}: {
+  v: {
+    combined_tags: string[];
+    tool: string;
+    tool_version?: string | null;
+    published: boolean;
+    uuid?: string;
+    name: string;
+    description?: string | null;
+    created_timestamp: string;
+    modified_timestamp: string;
+    last_viewed_timestamp: string;
+  };
+  setSelectedVizId: (id: string) => void;
+}) {
+  const selectViz = useCallback(
+    () => setSelectedVizId(v.uuid),
+    [v.uuid, setSelectedVizId]
+  );
+  return (
+    <ListItem disablePadding secondaryAction={<ActionsMenu />}>
+      <ListItemButton onClick={selectViz}>
+        <ListItemText
+          primary={v.name}
+          secondary={[
+            "10 tracks",
+            "4 active datasets",
+            "updated 2 hours ago",
+          ].map((t) => (
+            <>{t} &middot; </>
+          ))}
+        />
+      </ListItemButton>
+    </ListItem>
+  );
+}
 
+function VisualizationList({
+  visualizations,
+  setSelectedVizId,
+}: {
+  visualizations?: components["schemas"]["VisualizationNoConfOut"][];
+  setSelectedVizId: (id: string) => void;
+}) {
   const [input, setInput] = useState<string>("");
 
   if (!visualizations) {
     return null;
   }
+
   return (
     <Stack spacing={0.75}>
       <TextField
@@ -129,20 +170,11 @@ function VisualizationList({ projectId }: { projectId: string }) {
             return true;
           })
           .map((v) => (
-            <ListItem disablePadding secondaryAction={<ActionsMenu />}>
-              <ListItemButton>
-                <ListItemText
-                  primary={v.name}
-                  secondary={[
-                    "10 tracks",
-                    "4 active datasets",
-                    "updated 2 hours ago",
-                  ].map((t) => (
-                    <>{t} &middot; </>
-                  ))}
-                />
-              </ListItemButton>
-            </ListItem>
+            <VisualizationListItem
+              v={v}
+              setSelectedVizId={setSelectedVizId}
+              key={v.name}
+            />
           ))}
       </List>
     </Stack>
@@ -151,23 +183,38 @@ function VisualizationList({ projectId }: { projectId: string }) {
 
 export default function VisualizationAccordion({
   projectId,
+  setSelectedVizId,
 }: {
   projectId: string;
+  setSelectedVizId: (id: string) => void;
 }) {
+  const { data: visualizations } = useGetProjectVisualizations({
+    projectId,
+    tags: [],
+  });
+
   return (
-    <Accordion>
+    <Accordion disableGutters>
       <AccordionSummary
         expandIcon={<ArrowDropDownIcon />}
         aria-controls="panel1-content"
         id="panel1-header"
       >
+        <Stack direction="row" spacing={2} alignItems="center">
         <FolderOutlinedIcon />
-        <Typography ml={1} component="span">
-          Visualization
-        </Typography>
+          <Typography variant="h6" ml={1} component="span" >
+            VISUALIZATION
+          </Typography>
+          <Typography variant="body2" component="span" color="textSecondary">
+            {visualizations?.length} dataset{visualizations?.length === 1 ? "" : "s"}
+          </Typography>
+        </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <VisualizationList projectId={projectId} />
+        <VisualizationList
+          visualizations={visualizations}
+          setSelectedVizId={setSelectedVizId}
+        />
       </AccordionDetails>
     </Accordion>
   );
