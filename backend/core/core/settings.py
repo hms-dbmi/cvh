@@ -50,13 +50,13 @@ def get_ecs_allowed_hosts(uri):
     task_metadata = requests.get(f"{uri}/task").json()
 
     cluster = task_metadata["Cluster"]
-    task = task_metadata["TaskARN"]
+    task_arn = task_metadata["TaskARN"]
     try:
-        tasks = ecs_client.describe_tasks(cluster=cluster, tasks=[task])
+        tasks = ecs_client.describe_tasks(cluster=cluster, tasks=[task_arn])
     except ClientError as e:
         raise e
 
-    task = tasks[0]
+    task = tasks["tasks"][0]
     attachments = task.get("attachments", [])
     eni_id = None
 
@@ -69,11 +69,7 @@ def get_ecs_allowed_hosts(uri):
     if eni_id:
         try:
             network_interfaces = ec2_client.describe_network_interfaces(
-                NetworkInterfaceIds=[
-                    tasks["tasks"][0]["containers"][0]["networkInterfaces"][0][
-                        "attachmentId"
-                    ]
-                ],
+                NetworkInterfaceIds=[eni_id],
             )
         except ClientError as e:
             raise e
