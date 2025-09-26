@@ -127,14 +127,17 @@ class Dataset(UserCreated):
     )
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     tags = models.ManyToManyField(Tag)
+    assembly = models.CharField(max_length=50, null=True)
+    index_url = models.CharField(max_length=100, null=True)
+    separator = models.CharField(max_length=50, null=True)
+    headers = models.BooleanField(default=False)
+    data_column = models.JSONField(null=True, blank=True)
 
     objects = TagsManager()
 
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField(null=True)
-    tool = models.CharField(max_length=50)
-    tool_version = models.CharField(max_length=50, blank=True)
     project_key = models.ForeignKey(
         Project, on_delete=models.CASCADE, blank=True, null=True
     )

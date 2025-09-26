@@ -270,7 +270,9 @@ def get_projects(request):
 
 @api.delete("/projects/{project_uuid}", auth=Authorized())
 def delete_project(request, project_uuid: str):
-    project = Project.objects.get_admin_project(user=request.auth, project_uuid=project_uuid)
+    project = Project.objects.get_admin_project(
+        user=request.auth, project_uuid=project_uuid
+    )
     project.delete()
     return {"success": True}
 
@@ -374,6 +376,11 @@ def get_user_datasets(request):
         "modified_timestamp",
         "last_viewed_timestamp",
         "combined_tags",
+        "assembly",
+        "data_column",
+        "headers",
+        "index_url",
+        "separator",
     )
     return datasets
 
@@ -408,6 +415,11 @@ def get_project_datasets(
             "modified_timestamp",
             "last_viewed_timestamp",
             "combined_tags",
+            "assembly",
+            "data_column",
+            "headers",
+            "index_url",
+            "separator",
         )
     )
     return datasets

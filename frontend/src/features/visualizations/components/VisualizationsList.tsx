@@ -11,7 +11,6 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import AddBoxIcon from "@mui/icons-material/AddBox";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import { useGetProjectVisualizations } from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
@@ -27,6 +26,7 @@ import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 
 import type { components } from "../../../types/schema";
+import AddVisualizationButton from "./AddVisualizationButton";
 
 function ActionsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -119,9 +119,11 @@ function VisualizationListItem({
 }
 
 function VisualizationList({
+  projectId,
   visualizations,
   setSelectedVizId,
 }: {
+  projectId: string;
   visualizations?: components["schemas"]["VisualizationNoConfOut"][];
   setSelectedVizId: (id: string) => void;
 }) {
@@ -154,9 +156,7 @@ function VisualizationList({
         }}
       />
       <Stack direction="row" spacing={1}>
-        <Button startIcon={<AddBoxIcon />} variant="outlined">
-          New Visualization
-        </Button>
+        <AddVisualizationButton projectId={projectId} />
         <Button startIcon={<OpenInFullIcon />} variant="outlined">
           View All
         </Button>
@@ -201,17 +201,19 @@ export default function VisualizationAccordion({
         id="panel1-header"
       >
         <Stack direction="row" spacing={2} alignItems="center">
-        <FolderOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span" >
+          <FolderOutlinedIcon />
+          <Typography variant="h6" ml={1} component="span">
             VISUALIZATION
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
-            {visualizations?.length} dataset{visualizations?.length === 1 ? "" : "s"}
+            {visualizations?.length} dataset
+            {visualizations?.length === 1 ? "" : "s"}
           </Typography>
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
         <VisualizationList
+          projectId={projectId}
           visualizations={visualizations}
           setSelectedVizId={setSelectedVizId}
         />

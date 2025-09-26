@@ -363,36 +363,122 @@ export interface components {
         DatasetIn: {
             /** Project Uuid */
             project_uuid?: string | null;
+            /** Dataset */
+            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
+        };
+        /** GoslingDatasetSimple */
+        GoslingDatasetSimple: {
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
             /** Name */
             name: string;
             /** Description */
             description?: string | null;
             /** Source Url */
             source_url: string;
-            /** File Type */
-            file_type: string;
             /** Data Type */
             data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "bigwig" | "gene-annotation" | "matrix" | "multivec" | "vector";
         };
-        /** DatasetUpdate */
-        DatasetUpdate: {
+        /** GoslingDesignerBEDB */
+        GoslingDesignerBEDB: {
+            /** Data Column */
+            data_column?: {
+                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
+            } | null;
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
             /** Name */
-            name?: string;
+            name: string;
             /** Description */
             description?: string | null;
             /** Source Url */
-            source_url?: string;
-            /** File Type */
-            file_type?: string;
+            source_url: string;
             /** Data Type */
-            data_type?: string;
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "beddb";
+        };
+        /** GoslingDesignerCSV */
+        GoslingDesignerCSV: {
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "csv";
+            /** Separator */
+            separator: string;
+            /** Headers */
+            headers: boolean;
+            /** Data Column */
+            data_column: {
+                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
+            };
+        };
+        /** GoslingDesignerIndex */
+        GoslingDesignerIndex: {
+            /** Data Column */
+            data_column?: {
+                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
+            } | null;
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "bed" | "gff" | "vcf";
+            /** Index Url */
+            index_url: string;
+        };
+        /** DatasetUpdate */
+        DatasetUpdate: {
             /** Project Uuid */
             project_uuid?: string | null;
+            /** Dataset */
+            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
             /**
              * Uuid
              * Format: uuid4
              */
-            uuid?: string;
+            uuid: string;
         };
         /** DatasetOut */
         DatasetOut: {
@@ -404,6 +490,19 @@ export interface components {
             file_type: string;
             /** Data Type */
             data_type: string;
+            /** Assembly */
+            assembly?: string | null;
+            /** Data Column */
+            data_column?: Record<string, never> | null;
+            /**
+             * Headers
+             * @default false
+             */
+            headers: boolean;
+            /** Index Url */
+            index_url?: string | null;
+            /** Separator */
+            separator?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -480,10 +579,6 @@ export interface components {
         VisualizationNoConfOut: {
             /** Combined Tags */
             combined_tags: string[];
-            /** Tool */
-            tool: string;
-            /** Tool Version */
-            tool_version?: string | null;
             /**
              * Published
              * @default false
@@ -521,27 +616,17 @@ export interface components {
              * Format: uuid4
              */
             project_uuid: string;
-            /** Name */
-            name: string;
             /** Description */
             description?: string | null;
-            /** Conf */
-            conf: Record<string, never>;
-            /** Tool */
-            tool: string;
-            /** Tool Version */
-            tool_version?: string | null;
+            /** Name */
+            name: string;
         };
         /** VisualizationOut */
         VisualizationOut: {
             /** Combined Tags */
             combined_tags: string[];
             /** Conf */
-            conf: Record<string, never>;
-            /** Tool */
-            tool: string;
-            /** Tool Version */
-            tool_version?: string | null;
+            conf?: Record<string, never> | null;
             /**
              * Published
              * @default false
@@ -579,11 +664,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Conf */
-            conf?: Record<string, never>;
-            /** Tool */
-            tool?: string;
-            /** Tool Version */
-            tool_version?: string | null;
+            conf?: Record<string, never> | null;
             /** Published */
             published?: boolean;
         };

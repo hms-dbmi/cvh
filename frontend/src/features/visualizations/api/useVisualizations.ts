@@ -34,12 +34,8 @@ function useGetProjectVisualizations({
   });
 }
 
-function useGetVisualization(visualizationId?: string) {
+function useGetVisualization(visualizationId: string) {
   const client = useClient();
-
-  if(!visualizationId){
-    return {}
-  }
   return client.useQuery("get", `${path}/{visualization_uuid}`, {
     params: {
       path: { visualization_uuid: visualizationId },

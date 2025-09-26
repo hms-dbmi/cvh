@@ -25,6 +25,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import type { components } from "../../../types/schema";
+import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 
 function ActionsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -78,6 +79,7 @@ function ActionsMenu() {
 }
 
 function DataList({
+  projectId,
   datasets,
 }: {
   projectId: string;
@@ -111,9 +113,7 @@ function DataList({
         }}
       />
       <Stack direction="row" spacing={1}>
-        <Button startIcon={<FileUploadOutlinedIcon />} variant="outlined">
-          Upload Data
-        </Button>
+        <AddDatasetButton projectId={projectId} />
         <Button startIcon={<OpenInFullIcon />} variant="outlined">
           View All
         </Button>

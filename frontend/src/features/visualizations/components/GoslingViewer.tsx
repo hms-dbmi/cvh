@@ -2,25 +2,25 @@ import { ComponentProps, useCallback, useMemo, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import Avatar from "@mui/material/Avatar";
+import Menu from "@mui/material/Menu";
+import { Box, Button, IconButton, Stack } from "@mui/material";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import MenuItem from "@mui/material/MenuItem";
 
 import { GoslingDesignerVEC } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
-
 import VisualizationsList from "./VisualizationsList.tsx";
 import DataList from "./DataList.tsx";
-
 import { useGetVisualization } from "../api/useVisualizations.ts";
-import { Box, Button, IconButton, Stack } from "@mui/material";
 import type { components } from "../../../types/schema";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import useGetProjects, {
   useGetProjectMembers,
-  useGetProject,
 } from "../../projects/api/useProjects";
-import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+
 import GoslingIcon from "../../../assets/gosling.svg?react";
-import Avatar from "@mui/material/Avatar";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   const { data } = useGetProjectMembers(projectId);
@@ -44,6 +44,16 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
 function WorkspaceMenu({ projectId }: { projectId: string }) {
   const { data: projectsData } = useGetProjects();
 
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   const currentProject = projectsData?.items.find((p) => p.uuid === projectId);
 
   if (!currentProject) {
@@ -54,25 +64,52 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
   const firstLetter = name?.length ? name[0] : null;
 
   return (
-    <Button
-      variant="outlined"
-      sx={{ color: "black", borderColor: "gray", padding: "8px" }}
-    >
-      {firstLetter && (
-        <Avatar
-          sx={{
-            backgroundColor: "pink",
-            width: 24,
-            height: 24,
-            marginRight: 1,
-          }}
-          variant="square"
-        >
-          {firstLetter}
-        </Avatar>
-      )}
-      {name}
-    </Button>
+    <>
+      <Button
+        id="workspaces-button"
+        aria-controls={open ? "workspaces-menu" : undefined}
+        aria-haspopup="true"
+        aria-expanded={open ? "true" : undefined}
+        variant="outlined"
+        sx={{ color: "black", borderColor: "gray", padding: "8px" }}
+        onClick={handleClick}
+      >
+        {firstLetter && (
+          <Avatar
+            sx={{
+              backgroundColor: "pink",
+              width: 24,
+              height: 24,
+              marginRight: 1,
+            }}
+            variant="square"
+          >
+            {firstLetter}
+          </Avatar>
+        )}
+        {name}
+      </Button>
+      <Menu
+        id="workspaces-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        slotProps={{
+          list: {
+            "aria-labelledby": "workspaces-button",
+          },
+        }}
+      >
+        {projectsData?.items.map(
+          (p) =>
+            p.uuid !== projectId && (
+              <MenuItem component="a" href={`/project/${p.uuid}`}>
+                {p?.name}
+              </MenuItem>
+            )
+        )}
+      </Menu>
+    </>
   );
 }
 
@@ -112,14 +149,17 @@ const useFormattedDatasets = (
 const formatVisualization = (
   viz?: components["schemas"]["VisualizationOut"]
 ) => {
-  if (!viz) {
+  if (!viz?.conf) {
     return undefined;
   }
+
+  const conf = viz?.conf ?? {};
+
   return {
     note: "",
     name: viz.name,
     id: viz.uuid,
-    spec: viz.conf,
+    spec: conf,
     usedDataIds: [],
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
   } as ComponentProps<typeof GoslingDesignerVEC>["visualization"];
@@ -179,6 +219,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     return null;
   }
 
+  console.log(formattedVisualization);
   return (
     <Stack direction="column">
       <AppBar
