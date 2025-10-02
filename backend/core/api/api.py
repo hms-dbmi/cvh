@@ -320,9 +320,9 @@ def create_dataset(request, dataset: DatasetIn):
     del dataset_dict["project_uuid"]
     if project_uuid:
         project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
-        Dataset.objects.create(**dataset_dict, project_key=project)
+        Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
         return dataset
-    Dataset.objects.create(**dataset_dict, user_key=request.auth)
+    Dataset.objects.create(**dataset_dict.dataset, user_key=request.auth)
     return dataset
 
 
