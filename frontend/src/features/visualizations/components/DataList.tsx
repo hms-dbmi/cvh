@@ -118,7 +118,7 @@ function DataList({
           View All
         </Button>
       </Stack>
-      <List>
+      {/*<List>
         {datasets
           ?.filter((d) => {
             if (input.length) {
@@ -138,7 +138,7 @@ function DataList({
               </ListItemButton>
             </ListItem>
           ))}
-      </List>
+      </List>*/}
     </Stack>
   );
 }
@@ -159,7 +159,7 @@ export default function DataAccordion({
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <DescriptionOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span" >
+          <Typography variant="h6" ml={1} component="span">
             DATASETS
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">

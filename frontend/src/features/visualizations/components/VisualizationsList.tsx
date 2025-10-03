@@ -206,7 +206,7 @@ export default function VisualizationAccordion({
             VISUALIZATION
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
-            {visualizations?.length} dataset
+            {visualizations?.length} visualization
             {visualizations?.length === 1 ? "" : "s"}
           </Typography>
         </Stack>

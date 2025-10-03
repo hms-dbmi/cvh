@@ -364,7 +364,7 @@ export interface components {
             /** Project Uuid */
             project_uuid?: string | null;
             /** Dataset */
-            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
+            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
         };
         /** GoslingDatasetSimple */
         GoslingDatasetSimple: {
@@ -385,7 +385,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            file_type: "bigwig" | "gene-annotation" | "matrix" | "multivec" | "vector";
+            file_type: "bigwig" | "cooler" | "vector";
         };
         /** GoslingDesignerBEDB */
         GoslingDesignerBEDB: {
@@ -468,12 +468,35 @@ export interface components {
             /** Index Url */
             index_url: string;
         };
+        /** GoslingDesignerMultiVec */
+        GoslingDesignerMultiVec: {
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "multivec";
+            /** Row Names */
+            row_names: string[];
+        };
         /** DatasetUpdate */
         DatasetUpdate: {
             /** Project Uuid */
             project_uuid?: string | null;
             /** Dataset */
-            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
+            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
             /**
              * Uuid
              * Format: uuid4

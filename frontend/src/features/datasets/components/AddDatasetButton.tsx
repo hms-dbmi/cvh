@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button, { ButtonProps } from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,7 +46,12 @@ interface BaseValues {
 }
 
 interface Simple extends BaseValues {
-  file_type: "bigwig" | "vector" | "multivec" | "gene-annotation" | "matrix";
+  file_type: "bigwig" | "vector" | "cooler";
+}
+
+interface MultiVec extends BaseValues {
+  file_type: "multivec";
+  row_names: string[];
 }
 interface IndexAndColumn extends BaseValues {
   file_type: "vcf" | "bed" | "gff";
@@ -76,7 +80,7 @@ interface CSV extends BaseValues {
   >;
 }
 
-type FormValues = Simple | IndexAndColumn | ColumnOnly | CSV;
+type FormValues = Simple | MultiVec | IndexAndColumn | ColumnOnly | CSV;
 
 function FormTextField({
   name,
@@ -105,6 +109,7 @@ function FormTextField({
   );
 }
 
+/*
 function FormSelectField({
   name,
   control,
@@ -140,29 +145,25 @@ function FormSelectField({
     </TextField>
   );
 }
+*/
 
 //TODO: Dedupe enums
-const BASIC_TYPES = [
-  "bigwig",
-  "vector",
-  "multivec",
-  "gene-annotation",
-  "matrix",
-];
+// const BASIC_TYPES = ["bigwig", "vector", "cooler"];
+
+//const MULTIVEC = ["multivec"];
 
 const INDEX_AND_COLUMN_TYPES = ["vcf", "bed", "gff"];
 
-const COLUMN_ONLY_TYPES = ["beddb"];
+// const COLUMN_ONLY_TYPES = ["beddb"];
 
-const CSV_TYPES = ["csv"];
+// const CSV_TYPES = ["csv"];
 
 // TODO: Move this to a more appropriate place
 const SUPPORTED_FILE_TYPES = [
   "bigwig",
   "vector",
   "multivec",
-  "gene-annotation",
-  "matrix",
+  "cooler",
   "vcf",
   "bed",
   "gff",
@@ -199,13 +200,12 @@ const base = z.object({
 });
 
 const simple = base.extend({
-  file_type: z.enum([
-    "bigwig",
-    "vector",
-    "multivec",
-    "gene-annotation",
-    "matrix",
-  ]),
+  file_type: z.enum(["bigwig", "vector", "cooler"]),
+});
+
+const multiVec = base.extend({
+  file_type: z.enum(["multivec"]),
+  row_names: z.array(z.string()),
 });
 
 const indexAndColumn = base.extend({
@@ -241,6 +241,7 @@ const csv = base.extend({
 
 const schema = z.discriminatedUnion("file_type", [
   simple,
+  multiVec,
   indexAndColumn,
   columnOnly,
   csv,
@@ -296,7 +297,6 @@ function DatasetSelectionButton({
 function SelectDataType({
   name,
   control,
-  ...rest
 }: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
   const { field } = useController({
     name,
@@ -325,7 +325,7 @@ function SelectDataType({
                         onChange={field.onChange}
                         value={fileType}
                         isSelected={field.value === fileType}
-                        disabled={fileType === "csv"}
+                        disabled={["csv", "multivec"].includes(fileType)}
                       />
                     </Grid>
                   );
@@ -349,6 +349,7 @@ function SelectDataType({
                     onChange={field.onChange}
                     value={fileType}
                     isSelected={field.value === fileType}
+                    disabled={["csv", "multivec"].includes(fileType)}
                   />
                 </Grid>
               ))}

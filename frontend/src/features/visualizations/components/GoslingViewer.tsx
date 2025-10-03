@@ -270,7 +270,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
           Close Visualization
         </Button> */}
       </Stack>
-      <Box sx={{ minWidth: 0 }} sx={{ minHeight: "100vh" }}>
+      <Box sx={{ minWidth: 0 }} sx={{ minHeight: "100vh", height: "100vh" }}>
         <GoslingDesignerVEC
           visualization={formattedVisualization} // or `undefined`
           data={formattedDatasets} // or `undefined`
@@ -280,7 +280,6 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
           <Box
             sx={{
               background: "#FFF",
-              minHeight: "100vh",
             }}
           >
             <VisualizationsList

@@ -57,8 +57,11 @@ class GoslingDataCommon(ModelSchema):
 
 
 class GoslingDatasetSimple(GoslingDataCommon):
-    file_type: Literal["bigwig", "vector", "multivec", "gene-annotation", "matrix"]
+    file_type: Literal["bigwig", "vector", "cooler"]
 
+class GoslingDesignerMultiVec(GoslingDataCommon):
+    file_type: Literal["multivec"]
+    row_names: List[str]
 
 class GoslingDesignerDataColumn(Schema):
     data_column: Optional[
@@ -87,6 +90,7 @@ class GoslingDesignerCSV(GoslingDataCommon):
 GoslingDesignerModel = Annotated[
     Union[
         GoslingDatasetSimple,
+        GoslingDesignerMultiVec,
         GoslingDesignerIndex,
         GoslingDesignerBEDB,
         GoslingDesignerCSV,
