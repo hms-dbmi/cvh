@@ -255,7 +255,7 @@ function DatasetSelectionButton({
   onChange: (v: string) => void;
   value: string;
   isSelected: boolean;
-}) {
+} & Partial<ButtonProps>) {
   const onClick = useCallback(() => {
     onChange(value);
   }, [value, onChange]);
@@ -325,6 +325,7 @@ function SelectDataType({
                         onChange={field.onChange}
                         value={fileType}
                         isSelected={field.value === fileType}
+                        disabled={fileType === "csv"}
                       />
                     </Grid>
                   );

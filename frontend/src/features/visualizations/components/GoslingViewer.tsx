@@ -125,12 +125,18 @@ const formatCvhDatasetsAsGoslingDatasets = (
   datasets: components["schemas"]["DatasetOut"][]
 ) => {
   return datasets.map((dataset) => ({
-    type: dataset.data_type,
+    type: dataset.file_type,
     name: dataset.name,
     id: dataset.uuid,
-    assembly: "unknown",
     metadata: {},
     url: dataset.source_url,
+    assembly: dataset?.assembly ?? undefined,
+    indexURL: dataset?.index_url ?? undefined,
+    header: dataset?.headers ?? undefined,
+    separator: dataset?.separator ?? undefined,
+    ...(dataset.file_type === "csv"
+      ? { fields: dataset?.data_column ?? undefined }
+      : { optionalFields: dataset?.data_column ?? undefined }),
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
   })) as ComponentProps<typeof GoslingDesignerVEC>["data"];
 };
@@ -219,7 +225,6 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     return null;
   }
 
-  console.log(formattedVisualization);
   return (
     <Stack direction="column">
       <AppBar
@@ -265,7 +270,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
           Close Visualization
         </Button> */}
       </Stack>
-      <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ minWidth: 0 }} sx={{ minHeight: "100vh" }}>
         <GoslingDesignerVEC
           visualization={formattedVisualization} // or `undefined`
           data={formattedDatasets} // or `undefined`
@@ -275,6 +280,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
           <Box
             sx={{
               background: "#FFF",
+              minHeight: "100vh",
             }}
           >
             <VisualizationsList
