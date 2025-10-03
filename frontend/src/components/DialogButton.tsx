@@ -25,6 +25,7 @@ interface CoreFormDialogProps {
   onClose?: () => void;
   text: DialogText;
   buttonProps?: Partial<ButtonProps>;
+  actionButtons?: ReactNode;
 }
 
 type DialogProps =
@@ -40,6 +41,7 @@ export default function DialogButton({
   onClose,
   buttonProps,
   children,
+  actionButtons,
   isForm = true,
 }: PropsWithChildren<DialogProps>) {
   const [open, setOpen] = useState(false);
@@ -84,7 +86,7 @@ export default function DialogButton({
             : {}
         }
         fullWidth
-        maxWidth="lg"
+        maxWidth="md"
       >
         <DialogTitle>{text.title}</DialogTitle>
         <DialogContent sx={{ p: 2 }}>
@@ -95,7 +97,8 @@ export default function DialogButton({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>{text.cancelButton ?? "Cancel"}</Button>
-          {isForm && (
+          {actionButtons && actionButtons}
+          {isForm && !actionButtons && (
             <Button type="submit">{text.submitButton ?? "Submit"}</Button>
           )}
         </DialogActions>

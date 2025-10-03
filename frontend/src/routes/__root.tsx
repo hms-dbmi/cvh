@@ -1,12 +1,22 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  Outlet,
+  useRouterState,
+} from "@tanstack/react-router";
 // import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
 import Header from "../features/navigation/components/Header";
 import Snackbar from "../components/Snackbar/Snackbar";
-export const Route = createRootRoute({
-  component: () => (
+
+function C() {
+  const router = useRouterState();
+  if (router.location.pathname.startsWith("/project")) {
+    return <Outlet />;
+  }
+
+  return (
     <Stack height="100%">
       <Box>
         <Header />
@@ -17,5 +27,9 @@ export const Route = createRootRoute({
       </Box>
       {/* <TanStackRouterDevtools />*/}
     </Stack>
-  ),
+  );
+}
+
+export const Route = createRootRoute({
+  component: () => <C />,
 });
