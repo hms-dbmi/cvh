@@ -285,6 +285,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
             <VisualizationsList
               projectId={projectId}
               setSelectedVizId={selectViz}
+              selectedVizId={selectedVizId}
             />
             <DataList projectId={projectId} datasets={datasets} />
           </Box>

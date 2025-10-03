@@ -81,6 +81,7 @@ function ActionsMenu() {
 function VisualizationListItem({
   v,
   setSelectedVizId,
+  isSelected,
 }: {
   v: {
     combined_tags: string[];
@@ -95,14 +96,21 @@ function VisualizationListItem({
     last_viewed_timestamp: string;
   };
   setSelectedVizId: (id: string) => void;
+  isSelected: boolean;
 }) {
   const selectViz = useCallback(
     () => setSelectedVizId(v.uuid),
     [v.uuid, setSelectedVizId]
   );
   return (
-    <ListItem disablePadding secondaryAction={<ActionsMenu />}>
-      <ListItemButton onClick={selectViz}>
+    <ListItem
+      disablePadding
+      secondaryAction={<ActionsMenu />}
+      sx={(theme) => ({
+        bgcolor: isSelected ? theme.palette.primary.light : "inherit",
+      })}
+    >
+      <ListItemButton onClick={selectViz} color="primary">
         <ListItemText
           primary={v.name}
           secondary={[
@@ -122,10 +130,12 @@ function VisualizationList({
   projectId,
   visualizations,
   setSelectedVizId,
+  selectedVizId,
 }: {
   projectId: string;
   visualizations?: components["schemas"]["VisualizationNoConfOut"][];
   setSelectedVizId: (id: string) => void;
+  selectedVizId?: string;
 }) {
   const [input, setInput] = useState<string>("");
 
@@ -172,6 +182,7 @@ function VisualizationList({
           .map((v) => (
             <VisualizationListItem
               v={v}
+              isSelected={v.uuid === selectedVizId}
               setSelectedVizId={setSelectedVizId}
               key={v.name}
             />
@@ -184,9 +195,11 @@ function VisualizationList({
 export default function VisualizationAccordion({
   projectId,
   setSelectedVizId,
+  selectedVizId,
 }: {
   projectId: string;
   setSelectedVizId: (id: string) => void;
+  selectedVizId?: string;
 }) {
   const { data: visualizations } = useGetProjectVisualizations({
     projectId,
@@ -216,6 +229,7 @@ export default function VisualizationAccordion({
           projectId={projectId}
           visualizations={visualizations}
           setSelectedVizId={setSelectedVizId}
+          selectedVizId={selectedVizId}
         />
       </AccordionDetails>
     </Accordion>
