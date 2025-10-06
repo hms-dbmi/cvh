@@ -1,7 +1,6 @@
 import {
   createRootRoute,
   Outlet,
-  useRouterState,
 } from "@tanstack/react-router";
 // import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import Box from "@mui/material/Box";
@@ -11,11 +10,6 @@ import Header from "../features/navigation/components/Header";
 import Snackbar from "../components/Snackbar/Snackbar";
 
 function C() {
-  const router = useRouterState();
-  if (router.location.pathname.startsWith("/project")) {
-    return <Outlet />;
-  }
-
   return (
     <Stack height="100%">
       <Box>

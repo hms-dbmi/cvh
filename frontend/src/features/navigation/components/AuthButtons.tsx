@@ -6,7 +6,6 @@ const LoginButton = (props: Partial<ButtonProps>) => {
 
   return (
     <Button
-      sx={(theme) => ({ color: theme.palette.common.white })}
       onClick={() => loginWithRedirect()}
       {...props}
     >
@@ -20,7 +19,6 @@ const LogoutButton = (props: Partial<ButtonProps>) => {
 
   return (
     <Button
-      sx={(theme) => ({ color: theme.palette.common.white })}
       onClick={() =>
         logout({ logoutParams: { returnTo: window.location.origin } })
       }
