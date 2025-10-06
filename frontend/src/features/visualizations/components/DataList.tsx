@@ -5,13 +5,8 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Button from "@mui/material/Button";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -27,6 +22,7 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 
+// eslint-disable-next-line
 function ActionsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
