@@ -123,9 +123,18 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
 function ProjectsBar() {
   const { projectId } = useParams({ strict: false });
   const router = useRouterState();
+  const { isAuthenticated } = useAuth0();
 
-  if (!(router.location.pathname.startsWith("/project") && projectId)) {
-    return <Box flexGrow={1} />;
+  if (!router.location.pathname.startsWith("/project") && isAuthenticated) {
+    return (
+      <Box flexGrow={1} ml={2}>
+        <Link to="/project/{-$projectId}">Return to Workspaces</Link>
+      </Box>
+    );
+  }
+
+  if (!projectId) {
+    return null;
   }
 
   return (
