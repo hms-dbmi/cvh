@@ -1,7 +1,7 @@
 import { ComponentProps, useCallback, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 
-import { GoslingDesignerVEC } from "gosling-designer-vec";
+import { GoslingDesignerVEC, VisSchema } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
 import VisualizationsList from "./VisualizationsList.tsx";
 import DataList from "./DataList.tsx";
@@ -92,16 +92,14 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     [setSelectedVizId]
   );
 
-  console.log(selectedVizId)
-
   const saveViz = useCallback(
-    (newConf: string) => {
-      console.log(newConf)
+    (vis: VisSchema.GDVis) => {
+      const conf = vis?.spec;
+
       try {
         if (!selectedVizId) {
           return;
         }
-        const conf = JSON.parse(newConf);
         updateViz({
           body: { conf },
           params: {
@@ -125,7 +123,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
       <GoslingDesignerVEC
         visualization={formattedVisualization} // or `undefined`
         data={formattedDatasets} // or `undefined`
-        onCodeChange={saveViz}
+        onChange={saveViz}
       >
         <Box
           sx={{
