@@ -4,10 +4,8 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
@@ -110,9 +108,6 @@ function DataList({
       />
       <Stack direction="row" spacing={1}>
         <AddDatasetButton projectId={projectId} />
-        <Button startIcon={<OpenInFullIcon />} variant="outlined">
-          View All
-        </Button>
       </Stack>
       {/*<List>
         {datasets

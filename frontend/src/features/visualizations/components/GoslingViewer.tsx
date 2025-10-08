@@ -62,6 +62,7 @@ const formatVisualization = (
     id: viz.uuid,
     spec: conf,
     usedDataIds: [],
+    isPublished: viz?.published,
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
   } as ComponentProps<typeof GoslingDesignerVEC>["visualization"];
 };
