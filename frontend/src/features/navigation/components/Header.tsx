@@ -27,6 +27,7 @@ import useGetProjects, {
 } from "../../projects/api/useProjects";
 
 import { LoginButton, LogoutButton } from "./AuthButtons";
+import AddProjectButton from "../../projects/components/AddProjectButton";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   const { data } = useGetProjectMembers(projectId);
@@ -106,6 +107,10 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
           },
         }}
       >
+        <Box p={2}>
+          <AddProjectButton />
+        </Box>
+
         {projectsData?.items.map(
           (p) =>
             p.uuid !== projectId && (
