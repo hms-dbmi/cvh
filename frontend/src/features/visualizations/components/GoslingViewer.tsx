@@ -50,17 +50,15 @@ const useFormattedDatasets = (
 const formatVisualization = (
   viz?: components["schemas"]["VisualizationOut"]
 ) => {
-  if (!viz?.conf) {
+  if (!viz) {
     return undefined;
   }
-
-  const conf = viz?.conf ?? {};
 
   return {
     note: "",
     name: viz.name,
     id: viz.uuid,
-    spec: conf,
+    spec: viz?.conf,
     usedDataIds: [],
     isPublished: viz?.published,
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
@@ -92,6 +90,8 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     (id: string) => setSelectedVizId(id),
     [setSelectedVizId]
   );
+
+  console.log(selectedVizId, formatVisualization);
 
   const saveViz = useCallback(
     (vis: VisSchema.GDVis) => {
