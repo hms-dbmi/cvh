@@ -13,7 +13,7 @@ import { z } from "zod";
 import { useTagDataset } from "../api/useDatasets";
 
 interface FormValues {
-  tagKey?: string;
+  tagKey: string;
   tag: string;
 }
 

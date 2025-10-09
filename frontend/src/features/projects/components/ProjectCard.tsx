@@ -17,7 +17,7 @@ export default function ProjectCard({
     <Card sx={{ minWidth: 275, maxWidth: 200 }}>
       <CardContent>
         <Link
-          to="/project/$projectId"
+          to="/project/{-$projectId}"
           params={{ projectId: project.uuid }}
           variant="h5"
         >

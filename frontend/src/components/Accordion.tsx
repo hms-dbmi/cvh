@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, ReactNode } from "react";
 import Accordion, { AccordionProps } from "@mui/material/Accordion";
 import AccordionSummary, {
   AccordionSummaryProps,
@@ -8,7 +8,6 @@ import AccordionDetails, {
 } from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { ReactNode } from "@tanstack/react-router";
 
 export default function BasicAccordion({
   id,
