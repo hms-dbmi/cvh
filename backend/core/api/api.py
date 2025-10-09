@@ -162,6 +162,15 @@ class RequestToken(object):
             user = User(username=username, email=email)
             user.save()
 
+            project = Project.objects.create(
+                description="Your first workspace.",
+                name="First Workspace",
+                user_key=user,
+            )
+            ProjectMember.objects.create(
+                project_key=project, user_key=user, permissions=4
+            )
+
         return user
 
     def hasPermission(self, permission: str) -> bool:
@@ -318,10 +327,16 @@ def create_dataset(request, dataset: DatasetIn):
     dataset_dict = dataset.dict()
     project_uuid = dataset_dict.get("project_uuid")
     del dataset_dict["project_uuid"]
+
     if project_uuid:
-        project = get_object_or_404(Project, uuid=project_uuid, user_key=request.auth)
-        Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
-        return dataset
+        try:
+            project = Project.objects.get_write_project(
+                user=request.auth, project_uuid=project_uuid
+            )
+            Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
+            return dataset
+        except Project.DoesNotExist:
+            raise Http404("Failed to create visualization.")
     Dataset.objects.create(**dataset_dict.dataset, user_key=request.auth)
     return dataset
 
@@ -532,8 +547,11 @@ def create_visualization(request, visualization: VisualizationIn):
     project_uuid = visualization_dict.get("project_uuid")
     del visualization_dict["project_uuid"]
 
-    project = get_object_or_404(
-        Project, Q(uuid=project_uuid) & (Q(user_key=request.auth) | Q(private=False))
-    )
+    try:
+        project = Project.objects.get_write_project(
+            user=request.auth, project_uuid=project_uuid
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to create visualization.")
     VisualizationConf.objects.create(**visualization_dict, project_key=project)
     return visualization
