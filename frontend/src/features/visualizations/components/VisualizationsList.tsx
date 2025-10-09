@@ -4,14 +4,12 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import { useGetProjectVisualizations } from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -85,8 +83,6 @@ function VisualizationListItem({
 }: {
   v: {
     combined_tags: string[];
-    tool: string;
-    tool_version?: string | null;
     published: boolean;
     uuid?: string;
     name: string;
@@ -98,10 +94,11 @@ function VisualizationListItem({
   setSelectedVizId: (id: string) => void;
   isSelected: boolean;
 }) {
-  const selectViz = useCallback(
-    () => setSelectedVizId(v.uuid),
-    [v.uuid, setSelectedVizId]
-  );
+  const selectViz = useCallback(() => {
+    if (v?.uuid) {
+      setSelectedVizId(v.uuid);
+    }
+  }, [v.uuid, setSelectedVizId]);
   return (
     <ListItem
       disablePadding
@@ -167,9 +164,6 @@ function VisualizationList({
       />
       <Stack direction="row" spacing={1}>
         <AddVisualizationButton projectId={projectId} />
-        <Button startIcon={<OpenInFullIcon />} variant="outlined">
-          View All
-        </Button>
       </Stack>
       <List>
         {visualizations
