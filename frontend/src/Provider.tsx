@@ -14,6 +14,8 @@ function Provider({ children }: PropsWithChildren) {
         clientId={import.meta.env.VITE_AUTH0_CLIENTID}
         authorizationParams={{
           redirect_uri: window.location.origin,
+          audience: import.meta.env.VITE_API_AUDIENCE,
+          scope: "read:current_user",
         }}
       >
         <QueryClientProvider client={queryClient}>
