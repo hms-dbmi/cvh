@@ -13,7 +13,7 @@ import { z } from "zod";
 import { useTagVisualization } from "../api/useVisualizations";
 
 interface FormValues {
-  tagKey?: string;
+  tagKey: string;
   tag: string;
 }
 

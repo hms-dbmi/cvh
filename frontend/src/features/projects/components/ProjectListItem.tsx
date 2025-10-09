@@ -26,7 +26,7 @@ export default function ProjectListItem({
     <EntityListItem
       primary={
         <Link
-          to="/project/$projectId"
+          to="/project/{-$projectId}"
           params={{ projectId: project.uuid }}
           variant="subtitle1"
         >

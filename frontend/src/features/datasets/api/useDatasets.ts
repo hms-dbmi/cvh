@@ -41,6 +41,20 @@ function useGetProjectDatasets(projectId: string, tags: Tag[]) {
   });
 }
 
+interface Page {
+  count: number;
+  items: Record<string,unknown>[]
+}
+
+function getNextPageParam(lastPage: Page, pages: Page[]) {
+  const allItems = pages.flatMap(page => page.items);
+  if (lastPage.count <= allItems.length) {
+    return undefined;
+  }
+  const pageLength = lastPage.items.length;
+  const nextPageNumber = Math.floor(allItems.length / pageLength) + 1;
+  return nextPageNumber;
+}
 /**
  * Fetches paginated datasets for a specific project, optionally filtered by tags.
  *
@@ -65,15 +79,7 @@ function useGetPaginatedProjectDatasets(projectId: string, tags: Tag[]) {
     {
       pageParamName: "page",
       initialPageParam: 1,
-      getNextPageParam: (lastPage, pages) => {
-        const allItems = pages.flatMap(page => page.items);
-        if (lastPage.count <= allItems.length) {
-          return undefined;
-        }
-        const pageLength = lastPage.items.length;
-        const nextPageNumber = Math.floor(allItems.length / pageLength) + 1;
-        return nextPageNumber;
-      }
+      getNextPageParam: getNextPageParam
     }
   );
 }

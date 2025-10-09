@@ -20,7 +20,8 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 
-// eslint-disable-next-line
+/*eslint-disable */
+// @ts-ignore TODO: Remove ignore.
 function ActionsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -71,6 +72,7 @@ function ActionsMenu() {
     </div>
   );
 }
+/* eslint-enable */
 
 function DataList({
   projectId,

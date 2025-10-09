@@ -89,11 +89,6 @@ export default function VisualizationListItem({
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               {visualization.description}
             </Typography>
-            <Stack direction="row" spacing={2}>
-              <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-                Tool: {visualization.tool}
-              </Typography>
-            </Stack>
             <Stack direction="row" spacing={1} alignItems="center" mt={1}>
               {visualization?.combined_tags?.map((tag) => (
                 <Chip key={tag} label={tag} variant="outlined" />
@@ -110,7 +105,7 @@ export default function VisualizationListItem({
           <Stack direction="row" spacing={1.5}>
             {editViz && (
               <TooltipIconButton
-                tooltip={`Edit ${visualization.tool} Visualization`}
+                tooltip="Edit Visualization"
                 iconButtonProps={{
                   color: "primary",
                   size: "large",
@@ -121,7 +116,7 @@ export default function VisualizationListItem({
               </TooltipIconButton>
             )}
             <TooltipIconButton
-              tooltip={`View ${visualization.tool} Visualization`}
+              tooltip="View  Visualization"
               iconButtonProps={{
                 color: "primary",
                 size: "large",
