@@ -21,6 +21,7 @@ function useAuthToken(){
             return token;
           } catch (e) {
             if (e instanceof GenericError) {
+              console.log(e)
               if (e.error === "consent_required" || e.error=="login_required") {
                 const popup = window.open("");
                 const token = await getAccessTokenWithPopup(authParams, { popup });
