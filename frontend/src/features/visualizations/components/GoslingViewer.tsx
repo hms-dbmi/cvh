@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import { GoslingDesignerVEC, VisSchema } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
 import VisualizationsList from "./VisualizationsList.tsx";
-import DataList from "./DataList.tsx";
+import DataList, { DatasetActionsMenu } from "./DataList.tsx";
 import { useGetVisualization } from "../api/useVisualizations.ts";
 import type { components } from "../../../types/schema";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
@@ -125,19 +125,21 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
         visualization={formattedVisualization} // or `undefined`
         data={formattedDatasets} // or `undefined`
         onChange={saveViz}
-      >
-        <Box
-          sx={{
-            background: "#FFF",
-          }}
-        >
+        visualizationPanel={
           <VisualizationsList
             projectId={projectId}
             setSelectedVizId={selectViz}
             selectedVizId={selectedVizId}
           />
-          <DataList projectId={projectId} datasets={datasets} />
-        </Box>
+        }
+        DatasetsPanel={DataList}
+        DatasetMenuButton={DatasetActionsMenu}
+      >
+        <Box
+          sx={{
+            background: "#FFF",
+          }}
+        ></Box>
       </GoslingDesignerVEC>
     </Box>
   );
