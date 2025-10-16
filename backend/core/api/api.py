@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, F, Value, CharField
 from django.core.exceptions import PermissionDenied
 from django.db.models.functions import Concat
+from django.forms.models import model_to_dict
 
 from django.http import Http404
 
@@ -24,6 +25,7 @@ from .schema import (
     DatasetIn,
     DatasetOut,
     DatasetUpdate,
+    DatasetWithTagsOut,
     VisualizationNoConfOut,
     VisualizationIn,
     VisualizationOut,
@@ -32,7 +34,7 @@ from .schema import (
     ProjectMemberOut,
     ProjectMemberUpdate,
     PartialProjectIn,
-    TagIn,
+    TagsIn,
     TagOut,
     VizTagIn,
 )
@@ -361,41 +363,52 @@ def update_dataset(request, payload: DatasetUpdate):
 
 
 @api.put("/datasets/tags", auth=Authorized())
-def tag_dataset(request, payload: TagIn):
-    if payload.project_uuid:
+def tag_dataset(request, payload: TagsIn):
+    try:
         project = Project.objects.get_write_project(
             project_uuid=payload.project_uuid, user=request.auth
         )
-        dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
-    else:
-        dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
-    try:
-        tag = Tag.objects.get(tag=payload.tag, key=payload.key)
-    except Tag.DoesNotExist:
-        tag = Tag.objects.create(tag=payload.tag, key=payload.key)
-    dataset.tags.add(tag)
+    except Project.DoesNotExist:
+        raise Http404("Failed to tag dataset.")
+
+    dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
+
+    tags = []
+    for t in payload.tags:
+        try:
+            tag = Tag.objects.get(tag=t["tag"], key=t["key"], project_key=project)
+        except Tag.DoesNotExist:
+            tag = Tag.objects.create(
+                tag=t["tag"], key=t["key"], project_key=project
+            )
+        tags.append(tag)
+    
+    dataset.tags.set(tags)
     return {"success": True}
 
 
 @api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
 @paginate
 def get_user_datasets(request):
-    datasets = Dataset.objects.filter(user_key=request.auth).values(
-        "source_url",
-        "file_type",
-        "data_type",
-        "uuid",
-        "name",
-        "description",
-        "created_timestamp",
-        "modified_timestamp",
-        "last_viewed_timestamp",
-        "combined_tags",
-        "assembly",
-        "data_column",
-        "headers",
-        "index_url",
-        "separator",
+    datasets = (
+        Dataset.objects.filter(user_key=request.auth)
+        .distinct()
+        .values(
+            "source_url",
+            "file_type",
+            "data_type",
+            "uuid",
+            "name",
+            "description",
+            "created_timestamp",
+            "modified_timestamp",
+            "last_viewed_timestamp",
+            "assembly",
+            "data_column",
+            "headers",
+            "index_url",
+            "separator",
+        )
     )
     return datasets
 
@@ -404,7 +417,7 @@ class QuerySchema(Schema):
     tags: List[str] = Field(None, alias="tags")
 
 
-@api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetOut])
+@api.get("/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetWithTagsOut])
 @paginate(PageNumberPagination)
 def get_project_datasets(
     request, project_uuid: str, query_filters: QuerySchema = Query(...)
@@ -418,26 +431,21 @@ def get_project_datasets(
         q &= Q(tags__in=t)
     datasets = (
         Dataset.objects.filter(Q(project_key=project) & q)
-        .order_by("-modified_timestamp")
-        .values(
-            "source_url",
-            "file_type",
-            "data_type",
-            "uuid",
-            "name",
-            "description",
-            "created_timestamp",
-            "modified_timestamp",
-            "last_viewed_timestamp",
-            "combined_tags",
-            "assembly",
-            "data_column",
-            "headers",
-            "index_url",
-            "separator",
-        )
-    )
+        .order_by("-modified_timestamp"))
     return datasets
+
+
+@api.get("/datasets/uuid/{dataset_uuid}", auth=Authorized(), response=DatasetWithTagsOut)
+def get_dataset(request, dataset_uuid: str):
+    dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
+    try:
+        Project.objects.get_read_project(
+            project_uuid=dataset.project_key.uuid, user=request.auth
+        )
+    except Project.DoesNotExist:
+        raise Http404("Dataset not found.")
+
+    return dataset
 
 
 @api.get("/tags", response=List[TagOut])
@@ -447,9 +455,13 @@ def get_tags(request, sub_str: str = None):
     if sub_str:
         q &= Q(combined_tag__icontains=sub_str)
 
-    tags = Tag.objects.annotate(
-        full_name=Concat("key", Value(":"), "tag", combined_tag=CharField())
-    ).filter(q)
+    tags = (
+        Tag.objects.annotate(
+            full_name=Concat("key", Value(":"), "tag", combined_tag=CharField())
+        )
+        .filter(q)
+        .distinct()
+    )
     return tags
 
 
@@ -463,6 +475,7 @@ def get_published_visualizations(request, query_filters: QuerySchema = Query(...
     visualizations = (
         VisualizationConf.objects.filter(Q(published=True) & q)
         .order_by("-modified_timestamp")
+        .distinct()
         .values()
     )
     return visualizations
@@ -481,7 +494,9 @@ def get_project_visualizations(
         project_uuid=project_uuid,
         error_message="Visualization not found.",
     )
-    visualizations = VisualizationConf.objects.filter(Q(project_key=project) & q)
+    visualizations = VisualizationConf.objects.filter(
+        Q(project_key=project) & q
+    ).distinct()
     return visualizations
 
 
@@ -528,15 +543,15 @@ def update_visualization(
 def tag_visualization(request, visualization_uuid: str, payload: VizTagIn):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
-        Project.objects.get_write_project(
+        project = Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
         )
     except Project.DoesNotExist:
         raise Http404("Failed to tag visualization.")
     try:
-        tag = Tag.objects.get(tag=payload.tag, key=payload.key)
+        tag = Tag.objects.get(tag=payload.tag, key=payload.key, project_key=project)
     except Tag.DoesNotExist:
-        tag = Tag.objects.create(tag=payload.tag, key=payload.key)
+        tag = Tag.objects.create(tag=payload.tag, key=payload.key, project_key=project)
     visualization.tags.add(tag)
     return {"success": True}
 

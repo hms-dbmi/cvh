@@ -1,7 +1,7 @@
 from ninja import Schema, ModelSchema
 from pydantic import UUID4, EmailStr, Field
 from typing import Optional, Any, List, Literal, Union, Annotated
-from typing_extensions import Dict
+from typing_extensions import Dict, TypedDict
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 
@@ -114,8 +114,6 @@ class DatasetUpdate(PartialDatasetIn):
 
 
 class DatasetOut(ModelSchema):
-    combined_tags: List[str]
-
     class Meta:
         model = Dataset
         fields = [
@@ -130,12 +128,14 @@ class DatasetOut(ModelSchema):
             *shared_output_fields,
         ]
 
-
-class TagIn(Schema):
+class TagIn(TypedDict):
     tag: str
-    key: Optional[str] = None
+    key: str
+
+class TagsIn(Schema):
+    tags: List[TagIn]
     uuid: UUID4
-    project_uuid: Optional[UUID4] = None
+    project_uuid: UUID4
 
 
 class VizTagIn(Schema):
@@ -149,6 +149,9 @@ class TagOut(ModelSchema):
         fields = ["tag", "key"]
 
 
+class DatasetWithTagsOut(DatasetOut):
+    tags: List[TagOut]
+
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4
     description: Optional[str] = None
@@ -159,16 +162,12 @@ class VisualizationIn(ModelSchema):
 
 
 class VisualizationNoConfOut(ModelSchema):
-    combined_tags: List[str]
-
     class Meta:
         model = VisualizationConf
         fields = ["published", *shared_output_fields]
 
 
 class VisualizationOut(ModelSchema):
-    combined_tags: List[str]
-
     class Meta:
         model = VisualizationConf
         fields = ["conf", "published", *shared_output_fields]

@@ -147,6 +147,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/uuid/{dataset_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dataset */
+        get: operations["api_api_get_dataset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tags": {
         parameters: {
             query?: never;
@@ -505,8 +522,6 @@ export interface components {
         };
         /** DatasetOut */
         DatasetOut: {
-            /** Combined Tags */
-            combined_tags: string[];
             /** Source Url */
             source_url: string;
             /** File Type */
@@ -563,26 +578,75 @@ export interface components {
             /** Tag */
             tag: string;
             /** Key */
-            key?: string | null;
+            key: string;
+        };
+        /** TagsIn */
+        TagsIn: {
+            /** Tags */
+            tags: components["schemas"]["TagIn"][];
             /**
              * Uuid
              * Format: uuid4
              */
             uuid: string;
-            /** Project Uuid */
-            project_uuid?: string | null;
+            /**
+             * Project Uuid
+             * Format: uuid4
+             */
+            project_uuid: string;
         };
         /** QuerySchema */
         QuerySchema: {
             /** Tags */
             tags?: string[];
         };
-        /** PagedTagOut */
-        PagedTagOut: {
-            /** Items */
-            items: components["schemas"]["TagOut"][];
-            /** Count */
-            count: number;
+        /** DatasetWithTagsOut */
+        DatasetWithTagsOut: {
+            /** Source Url */
+            source_url: string;
+            /** File Type */
+            file_type: string;
+            /** Data Type */
+            data_type: string;
+            /** Assembly */
+            assembly?: string | null;
+            /** Data Column */
+            data_column?: Record<string, never> | null;
+            /**
+             * Headers
+             * @default false
+             */
+            headers: boolean;
+            /** Index Url */
+            index_url?: string | null;
+            /** Separator */
+            separator?: string | null;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: date-time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: date-time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: date-time
+             */
+            last_viewed_timestamp: string;
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
         };
         /** TagOut */
         TagOut: {
@@ -590,6 +654,13 @@ export interface components {
             tag: string;
             /** Key */
             key?: string | null;
+        };
+        /** PagedTagOut */
+        PagedTagOut: {
+            /** Items */
+            items: components["schemas"]["TagOut"][];
+            /** Count */
+            count: number;
         };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
@@ -600,8 +671,6 @@ export interface components {
         };
         /** VisualizationNoConfOut */
         VisualizationNoConfOut: {
-            /** Combined Tags */
-            combined_tags: string[];
             /**
              * Published
              * @default false
@@ -646,8 +715,6 @@ export interface components {
         };
         /** VisualizationOut */
         VisualizationOut: {
-            /** Combined Tags */
-            combined_tags: string[];
             /** Conf */
             conf?: Record<string, never> | null;
             /**
@@ -1009,7 +1076,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TagIn"];
+                "application/json": components["schemas"]["TagsIn"];
             };
         };
         responses: {
@@ -1043,6 +1110,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedDatasetOut"];
+                };
+            };
+        };
+    };
+    api_api_get_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetWithTagsOut"];
                 };
             };
         };
