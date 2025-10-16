@@ -114,6 +114,16 @@ function useUpdateDataset() {
   });
 }
 
+function useGetDataset(datasetId: string) {
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/uuid/{dataset_uuid}`, {
+    params: {
+      path: { dataset_uuid: datasetId },
+    },
+  });
+}
+
 function useTagDataset() {
   const queryClient = useQueryClient();
   const client = useClient();
@@ -130,4 +140,5 @@ export {
   useCreateDataset,
   useUpdateDataset,
   useTagDataset,
+  useGetDataset,
 };

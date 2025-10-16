@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { PropsWithChildren, useState } from "react";
+import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -14,17 +15,29 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
+import {
+  useGetDataset,
+  useGetPaginatedProjectDatasets,
+} from "../../datasets/api/useDatasets";
+import AddTagButton from "../../datasets/components/AddTagButton";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 
-/*eslint-disable */
-// @ts-ignore TODO: Remove ignore.
-function ActionsMenu() {
+export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const { projectId } = useParams({ strict: false });
+
+  const [openAddTags, setOpenAddTags] = useState(false);
+  const { data } = useGetDataset(datasetID);
+
+  if (!projectId || !data) {
+    return null;
+  }
+
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -34,6 +47,14 @@ function ActionsMenu() {
 
   return (
     <div>
+      <AddTagButton
+        datasetId={datasetID}
+        projectId={projectId}
+        dataset={data}
+        closeMenu={handleClose}
+        open={openAddTags}
+        setOpen={setOpenAddTags}
+      />
       <IconButton
         onClick={handleClick}
         size="small"
@@ -50,12 +71,15 @@ function ActionsMenu() {
         onClose={handleClose}
         onClick={handleClose}
       >
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon>
-            <EditOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          Edit Details
+        <MenuItem onClick={() => setOpenAddTags(true)}>
+          <>
+            <ListItemIcon>
+              <LocalOfferOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            Edit Tags
+          </>
         </MenuItem>
+
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <ContentCopyOutlinedIcon fontSize="small" />
@@ -72,20 +96,14 @@ function ActionsMenu() {
     </div>
   );
 }
-/* eslint-enable */
+
+type Dataset = components["schemas"]["DatasetOut"];
 
 function DataList({
+  children,
   projectId,
-  datasets,
-}: {
-  projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
-}) {
+}: PropsWithChildren<{ projectId: string }>) {
   const [input, setInput] = useState<string>("");
-
-  if (!datasets) {
-    return null;
-  }
   return (
     <Stack spacing={0.75}>
       <TextField
@@ -111,38 +129,20 @@ function DataList({
       <Stack direction="row" spacing={1}>
         <AddDatasetButton projectId={projectId} />
       </Stack>
-      {/*<List>
-        {datasets
-          ?.filter((d) => {
-            if (input.length) {
-              return d.name.includes(input);
-            }
-            return true;
-          })
-          .map((v) => (
-            <ListItem disablePadding secondaryAction={<ActionsMenu />}>
-              <ListItemButton>
-                <ListItemText
-                  primary={v.name}
-                  secondary={[v.source_url, "updated 2 hours ago"].map((t) => (
-                    <>{t} &middot; </>
-                  ))}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-      </List>*/}
+      {children}
     </Stack>
   );
 }
 
-export default function DataAccordion({
+function DataAccordion({
   projectId,
-  datasets,
-}: {
-  projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
-}) {
+  children,
+}: PropsWithChildren<{ projectId: string }>) {
+  const { data } = useGetPaginatedProjectDatasets(projectId, []);
+
+  const datasets: Required<Dataset>[] =
+    data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
+
   return (
     <Accordion disableGutters>
       <AccordionSummary
@@ -161,8 +161,18 @@ export default function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <DataList projectId={projectId} datasets={datasets} />
+        <DataList projectId={projectId}>{children}</DataList>
       </AccordionDetails>
     </Accordion>
   );
+}
+
+export default function Wrapper({ children }: PropsWithChildren) {
+  const { projectId } = useParams({ strict: false });
+
+  if (!projectId) {
+    return null;
+  }
+
+  return <DataAccordion projectId={projectId}>{children}</DataAccordion>;
 }

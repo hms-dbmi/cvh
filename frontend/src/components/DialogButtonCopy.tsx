@@ -1,10 +1,4 @@
-import {
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  useState,
-  FormEvent,
-} from "react";
+import { PropsWithChildren, ReactNode, useCallback, FormEvent } from "react";
 
 import Button, { ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -12,7 +6,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import MenuItem, { MenuItemProps } from "@mui/material/MenuItem";
+import { MenuItemProps } from "@mui/material/MenuItem";
 
 interface DialogText {
   button: ReactNode;
@@ -25,6 +19,8 @@ interface DialogText {
 interface CoreFormDialogProps {
   onClose?: () => void;
   onOpen?: () => void;
+  setOpen: (o: boolean) => void;
+  open: boolean;
   text: DialogText;
   actionButtons?: ReactNode;
 }
@@ -53,28 +49,16 @@ type DialogProps =
       onSubmit?: undefined;
     } & ActionProps);
 
-export default function DialogButton({
+export default function DialogButtonCopy({
   text,
   onSubmit,
   onClose,
-  onOpen,
-  buttonProps,
-  menuItemProps,
+  open,
+  setOpen,
   children,
   actionButtons,
   isForm = true,
-  isButton = true,
-  isMenuItem = false,
 }: PropsWithChildren<DialogProps>) {
-  const [open, setOpen] = useState(false);
-
-  const handleClickOpen = useCallback(() => {
-    if (onOpen) {
-      // onOpen();
-    }
-    setOpen(true);
-  }, [setOpen, onOpen]);
-
   const handleClose = useCallback(() => {
     if (onClose) {
       onClose();
@@ -94,16 +78,6 @@ export default function DialogButton({
 
   return (
     <>
-      {isButton && (
-        <Button variant="outlined" onClick={handleClickOpen} {...buttonProps}>
-          {text.button}
-        </Button>
-      )}
-      {isMenuItem && (
-        <MenuItem onClick={handleClickOpen} {...menuItemProps}>
-          {text.button}
-        </MenuItem>
-      )}
       <Dialog
         open={open}
         onClose={handleClose}

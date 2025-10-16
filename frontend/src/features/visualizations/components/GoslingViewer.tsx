@@ -11,13 +11,13 @@ import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStor
 import { useUpdateVisualization } from "../api/useVisualizations";
 interface GoslingViewerProps {
   projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
+  datasets?: components["schemas"]["DatasetWithTagsOut"][];
   readonly?: boolean;
 }
 
 // TODO: This needs to be revisited to support fields etc
 const formatCvhDatasetsAsGoslingDatasets = (
-  datasets: components["schemas"]["DatasetOut"][]
+  datasets: components["schemas"]["DatasetWithTagsOut"][]
 ) => {
   return datasets.map((dataset) => ({
     type: dataset.file_type,
@@ -32,12 +32,13 @@ const formatCvhDatasetsAsGoslingDatasets = (
     ...(dataset.file_type === "csv"
       ? { fields: dataset?.data_column ?? undefined }
       : { optionalFields: dataset?.data_column ?? undefined }),
+    tags: dataset.tags.map(t => [t.key, t.tag])
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
   })) as ComponentProps<typeof GoslingDesignerVEC>["data"];
 };
 
 const useFormattedDatasets = (
-  datasets: components["schemas"]["DatasetOut"][]
+  datasets: components["schemas"]["DatasetWithTagsOut"][]
 ) => {
   return useMemo(() => {
     if (!datasets) {
@@ -90,8 +91,6 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     (id: string) => setSelectedVizId(id),
     [setSelectedVizId]
   );
-
-  console.log(selectedVizId, formatVisualization);
 
   const saveViz = useCallback(
     (vis: VisSchema.GDVis) => {
