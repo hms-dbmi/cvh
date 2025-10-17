@@ -27,6 +27,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import Chip from "@mui/material/Chip";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
@@ -136,16 +137,24 @@ function VisualizationListItem({
       })}
     >
       <ListItemButton onClick={selectViz} color="primary">
-        <ListItemText
-          primary={v.name}
-          secondary={[
-            "10 tracks",
-            "4 active datasets",
-            "updated 2 hours ago",
-          ].map((t) => (
-            <>{t} &middot; </>
-          ))}
-        />
+        <Stack>
+          <ListItemText
+            primary={v.name}
+            secondary={[
+              "10 tracks",
+              "4 active datasets",
+              "updated 2 hours ago",
+            ].map((t) => (
+              <>{t} &middot; </>
+            ))}
+          />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <LocalOfferOutlinedIcon fontSize="small" />
+            {v?.tags.map((t) => (
+              <Chip key={t.key + t.tag} label={[t.key, t.tag].join(" ")} />
+            ))}
+          </Stack>
+        </Stack>
       </ListItemButton>
     </ListItem>
   );
