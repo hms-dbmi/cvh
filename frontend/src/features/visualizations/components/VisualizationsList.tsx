@@ -141,8 +141,8 @@ function VisualizationListItem({
           <ListItemText
             primary={v.name}
             secondary={[
-              "10 tracks",
-              "4 active datasets",
+              `${v.n_tracks} tracks`,
+              `${v.n_datasets} active datasets`,
               "updated 2 hours ago",
             ].map((t) => (
               <>{t} &middot; </>

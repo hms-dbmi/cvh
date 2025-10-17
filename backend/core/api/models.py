@@ -124,6 +124,8 @@ class VisualizationConf(UserCreated):
     )
     tags = models.ManyToManyField(Tag)
     published = models.BooleanField(default=False)
+    n_tracks = models.IntegerField(default=0, null=True)
+    n_datasets = models.IntegerField(default=0, null=True)
 
 
 class ProjectMember(models.Model):

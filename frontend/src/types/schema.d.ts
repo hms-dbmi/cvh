@@ -686,6 +686,16 @@ export interface components {
              */
             published: boolean;
             /**
+             * N Tracks
+             * @default 0
+             */
+            n_tracks: number | null;
+            /**
+             * N Datasets
+             * @default 0
+             */
+            n_datasets: number | null;
+            /**
              * Uuid
              * Format: uuid
              */
@@ -734,6 +744,16 @@ export interface components {
              */
             published: boolean;
             /**
+             * N Tracks
+             * @default 0
+             */
+            n_tracks: number | null;
+            /**
+             * N Datasets
+             * @default 0
+             */
+            n_datasets: number | null;
+            /**
              * Uuid
              * Format: uuid
              */
@@ -768,6 +788,10 @@ export interface components {
             conf?: Record<string, never> | null;
             /** Published */
             published?: boolean;
+            /** N Tracks */
+            n_tracks?: number | null;
+            /** N Datasets */
+            n_datasets?: number | null;
         };
     };
     responses: never;

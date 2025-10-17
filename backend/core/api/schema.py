@@ -166,20 +166,21 @@ class VisualizationNoConfOut(ModelSchema):
 
     class Meta:
         model = VisualizationConf
-        fields = ["published", *shared_output_fields]
+        fields = ["published", "n_tracks", "n_datasets", *shared_output_fields]
 
 
 class VisualizationOut(ModelSchema):
     tags: List[TagOut]
+
     class Meta:
         model = VisualizationConf
-        fields = ["conf", "published", *shared_output_fields]
+        fields = ["conf", "published", "n_tracks", "n_datasets", *shared_output_fields]
 
 
 class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
-        fields = ["name", "description", "conf", "published"]
+        fields = ["name", "description", "conf", "published", "n_tracks", "n_datasets"]
 
 
 class ProjectMemberIn(Schema):

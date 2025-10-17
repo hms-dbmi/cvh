@@ -90,7 +90,7 @@ export default function VisualizationListItem({
               {visualization.description}
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center" mt={1}>
-              {visualization?.combined_tags?.map((tag) => (
+              {visualization?.tags?.map((tag) => (
                 <Chip key={tag} label={tag} variant="outlined" />
               ))}
               {showActions && (

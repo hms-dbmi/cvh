@@ -32,7 +32,7 @@ const formatCvhDatasetsAsGoslingDatasets = (
     ...(dataset.file_type === "csv"
       ? { fields: dataset?.data_column ?? undefined }
       : { optionalFields: dataset?.data_column ?? undefined }),
-    tags: dataset.tags.map(t => [t.key, t.tag])
+    tags: dataset.tags.map((t) => [t.key, t.tag]),
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
   })) as ComponentProps<typeof GoslingDesignerVEC>["data"];
 };
@@ -93,15 +93,26 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
   );
 
   const saveViz = useCallback(
-    (vis: VisSchema.GDVis) => {
+    ({
+      vis,
+      nTracks,
+      nDatasets,
+    }: {
+      vis: VisSchema.GDVis;
+      nTracks: number;
+      nDatasets: number;
+    }) => {
       const conf = vis?.spec;
+      const n_tracks = nTracks;
+      const n_datasets = nDatasets;
 
+      console.log(conf, nTracks, nDatasets, 'aa')
       try {
         if (!selectedVizId) {
           return;
         }
         updateViz({
-          body: { conf },
+          body: { conf, n_tracks, n_datasets },
           params: {
             path: { visualization_uuid: selectedVizId },
           },
@@ -133,6 +144,7 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
         }
         DatasetsPanel={DataList}
         DatasetMenuButton={DatasetActionsMenu}
+        userMode="admin"
       >
         <Box
           sx={{
