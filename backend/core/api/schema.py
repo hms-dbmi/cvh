@@ -59,9 +59,11 @@ class GoslingDataCommon(ModelSchema):
 class GoslingDatasetSimple(GoslingDataCommon):
     file_type: Literal["bigwig", "vector", "cooler"]
 
+
 class GoslingDesignerMultiVec(GoslingDataCommon):
     file_type: Literal["multivec"]
     row_names: List[str]
+
 
 class GoslingDesignerDataColumn(Schema):
     data_column: Optional[
@@ -128,19 +130,16 @@ class DatasetOut(ModelSchema):
             *shared_output_fields,
         ]
 
+
 class TagIn(TypedDict):
     tag: str
     key: str
+
 
 class TagsIn(Schema):
     tags: List[TagIn]
     uuid: UUID4
     project_uuid: UUID4
-
-
-class VizTagIn(Schema):
-    tag: str
-    key: Optional[str] = None
 
 
 class TagOut(ModelSchema):
@@ -152,6 +151,7 @@ class TagOut(ModelSchema):
 class DatasetWithTagsOut(DatasetOut):
     tags: List[TagOut]
 
+
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4
     description: Optional[str] = None
@@ -162,12 +162,15 @@ class VisualizationIn(ModelSchema):
 
 
 class VisualizationNoConfOut(ModelSchema):
+    tags: List[TagOut]
+
     class Meta:
         model = VisualizationConf
         fields = ["published", *shared_output_fields]
 
 
 class VisualizationOut(ModelSchema):
+    tags: List[TagOut]
     class Meta:
         model = VisualizationConf
         fields = ["conf", "published", *shared_output_fields]

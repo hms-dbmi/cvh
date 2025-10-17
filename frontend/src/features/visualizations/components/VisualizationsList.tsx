@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -10,7 +11,10 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import { useGetProjectVisualizations } from "../api/useVisualizations";
+import {
+  useGetProjectVisualizations,
+  useGetVisualization,
+} from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
@@ -22,21 +26,41 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
+import AddTagButton from "./AddVizTagButton";
 
-function ActionsMenu() {
+function ActionsMenu({ visualizationId }: { visualizationId: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [openAddTags, setOpenAddTags] = useState(false);
+  const { projectId } = useParams({ strict: false });
+
+  const { data } = useGetVisualization(visualizationId);
+
+  if (!projectId || !data) {
+    return null;
+  }
+
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   return (
     <div>
+      <AddTagButton
+        visualizationId={visualizationId}
+        projectId={projectId}
+        visualization={data}
+        closeMenu={handleClose}
+        open={openAddTags}
+        setOpen={setOpenAddTags}
+      />
       <IconButton
         onClick={handleClick}
         size="small"
@@ -58,6 +82,14 @@ function ActionsMenu() {
             <EditOutlinedIcon fontSize="small" />
           </ListItemIcon>
           Edit Details
+        </MenuItem>
+        <MenuItem onClick={() => setOpenAddTags(true)}>
+          <>
+            <ListItemIcon>
+              <LocalOfferOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            Edit Tags
+          </>
         </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
@@ -81,16 +113,7 @@ function VisualizationListItem({
   setSelectedVizId,
   isSelected,
 }: {
-  v: {
-    combined_tags: string[];
-    published: boolean;
-    uuid?: string;
-    name: string;
-    description?: string | null;
-    created_timestamp: string;
-    modified_timestamp: string;
-    last_viewed_timestamp: string;
-  };
+  v: components["schemas"]["VisualizationNoConfOut"];
   setSelectedVizId: (id: string) => void;
   isSelected: boolean;
 }) {
@@ -99,10 +122,15 @@ function VisualizationListItem({
       setSelectedVizId(v.uuid);
     }
   }, [v.uuid, setSelectedVizId]);
+
+  if (!v.uuid) {
+    return null;
+  }
+
   return (
     <ListItem
       disablePadding
-      secondaryAction={<ActionsMenu />}
+      secondaryAction={<ActionsMenu visualizationId={v.uuid} />}
       sx={(theme) => ({
         bgcolor: isSelected ? theme.palette.primary.light : "inherit",
       })}

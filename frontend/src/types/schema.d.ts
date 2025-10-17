@@ -648,6 +648,13 @@ export interface components {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
         };
+        /** PagedDatasetWithTagsOut */
+        PagedDatasetWithTagsOut: {
+            /** Items */
+            items: components["schemas"]["DatasetWithTagsOut"][];
+            /** Count */
+            count: number;
+        };
         /** TagOut */
         TagOut: {
             /** Tag */
@@ -671,6 +678,8 @@ export interface components {
         };
         /** VisualizationNoConfOut */
         VisualizationNoConfOut: {
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
             /**
              * Published
              * @default false
@@ -715,6 +724,8 @@ export interface components {
         };
         /** VisualizationOut */
         VisualizationOut: {
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
             /** Conf */
             conf?: Record<string, never> | null;
             /**
@@ -757,13 +768,6 @@ export interface components {
             conf?: Record<string, never> | null;
             /** Published */
             published?: boolean;
-        };
-        /** VizTagIn */
-        VizTagIn: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key?: string | null;
         };
     };
     responses: never;
@@ -1109,7 +1113,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedDatasetOut"];
+                    "application/json": components["schemas"]["PagedDatasetWithTagsOut"];
                 };
             };
         };
@@ -1308,7 +1312,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VizTagIn"];
+                "application/json": components["schemas"]["TagsIn"];
             };
         };
         responses: {
