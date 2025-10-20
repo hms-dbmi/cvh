@@ -2,7 +2,10 @@ Description: Deploy a static website
 
 Parameters:
     RootDomainName:
-        Description: Domain name for the cvh website
+        Description: Domain name for the website (beta.designer.gosling-lang.org)
+        Type: String
+    HostedZoneId:
+        Description: Hosted Zone ID
         Type: String
 
 Resources:
@@ -96,6 +99,23 @@ Resources:
                             StringEquals:
                                 'aws:SourceAccount': !Sub '${AWS::AccountId}'
 
+    CertificateManagerCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+        # naked domain
+        DomainName: !Ref RootDomainName
+        # add www to certificate
+        SubjectAlternativeNames:
+            - !Sub 'www.${RootDomainName}'
+        ValidationMethod: DNS
+        DomainValidationOptions:
+            # DNS record for the naked domain
+            - DomainName: !Ref RootDomainName
+                HostedZoneId: !Ref HostedZoneId
+            # DNS record for the www domain
+            - DomainName: !Sub 'www.${RootDomainName}'
+                HostedZoneId: !Ref HostedZoneId
+
     CloudFrontDistribution:
         Type: AWS::CloudFront::Distribution
         Properties:
@@ -126,6 +146,13 @@ Resources:
                     ResponseHeadersPolicyId: e61eb60c-9c35-4d20-a928-2b84e02af89c 
                     CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
                 DefaultRootObject: 'index.html'
+                CustomErrorResponses:
+                    - ErrorCode: 404
+                      ResponseCode: 200
+                      ResponsePagePath: /index.html
+                    - ErrorCode: 403
+                      ResponseCode: 200
+                      ResponsePagePath: /index.html
                 Enabled: true
                 HttpVersion: http2
                 IPV6Enabled: true
@@ -154,6 +181,9 @@ Resources:
                 Comment: !Sub 'CloudFront OAI for cvh'
 
 Outputs:
+    CertificateArn:
+        Description: Issued certificate
+        Value: !Ref CertificateManagerCertificate  
     CloudFrontDistribution:
         Description: CloudFront distribution
         Value: !Ref CloudFrontDistribution
