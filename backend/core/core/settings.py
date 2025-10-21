@@ -48,10 +48,10 @@ def get_ecs_allowed_hosts(uri):
     
     container_ips = []
 
-    networks = container_metadata["Networks"]
+    networks = container_metadata.get("Networks", [])
     
     for network in networks:
-        network_addresses = network["IPv4Addresses"]
+        network_addresses = network.get("IPv4Addresses", [])
 
         for network_address in network_addresses:
             container_ips.append(network_address)
@@ -86,7 +86,7 @@ def get_ecs_allowed_hosts(uri):
         except ClientError as e:
             raise e
 
-        interfaces = network_interfaces["NetworkInterfaces"]
+        interfaces = network_interfaces.get("NetworkInterfaces", [])
 
         for interface in interfaces:
             task_addresses.append(interface["Association"]["PublicIp"])
