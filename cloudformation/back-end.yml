@@ -102,7 +102,6 @@ Resources:
           ToPort: 8000
           # CidrIp: 0.0.0.0/0
           SourceSecurityGroupId: !Ref 'LoadBalancerSG'
-      SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 80
@@ -206,6 +205,7 @@ Resources:
       TaskDefinition: !Ref ECSServiceTaskDefinition
     DependsOn:
       - LoadBalancerListenerTargetGroupECS
+      - LoadBalancer
   #     - LoadBalancerListener
 
   # ECS Task Definition
