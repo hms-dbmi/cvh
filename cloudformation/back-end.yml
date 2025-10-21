@@ -39,25 +39,25 @@ Parameters:
 
 Resources:
   # Security Group for the Load Balancer
-  # LoadBalancerSG:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Properties:
-  #     GroupDescription: "LoadBalancer Security Group"
-  #     SecurityGroupIngress:
-  #       - CidrIp: 0.0.0.0/0
-  #         IpProtocol: -1
-  #         # Description: Allow from anyone on port 80
-  #         # FromPort: 80
-  #         # IpProtocol: tcp
-  #         # ToPort: 80
-  #     Tags: 
-  #       - Key: Name
-  #         Value: !Sub
-  #           - '${StackName}:ECSService'
-  #           - StackName: !Ref AWS::StackName
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #     VpcId: !Ref VpcId
+  LoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "LoadBalancer Security Group"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+          # Description: Allow from anyone on port 80
+          # FromPort: 80
+          # IpProtocol: tcp
+          # ToPort: 80
+      Tags: 
+        - Key: Name
+          Value: !Sub
+            - '${StackName}:ECSService'
+            - StackName: !Ref AWS::StackName
+        - Key: project
+          Value: 'gosling-dmc'
+      VpcId: !Ref VpcId
 
 
   # Load Balancer
@@ -75,20 +75,20 @@ Resources:
   #     Type: application
   # 
   # External load balancer - as alternate to above internal version
-  # LoadBalancer:
-  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-  #   Properties:
-  #     LoadBalancerAttributes:
-  #       - Key: idle_timeout.timeout_seconds
-  #         Value: '30'
-  #     Scheme: internet-facing
-  #     SecurityGroups:
-  #       - !GetAtt LoadBalancerSG.GroupId
-  #     Subnets: !Ref PublicSubnetIds
-  #     Tags: 
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #     Type: application
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '30'
+      Scheme: internet-facing
+      SecurityGroups:
+        - !GetAtt LoadBalancerSG.GroupId
+      Subnets: !Ref PublicSubnetIds
+      Tags: 
+        - Key: project
+          Value: 'gosling-dmc'
+      Type: application
 
 
   # ECS Security Group
@@ -99,9 +99,14 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
-          ToPort: 65535
-          CidrIp: 0.0.0.0/0
-          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          ToPort: 8000
+          # CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 80
+          # CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -130,46 +135,33 @@ Resources:
       GroupId: !Ref DbSG
 
   # Target Group for ECS Service
-  # LoadBalancerListenerTargetGroupECS:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     HealthCheckPath: /health     
-  #     Port: 80
-  #     Protocol: HTTP
-  #     Tags:
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #       - Key: component
-  #         Value: 'gosling-dmc-api'
-  #     TargetType: ip
-  #     VpcId: !Ref VpcId
-  # Dummy
-  # LoadBalancerListenerTargetGroupECS:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     HealthCheckPath: /health     
-  #     Port: 80
-  #     Protocol: HTTP
-  #     Tags:
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #       - Key: component
-  #         Value: 'gosling-dmc-api'
-  #     # TargetType: ip
-  #     VpcId: !Ref VpcId  
+  LoadBalancerListenerTargetGroupECS:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /health     
+      Port: 8000
+      Protocol: HTTP
+      Tags:
+        - Key: project
+          Value: 'gosling-dmc'
+        - Key: component
+          Value: 'gosling-dmc-api'
+      TargetType: ip
+      VpcId: !Ref VpcId
+ 
 
   # Load Balancer Listener
-  # LoadBalancerListener:
-  #   Type: AWS::ElasticLoadBalancingV2::Listener
-  #   Properties:
-  #     DefaultActions:
-  #       - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-  #         Type: 'forward'
-  #     LoadBalancerArn: !Ref LoadBalancer
-  #     Port: 80
-  #     Protocol: HTTP
-  #   DependsOn:
-  #     - LoadBalancer
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
+          Type: 'forward'
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+    DependsOn:
+      - LoadBalancer
 
   # ECS Cluster
   ECSFargateCluster:
@@ -181,38 +173,39 @@ Resources:
           Value: 'gosling-dmc'
 
   # ECS Service
-  # ECSService:
-  #   Type: AWS::ECS::Service
-  #   Properties:
-  #     Cluster: !Ref ECSFargateCluster
-  #     DeploymentConfiguration:
-  #       MaximumPercent: 100
-  #       MinimumHealthyPercent: 50
-  #     DesiredCount: 2
-  #     EnableECSManagedTags: true
-  #     HealthCheckGracePeriodSeconds: 60
-  #     LaunchType: FARGATE
-  #     LoadBalancers:
-  #       - ContainerName: !Ref TaskName
-  #         ContainerPort: 8000
-  #         TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-  #     NetworkConfiguration:
-  #       AwsvpcConfiguration:
-  #         AssignPublicIp: ENABLED
-  #         SecurityGroups:
-  #           - !GetAtt ECSSecurityGroup.GroupId
-  #         # Subnets: !Ref PrivateSubnetIds
-  #         Subnets: !Join [ ",", [!Ref PrivateSubnetIds, !Ref PublicSubnetIds] ]
-  #     Tags: 
-  #       - Key: Name
-  #         Value: !Sub
-  #           - '${StackName}:ECSService'
-  #           - StackName: !Ref AWS::StackName
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #     TaskDefinition: !Ref ECSServiceTaskDefinition
-  #   DependsOn:
-  #     - LoadBalancerListenerTargetGroupECS
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSFargateCluster
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 50
+      DesiredCount: 2
+      EnableECSManagedTags: true
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: !Ref TaskName
+          ContainerPort: 8000
+          TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt ECSSecurityGroup.GroupId
+          Subnets: !Ref PublicSubnetIds
+          # Subnets: !Join [ ",", [!Ref PrivateSubnetIds, !Ref PublicSubnetIds] ]
+      Tags: 
+        - Key: Name
+          Value: !Sub
+            - '${StackName}:ECSService'
+            - StackName: !Ref AWS::StackName
+        - Key: project
+          Value: 'gosling-dmc'
+      TaskDefinition: !Ref ECSServiceTaskDefinition
+    DependsOn:
+      - LoadBalancerListenerTargetGroupECS
+      - LoadBalancer
   #     - LoadBalancerListener
 
   # ECS Task Definition
@@ -295,6 +288,11 @@ Resources:
                 Resource: [
                   !Ref TaskEnvFile,
                 ]
+              - Sid: ECS
+                Effect: Allow
+                Action:
+                  - ecs:DescribeTasks
+                Resource: "*"
               - Sid: RdsAccess
                 Effect: Allow
                 Action:
