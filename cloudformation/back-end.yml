@@ -99,9 +99,15 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
-          ToPort: 65535
-          CidrIp: 0.0.0.0/0
-          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          ToPort: 8000
+          # CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 80
+          # CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -134,7 +140,7 @@ Resources:
   #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
   #   Properties:
   #     HealthCheckPath: /health     
-  #     Port: 80
+  #     Port: 8000
   #     Protocol: HTTP
   #     Tags:
   #       - Key: project
@@ -143,20 +149,7 @@ Resources:
   #         Value: 'gosling-dmc-api'
   #     TargetType: ip
   #     VpcId: !Ref VpcId
-  # Dummy
-  # LoadBalancerListenerTargetGroupECS:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     HealthCheckPath: /health     
-  #     Port: 80
-  #     Protocol: HTTP
-  #     Tags:
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #       - Key: component
-  #         Value: 'gosling-dmc-api'
-  #     # TargetType: ip
-  #     VpcId: !Ref VpcId  
+ 
 
   # Load Balancer Listener
   # LoadBalancerListener:
@@ -295,6 +288,11 @@ Resources:
                 Resource: [
                   !Ref TaskEnvFile,
                 ]
+              - Sid: ECS
+                Effect: Allow
+                Action:
+                  - ecs:DescribeTasks
+                Resource: "*"
               - Sid: RdsAccess
                 Effect: Allow
                 Action:
