@@ -45,12 +45,24 @@ def get_ecs_allowed_hosts(uri):
     ec2_client = session.client(service_name="ec2", region_name=region_name)
 
     container_metadata = requests.get(uri).json()
-    container_ip = container_metadata["Networks"][0]["IPv4Addresses"][0]
+    
+    container_ips = []
+
+    networks = container_metadata["Networks"]
+    
+    for network in networks:
+        network_addresses = network["IPv4Addresses"]
+
+        for network_address in network_addresses:
+            container_ips.append(network_address)
 
     task_metadata = requests.get(f"{uri}/task").json()
 
     cluster = task_metadata["Cluster"]
     task_arn = task_metadata["TaskARN"]
+
+    task_addresses = []
+
     try:
         tasks = ecs_client.describe_tasks(cluster=cluster, tasks=[task_arn])
     except ClientError as e:
@@ -74,11 +86,12 @@ def get_ecs_allowed_hosts(uri):
         except ClientError as e:
             raise e
 
-        return [
-            container_ip,
-            network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"],
-        ]
-    return [container_ip]
+        interfaces = network_interfaces["NetworkInterfaces"]
+
+        for interface in interfaces:
+            task_addresses.append(interface["Association"]["PublicIp"])
+        return container_ips.extend(task_addresses)
+    return container_ips
 
 
 if METADATA_URI:
@@ -106,6 +119,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "core.middleware.HealthCheckMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

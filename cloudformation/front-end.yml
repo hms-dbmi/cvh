@@ -7,6 +7,9 @@ Parameters:
     HostedZoneId:
         Description: Hosted Zone ID
         Type: String
+    HostedZoneName:
+        Description: Hosted Zone Name
+        Type: String
 
 Resources:
     # Two buckets are created for website hosting - the RootBucket hosts the content,
@@ -100,31 +103,36 @@ Resources:
                                 'aws:SourceAccount': !Sub '${AWS::AccountId}'
 
     CertificateManagerCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-        # naked domain
-        DomainName: !Ref RootDomainName
-        # add www to certificate
-        SubjectAlternativeNames:
-            - !Sub 'www.${RootDomainName}'
-        ValidationMethod: DNS
-        DomainValidationOptions:
-            # DNS record for the naked domain
-            - DomainName: !Ref RootDomainName
-                HostedZoneId: !Ref HostedZoneId
-            # DNS record for the www domain
-            - DomainName: !Sub 'www.${RootDomainName}'
-                HostedZoneId: !Ref HostedZoneId
+        Type: AWS::CertificateManager::Certificate
+        Properties:
+            # naked domain
+            DomainName: !Ref RootDomainName
+            # add www to certificate
+            SubjectAlternativeNames:
+                - !Sub 'www.${RootDomainName}'
+            ValidationMethod: DNS
+            DomainValidationOptions:
+                # DNS record for the naked domain
+                - DomainName: !Ref RootDomainName
+                  HostedZoneId: !Ref HostedZoneId
+                # DNS record for the www domain
+                - DomainName: !Sub 'www.${RootDomainName}'
+                  HostedZoneId: !Ref HostedZoneId
 
     CloudFrontDistribution:
         Type: AWS::CloudFront::Distribution
         Properties:
             DistributionConfig:
+                Aliases:
+                    - !Ref RootDomainName
+                    - !Sub 'www.${RootDomainName}'
                 CustomErrorResponses:
-                    - ErrorCachingMinTTL: 60
-                      ErrorCode: 404
-                      ResponseCode: 404
+                    - ErrorCode: 404
+                      ResponseCode: 200
                       ResponsePagePath: '/index.html'
+                    - ErrorCode: 403
+                      ResponseCode: 200
+                      ResponsePagePath: /index.html
                 DefaultCacheBehavior:
                     AllowedMethods:
                         - GET
@@ -146,13 +154,6 @@ Resources:
                     ResponseHeadersPolicyId: e61eb60c-9c35-4d20-a928-2b84e02af89c 
                     CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
                 DefaultRootObject: 'index.html'
-                CustomErrorResponses:
-                    - ErrorCode: 404
-                      ResponseCode: 200
-                      ResponsePagePath: /index.html
-                    - ErrorCode: 403
-                      ResponseCode: 200
-                      ResponsePagePath: /index.html
                 Enabled: true
                 HttpVersion: http2
                 IPV6Enabled: true
@@ -168,7 +169,8 @@ Resources:
                             !Join ['', ['origin-access-identity/cloudfront/', !Ref CloudFrontOriginAccessIdentity]]
                 PriceClass: PriceClass_All
                 ViewerCertificate:
-                  CloudFrontDefaultCertificate: true
+                  AcmCertificateArn: !Ref CertificateManagerCertificate
+                  SslSupportMethod: sni-only
                   MinimumProtocolVersion: 'TLSv1.2_2021'
             Tags:
                 - Key: Domain
@@ -178,7 +180,56 @@ Resources:
         Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
         Properties:
             CloudFrontOriginAccessIdentityConfig:
-                Comment: !Sub 'CloudFront OAI for cvh'
+                Comment: !Sub 'CloudFront OAI for www.${RootDomainName}'
+
+    Route53RecordSetGroup:
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            # keep the . suffix
+            HostedZoneName: !Sub '${HostedZoneName}.'
+            # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html#cfn-route53-aliastarget-hostedzoneid
+            Comment: Zone apex alias.
+            RecordSets:
+                - Name: !Ref RootDomainName
+                  Type: A
+                  AliasTarget:
+                      DNSName: !GetAtt CloudFrontDistribution.DomainName
+                      EvaluateTargetHealth: false
+                      HostedZoneId: Z2FDTNDATAQYW2 # leave hardcoded, don't confuse w/ !Ref HostedZoneId
+                - Name: !Sub 'www.${RootDomainName}'
+                  Type: A
+                  AliasTarget:
+                      DNSName: !GetAtt CloudFrontDistribution.DomainName
+                      EvaluateTargetHealth: false
+                      HostedZoneId: Z2FDTNDATAQYW2 # leave hardcoded, don't confuse w/ !Ref HostedZoneId
+
+    # This function replicates the Amazon S3 behavior that directs any request that lacks a filename to index.html,
+    # regardless of whether it's for the root of a website or a subfolder.
+    # https://github.com/aws-samples/amazon-cloudfront-functions/tree/main/url-rewrite-single-page-apps
+    CloudFrontFunction:
+        Type: AWS::CloudFront::Function
+        Properties:
+            AutoPublish: true
+            Name: add-index_html
+            FunctionCode: !Sub |
+                function handler(event) {
+                    var request = event.request;
+                    var uri = request.uri;
+
+                    // Check whether the URI is missing a file name.
+                    if (uri.endsWith('/')) {
+                        request.uri += 'index.html';
+                    }
+                    // Check whether the URI is missing a file extension.
+                    else if (!uri.includes('.')) {
+                        request.uri += '/index.html';
+                    }
+
+                    return request;
+                }
+            FunctionConfig:
+                Comment: Add index.html to request URLs that do not include a file name
+                Runtime: cloudfront-js-1.0
 
 Outputs:
     CertificateArn:
