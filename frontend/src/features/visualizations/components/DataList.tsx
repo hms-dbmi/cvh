@@ -22,9 +22,11 @@ import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 import {
   useGetDataset,
   useGetPaginatedProjectDatasets,
+  useGetProjectDatasetFieldValues,
 } from "../../datasets/api/useDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -97,6 +99,38 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   );
 }
 
+function DataSelects({ projectId }: { projectId: string }) {
+  const [selectedAssemblies, setSelectedAssemblies] = useState<string[]>([]);
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
+
+  const { data: assemblyData } = useGetProjectDatasetFieldValues(
+    projectId,
+    "assembly"
+  );
+
+  const { data: fileTypeData } = useGetProjectDatasetFieldValues(
+    projectId,
+    "file_type"
+  );
+
+  return (
+    <Stack direction="row" spacing={1}>
+      <DatasetAttributeSelect
+        attribute="assembly"
+        values={assemblyData ?? []}
+        selectedValues={selectedAssemblies}
+        setSelectedValues={setSelectedAssemblies}
+      />
+      <DatasetAttributeSelect
+        attribute="file_type"
+        values={fileTypeData ?? []}
+        selectedValues={selectedFileTypes}
+        setSelectedValues={setSelectedFileTypes}
+      />
+    </Stack>
+  );
+}
+
 type Dataset = components["schemas"]["DatasetOut"];
 
 function DataList({
@@ -104,6 +138,7 @@ function DataList({
   projectId,
 }: PropsWithChildren<{ projectId: string }>) {
   const [input, setInput] = useState<string>("");
+
   return (
     <Stack spacing={0.75}>
       <TextField
@@ -129,6 +164,7 @@ function DataList({
       <Stack direction="row" spacing={1}>
         <AddDatasetButton projectId={projectId} />
       </Stack>
+      <DataSelects projectId={projectId} />
       {children}
     </Stack>
   );

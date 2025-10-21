@@ -147,6 +147,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/fields/{project_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Datasets Field Values */
+        get: operations["api_api_get_project_datasets_field_values"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasets/uuid/{dataset_uuid}": {
         parameters: {
             query?: never;
@@ -1138,6 +1155,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedDatasetWithTagsOut"];
+                };
+            };
+        };
+    };
+    api_api_get_project_datasets_field_values: {
+        parameters: {
+            query: {
+                field: "assembly" | "file_type";
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };

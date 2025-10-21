@@ -133,6 +133,17 @@ function useTagDataset() {
   });
 }
 
+function useGetProjectDatasetFieldValues(project_uuid: string, field: "assembly" | "file_type"){
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/fields/{project_uuid}`, {
+    params: {
+      path: { project_uuid },
+      query: {field}
+    },
+  });
+}
+
 export {
   useGetUserDatasets,
   useGetProjectDatasets,
@@ -141,4 +152,5 @@ export {
   useUpdateDataset,
   useTagDataset,
   useGetDataset,
+  useGetProjectDatasetFieldValues
 };

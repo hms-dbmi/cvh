@@ -14,7 +14,7 @@ from ninja.pagination import paginate, PageNumberPagination
 
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
-from typing import Any, List
+from typing import Any, List, Literal
 from environs import env
 import requests
 
@@ -413,6 +413,17 @@ def get_project_datasets(
         "-modified_timestamp"
     )
     return datasets
+
+
+@api.get(
+    "/datasets/fields/{project_uuid}", auth=Authorized(), response=List[str]
+)
+def get_project_datasets_field_values(
+    request, project_uuid: str, field: Literal['assembly', 'file_type']
+):
+    project = Project.objects.get_read_project(user=request.auth, project_uuid=project_uuid)
+    field_values = Dataset.objects.filter(Q(project_key=project)).values_list(field, flat="true").distinct()
+    return field_values
 
 
 @api.get(
