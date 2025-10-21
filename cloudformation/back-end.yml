@@ -45,11 +45,15 @@ Resources:
       GroupDescription: "LoadBalancer Security Group"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          IpProtocol: -1
-          # Description: Allow from anyone on port 80
-          # FromPort: 80
-          # IpProtocol: tcp
-          # ToPort: 80
+          Description: Allow from anyone on port 80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: Allow from anyone on port 443
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 80
       Tags: 
         - Key: Name
           Value: !Sub
@@ -100,13 +104,13 @@ Resources:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 8000
-          # CidrIp: 0.0.0.0/0
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 80
-          # CidrIp: 0.0.0.0/0
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -151,17 +155,17 @@ Resources:
  
 
   # Load Balancer Listener
-  # LoadBalancerListener:
-  #   Type: AWS::ElasticLoadBalancingV2::Listener
-  #   Properties:
-  #     DefaultActions:
-  #       - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-  #         Type: 'forward'
-  #     LoadBalancerArn: !Ref LoadBalancer
-  #     Port: 80
-  #     Protocol: HTTP
-  #   DependsOn:
-  #     - LoadBalancer
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
+          Type: 'forward'
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+    DependsOn:
+      - LoadBalancer
 
   # ECS Cluster
   ECSFargateCluster:
@@ -206,7 +210,7 @@ Resources:
     DependsOn:
       - LoadBalancerListenerTargetGroupECS
       - LoadBalancer
-  #     - LoadBalancerListener
+      - LoadBalancerListener
 
   # ECS Task Definition
   ECSServiceTaskDefinition:
