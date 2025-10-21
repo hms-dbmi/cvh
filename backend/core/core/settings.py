@@ -45,24 +45,12 @@ def get_ecs_allowed_hosts(uri):
     ec2_client = session.client(service_name="ec2", region_name=region_name)
 
     container_metadata = requests.get(uri).json()
-    
-    container_ips = []
-
-    networks = container_metadata.get("Networks", [])
-    
-    for network in networks:
-        network_addresses = network.get("IPv4Addresses", [])
-
-        for network_address in network_addresses:
-            container_ips.append(network_address)
+    container_ip = container_metadata["Networks"][0]["IPv4Addresses"][0]
 
     task_metadata = requests.get(f"{uri}/task").json()
 
     cluster = task_metadata["Cluster"]
     task_arn = task_metadata["TaskARN"]
-
-    task_addresses = []
-
     try:
         tasks = ecs_client.describe_tasks(cluster=cluster, tasks=[task_arn])
     except ClientError as e:
@@ -86,12 +74,11 @@ def get_ecs_allowed_hosts(uri):
         except ClientError as e:
             raise e
 
-        interfaces = network_interfaces.get("NetworkInterfaces", [])
-
-        for interface in interfaces:
-            task_addresses.append(interface["Association"]["PublicIp"])
-        return container_ips.extend(task_addresses)
-    return container_ips
+        return [
+            container_ip,
+            network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"],
+        ]
+    return [container_ip]
 
 
 if METADATA_URI:
