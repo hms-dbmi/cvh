@@ -143,20 +143,7 @@ Resources:
   #         Value: 'gosling-dmc-api'
   #     TargetType: ip
   #     VpcId: !Ref VpcId
-  # Dummy
-  # LoadBalancerListenerTargetGroupECS:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     HealthCheckPath: /health     
-  #     Port: 80
-  #     Protocol: HTTP
-  #     Tags:
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #       - Key: component
-  #         Value: 'gosling-dmc-api'
-  #     # TargetType: ip
-  #     VpcId: !Ref VpcId  
+
 
   # Load Balancer Listener
   # LoadBalancerListener:
@@ -180,40 +167,40 @@ Resources:
         - Key: project
           Value: 'gosling-dmc'
 
-  # ECS Service
-  # ECSService:
-  #   Type: AWS::ECS::Service
-  #   Properties:
-  #     Cluster: !Ref ECSFargateCluster
-  #     DeploymentConfiguration:
-  #       MaximumPercent: 100
-  #       MinimumHealthyPercent: 50
-  #     DesiredCount: 2
-  #     EnableECSManagedTags: true
-  #     HealthCheckGracePeriodSeconds: 60
-  #     LaunchType: FARGATE
-  #     LoadBalancers:
-  #       - ContainerName: !Ref TaskName
-  #         ContainerPort: 8000
-  #         TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-  #     NetworkConfiguration:
-  #       AwsvpcConfiguration:
-  #         AssignPublicIp: ENABLED
-  #         SecurityGroups:
-  #           - !GetAtt ECSSecurityGroup.GroupId
-  #         # Subnets: !Ref PrivateSubnetIds
-  #         Subnets: !Join [ ",", [!Ref PrivateSubnetIds, !Ref PublicSubnetIds] ]
-  #     Tags: 
-  #       - Key: Name
-  #         Value: !Sub
-  #           - '${StackName}:ECSService'
-  #           - StackName: !Ref AWS::StackName
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #     TaskDefinition: !Ref ECSServiceTaskDefinition
-  #   DependsOn:
-  #     - LoadBalancerListenerTargetGroupECS
-  #     - LoadBalancerListener
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSFargateCluster
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 50
+      DesiredCount: 2
+      EnableECSManagedTags: true
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      # LoadBalancers:
+      #   - ContainerName: !Ref TaskName
+      #     ContainerPort: 8000
+      #     TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt ECSSecurityGroup.GroupId
+          # Subnets: !Ref PrivateSubnetIds
+          # Subnets: !Join [ ",", [!Ref PrivateSubnetIds, !Ref PublicSubnetIds] ]
+          Subnets: !Ref PublicSubnetIds
+      Tags: 
+        - Key: Name
+          Value: !Sub
+            - '${StackName}:ECSService'
+            - StackName: !Ref AWS::StackName
+        - Key: project
+          Value: 'gosling-dmc'
+      TaskDefinition: !Ref ECSServiceTaskDefinition
+    # DependsOn:
+    #   - LoadBalancerListenerTargetGroupECS
+    #   - LoadBalancerListener
 
   # ECS Task Definition
   ECSServiceTaskDefinition:
@@ -300,6 +287,11 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref DbInfo
+              - Sid: ECS
+                Effect: Allow
+                Action:
+                  - ecs:DescribeTasks
+                Resource: "*"
               - Sid: ECR
                 Effect: Allow
                 Action:
