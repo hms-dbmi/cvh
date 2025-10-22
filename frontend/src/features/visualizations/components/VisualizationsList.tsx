@@ -29,11 +29,13 @@ import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
 import AddTagButton from "./AddVizTagButton";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
+import VisualizationThumbnail from "./VisualizationThumbnail";
 
 function ActionsMenu({ visualizationId }: { visualizationId: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -133,28 +135,43 @@ function VisualizationListItem({
   return (
     <ListItem
       disablePadding
-      secondaryAction={<ActionsMenu visualizationId={v.uuid} />}
-      sx={(theme) => ({
-        bgcolor: isSelected ? theme.palette.primary.light : "inherit",
+      secondaryAction={
+        <Box sx={{ heigh: "100%", alignSelf: "start" }}>
+          <ActionsMenu visualizationId={v.uuid} />
+        </Box>
+      }
+      sx={() => ({
+        boxShadow: isSelected
+          ? "-2px -2px 14.3px 0 rgba(14, 207, 255, 0.15), 4px 4px 20px 0 rgba(160, 246, 136, 0.15)"
+          : "none",
+        border: isSelected ? "2px solid black" : "none",
+        borderRadius: "8px",
       })}
     >
       <ListItemButton onClick={selectViz} color="primary">
-        <Stack>
-          <ListItemText
-            primary={v.name}
-            secondary={[
-              `${v.n_tracks} tracks`,
-              `${v.n_datasets} active datasets`,
-              "updated 2 hours ago",
-            ].map((t) => (
-              <>{t} &middot; </>
-            ))}
-          />
-          <Stack direction="row" spacing={1} alignItems="center">
-            <LocalOfferOutlinedIcon fontSize="small" />
-            {v?.tags.map((t) => (
-              <Chip key={t.key + t.tag} label={[t.key, t.tag].join(" ")} />
-            ))}
+        <Stack direction="row" spacing={2}>
+          <Box sx={{ alignSelf: "center" }}>
+            <VisualizationThumbnail nTracks={v.n_tracks} />
+          </Box>
+          <Stack>
+            <ListItemText
+              primary={v.name}
+              secondary={[
+                `${v.n_tracks} tracks`,
+                `${v.n_datasets} active datasets`,
+                "updated 2 hours ago",
+              ].map((t) => (
+                <>{t} &middot; </>
+              ))}
+            />
+            {v?.tags?.length > 0 && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <LocalOfferOutlinedIcon fontSize="small" />
+                {v?.tags.map((t) => (
+                  <Chip key={t.key + t.tag} label={[t.key, t.tag].join(" ")} />
+                ))}
+              </Stack>
+            )}
           </Stack>
         </Stack>
       </ListItemButton>
