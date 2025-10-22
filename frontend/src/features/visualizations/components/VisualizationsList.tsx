@@ -224,12 +224,14 @@ function VisualizationList({
       <Stack direction="row" spacing={1}>
         <AddVisualizationButton projectId={projectId} />
       </Stack>
-      <DatasetTagsSelect
-        attribute="tags"
-        values={tagsData ?? []}
-        selectedValues={selectedTags}
-        setSelectedValues={setSelectedTags}
-      />
+      <Box sx={{ maxWidth: 100 }}>
+        <DatasetTagsSelect
+          attribute="tags"
+          values={tagsData ?? []}
+          selectedValues={selectedTags}
+          setSelectedValues={setSelectedTags}
+        />
+      </Box>
       <List>
         {visualizations
           ?.filter((v) => {

@@ -25,8 +25,8 @@ import FormLabel from "@mui/material/FormLabel";
 import Switch from "@mui/material/Switch";
 
 const text = {
-  button: "Add Data Source",
-  title: "Add Data Source",
+  button: "Upload Data",
+  title: "Upload Data",
 };
 
 interface BaseValues {

@@ -15,7 +15,7 @@ function C() {
       <Box>
         <Header />
       </Box>
-      <Box p={2} flexGrow={1}>
+      <Box flexGrow={1}>
         <Outlet />
         <Snackbar />
       </Box>
