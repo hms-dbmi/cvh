@@ -145,7 +145,7 @@ class TagsIn(Schema):
 class TagOut(ModelSchema):
     class Meta:
         model = Tag
-        fields = ["tag", "key"]
+        fields = ["tag", "key", "uuid"]
 
 
 class DatasetWithTagsOut(DatasetOut):

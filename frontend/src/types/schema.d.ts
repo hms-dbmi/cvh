@@ -164,6 +164,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/tags/{project_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Datasets Tags */
+        get: operations["api_api_get_project_datasets_tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasets/uuid/{dataset_uuid}": {
         parameters: {
             query?: never;
@@ -678,6 +695,11 @@ export interface components {
             tag: string;
             /** Key */
             key?: string | null;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
         };
         /** PagedTagOut */
         PagedTagOut: {
@@ -1179,6 +1201,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    api_api_get_project_datasets_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
                 };
             };
         };

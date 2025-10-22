@@ -92,6 +92,7 @@ class Project(UserCreated):
 class Tag(models.Model):
     tag = models.CharField(max_length=50)
     key = models.CharField(max_length=50, blank=True, null=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     project_key = models.ForeignKey(
         Project, on_delete=models.CASCADE, blank=True, null=True
     )

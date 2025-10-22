@@ -415,15 +415,35 @@ def get_project_datasets(
     return datasets
 
 
-@api.get(
-    "/datasets/fields/{project_uuid}", auth=Authorized(), response=List[str]
-)
+@api.get("/datasets/fields/{project_uuid}", auth=Authorized(), response=List[str])
 def get_project_datasets_field_values(
-    request, project_uuid: str, field: Literal['assembly', 'file_type']
+    request, project_uuid: str, field: Literal["assembly", "file_type"]
 ):
-    project = Project.objects.get_read_project(user=request.auth, project_uuid=project_uuid)
-    field_values = Dataset.objects.filter(Q(project_key=project)).values_list(field, flat="true").distinct()
+    project = Project.objects.get_read_project(
+        user=request.auth, project_uuid=project_uuid
+    )
+    field_values = (
+        Dataset.objects.filter(Q(project_key=project))
+        .values_list(field, flat="true")
+        .distinct()
+    )
     return field_values
+
+
+@api.get("/datasets/tags/{project_uuid}", auth=Authorized(), response=List[TagOut])
+def get_project_datasets_tags(request, project_uuid: str):
+    project = Project.objects.get_read_project(
+        user=request.auth, project_uuid=project_uuid
+    )
+    field_values = (
+        Dataset.objects.filter(Q(project_key=project)).values("tags__tag", "tags__uuid", "tags__key", "tags__uuid").distinct().exclude(tags__uuid=None)
+    )
+
+    print(field_values)
+
+    tags = [dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"]) for item in field_values]
+
+    return tags
 
 
 @api.get(

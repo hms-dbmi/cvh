@@ -23,10 +23,12 @@ import {
   useGetDataset,
   useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
+  useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
+import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -102,6 +104,7 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
 function DataSelects({ projectId }: { projectId: string }) {
   const [selectedAssemblies, setSelectedAssemblies] = useState<string[]>([]);
   const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const { data: assemblyData } = useGetProjectDatasetFieldValues(
     projectId,
@@ -112,6 +115,9 @@ function DataSelects({ projectId }: { projectId: string }) {
     projectId,
     "file_type"
   );
+
+  const { data: tagsData } = useGetProjectDatasetTags(projectId);
+
 
   return (
     <Stack direction="row" spacing={1}>
@@ -126,6 +132,12 @@ function DataSelects({ projectId }: { projectId: string }) {
         values={fileTypeData ?? []}
         selectedValues={selectedFileTypes}
         setSelectedValues={setSelectedFileTypes}
+      />
+      <DatasetTagsSelect
+        attribute="tags"
+        values={tagsData ?? []}
+        selectedValues={selectedTags}
+        setSelectedValues={setSelectedTags}
       />
     </Stack>
   );
