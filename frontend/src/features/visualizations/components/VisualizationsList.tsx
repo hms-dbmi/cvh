@@ -13,6 +13,7 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import {
   useGetProjectVisualizations,
+  useGetProjectVisualizationTags,
   useGetVisualization,
 } from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
@@ -32,6 +33,7 @@ import Chip from "@mui/material/Chip";
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
 import AddTagButton from "./AddVizTagButton";
+import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 
 function ActionsMenu({ visualizationId }: { visualizationId: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -173,6 +175,9 @@ function VisualizationList({
 }) {
   const [input, setInput] = useState<string>("");
 
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { data: tagsData } = useGetProjectVisualizationTags(projectId);
+
   if (!visualizations) {
     return null;
   }
@@ -202,6 +207,12 @@ function VisualizationList({
       <Stack direction="row" spacing={1}>
         <AddVisualizationButton projectId={projectId} />
       </Stack>
+      <DatasetTagsSelect
+        attribute="tags"
+        values={tagsData ?? []}
+        selectedValues={selectedTags}
+        setSelectedValues={setSelectedTags}
+      />
       <List>
         {visualizations
           ?.filter((v) => {

@@ -436,12 +436,16 @@ def get_project_datasets_tags(request, project_uuid: str):
         user=request.auth, project_uuid=project_uuid
     )
     field_values = (
-        Dataset.objects.filter(Q(project_key=project)).values("tags__tag", "tags__uuid", "tags__key", "tags__uuid").distinct().exclude(tags__uuid=None)
+        Dataset.objects.filter(Q(project_key=project))
+        .values("tags__tag", "tags__uuid", "tags__key", "tags__uuid")
+        .distinct()
+        .exclude(tags__uuid=None)
     )
 
-    print(field_values)
-
-    tags = [dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"]) for item in field_values]
+    tags = [
+        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
+        for item in field_values
+    ]
 
     return tags
 
@@ -511,6 +515,26 @@ def get_project_visualizations(
         Q(project_key=project) & q
     ).distinct()
     return visualizations
+
+
+@api.get("/visualizations/tags", auth=Authorized(), response=List[TagOut])
+def get_project_visualizations_Tags(request, project_uuid: str):
+    project = Project.objects.get_read_project(
+        user=request.auth, project_uuid=project_uuid
+    )
+    field_values = (
+        VisualizationConf.objects.filter(Q(project_key=project))
+        .values("tags__tag", "tags__uuid", "tags__key", "tags__uuid")
+        .distinct()
+        .exclude(tags__uuid=None)
+    )
+
+    tags = [
+        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
+        for item in field_values
+    ]
+
+    return tags
 
 
 @api.get("/visualizations/{visualization_uuid}", response=VisualizationOut)
