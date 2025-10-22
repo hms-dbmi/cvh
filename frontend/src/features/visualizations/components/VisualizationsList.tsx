@@ -155,6 +155,9 @@ function VisualizationListItem({
           </Box>
           <Stack>
             <ListItemText
+              slotProps={{
+                primary: { variant: "subtitle1", component: "p" },
+              }}
               primary={v.name}
               secondary={[
                 `${v.n_tracks} tracks`,
@@ -168,7 +171,19 @@ function VisualizationListItem({
               <Stack direction="row" spacing={1} alignItems="center">
                 <LocalOfferOutlinedIcon fontSize="small" />
                 {v?.tags.map((t) => (
-                  <Chip key={t.key + t.tag} label={[t.key, t.tag].join(" ")} />
+                  <Chip
+                    key={t.key + t.tag}
+                    label={
+                      <>
+                        <Typography variant="subtitle1" component="span">
+                          {t.key}
+                        </Typography>{" "}
+                        <Typography variant="body2" component="span">
+                          {t.tag}
+                        </Typography>
+                      </>
+                    }
+                  />
                 ))}
               </Stack>
             )}
@@ -276,7 +291,7 @@ export default function VisualizationAccordion({
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <FolderOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span">
+          <Typography variant="h5" ml={1} component="span">
             VISUALIZATION
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">

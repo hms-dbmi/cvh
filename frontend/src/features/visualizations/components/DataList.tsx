@@ -200,7 +200,7 @@ function DataAccordion({
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <DescriptionOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span">
+          <Typography variant="h5" ml={1} component="span">
             DATASETS
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
