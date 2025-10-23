@@ -16,7 +16,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import InputBase from "@mui/material/InputBase";
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
@@ -123,12 +123,14 @@ function DataSelects({ projectId }: { projectId: string }) {
     <Stack direction="row" spacing={1}>
       <DatasetAttributeSelect
         attribute="assembly"
+        label="Assembly"
         values={assemblyData ?? []}
         selectedValues={selectedAssemblies}
         setSelectedValues={setSelectedAssemblies}
       />
       <DatasetAttributeSelect
         attribute="file_type"
+        label="File Type"
         values={fileTypeData ?? []}
         selectedValues={selectedFileTypes}
         setSelectedValues={setSelectedFileTypes}
@@ -152,7 +154,7 @@ function DataList({
   const [input, setInput] = useState<string>("");
 
   return (
-    <Stack spacing={0.75}>
+    <Stack spacing={1}>
       <InputBase
         value={input}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
