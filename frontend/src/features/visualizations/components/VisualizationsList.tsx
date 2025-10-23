@@ -37,6 +37,7 @@ import AddVisualizationButton from "./AddVisualizationButton";
 import AddTagButton from "./AddVizTagButton";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import VisualizationThumbnail from "./VisualizationThumbnail";
+import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
 
 function ActionsMenu({ visualizationId }: { visualizationId: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -196,7 +197,7 @@ function VisualizationListItem({
 
 function VisualizationList({
   projectId,
-  visualizations,
+  visualizations = [],
   setSelectedVizId,
   selectedVizId,
 }: {
@@ -205,21 +206,30 @@ function VisualizationList({
   setSelectedVizId: (id: string) => void;
   selectedVizId?: string;
 }) {
-  const [input, setInput] = useState<string>("");
+  const selectedTags = useVisualizationFiltersStore(
+    (state) => state.selectedTags
+  );
 
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const setSelectedTags = useVisualizationFiltersStore(
+    (state) => state.setSelectedTags
+  );
+
+  const nameSubstring = useVisualizationFiltersStore(
+    (state) => state.nameSubstring
+  );
+
+  const setNameSubstring = useVisualizationFiltersStore(
+    (state) => state.setNameSubstring
+  );
+
   const { data: tagsData } = useGetProjectVisualizationTags(projectId);
-
-  if (!visualizations) {
-    return null;
-  }
 
   return (
     <Stack spacing={1}>
       <InputBase
-        value={input}
+        value={nameSubstring}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-          setInput(event.target.value);
+          setNameSubstring(event.target.value);
         }}
         id="tags-autocomplete"
         fullWidth
@@ -255,21 +265,14 @@ function VisualizationList({
         />
       </Box>
       <List>
-        {visualizations
-          ?.filter((v) => {
-            if (input.length) {
-              return v.name.includes(input);
-            }
-            return true;
-          })
-          .map((v) => (
-            <VisualizationListItem
-              v={v}
-              isSelected={v.uuid === selectedVizId}
-              setSelectedVizId={setSelectedVizId}
-              key={v.name}
-            />
-          ))}
+        {visualizations.map((v) => (
+          <VisualizationListItem
+            v={v}
+            isSelected={v.uuid === selectedVizId}
+            setSelectedVizId={setSelectedVizId}
+            key={v.name}
+          />
+        ))}
       </List>
     </Stack>
   );
@@ -284,9 +287,18 @@ export default function VisualizationAccordion({
   setSelectedVizId: (id: string) => void;
   selectedVizId?: string;
 }) {
+  const nameSubstring = useVisualizationFiltersStore(
+    (state) => state.nameSubstring
+  );
+
+  const selectedTags = useVisualizationFiltersStore(
+    (state) => state.selectedTags
+  );
+
   const { data: visualizations } = useGetProjectVisualizations({
     projectId,
-    tags: [],
+    tags: selectedTags,
+    name: nameSubstring,
   });
 
   return (

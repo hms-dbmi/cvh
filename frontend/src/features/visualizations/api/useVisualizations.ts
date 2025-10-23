@@ -15,14 +15,28 @@ const invalidateGetQuery = buildInvalidateGetQuery([
   "/api/tags",
 ]);
 
+function hasFilter(filter: Record<string, unknown>) {
+  return Object.keys(filter).length > 0;
+}
+
 function useGetProjectVisualizations({
-  tags,
+  tags =[],
   projectId,
+  name,
 }: {
-  tags: { tag: string }[];
+  tags: string[];
   projectId: string;
+  name?: string;
 }) {
-  const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
+  const tagsFilter = tags.length ? { tags } : {};
+  const nameFilter = name ? { name } : {};
+
+  const queryOptions =
+    hasFilter(tagsFilter) ||
+    hasFilter(nameFilter)
+      ? { ...tagsFilter, ...nameFilter }
+      : {};
+  
   const client = useClient();
   return client.useQuery("get", path, {
     params: {

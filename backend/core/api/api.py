@@ -393,7 +393,7 @@ def get_user_datasets(request):
     return datasets
 
 
-class QuerySchema(Schema):
+class DatasetQuerySchema(Schema):
     tags: List[str] = Field(None, alias="tags")
     assembly: List[str] = Field(None, alias="assembly")
     file_type: List[str] = Field(None, alias="file_type")
@@ -405,7 +405,7 @@ class QuerySchema(Schema):
 )
 @paginate(PageNumberPagination)
 def get_project_datasets(
-    request, project_uuid: str, query_filters: QuerySchema = Query(...)
+    request, project_uuid: str, query_filters: DatasetQuerySchema = Query(...)
 ):
     project = _get_project(
         user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
@@ -496,9 +496,16 @@ def get_tags(request, sub_str: str = None):
     return tags
 
 
+class VisualizationQuerySchema(Schema):
+    tags: List[str] = Field(None, alias="tags")
+    name: str = Field(None, alias="name")
+
+
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
 @paginate
-def get_published_visualizations(request, query_filters: QuerySchema = Query(...)):
+def get_published_visualizations(
+    request, query_filters: DatasetQuerySchema = Query(...)
+):
     q = Q()
     if query_filters.tags:
         t = Tag.objects.filter(tag__in=query_filters.tags)
@@ -514,17 +521,19 @@ def get_published_visualizations(request, query_filters: QuerySchema = Query(...
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
 def get_project_visualizations(
-    request, project_uuid: str, query_filters: QuerySchema = Query(...)
+    request, project_uuid: str, query_filters: VisualizationQuerySchema = Query(...)
 ):
-    q = Q()
-    if query_filters.tags:
-        t = Tag.objects.filter(tag__in=query_filters.tags)
-        q &= Q(tags__in=t)
     project = _get_project(
         user=request.auth,
         project_uuid=project_uuid,
         error_message="Visualization not found.",
     )
+    q = Q()
+    if query_filters.tags:
+        t = Tag.objects.filter(uuid__in=query_filters.tags)
+        q &= Q(tags__in=t)
+    if query_filters.name:
+        q &= Q(name__icontains=query_filters.name)
     visualizations = VisualizationConf.objects.filter(
         Q(project_key=project) & q
     ).distinct()

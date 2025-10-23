@@ -693,8 +693,8 @@ export interface components {
              */
             project_uuid: string;
         };
-        /** QuerySchema */
-        QuerySchema: {
+        /** DatasetQuerySchema */
+        DatasetQuerySchema: {
             /** Tags */
             tags?: string[];
             /** Assembly */
@@ -777,6 +777,13 @@ export interface components {
             items: components["schemas"]["TagOut"][];
             /** Count */
             count: number;
+        };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
         };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
@@ -1350,8 +1357,6 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
-                assembly?: string[];
-                file_type?: string[];
                 name?: string;
                 limit?: number;
                 offset?: number;
@@ -1378,8 +1383,6 @@ export interface operations {
             query: {
                 project_uuid: string;
                 tags?: string[];
-                assembly?: string[];
-                file_type?: string[];
                 name?: string;
             };
             header?: never;
