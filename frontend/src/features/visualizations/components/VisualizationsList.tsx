@@ -9,7 +9,6 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import {
   useGetProjectVisualizations,
@@ -18,7 +17,7 @@ import {
 } from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
@@ -30,6 +29,7 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
+import InputBase from "@mui/material/InputBase";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
@@ -215,8 +215,8 @@ function VisualizationList({
   }
 
   return (
-    <Stack spacing={0.75}>
-      <TextField
+    <Stack spacing={1}>
+      <InputBase
         value={input}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
           setInput(event.target.value);
@@ -224,17 +224,24 @@ function VisualizationList({
         id="tags-autocomplete"
         fullWidth
         placeholder="Search for a visualization..."
-        slotProps={{
+        startAdornment={
+          <InputAdornment position="start">
+            <SearchOutlinedIcon />
+          </InputAdornment>
+        }
+        sx={(theme) => ({
+          borderRadius: "4px",
+          paddingLeft: "4px",
+          paddingRight: "12px",
+          paddingTop: "8px",
+          paddingBottom: "8px",
+          border: `1px solid ${theme.palette.grey[300]}`,
+          background: "#F8F8F8",
           input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton>
-                  <FilterAltIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
+            height: "20px",
+            padding: "0px",
           },
-        }}
+        })}
       />
       <Stack direction="row" spacing={1}>
         <AddVisualizationButton projectId={projectId} />

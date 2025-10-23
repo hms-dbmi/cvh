@@ -5,11 +5,9 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
@@ -17,6 +15,9 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import InputBase from "@mui/material/InputBase";
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 import {
@@ -118,7 +119,6 @@ function DataSelects({ projectId }: { projectId: string }) {
 
   const { data: tagsData } = useGetProjectDatasetTags(projectId);
 
-
   return (
     <Stack direction="row" spacing={1}>
       <DatasetAttributeSelect
@@ -153,7 +153,7 @@ function DataList({
 
   return (
     <Stack spacing={0.75}>
-      <TextField
+      <InputBase
         value={input}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
           setInput(event.target.value);
@@ -161,17 +161,24 @@ function DataList({
         id="tags-autocomplete"
         fullWidth
         placeholder="Search for a dataset..."
-        slotProps={{
+        startAdornment={
+          <InputAdornment position="start">
+            <SearchOutlinedIcon />
+          </InputAdornment>
+        }
+        sx={(theme) => ({
+          borderRadius: "4px",
+          paddingLeft: "4px",
+          paddingRight: "12px",
+          paddingTop: "8px",
+          paddingBottom: "8px",
+          border: `1px solid ${theme.palette.grey[300]}`,
+          background: "#F8F8F8",
           input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton>
-                  <FilterAltIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
+            height: "20px",
+            padding: "0px",
           },
-        }}
+        })}
       />
       <Stack direction="row" spacing={1}>
         <AddDatasetButton projectId={projectId} />
