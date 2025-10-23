@@ -17,7 +17,7 @@ import {
 } from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
@@ -30,6 +30,7 @@ import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import InputBase from "@mui/material/InputBase";
+import { formatRelative } from "date-fns";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
@@ -131,7 +132,6 @@ function VisualizationListItem({
   if (!v.uuid) {
     return null;
   }
-
   return (
     <ListItem
       disablePadding
@@ -162,7 +162,7 @@ function VisualizationListItem({
               secondary={[
                 `${v.n_tracks} tracks`,
                 `${v.n_datasets} active datasets`,
-                "updated 2 hours ago",
+                `updated ${formatRelative(v.modified_timestamp, new Date())}`,
               ].map((t) => (
                 <>{t} &middot; </>
               ))}

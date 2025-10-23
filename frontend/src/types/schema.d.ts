@@ -697,6 +697,12 @@ export interface components {
         QuerySchema: {
             /** Tags */
             tags?: string[];
+            /** Assembly */
+            assembly?: string[];
+            /** File Type */
+            file_type?: string[];
+            /** Name */
+            name?: string;
         };
         /** DatasetWithTagsOut */
         DatasetWithTagsOut: {
@@ -1224,6 +1230,9 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
                 page?: number;
             };
             header?: never;
@@ -1341,6 +1350,9 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
                 limit?: number;
                 offset?: number;
             };
@@ -1366,6 +1378,9 @@ export interface operations {
             query: {
                 project_uuid: string;
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
             };
             header?: never;
             path?: never;

@@ -275,12 +275,7 @@ def get_projects(request):
         .filter(private=True)
         .order_by("-modified_timestamp")
         .values()
-        .annotate(
-            project_members_count=Count(
-                "projectmember",
-                distinct=True
-            )
-        )
+        .annotate(project_members_count=Count("projectmember", distinct=True))
     )
     return projects
 
@@ -400,6 +395,9 @@ def get_user_datasets(request):
 
 class QuerySchema(Schema):
     tags: List[str] = Field(None, alias="tags")
+    assembly: List[str] = Field(None, alias="assembly")
+    file_type: List[str] = Field(None, alias="file_type")
+    name: str = Field(None, alias="name")
 
 
 @api.get(
@@ -414,11 +412,20 @@ def get_project_datasets(
     )
     q = Q()
     if query_filters.tags:
-        t = Tag.objects.filter(tag__in=query_filters.tags)
+        t = Tag.objects.filter(uuid__in=query_filters.tags)
         q &= Q(tags__in=t)
-    datasets = Dataset.objects.filter(Q(project_key=project) & q).order_by(
-        "-modified_timestamp"
+    if query_filters.assembly:
+        q &= Q(assembly__in=query_filters.assembly)
+    if query_filters.file_type:
+        q &= Q(file_type__in=query_filters.file_type)
+    if query_filters.name:
+        q &= Q(name__icontains=query_filters.name)
+    datasets = (
+        Dataset.objects.filter(Q(project_key=project) & q)
+        .order_by("-modified_timestamp")
+        .distinct()
     )
+
     return datasets
 
 
