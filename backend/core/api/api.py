@@ -275,19 +275,8 @@ def get_projects(request):
         .filter(private=True)
         .order_by("-modified_timestamp")
         .values()
-        .annotate(
-            project_members_count=Count(
-                "projectmember",
-                distinct=True
-            )
-        )
+        .annotate(project_members_count=Count("projectmember", distinct=True))
     )
-    for project in projects:
-        print(project["name"], project["project_members_count"])
-
-    for project in projects:
-        if project["name"] == "bigWig Data":
-            print(project)
     return projects
 
 
@@ -404,8 +393,11 @@ def get_user_datasets(request):
     return datasets
 
 
-class QuerySchema(Schema):
+class DatasetQuerySchema(Schema):
     tags: List[str] = Field(None, alias="tags")
+    assembly: List[str] = Field(None, alias="assembly")
+    file_type: List[str] = Field(None, alias="file_type")
+    name: str = Field(None, alias="name")
 
 
 @api.get(
@@ -413,18 +405,27 @@ class QuerySchema(Schema):
 )
 @paginate(PageNumberPagination)
 def get_project_datasets(
-    request, project_uuid: str, query_filters: QuerySchema = Query(...)
+    request, project_uuid: str, query_filters: DatasetQuerySchema = Query(...)
 ):
     project = _get_project(
         user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
     )
     q = Q()
     if query_filters.tags:
-        t = Tag.objects.filter(tag__in=query_filters.tags)
+        t = Tag.objects.filter(uuid__in=query_filters.tags)
         q &= Q(tags__in=t)
-    datasets = Dataset.objects.filter(Q(project_key=project) & q).order_by(
-        "-modified_timestamp"
+    if query_filters.assembly:
+        q &= Q(assembly__in=query_filters.assembly)
+    if query_filters.file_type:
+        q &= Q(file_type__in=query_filters.file_type)
+    if query_filters.name:
+        q &= Q(name__icontains=query_filters.name)
+    datasets = (
+        Dataset.objects.filter(Q(project_key=project) & q)
+        .order_by("-modified_timestamp")
+        .distinct()
     )
+
     return datasets
 
 
@@ -495,9 +496,16 @@ def get_tags(request, sub_str: str = None):
     return tags
 
 
+class VisualizationQuerySchema(Schema):
+    tags: List[str] = Field(None, alias="tags")
+    name: str = Field(None, alias="name")
+
+
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
 @paginate
-def get_published_visualizations(request, query_filters: QuerySchema = Query(...)):
+def get_published_visualizations(
+    request, query_filters: DatasetQuerySchema = Query(...)
+):
     q = Q()
     if query_filters.tags:
         t = Tag.objects.filter(tag__in=query_filters.tags)
@@ -513,17 +521,19 @@ def get_published_visualizations(request, query_filters: QuerySchema = Query(...
 
 @api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
 def get_project_visualizations(
-    request, project_uuid: str, query_filters: QuerySchema = Query(...)
+    request, project_uuid: str, query_filters: VisualizationQuerySchema = Query(...)
 ):
-    q = Q()
-    if query_filters.tags:
-        t = Tag.objects.filter(tag__in=query_filters.tags)
-        q &= Q(tags__in=t)
     project = _get_project(
         user=request.auth,
         project_uuid=project_uuid,
         error_message="Visualization not found.",
     )
+    q = Q()
+    if query_filters.tags:
+        t = Tag.objects.filter(uuid__in=query_filters.tags)
+        q &= Q(tags__in=t)
+    if query_filters.name:
+        q &= Q(name__icontains=query_filters.name)
     visualizations = VisualizationConf.objects.filter(
         Q(project_key=project) & q
     ).distinct()

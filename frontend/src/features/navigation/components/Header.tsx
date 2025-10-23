@@ -24,7 +24,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import GoslingIcon from "../../../assets/gosling.svg?react";
 import { Link } from "./Links";
 import { components } from "../../../types/schema";
-
+import { formatRelative } from "date-fns";
 import useGetProjects, {
   useGetProjectMembers,
 } from "../../projects/api/useProjects";
@@ -89,6 +89,7 @@ function WorkspaceListItem({
                 width: 65,
                 height: 65,
                 marginRight: 1,
+                borderRadius: "8px",
               }}
               variant="square"
             >
@@ -104,7 +105,7 @@ function WorkspaceListItem({
             primary={project.name}
             secondary={[
               `${project.project_members_count} collaborators`,
-              "updated 2 hours ago",
+              `updated ${formatRelative(project.modified_timestamp, new Date())}`,
             ].map((t) => (
               <>{t} &middot; </>
             ))}
@@ -156,6 +157,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
               width: 24,
               height: 24,
               marginRight: 1,
+              borderRadius: "4px",
             }}
             variant="square"
           >

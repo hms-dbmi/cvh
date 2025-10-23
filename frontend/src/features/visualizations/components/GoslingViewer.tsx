@@ -9,16 +9,19 @@ import { useGetVisualization } from "../api/useVisualizations.ts";
 import type { components } from "../../../types/schema";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import { useUpdateVisualization } from "../api/useVisualizations";
+import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
+import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
+
+type Dataset = components["schemas"]["DatasetWithTagsOut"];
+
 interface GoslingViewerProps {
   projectId: string;
-  datasets?: components["schemas"]["DatasetWithTagsOut"][];
+  datasets?: Dataset[];
   readonly?: boolean;
 }
 
 // TODO: This needs to be revisited to support fields etc
-const formatCvhDatasetsAsGoslingDatasets = (
-  datasets: components["schemas"]["DatasetWithTagsOut"][]
-) => {
+const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]) => {
   return datasets.map((dataset) => ({
     type: dataset.file_type,
     name: dataset.name,
@@ -37,9 +40,7 @@ const formatCvhDatasetsAsGoslingDatasets = (
   })) as ComponentProps<typeof GoslingDesignerVEC>["data"];
 };
 
-const useFormattedDatasets = (
-  datasets: components["schemas"]["DatasetWithTagsOut"][]
-) => {
+const useFormattedDatasets = (datasets: Dataset[]) => {
   return useMemo(() => {
     if (!datasets) {
       return [];
@@ -66,7 +67,7 @@ const formatVisualization = (
   } as ComponentProps<typeof GoslingDesignerVEC>["visualization"];
 };
 
-function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
+function GoslingViewer({ projectId }: GoslingViewerProps) {
   const [selectedVizId, setSelectedVizId] = useState<string>();
 
   /* eslint-disable */
@@ -81,7 +82,29 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     close();
   }, [onSave, close, changedCode]); */
 
-  const formattedDatasets = useFormattedDatasets(datasets);
+  const selectedAssemblies = useDatasetFiltersStore(
+    (state) => state.selectedAssemblies
+  );
+  const selectedFileTypes = useDatasetFiltersStore(
+    (state) => state.selectedFileTypes
+  );
+
+  const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
+
+  const selectedTags = useDatasetFiltersStore((state) => state.selectedTags);
+
+  const { data: datasets } = useGetPaginatedProjectDatasets({
+    projectId,
+    tags: selectedTags,
+    fileTypes: selectedFileTypes,
+    assemblies: selectedAssemblies,
+    name: nameSubstring,
+  });
+
+  const allDatasets: Required<Dataset>[] =
+    datasets?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
+
+  const formattedDatasets = useFormattedDatasets(allDatasets);
   const formattedVisualization = formatVisualization(data);
 
   const { mutate: updateViz } = useUpdateVisualization();
@@ -106,7 +129,6 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
       const n_tracks = nTracks;
       const n_datasets = nDatasets;
 
-      console.log(conf, nTracks, nDatasets, 'aa')
       try {
         if (!selectedVizId) {
           return;

@@ -30,6 +30,7 @@ import AddTagButton from "../../datasets/components/AddTagButton";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
+import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -103,10 +104,25 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
 }
 
 function DataSelects({ projectId }: { projectId: string }) {
-  const [selectedAssemblies, setSelectedAssemblies] = useState<string[]>([]);
-  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const selectedAssemblies = useDatasetFiltersStore(
+    (state) => state.selectedAssemblies
+  );
+  const selectedFileTypes = useDatasetFiltersStore(
+    (state) => state.selectedFileTypes
+  );
 
+  const selectedTags = useDatasetFiltersStore((state) => state.selectedTags);
+  const setSelectedAssemblies = useDatasetFiltersStore(
+    (state) => state.setSelectedAssemblies
+  );
+
+  const setSelectedFileTypes = useDatasetFiltersStore(
+    (state) => state.setSelectedFileTypes
+  );
+
+  const setSelectedTags = useDatasetFiltersStore(
+    (state) => state.setSelectedTags
+  );
   const { data: assemblyData } = useGetProjectDatasetFieldValues(
     projectId,
     "assembly"
@@ -151,14 +167,22 @@ function DataList({
   children,
   projectId,
 }: PropsWithChildren<{ projectId: string }>) {
-  const [input, setInput] = useState<string>("");
+  const nameSubstring = useDatasetFiltersStore(
+    (state) => state.nameSubstring
+  );
+
+  const setNameSubstring = useDatasetFiltersStore(
+    (state) => state.setNameSubstring
+  );
+
 
   return (
     <Stack spacing={1}>
       <InputBase
-        value={input}
+        value={nameSubstring}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-          setInput(event.target.value);
+          //TODO: Debounce
+          setNameSubstring(event.target.value);
         }}
         id="tags-autocomplete"
         fullWidth
@@ -195,7 +219,7 @@ function DataAccordion({
   projectId,
   children,
 }: PropsWithChildren<{ projectId: string }>) {
-  const { data } = useGetPaginatedProjectDatasets(projectId, []);
+  const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
 
   const datasets: Required<Dataset>[] =
     data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];

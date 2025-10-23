@@ -693,10 +693,16 @@ export interface components {
              */
             project_uuid: string;
         };
-        /** QuerySchema */
-        QuerySchema: {
+        /** DatasetQuerySchema */
+        DatasetQuerySchema: {
             /** Tags */
             tags?: string[];
+            /** Assembly */
+            assembly?: string[];
+            /** File Type */
+            file_type?: string[];
+            /** Name */
+            name?: string;
         };
         /** DatasetWithTagsOut */
         DatasetWithTagsOut: {
@@ -771,6 +777,13 @@ export interface components {
             items: components["schemas"]["TagOut"][];
             /** Count */
             count: number;
+        };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
         };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
@@ -1224,6 +1237,9 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
                 page?: number;
             };
             header?: never;
@@ -1341,6 +1357,7 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                name?: string;
                 limit?: number;
                 offset?: number;
             };
@@ -1366,6 +1383,7 @@ export interface operations {
             query: {
                 project_uuid: string;
                 tags?: string[];
+                name?: string;
             };
             header?: never;
             path?: never;
