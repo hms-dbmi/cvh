@@ -282,12 +282,6 @@ def get_projects(request):
             )
         )
     )
-    for project in projects:
-        print(project["name"], project["project_members_count"])
-
-    for project in projects:
-        if project["name"] == "bigWig Data":
-            print(project)
     return projects
 
 
