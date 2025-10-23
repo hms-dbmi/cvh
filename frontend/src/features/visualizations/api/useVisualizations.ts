@@ -117,6 +117,16 @@ function useTagVisualization() {
   });
 }
 
+function useGetProjectVisualizationTags(project_uuid: string){
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/tags`, {
+    params: {
+      query: { project_uuid },
+    },
+  });
+}
+
 export {
   useGetProjectVisualizations,
   useGetVisualization,
@@ -125,4 +135,5 @@ export {
   useDeleteVisualization,
   useGetPublishedVisualizations,
   useTagVisualization,
+  useGetProjectVisualizationTags
 };

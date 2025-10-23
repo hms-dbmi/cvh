@@ -6,7 +6,7 @@ import GoslingViewer from "./GoslingViewer.tsx";
 interface VisualizationViewerProps {
   projectId: string;
   visualizationType: string;
-  datasets?: components["schemas"]["DatasetOut"][];
+  datasets?: components["schemas"]["DatasetWithTagsOut"][];
   readonly?: boolean;
   onSave?: (newConf: string) => void;
 }

@@ -114,12 +114,43 @@ function useUpdateDataset() {
   });
 }
 
+function useGetDataset(datasetId: string) {
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/uuid/{dataset_uuid}`, {
+    params: {
+      path: { dataset_uuid: datasetId },
+    },
+  });
+}
+
 function useTagDataset() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("put", `${path}/tags`, {
     onSuccess: () =>
       queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+  });
+}
+
+function useGetProjectDatasetFieldValues(project_uuid: string, field: "assembly" | "file_type"){
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/fields/{project_uuid}`, {
+    params: {
+      path: { project_uuid },
+      query: {field}
+    },
+  });
+}
+
+function useGetProjectDatasetTags(project_uuid: string){
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/tags/{project_uuid}`, {
+    params: {
+      path: { project_uuid },
+    },
   });
 }
 
@@ -130,4 +161,7 @@ export {
   useCreateDataset,
   useUpdateDataset,
   useTagDataset,
+  useGetDataset,
+  useGetProjectDatasetFieldValues,
+  useGetProjectDatasetTags
 };

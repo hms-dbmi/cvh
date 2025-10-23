@@ -1,7 +1,7 @@
 from ninja import Schema, ModelSchema
 from pydantic import UUID4, EmailStr, Field
 from typing import Optional, Any, List, Literal, Union, Annotated
-from typing_extensions import Dict
+from typing_extensions import Dict, TypedDict
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 
@@ -47,6 +47,8 @@ class ProjectOut(ModelSchema):
         model = Project
         fields = ["private", *shared_output_fields]
 
+class ProjectOutWithMembersCount(ProjectOut):
+    project_members_count: int
 
 class GoslingDataCommon(ModelSchema):
     assembly: Literal["hg38", "hg19", "hg18", "hg17", "hg16", "mm10", "mm9", "unknown"]
@@ -59,9 +61,11 @@ class GoslingDataCommon(ModelSchema):
 class GoslingDatasetSimple(GoslingDataCommon):
     file_type: Literal["bigwig", "vector", "cooler"]
 
+
 class GoslingDesignerMultiVec(GoslingDataCommon):
     file_type: Literal["multivec"]
     row_names: List[str]
+
 
 class GoslingDesignerDataColumn(Schema):
     data_column: Optional[
@@ -114,8 +118,6 @@ class DatasetUpdate(PartialDatasetIn):
 
 
 class DatasetOut(ModelSchema):
-    combined_tags: List[str]
-
     class Meta:
         model = Dataset
         fields = [
@@ -131,22 +133,25 @@ class DatasetOut(ModelSchema):
         ]
 
 
-class TagIn(Schema):
+class TagIn(TypedDict):
     tag: str
-    key: Optional[str] = None
+    key: str
+
+
+class TagsIn(Schema):
+    tags: List[TagIn]
     uuid: UUID4
-    project_uuid: Optional[UUID4] = None
-
-
-class VizTagIn(Schema):
-    tag: str
-    key: Optional[str] = None
+    project_uuid: UUID4
 
 
 class TagOut(ModelSchema):
     class Meta:
         model = Tag
-        fields = ["tag", "key"]
+        fields = ["tag", "key", "uuid"]
+
+
+class DatasetWithTagsOut(DatasetOut):
+    tags: List[TagOut]
 
 
 class VisualizationIn(ModelSchema):
@@ -159,25 +164,25 @@ class VisualizationIn(ModelSchema):
 
 
 class VisualizationNoConfOut(ModelSchema):
-    combined_tags: List[str]
+    tags: List[TagOut]
 
     class Meta:
         model = VisualizationConf
-        fields = ["published", *shared_output_fields]
+        fields = ["published", "n_tracks", "n_datasets", *shared_output_fields]
 
 
 class VisualizationOut(ModelSchema):
-    combined_tags: List[str]
+    tags: List[TagOut]
 
     class Meta:
         model = VisualizationConf
-        fields = ["conf", "published", *shared_output_fields]
+        fields = ["conf", "published", "n_tracks", "n_datasets", *shared_output_fields]
 
 
 class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
-        fields = ["name", "description", "conf", "published"]
+        fields = ["name", "description", "conf", "published", "n_tracks", "n_datasets"]
 
 
 class ProjectMemberIn(Schema):

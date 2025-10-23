@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -8,12 +9,15 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import { useGetProjectVisualizations } from "../api/useVisualizations";
+import {
+  useGetProjectVisualizations,
+  useGetProjectVisualizationTags,
+  useGetVisualization,
+} from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
@@ -22,21 +26,46 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
+import InputBase from "@mui/material/InputBase";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
+import AddTagButton from "./AddVizTagButton";
+import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
+import VisualizationThumbnail from "./VisualizationThumbnail";
 
-function ActionsMenu() {
+function ActionsMenu({ visualizationId }: { visualizationId: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [openAddTags, setOpenAddTags] = useState(false);
+  const { projectId } = useParams({ strict: false });
+
+  const { data } = useGetVisualization(visualizationId);
+
+  if (!projectId || !data) {
+    return null;
+  }
+
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   return (
     <div>
+      <AddTagButton
+        visualizationId={visualizationId}
+        projectId={projectId}
+        visualization={data}
+        closeMenu={handleClose}
+        open={openAddTags}
+        setOpen={setOpenAddTags}
+      />
       <IconButton
         onClick={handleClick}
         size="small"
@@ -58,6 +87,14 @@ function ActionsMenu() {
             <EditOutlinedIcon fontSize="small" />
           </ListItemIcon>
           Edit Details
+        </MenuItem>
+        <MenuItem onClick={() => setOpenAddTags(true)}>
+          <>
+            <ListItemIcon>
+              <LocalOfferOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            Edit Tags
+          </>
         </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
@@ -81,16 +118,7 @@ function VisualizationListItem({
   setSelectedVizId,
   isSelected,
 }: {
-  v: {
-    combined_tags: string[];
-    published: boolean;
-    uuid?: string;
-    name: string;
-    description?: string | null;
-    created_timestamp: string;
-    modified_timestamp: string;
-    last_viewed_timestamp: string;
-  };
+  v: components["schemas"]["VisualizationNoConfOut"];
   setSelectedVizId: (id: string) => void;
   isSelected: boolean;
 }) {
@@ -99,25 +127,68 @@ function VisualizationListItem({
       setSelectedVizId(v.uuid);
     }
   }, [v.uuid, setSelectedVizId]);
+
+  if (!v.uuid) {
+    return null;
+  }
+
   return (
     <ListItem
       disablePadding
-      secondaryAction={<ActionsMenu />}
-      sx={(theme) => ({
-        bgcolor: isSelected ? theme.palette.primary.light : "inherit",
+      secondaryAction={
+        <Box sx={{ heigh: "100%", alignSelf: "start" }}>
+          <ActionsMenu visualizationId={v.uuid} />
+        </Box>
+      }
+      sx={() => ({
+        boxShadow: isSelected
+          ? "-2px -2px 14.3px 0 rgba(14, 207, 255, 0.15), 4px 4px 20px 0 rgba(160, 246, 136, 0.15)"
+          : "none",
+        border: isSelected ? "2px solid black" : "none",
+        borderRadius: "8px",
       })}
     >
       <ListItemButton onClick={selectViz} color="primary">
-        <ListItemText
-          primary={v.name}
-          secondary={[
-            "10 tracks",
-            "4 active datasets",
-            "updated 2 hours ago",
-          ].map((t) => (
-            <>{t} &middot; </>
-          ))}
-        />
+        <Stack direction="row" spacing={2}>
+          <Box sx={{ alignSelf: "center" }}>
+            <VisualizationThumbnail nTracks={v.n_tracks} />
+          </Box>
+          <Stack>
+            <ListItemText
+              slotProps={{
+                primary: { variant: "subtitle1", component: "p" },
+              }}
+              primary={v.name}
+              secondary={[
+                `${v.n_tracks} tracks`,
+                `${v.n_datasets} active datasets`,
+                "updated 2 hours ago",
+              ].map((t) => (
+                <>{t} &middot; </>
+              ))}
+            />
+            {v?.tags?.length > 0 && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <LocalOfferOutlinedIcon fontSize="small" />
+                {v?.tags.map((t) => (
+                  <Chip
+                    key={t.key + t.tag}
+                    label={
+                      <>
+                        <Typography variant="subtitle1" component="span">
+                          {t.key}
+                        </Typography>{" "}
+                        <Typography variant="body2" component="span">
+                          {t.tag}
+                        </Typography>
+                      </>
+                    }
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </Stack>
       </ListItemButton>
     </ListItem>
   );
@@ -136,13 +207,16 @@ function VisualizationList({
 }) {
   const [input, setInput] = useState<string>("");
 
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { data: tagsData } = useGetProjectVisualizationTags(projectId);
+
   if (!visualizations) {
     return null;
   }
 
   return (
-    <Stack spacing={0.75}>
-      <TextField
+    <Stack spacing={1}>
+      <InputBase
         value={input}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
           setInput(event.target.value);
@@ -150,21 +224,36 @@ function VisualizationList({
         id="tags-autocomplete"
         fullWidth
         placeholder="Search for a visualization..."
-        slotProps={{
+        startAdornment={
+          <InputAdornment position="start">
+            <SearchOutlinedIcon />
+          </InputAdornment>
+        }
+        sx={(theme) => ({
+          borderRadius: "4px",
+          paddingLeft: "4px",
+          paddingRight: "12px",
+          paddingTop: "8px",
+          paddingBottom: "8px",
+          border: `1px solid ${theme.palette.grey[300]}`,
+          background: "#F8F8F8",
           input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton>
-                  <FilterAltIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
+            height: "20px",
+            padding: "0px",
           },
-        }}
+        })}
       />
       <Stack direction="row" spacing={1}>
         <AddVisualizationButton projectId={projectId} />
       </Stack>
+      <Box sx={{ maxWidth: 100 }}>
+        <DatasetTagsSelect
+          attribute="tags"
+          values={tagsData ?? []}
+          selectedValues={selectedTags}
+          setSelectedValues={setSelectedTags}
+        />
+      </Box>
       <List>
         {visualizations
           ?.filter((v) => {
@@ -209,7 +298,7 @@ export default function VisualizationAccordion({
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <FolderOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span">
+          <Typography variant="h5" ml={1} component="span">
             VISUALIZATION
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">

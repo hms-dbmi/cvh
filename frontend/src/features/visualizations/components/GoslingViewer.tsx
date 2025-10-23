@@ -4,20 +4,20 @@ import Box from "@mui/material/Box";
 import { GoslingDesignerVEC, VisSchema } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
 import VisualizationsList from "./VisualizationsList.tsx";
-import DataList from "./DataList.tsx";
+import DataList, { DatasetActionsMenu } from "./DataList.tsx";
 import { useGetVisualization } from "../api/useVisualizations.ts";
 import type { components } from "../../../types/schema";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import { useUpdateVisualization } from "../api/useVisualizations";
 interface GoslingViewerProps {
   projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
+  datasets?: components["schemas"]["DatasetWithTagsOut"][];
   readonly?: boolean;
 }
 
 // TODO: This needs to be revisited to support fields etc
 const formatCvhDatasetsAsGoslingDatasets = (
-  datasets: components["schemas"]["DatasetOut"][]
+  datasets: components["schemas"]["DatasetWithTagsOut"][]
 ) => {
   return datasets.map((dataset) => ({
     type: dataset.file_type,
@@ -32,12 +32,13 @@ const formatCvhDatasetsAsGoslingDatasets = (
     ...(dataset.file_type === "csv"
       ? { fields: dataset?.data_column ?? undefined }
       : { optionalFields: dataset?.data_column ?? undefined }),
+    tags: dataset.tags.map((t) => [t.key, t.tag]),
     // name: dataset.source_url.replace(/^.*[\\/]/, ""),
   })) as ComponentProps<typeof GoslingDesignerVEC>["data"];
 };
 
 const useFormattedDatasets = (
-  datasets: components["schemas"]["DatasetOut"][]
+  datasets: components["schemas"]["DatasetWithTagsOut"][]
 ) => {
   return useMemo(() => {
     if (!datasets) {
@@ -91,18 +92,27 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
     [setSelectedVizId]
   );
 
-  console.log(selectedVizId, formatVisualization);
-
   const saveViz = useCallback(
-    (vis: VisSchema.GDVis) => {
+    ({
+      vis,
+      nTracks,
+      nDatasets,
+    }: {
+      vis: VisSchema.GDVis;
+      nTracks: number;
+      nDatasets: number;
+    }) => {
       const conf = vis?.spec;
+      const n_tracks = nTracks;
+      const n_datasets = nDatasets;
 
+      console.log(conf, nTracks, nDatasets, 'aa')
       try {
         if (!selectedVizId) {
           return;
         }
         updateViz({
-          body: { conf },
+          body: { conf, n_tracks, n_datasets },
           params: {
             path: { visualization_uuid: selectedVizId },
           },
@@ -125,19 +135,22 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
         visualization={formattedVisualization} // or `undefined`
         data={formattedDatasets} // or `undefined`
         onChange={saveViz}
-      >
-        <Box
-          sx={{
-            background: "#FFF",
-          }}
-        >
+        visualizationPanel={
           <VisualizationsList
             projectId={projectId}
             setSelectedVizId={selectViz}
             selectedVizId={selectedVizId}
           />
-          <DataList projectId={projectId} datasets={datasets} />
-        </Box>
+        }
+        DatasetsPanel={DataList}
+        DatasetMenuButton={DatasetActionsMenu}
+        userMode="admin"
+      >
+        <Box
+          sx={{
+            background: "#FFF",
+          }}
+        ></Box>
       </GoslingDesignerVEC>
     </Box>
   );

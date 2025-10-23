@@ -1,30 +1,48 @@
-import { useState } from "react";
+import { PropsWithChildren, useState } from "react";
+import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import InputBase from "@mui/material/InputBase";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
+import {
+  useGetDataset,
+  useGetPaginatedProjectDatasets,
+  useGetProjectDatasetFieldValues,
+  useGetProjectDatasetTags,
+} from "../../datasets/api/useDatasets";
+import AddTagButton from "../../datasets/components/AddTagButton";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
+import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 
-/*eslint-disable */
-// @ts-ignore TODO: Remove ignore.
-function ActionsMenu() {
+export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const { projectId } = useParams({ strict: false });
+
+  const [openAddTags, setOpenAddTags] = useState(false);
+  const { data } = useGetDataset(datasetID);
+
+  if (!projectId || !data) {
+    return null;
+  }
+
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -34,6 +52,14 @@ function ActionsMenu() {
 
   return (
     <div>
+      <AddTagButton
+        datasetId={datasetID}
+        projectId={projectId}
+        dataset={data}
+        closeMenu={handleClose}
+        open={openAddTags}
+        setOpen={setOpenAddTags}
+      />
       <IconButton
         onClick={handleClick}
         size="small"
@@ -50,12 +76,15 @@ function ActionsMenu() {
         onClose={handleClose}
         onClick={handleClose}
       >
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon>
-            <EditOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          Edit Details
+        <MenuItem onClick={() => setOpenAddTags(true)}>
+          <>
+            <ListItemIcon>
+              <LocalOfferOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            Edit Tags
+          </>
         </MenuItem>
+
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <ContentCopyOutlinedIcon fontSize="small" />
@@ -72,23 +101,61 @@ function ActionsMenu() {
     </div>
   );
 }
-/* eslint-enable */
+
+function DataSelects({ projectId }: { projectId: string }) {
+  const [selectedAssemblies, setSelectedAssemblies] = useState<string[]>([]);
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const { data: assemblyData } = useGetProjectDatasetFieldValues(
+    projectId,
+    "assembly"
+  );
+
+  const { data: fileTypeData } = useGetProjectDatasetFieldValues(
+    projectId,
+    "file_type"
+  );
+
+  const { data: tagsData } = useGetProjectDatasetTags(projectId);
+
+  return (
+    <Stack direction="row" spacing={1}>
+      <DatasetAttributeSelect
+        attribute="assembly"
+        label="Assembly"
+        values={assemblyData ?? []}
+        selectedValues={selectedAssemblies}
+        setSelectedValues={setSelectedAssemblies}
+      />
+      <DatasetAttributeSelect
+        attribute="file_type"
+        label="File Type"
+        values={fileTypeData ?? []}
+        selectedValues={selectedFileTypes}
+        setSelectedValues={setSelectedFileTypes}
+      />
+      <DatasetTagsSelect
+        attribute="tags"
+        values={tagsData ?? []}
+        selectedValues={selectedTags}
+        setSelectedValues={setSelectedTags}
+      />
+    </Stack>
+  );
+}
+
+type Dataset = components["schemas"]["DatasetOut"];
 
 function DataList({
+  children,
   projectId,
-  datasets,
-}: {
-  projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
-}) {
+}: PropsWithChildren<{ projectId: string }>) {
   const [input, setInput] = useState<string>("");
 
-  if (!datasets) {
-    return null;
-  }
   return (
-    <Stack spacing={0.75}>
-      <TextField
+    <Stack spacing={1}>
+      <InputBase
         value={input}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
           setInput(event.target.value);
@@ -96,53 +163,43 @@ function DataList({
         id="tags-autocomplete"
         fullWidth
         placeholder="Search for a dataset..."
-        slotProps={{
+        startAdornment={
+          <InputAdornment position="start">
+            <SearchOutlinedIcon />
+          </InputAdornment>
+        }
+        sx={(theme) => ({
+          borderRadius: "4px",
+          paddingLeft: "4px",
+          paddingRight: "12px",
+          paddingTop: "8px",
+          paddingBottom: "8px",
+          border: `1px solid ${theme.palette.grey[300]}`,
+          background: "#F8F8F8",
           input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton>
-                  <FilterAltIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
+            height: "20px",
+            padding: "0px",
           },
-        }}
+        })}
       />
       <Stack direction="row" spacing={1}>
         <AddDatasetButton projectId={projectId} />
       </Stack>
-      {/*<List>
-        {datasets
-          ?.filter((d) => {
-            if (input.length) {
-              return d.name.includes(input);
-            }
-            return true;
-          })
-          .map((v) => (
-            <ListItem disablePadding secondaryAction={<ActionsMenu />}>
-              <ListItemButton>
-                <ListItemText
-                  primary={v.name}
-                  secondary={[v.source_url, "updated 2 hours ago"].map((t) => (
-                    <>{t} &middot; </>
-                  ))}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-      </List>*/}
+      <DataSelects projectId={projectId} />
+      {children}
     </Stack>
   );
 }
 
-export default function DataAccordion({
+function DataAccordion({
   projectId,
-  datasets,
-}: {
-  projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
-}) {
+  children,
+}: PropsWithChildren<{ projectId: string }>) {
+  const { data } = useGetPaginatedProjectDatasets(projectId, []);
+
+  const datasets: Required<Dataset>[] =
+    data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
+
   return (
     <Accordion disableGutters>
       <AccordionSummary
@@ -152,7 +209,7 @@ export default function DataAccordion({
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <DescriptionOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span">
+          <Typography variant="h5" ml={1} component="span">
             DATASETS
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
@@ -161,8 +218,18 @@ export default function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <DataList projectId={projectId} datasets={datasets} />
+        <DataList projectId={projectId}>{children}</DataList>
       </AccordionDetails>
     </Accordion>
   );
+}
+
+export default function Wrapper({ children }: PropsWithChildren) {
+  const { projectId } = useParams({ strict: false });
+
+  if (!projectId) {
+    return null;
+  }
+
+  return <DataAccordion projectId={projectId}>{children}</DataAccordion>;
 }

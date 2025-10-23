@@ -11,8 +11,8 @@ import DialogButton from "../../../components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
 
 const text = {
-  button: "Add Visualization",
-  title: "Add Visualization",
+  button: "New Visualization",
+  title: "New Visualization",
 };
 
 interface FormValues {

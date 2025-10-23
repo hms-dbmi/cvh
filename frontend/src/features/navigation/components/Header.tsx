@@ -12,7 +12,9 @@ import MenuItem from "@mui/material/MenuItem";
 import Avatar from "@mui/material/Avatar";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-
+import ListItemText from "@mui/material/ListItemText";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 //TODO: Replace ICONS
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -21,6 +23,7 @@ import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import { useAuth0 } from "@auth0/auth0-react";
 import GoslingIcon from "../../../assets/gosling.svg?react";
 import { Link } from "./Links";
+import { components } from "../../../types/schema";
 
 import useGetProjects, {
   useGetProjectMembers,
@@ -28,6 +31,7 @@ import useGetProjects, {
 
 import { LoginButton, LogoutButton } from "./AuthButtons";
 import AddProjectButton from "../../projects/components/AddProjectButton";
+import generateAvatarColor from "../../../utils/generateAvatarColor";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   const { data } = useGetProjectMembers(projectId);
@@ -45,6 +49,69 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
       <PeopleAltOutlinedIcon sx={{ marginRight: 1 }} />
       {data && data.length} Collaborators
     </Button>
+  );
+}
+
+type ProjectOut = components["schemas"]["ProjectOutWithMembersCount"];
+
+function WorkspaceListItem({
+  project,
+  firstLetter,
+  isSelected,
+}: {
+  project: ProjectOut;
+  firstLetter: string | null;
+  isSelected: boolean;
+}) {
+  const selectedProps = isSelected
+    ? { onClick: undefined }
+    : { component: "a", href: `/project/${project.uuid}` };
+
+  return (
+    <MenuItem
+      {...selectedProps}
+      sx={{
+        borderRadius: "8px",
+        boxShadow: isSelected
+          ? "-2px -2px 14.3px 0 rgba(14, 207, 255, 0.15), 4px 4px 20px 0 rgba(160, 246, 136, 0.15)"
+          : "none",
+        border: isSelected ? "2px solid black" : "none",
+        marginBottom: 1,
+        cursor: isSelected ? "default" : "pointer",
+      }}
+    >
+      <Stack direction="row" spacing={2}>
+        {firstLetter && (
+          <Box sx={{ alignSelf: "center" }}>
+            <Avatar
+              sx={{
+                backgroundColor: generateAvatarColor(project.name),
+                width: 65,
+                height: 65,
+                marginRight: 1,
+              }}
+              variant="square"
+            >
+              {firstLetter}
+            </Avatar>
+          </Box>
+        )}
+        <Stack>
+          <ListItemText
+            slotProps={{
+              primary: { variant: "subtitle1", component: "p" },
+            }}
+            primary={project.name}
+            secondary={[
+              `${project.project_members_count} collaborators`,
+              "updated 2 hours ago",
+            ].map((t) => (
+              <>{t} &middot; </>
+            ))}
+          />
+        </Stack>
+      </Stack>
+    </MenuItem>
   );
 }
 
@@ -80,11 +147,12 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
         variant="outlined"
         sx={{ color: "black", borderColor: "gray", padding: "8px" }}
         onClick={handleClick}
+        endIcon={open ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
       >
         {firstLetter && (
           <Avatar
             sx={{
-              backgroundColor: "pink",
+              backgroundColor: generateAvatarColor(currentProject.name),
               width: 24,
               height: 24,
               marginRight: 1,
@@ -105,20 +173,21 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
           list: {
             "aria-labelledby": "workspaces-button",
           },
+          paper: {
+            sx: { paddingRight: 1, paddingLeft: 1, maxHeight: 450 },
+          },
         }}
       >
         <Box p={2}>
           <AddProjectButton />
         </Box>
-
-        {projectsData?.items.map(
-          (p) =>
-            p.uuid !== projectId && (
-              <MenuItem component="a" href={`/project/${p.uuid}`}>
-                {p?.name}
-              </MenuItem>
-            )
-        )}
+        {projectsData?.items.map((p) => (
+          <WorkspaceListItem
+            project={p}
+            firstLetter={firstLetter}
+            isSelected={p.uuid === projectId}
+          />
+        ))}
       </Menu>
     </>
   );
@@ -170,7 +239,7 @@ export default function Header() {
             <Link to="/">
               <GoslingIcon height={30} />
             </Link>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
               Gosling Designer
             </Typography>
           </Stack>
