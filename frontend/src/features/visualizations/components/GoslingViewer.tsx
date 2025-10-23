@@ -106,7 +106,6 @@ function GoslingViewer({ projectId, datasets = [] }: GoslingViewerProps) {
       const n_tracks = nTracks;
       const n_datasets = nDatasets;
 
-      console.log(conf, nTracks, nDatasets, 'aa')
       try {
         if (!selectedVizId) {
           return;
