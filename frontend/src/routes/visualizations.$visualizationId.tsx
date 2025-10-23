@@ -1,0 +1,120 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useGetVisualization } from "../features/visualizations/api/useVisualizations";
+
+import { GoslingDesignerVEC } from "gosling-designer-vec";
+import formatVisualization from "../features/visualizations/utils/formatVisualization";
+import { components } from "../types/schema";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import { formatRelative } from "date-fns";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
+import "gosling-designer-vec/build/style.css";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import formatISO from "../utils/formatISO";
+
+export const Route = createFileRoute("/visualizations/$visualizationId")({
+  component: RouteComponent,
+});
+
+function PublishedVisualizationPanel({
+  viz,
+}: {
+  viz: components["schemas"]["VisualizationOut"];
+}) {
+  return (
+    <>
+      <Accordion disableGutters>
+        <AccordionSummary
+          expandIcon={<ArrowDropDownIcon />}
+          aria-controls="panel1-content"
+          id="panel1-header"
+        >
+          <Stack direction="row" spacing={2} alignItems="center">
+            <FolderOutlinedIcon />
+            <Typography variant="h5" ml={1} component="span">
+              VISUALIZATION INFO
+            </Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack
+            spacing={1.25}
+            sx={{
+              backgroundColor: "#F5F7FA",
+              border: "1px solid #E2E9EC",
+              padding: "15px 12px",
+            }}
+          >
+            <Typography variant="h5" component="h1">
+              {viz.name}
+            </Typography>
+            <Typography variant="body2">
+              {viz?.published_timestamp && (
+                <>Published {formatISO(viz.published_timestamp)}</>
+              )}
+            </Typography>
+            <Typography variant="body2">{viz.description}</Typography>
+            <Typography variant="body2" sx={{ color: "#4E5A63" }}>
+              {[
+                `${viz.n_tracks} tracks`,
+                `${viz.n_datasets} active datasets`,
+                `updated ${formatRelative(viz.modified_timestamp, new Date())}`,
+              ].map((t) => (
+                <>{t} &middot; </>
+              ))}
+            </Typography>
+            {viz?.tags?.length > 0 && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <LocalOfferOutlinedIcon fontSize="small" />
+                {viz?.tags.map((t) => (
+                  <Chip
+                    key={t.key + t.tag}
+                    label={
+                      <>
+                        <Typography variant="subtitle1" component="span">
+                          {t.key}
+                        </Typography>{" "}
+                        <Typography variant="body2" component="span">
+                          {t.tag}
+                        </Typography>
+                      </>
+                    }
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+    </>
+  );
+}
+
+function RouteComponent() {
+  const { visualizationId } = Route.useParams();
+
+  const { data } = useGetVisualization(visualizationId);
+
+  if (!data) {
+    return null;
+  }
+
+  const formattedVisualization = formatVisualization(data);
+
+  return (
+    <Box>
+      <GoslingDesignerVEC
+        visualization={formattedVisualization} // or `undefined`
+        visualizationPanel={<PublishedVisualizationPanel viz={data} />}
+        DatasetsPanel={() => null}
+        userMode="guest"
+      />
+    </Box>
+  );
+}

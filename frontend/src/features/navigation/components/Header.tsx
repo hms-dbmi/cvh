@@ -234,7 +234,11 @@ export default function Header() {
       <AppBar
         position="static"
         color="inherit"
-        sx={{ backgroundColor: "#fff", color: "black" }}
+        sx={{
+          backgroundColor: "#fff",
+          color: "black",
+          borderBottom: "1px solid #CAD5DA",
+        }}
       >
         <Toolbar>
           <Stack spacing={2} direction="row">

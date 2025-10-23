@@ -778,13 +778,6 @@ export interface components {
             /** Count */
             count: number;
         };
-        /** VisualizationQuerySchema */
-        VisualizationQuerySchema: {
-            /** Tags */
-            tags?: string[];
-            /** Name */
-            name?: string;
-        };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
             /** Items */
@@ -811,6 +804,8 @@ export interface components {
              * @default 0
              */
             n_datasets: number | null;
+            /** Published Timestamp */
+            published_timestamp?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -835,6 +830,13 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
+        };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
         };
         /** VisualizationIn */
         VisualizationIn: {
@@ -869,6 +871,8 @@ export interface components {
              * @default 0
              */
             n_datasets: number | null;
+            /** Published Timestamp */
+            published_timestamp?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -1357,6 +1361,8 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
                 name?: string;
                 limit?: number;
                 offset?: number;

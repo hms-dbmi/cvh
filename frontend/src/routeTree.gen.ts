@@ -14,6 +14,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as DatasetsRouteImport } from './routes/datasets'
 import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VisualizationsVisualizationIdRouteImport } from './routes/visualizations.$visualizationId'
 import { Route as ProjectChar123ProjectIdChar125RouteImport } from './routes/project.{-$projectId}'
 
 const ProjectsRoute = ProjectsRouteImport.update({
@@ -41,6 +42,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VisualizationsVisualizationIdRoute =
+  VisualizationsVisualizationIdRouteImport.update({
+    id: '/visualizations/$visualizationId',
+    path: '/visualizations/$visualizationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ProjectChar123ProjectIdChar125Route =
   ProjectChar123ProjectIdChar125RouteImport.update({
     id: '/project/{-$projectId}',
@@ -55,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -63,6 +71,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -72,6 +81,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -82,6 +92,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/projects'
     | '/project/{-$projectId}'
+    | '/visualizations/$visualizationId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -90,6 +101,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/projects'
     | '/project/{-$projectId}'
+    | '/visualizations/$visualizationId'
   id:
     | '__root__'
     | '/'
@@ -98,6 +110,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/projects'
     | '/project/{-$projectId}'
+    | '/visualizations/$visualizationId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -107,6 +120,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ProjectsRoute: typeof ProjectsRoute
   ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
+  VisualizationsVisualizationIdRoute: typeof VisualizationsVisualizationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -146,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/visualizations/$visualizationId': {
+      id: '/visualizations/$visualizationId'
+      path: '/visualizations/$visualizationId'
+      fullPath: '/visualizations/$visualizationId'
+      preLoaderRoute: typeof VisualizationsVisualizationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/project/{-$projectId}': {
       id: '/project/{-$projectId}'
       path: '/project/{-$projectId}'
@@ -163,6 +184,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ProjectsRoute: ProjectsRoute,
   ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
+  VisualizationsVisualizationIdRoute: VisualizationsVisualizationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

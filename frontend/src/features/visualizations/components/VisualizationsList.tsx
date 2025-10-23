@@ -31,6 +31,7 @@ import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import InputBase from "@mui/material/InputBase";
 import { formatRelative } from "date-fns";
+import LanguageIcon from "@mui/icons-material/Language";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
@@ -147,48 +148,68 @@ function VisualizationListItem({
           : "none",
         border: isSelected ? "2px solid black" : "none",
         borderRadius: "8px",
+        marginBottom: "12px"
       })}
     >
       <ListItemButton onClick={selectViz} color="primary">
-        <Stack direction="row" spacing={2}>
-          <Box sx={{ alignSelf: "center" }}>
-            <VisualizationThumbnail nTracks={v.n_tracks} />
-          </Box>
-          <Stack>
-            <ListItemText
-              slotProps={{
-                primary: { variant: "subtitle1", component: "p" },
-              }}
-              primary={v.name}
-              secondary={[
-                `${v.n_tracks} tracks`,
-                `${v.n_datasets} active datasets`,
-                `updated ${formatRelative(v.modified_timestamp, new Date())}`,
-              ].map((t) => (
-                <>{t} &middot; </>
-              ))}
-            />
-            {v?.tags?.length > 0 && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <LocalOfferOutlinedIcon fontSize="small" />
-                {v?.tags.map((t) => (
-                  <Chip
-                    key={t.key + t.tag}
-                    label={
-                      <>
-                        <Typography variant="subtitle1" component="span">
-                          {t.key}
-                        </Typography>{" "}
-                        <Typography variant="body2" component="span">
-                          {t.tag}
-                        </Typography>
-                      </>
-                    }
-                  />
+        <Stack spacing={0.5}>
+          <Stack direction="row" spacing={2}>
+            <Box sx={{ alignSelf: "center" }}>
+              <VisualizationThumbnail nTracks={v.n_tracks} />
+            </Box>
+            <Stack>
+              <ListItemText
+                slotProps={{
+                  primary: { variant: "subtitle1", component: "p" },
+                }}
+                primary={v.name}
+                secondary={[
+                  `${v.n_tracks} tracks`,
+                  `${v.n_datasets} active datasets`,
+                  `updated ${formatRelative(v.modified_timestamp, new Date())}`,
+                ].map((t) => (
+                  <>{t} &middot; </>
                 ))}
-              </Stack>
-            )}
+              />
+              {v?.tags?.length > 0 && (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <LocalOfferOutlinedIcon fontSize="small" />
+                  {v?.tags.map((t) => (
+                    <Chip
+                      key={t.key + t.tag}
+                      label={
+                        <>
+                          <Typography variant="subtitle1" component="span">
+                            {t.key}
+                          </Typography>{" "}
+                          <Typography variant="body2" component="span">
+                            {t.tag}
+                          </Typography>
+                        </>
+                      }
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Stack>
           </Stack>
+          {v?.published && (
+            <Box>
+              <Chip
+                label="Public"
+                variant="outlined"
+                icon={<LanguageIcon sx={{ fill: "#27AE60" }} />}
+                sx={{
+                  backgroundColor: "#DEF8E9",
+                  border: "1px solid #27AE60",
+                  color: "#27AE60",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  height: "38px",
+                }}
+              />
+            </Box>
+          )}
         </Stack>
       </ListItemButton>
     </ListItem>
@@ -311,7 +332,7 @@ export default function VisualizationAccordion({
         <Stack direction="row" spacing={2} alignItems="center">
           <FolderOutlinedIcon />
           <Typography variant="h5" ml={1} component="span">
-            VISUALIZATION
+            VISUALIZATIONS
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
             {visualizations?.length} visualization

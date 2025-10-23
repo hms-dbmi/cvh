@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 
 import { useGetProject } from "../features/projects/api/useProjects";
-import { useGetProjectVisualizations } from "../features/visualizations/api/useVisualizations";
 import useGetProjects from "../features/projects/api/useProjects";
 import VisualizationViewer from "../features/visualizations/components/VisualizationViewer";
 
@@ -32,17 +30,12 @@ function RouteComponent() {
 }
 
 function ProjectsPage({ projectId }: { projectId: string }) {
-  const [selectedTags] = useState<{ tag: string }[]>([]);
-
   const { isLoading: isLoadingProject, isError: isErrorProject } =
     useGetProject(projectId);
 
-  const { isLoading: isLoadingVisualizations, isError: isErrorVisualizations } =
-    useGetProjectVisualizations({ projectId, tags: selectedTags });
+  const isLoading = isLoadingProject;
 
-  const isLoading = isLoadingProject || isLoadingVisualizations;
-
-  const isError = isErrorProject || isErrorVisualizations;
+  const isError = isErrorProject;
 
   if (isLoading || isError) {
     return null;

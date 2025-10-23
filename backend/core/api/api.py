@@ -5,7 +5,7 @@ from django.db.models import Q, F, Value, CharField, Count
 from django.core.exceptions import PermissionDenied
 from django.db.models.functions import Concat
 from django.forms.models import model_to_dict
-
+from django.utils import timezone
 from django.http import Http404
 
 from ninja.security import HttpBearer
@@ -594,6 +594,8 @@ def update_visualization(
         raise Http404("Failed to update visualization.")
 
     for attr, value in payload_dict.items():
+        if attr == "published":
+            setattr(visualization, "published_timestamp", timezone.now())
         setattr(visualization, attr, value)
     visualization.save()
     return {"success": True}
