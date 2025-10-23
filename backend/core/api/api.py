@@ -1,7 +1,7 @@
 from ninja import NinjaAPI, Query, Schema, Field
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Value, CharField
+from django.db.models import Q, F, Value, CharField, Count
 from django.core.exceptions import PermissionDenied
 from django.db.models.functions import Concat
 from django.forms.models import model_to_dict
@@ -22,6 +22,7 @@ from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 from .schema import (
     ProjectIn,
     ProjectOut,
+    ProjectOutWithMembersCount,
     DatasetIn,
     DatasetOut,
     DatasetUpdate,
@@ -266,7 +267,7 @@ def create_project(request, project: ProjectIn):
     return p
 
 
-@api.get("/projects", auth=Authorized(), response=List[ProjectOut])
+@api.get("/projects", auth=Authorized(), response=List[ProjectOutWithMembersCount])
 @paginate
 def get_projects(request):
     projects = (
@@ -274,7 +275,19 @@ def get_projects(request):
         .filter(private=True)
         .order_by("-modified_timestamp")
         .values()
+        .annotate(
+            project_members_count=Count(
+                "projectmember",
+                distinct=True
+            )
+        )
     )
+    for project in projects:
+        print(project["name"], project["project_members_count"])
+
+    for project in projects:
+        if project["name"] == "bigWig Data":
+            print(project)
     return projects
 
 

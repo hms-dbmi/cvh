@@ -47,6 +47,8 @@ class ProjectOut(ModelSchema):
         model = Project
         fields = ["private", *shared_output_fields]
 
+class ProjectOutWithMembersCount(ProjectOut):
+    project_members_count: int
 
 class GoslingDataCommon(ModelSchema):
     assembly: Literal["hg38", "hg19", "hg18", "hg17", "hg16", "mm10", "mm9", "unknown"]

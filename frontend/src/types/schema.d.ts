@@ -373,12 +373,52 @@ export interface components {
              */
             offset: number;
         };
-        /** PagedProjectOut */
-        PagedProjectOut: {
+        /** PagedProjectOutWithMembersCount */
+        PagedProjectOutWithMembersCount: {
             /** Items */
-            items: components["schemas"]["ProjectOut"][];
+            items: components["schemas"]["ProjectOutWithMembersCount"][];
             /** Count */
             count: number;
+        };
+        /** ProjectOutWithMembersCount */
+        ProjectOutWithMembersCount: {
+            /** Datasets Count */
+            datasets_count: number;
+            /** Visualizations Count */
+            visualizations_count: number;
+            /** Permissions */
+            permissions?: number | null;
+            /**
+             * Private
+             * @default true
+             */
+            private: boolean;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: date-time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: date-time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: date-time
+             */
+            last_viewed_timestamp: string;
+            /** Project Members Count */
+            project_members_count: number;
         };
         /** ProjectOut */
         ProjectOut: {
@@ -426,6 +466,13 @@ export interface components {
             description?: string;
             /** Private */
             private?: boolean;
+        };
+        /** PagedProjectOut */
+        PagedProjectOut: {
+            /** Items */
+            items: components["schemas"]["ProjectOut"][];
+            /** Count */
+            count: number;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -964,7 +1011,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedProjectOut"];
+                    "application/json": components["schemas"]["PagedProjectOutWithMembersCount"];
                 };
             };
         };
