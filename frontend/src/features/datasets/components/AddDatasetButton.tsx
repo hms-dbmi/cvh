@@ -5,7 +5,6 @@ import Button, { ButtonProps } from "@mui/material/Button";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
 import FormGroup from "@mui/material/FormGroup";
 import FormControl from "@mui/material/FormControl";
 import DialogButton from "../../../components/DialogButton";
@@ -23,10 +22,11 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Switch from "@mui/material/Switch";
+import { UploadSimple } from "@phosphor-icons/react";
 
 const text = {
-  button: "Upload Data",
-  title: "Upload Data",
+  button: "Add Data Source",
+  title: "Add Data Source",
 };
 
 interface BaseValues {
@@ -496,7 +496,10 @@ export default function AddDatasetButton({
     <DialogButton
       text={text}
       onSubmit={handleSubmit(onSubmit)}
-      buttonProps={{ startIcon: <FileUploadOutlinedIcon /> }}
+      buttonProps={{
+        startIcon: <UploadSimple size={20} />,
+        sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
+      }}
       actionButtons={
         tab === 1 ? <Button onClick={() => setTab(2)}>Next</Button> : undefined
       }

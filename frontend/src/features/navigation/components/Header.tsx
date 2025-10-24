@@ -13,12 +13,9 @@ import Avatar from "@mui/material/Avatar";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import ListItemText from "@mui/material/ListItemText";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 //TODO: Replace ICONS
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 
 import { useAuth0 } from "@auth0/auth0-react";
 import GoslingIcon from "../../../assets/gosling.svg?react";
@@ -32,6 +29,7 @@ import useGetProjects, {
 import { LoginButton, LogoutButton } from "./AuthButtons";
 import AddProjectButton from "../../projects/components/AddProjectButton";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
+import { CaretDown, CaretUp, Users } from "@phosphor-icons/react";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   const { data } = useGetProjectMembers(projectId);
@@ -46,8 +44,10 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
         padding: "8px",
       }}
     >
-      <PeopleAltOutlinedIcon sx={{ marginRight: 1 }} />
-      {data && data.length} Collaborators
+      <Users size={20} />
+      <Box sx={{ marginLeft: "4px" }} component="span">
+        {data && data.length} Collaborators
+      </Box>
     </Button>
   );
 }
@@ -148,7 +148,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
         variant="outlined"
         sx={{ color: "black", borderColor: "gray", padding: "8px" }}
         onClick={handleClick}
-        endIcon={open ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
+        endIcon={open ? <CaretDown size={16} /> : <CaretUp size={16} />}
       >
         {firstLetter && (
           <Avatar

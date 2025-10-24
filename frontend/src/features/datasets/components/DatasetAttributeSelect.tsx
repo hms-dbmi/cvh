@@ -7,6 +7,7 @@ import Checkbox from "@mui/material/Checkbox";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { CaretDown } from "@phosphor-icons/react";
 
 export default function DatasetAttributeSelect({
   label,
@@ -32,7 +33,7 @@ export default function DatasetAttributeSelect({
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box>
       <FormControl sx={{ width: "100%" }}>
         <Select<string[]>
           labelId={`${attribute}-select-label`}
@@ -40,6 +41,7 @@ export default function DatasetAttributeSelect({
           multiple
           value={selectedValues}
           onChange={handleChange}
+          IconComponent={() => <CaretDown size={20} />}
           input={
             <InputBase
               sx={(theme) => ({
@@ -47,6 +49,12 @@ export default function DatasetAttributeSelect({
                 padding: "4px 8px",
                 border: `1px solid ${theme.palette.grey[300]}`,
                 background: "#F8F8F8",
+                [`#${attribute}-select`]: {
+                  paddingRight: 0,
+                },
+                [`#${attribute}-select > div > div`]: {
+                  width: 0,
+                },
               })}
             />
           }

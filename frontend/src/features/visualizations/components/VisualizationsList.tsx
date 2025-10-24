@@ -4,7 +4,6 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -17,21 +16,25 @@ import {
 } from "../api/useVisualizations";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import {
+  Folder,
+  Tag,
+  GlobeSimpleX,
+  MagnifyingGlass,
+  DotsThree,
+  PencilSimple,
+  Cards,
+  Trash,
+  CaretDown,
+} from "@phosphor-icons/react";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import InputBase from "@mui/material/InputBase";
 import { formatRelative } from "date-fns";
-import LanguageIcon from "@mui/icons-material/Language";
 
 import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
@@ -76,7 +79,7 @@ function ActionsMenu({ visualizationId }: { visualizationId: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <MoreHorizIcon />
+        <DotsThree height={24} width={24} color="black" />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
@@ -87,27 +90,27 @@ function ActionsMenu({ visualizationId }: { visualizationId: string }) {
       >
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
-            <EditOutlinedIcon fontSize="small" />
+            <PencilSimple height={24} width={24} />
           </ListItemIcon>
           Edit Details
         </MenuItem>
         <MenuItem onClick={() => setOpenAddTags(true)}>
           <>
             <ListItemIcon>
-              <LocalOfferOutlinedIcon fontSize="small" />
+              <Tag width={24} height={24} color="#4E5A63" />
             </ListItemIcon>
             Edit Tags
           </>
         </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
-            <ContentCopyOutlinedIcon fontSize="small" />
+            <Cards width={24} height={24} />
           </ListItemIcon>
           Create a Copy
         </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
-            <DeleteOutlinedIcon fontSize="small" />
+            <Trash width={24} height={24} />
           </ListItemIcon>
           Delete
         </MenuItem>
@@ -148,7 +151,7 @@ function VisualizationListItem({
           : "none",
         border: isSelected ? "2px solid black" : "none",
         borderRadius: "8px",
-        marginBottom: "12px"
+        marginBottom: "12px",
       })}
     >
       <ListItemButton onClick={selectViz} color="primary">
@@ -173,7 +176,7 @@ function VisualizationListItem({
               />
               {v?.tags?.length > 0 && (
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <LocalOfferOutlinedIcon fontSize="small" />
+                  <Tag height={20} width={20} color="#4E5A63" />
                   {v?.tags.map((t) => (
                     <Chip
                       key={t.key + t.tag}
@@ -198,7 +201,7 @@ function VisualizationListItem({
               <Chip
                 label="Public"
                 variant="outlined"
-                icon={<LanguageIcon sx={{ fill: "#27AE60" }} />}
+                icon={<GlobeSimpleX width={20} height={20} color="#27AE60" />}
                 sx={{
                   backgroundColor: "#DEF8E9",
                   border: "1px solid #27AE60",
@@ -257,7 +260,7 @@ function VisualizationList({
         placeholder="Search for a visualization..."
         startAdornment={
           <InputAdornment position="start">
-            <SearchOutlinedIcon />
+            <MagnifyingGlass height={24} width={24} />
           </InputAdornment>
         }
         sx={(theme) => ({
@@ -277,14 +280,21 @@ function VisualizationList({
       <Stack direction="row" spacing={1}>
         <AddVisualizationButton projectId={projectId} />
       </Stack>
-      <Box sx={{ maxWidth: 100 }}>
+      <Stack direction="row" spacing={1}>
         <DatasetTagsSelect
           attribute="tags"
           values={tagsData ?? []}
           selectedValues={selectedTags}
           setSelectedValues={setSelectedTags}
         />
-      </Box>
+        <Typography
+          variant="subtitle2"
+          component={Button}
+          sx={{ color: "#657681" }}
+        >
+          Reset
+        </Typography>
+      </Stack>
       <List>
         {visualizations.map((v) => (
           <VisualizationListItem
@@ -325,12 +335,12 @@ export default function VisualizationAccordion({
   return (
     <Accordion disableGutters>
       <AccordionSummary
-        expandIcon={<ArrowDropDownIcon />}
+        expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"
         id="panel1-header"
       >
         <Stack direction="row" spacing={2} alignItems="center">
-          <FolderOutlinedIcon />
+          <Folder height={24} width={24} />
           <Typography variant="h5" ml={1} component="span">
             VISUALIZATIONS
           </Typography>

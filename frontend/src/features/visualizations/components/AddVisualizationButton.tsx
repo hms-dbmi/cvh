@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import AddBoxIcon from "@mui/icons-material/AddBox";
 
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +8,7 @@ import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
+import { Plus } from "@phosphor-icons/react";
 
 const text = {
   button: "New Visualization",
@@ -80,7 +80,10 @@ export default function AddVisualizationButton({
     <DialogButton
       text={text}
       onSubmit={handleSubmit(onSubmit)}
-      buttonProps={{ startIcon: <AddBoxIcon /> }}
+      buttonProps={{
+        startIcon: <Plus size={20} weight="fill" />,
+        sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
+      }}
     >
       <Stack direction="row" spacing={2} mt={2}>
         <Stack spacing={1} minWidth={300}>
