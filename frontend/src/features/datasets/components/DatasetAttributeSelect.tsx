@@ -41,7 +41,7 @@ export default function DatasetAttributeSelect({
           multiple
           value={selectedValues}
           onChange={handleChange}
-          IconComponent={() => <CaretDown size={20} />}
+          IconComponent={(props) => <CaretDown size={16} {...props} />}
           input={
             <InputBase
               sx={(theme) => ({
@@ -51,9 +51,6 @@ export default function DatasetAttributeSelect({
                 background: "#F8F8F8",
                 [`#${attribute}-select`]: {
                   paddingRight: 0,
-                },
-                [`#${attribute}-select > div > div`]: {
-                  width: 0,
                 },
               })}
             />

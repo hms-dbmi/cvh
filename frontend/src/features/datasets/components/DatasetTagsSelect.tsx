@@ -42,7 +42,7 @@ export default function DatasetTagsSelect({
           multiple
           value={selectedValues}
           onChange={handleChange}
-          IconComponent={() => <CaretDown size={20} />}
+          IconComponent={(props) => <CaretDown size={16} {...props} />}
           input={
             <InputBase
               sx={(theme) => ({
@@ -52,9 +52,6 @@ export default function DatasetTagsSelect({
                 background: "#F8F8F8",
                 "#tags-select": {
                   paddingRight: 0,
-                },
-                "#tags-select > div > div": {
-                  width: 0,
                 },
               })}
             />

@@ -241,7 +241,7 @@ export default function Header() {
         }}
       >
         <Toolbar>
-          <Stack spacing={2} direction="row">
+          <Stack spacing={2} direction="row" alignItems="center">
             <Link to="/">
               <GoslingIcon height={30} />
             </Link>
