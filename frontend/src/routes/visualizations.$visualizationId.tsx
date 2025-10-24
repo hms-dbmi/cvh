@@ -61,11 +61,11 @@ function PublishedVisualizationPanel({
             <Typography variant="body2" sx={{ color: "#4E5A63" }}>
               {[
                 `${viz.n_tracks} tracks`,
+                <> &middot; </>,
                 `${viz.n_datasets} active datasets`,
+                <> &middot; </>,
                 `updated ${formatRelative(viz.modified_timestamp, new Date())}`,
-              ].map((t) => (
-                <>{t} &middot; </>
-              ))}
+              ]}
             </Typography>
             {viz?.tags?.length > 0 && (
               <Stack direction="row" spacing={1} alignItems="center">

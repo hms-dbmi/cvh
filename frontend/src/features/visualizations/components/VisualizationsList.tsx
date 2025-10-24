@@ -171,11 +171,11 @@ function VisualizationListItem({
                 primary={v.name}
                 secondary={[
                   `${v.n_tracks} tracks`,
+                  <> &middot; </>,
                   `${v.n_datasets} active datasets`,
+                  <> &middot; </>,
                   `updated ${formatRelative(v.modified_timestamp, new Date())}`,
-                ].map((t) => (
-                  <>{t} &middot; </>
-                ))}
+                ]}
               />
               {v?.tags?.length > 0 && (
                 <Stack direction="row" spacing={1} alignItems="center">

@@ -105,10 +105,9 @@ function WorkspaceListItem({
             primary={project.name}
             secondary={[
               `${project.project_members_count} collaborators`,
+              <> &middot; </>,
               `updated ${formatRelative(project.modified_timestamp, new Date())}`,
-            ].map((t) => (
-              <>{t} &middot; </>
-            ))}
+            ]}
           />
         </Stack>
       </Stack>
