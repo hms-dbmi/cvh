@@ -548,9 +548,11 @@ def get_project_visualizations(
         q &= Q(tags__in=t)
     if query_filters.name:
         q &= Q(name__icontains=query_filters.name)
-    visualizations = VisualizationConf.objects.filter(
-        Q(project_key=project) & q
-    ).distinct()
+    visualizations = (
+        VisualizationConf.objects.filter(Q(project_key=project) & q)
+        .distinct()
+        .order_by("-modified_timestamp")
+    )
     return visualizations
 
 
