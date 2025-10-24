@@ -50,7 +50,7 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
 };
 
 function GoslingViewer({ projectId }: GoslingViewerProps) {
-  const [selectedVizId, setSelectedVizId] = useState<string>();
+  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(undefined);
 
   /* eslint-disable */
   // @ts-ignore TODO: Remove ignore.
@@ -91,11 +91,6 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
 
   const { mutate: updateViz } = useUpdateVisualization();
   const { toastError } = useSnackbarActions();
-
-  const selectViz = useCallback(
-    (id: string) => setSelectedVizId(id),
-    [setSelectedVizId]
-  );
 
   const saveViz = useCallback(
     ({
@@ -159,7 +154,7 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
         visualizationPanel={
           <VisualizationsList
             projectId={projectId}
-            setSelectedVizId={selectViz}
+            setSelectedVizId={setSelectedVizId}
             selectedVizId={selectedVizId}
           />
         }

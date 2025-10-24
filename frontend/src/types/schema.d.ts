@@ -192,7 +192,8 @@ export interface paths {
         get: operations["api_api_get_dataset"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Dataset */
+        delete: operations["api_api_delete_dataset"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1330,6 +1331,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DatasetWithTagsOut"];
                 };
+            };
+        };
+    };
+    api_api_delete_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

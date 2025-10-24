@@ -150,6 +150,22 @@ function useGetDataset(datasetId: string) {
   });
 }
 
+function useDeleteDataset() {
+  const {toastSuccess, toastError} = useSnackbarActions()
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("delete", `${path}/uuid/{dataset_uuid}`, {
+    onSuccess: () =>{
+      toastSuccess("Successfully removed data source.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to removed data source.");
+    }
+  });
+}
+
+
 function useTagDataset() {
   const queryClient = useQueryClient();
   const client = useClient();
@@ -191,6 +207,7 @@ export {
   useUpdateDataset,
   useTagDataset,
   useGetDataset,
+  useDeleteDataset,
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
 };

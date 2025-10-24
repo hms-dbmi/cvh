@@ -479,6 +479,20 @@ def get_dataset(request, dataset_uuid: str):
     return dataset
 
 
+@api.delete("/datasets/uuid/{dataset_uuid}", auth=Authorized())
+def delete_dataset(request, dataset_uuid: str):
+    dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=dataset.project_key.uuid, user=request.auth
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to delete dataset.")
+
+    dataset.delete()
+    return {"success": True}
+
+
 @api.get("/tags", response=List[TagOut])
 @paginate
 def get_tags(request, sub_str: str = None):
