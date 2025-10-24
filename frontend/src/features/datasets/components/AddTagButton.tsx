@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 
 import {
   useForm,
@@ -16,10 +15,9 @@ import type { components } from "../../../types/schema.d.ts";
 
 import { useTagDataset } from "../api/useDatasets";
 import IconButton from "@mui/material/IconButton/IconButton";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
-
+import { Tag, Trash } from "@phosphor-icons/react";
 interface FormValues {
   tags: { tagKey: string; tagValue: string }[];
 }
@@ -71,15 +69,14 @@ export default function AddTagButton({
   setOpen: (o: boolean) => void;
   open: boolean;
 }) {
-  const initialTags = dataset.tags.reduce<{ tagKey: string; tagValue: string }[]>(
-    (acc, { tag, key }) => {
-      if (tag && key) {
-        acc.push({ tagKey: key, tagValue: tag });
-      }
-      return acc;
-    },
-    []
-  );
+  const initialTags = dataset.tags.reduce<
+    { tagKey: string; tagValue: string }[]
+  >((acc, { tag, key }) => {
+    if (tag && key) {
+      acc.push({ tagKey: key, tagValue: tag });
+    }
+    return acc;
+  }, []);
 
   const { handleSubmit, control } = useForm({
     defaultValues: {
@@ -126,7 +123,7 @@ export default function AddTagButton({
         button: (
           <>
             <ListItemIcon>
-              <LocalOfferOutlinedIcon fontSize="small" />
+              <Tag size={24} color="#4E5A63" />
             </ListItemIcon>
             Edit Tags
           </>
@@ -156,7 +153,7 @@ export default function AddTagButton({
               placeholder="Tag value..."
             />
             <IconButton onClick={() => remove(i)}>
-              <DeleteOutlinedIcon />
+              <Trash size={24} color="#8A9EA8" />
             </IconButton>
           </Stack>
         ))}

@@ -16,13 +16,12 @@ import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import Grid from "@mui/material/Grid2";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Switch from "@mui/material/Switch";
-import { UploadSimple } from "@phosphor-icons/react";
+import { UploadSimple, Info } from "@phosphor-icons/react";
 
 const text = {
   button: "Add Data Source",
@@ -287,7 +286,7 @@ function DatasetSelectionButton({
       onClick={onClick}
       {...buttonProps}
       fullWidth
-      endIcon={<InfoOutlinedIcon />}
+      endIcon={<Info size={24} color={"#4E5A63"} />}
     >
       {value}
     </Button>

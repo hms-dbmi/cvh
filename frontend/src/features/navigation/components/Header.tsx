@@ -41,7 +41,7 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
         backgroundColor: "black",
         color: "#fff",
         borderRadius: "8px",
-        padding: "8px",
+        padding: " 12px 16px",
       }}
     >
       <Users size={20} />
@@ -146,7 +146,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
         variant="outlined"
-        sx={{ color: "black", borderColor: "gray", padding: "8px" }}
+        sx={{ color: "black", borderColor: "gray", padding: "8px 16px" }}
         onClick={handleClick}
         endIcon={open ? <CaretDown size={16} /> : <CaretUp size={16} />}
       >
@@ -156,7 +156,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
               backgroundColor: generateAvatarColor(currentProject.name),
               width: 24,
               height: 24,
-              marginRight: 1,
+              marginRight: 1.75,
               borderRadius: "4px",
             }}
             variant="square"

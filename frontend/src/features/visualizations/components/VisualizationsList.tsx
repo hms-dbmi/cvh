@@ -79,7 +79,7 @@ function ActionsMenu({ visualizationId }: { visualizationId: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <DotsThree height={24} width={24} color="black" />
+        <DotsThree height={24} width={24} color="black" weight="bold" />
       </IconButton>
       <Menu
         anchorEl={anchorEl}

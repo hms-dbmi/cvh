@@ -71,7 +71,7 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <DotsThree height={24} width={24} />
+        <DotsThree height={24} width={24} weight="bold" color="black" />
       </IconButton>
       <Menu
         anchorEl={anchorEl}

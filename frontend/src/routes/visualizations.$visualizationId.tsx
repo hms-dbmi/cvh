@@ -7,16 +7,14 @@ import { components } from "../types/schema";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import { formatRelative } from "date-fns";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import "gosling-designer-vec/build/style.css";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import formatISO from "../utils/formatISO";
+import { CaretDown, Folder, Tag } from "@phosphor-icons/react";
 
 export const Route = createFileRoute("/visualizations/$visualizationId")({
   component: RouteComponent,
@@ -31,12 +29,12 @@ function PublishedVisualizationPanel({
     <>
       <Accordion disableGutters>
         <AccordionSummary
-          expandIcon={<ArrowDropDownIcon />}
+          expandIcon={<CaretDown size={20} />}
           aria-controls="panel1-content"
           id="panel1-header"
         >
           <Stack direction="row" spacing={2} alignItems="center">
-            <FolderOutlinedIcon />
+            <Folder size={24} />
             <Typography variant="h5" ml={1} component="span">
               VISUALIZATION INFO
             </Typography>
@@ -71,7 +69,7 @@ function PublishedVisualizationPanel({
             </Typography>
             {viz?.tags?.length > 0 && (
               <Stack direction="row" spacing={1} alignItems="center">
-                <LocalOfferOutlinedIcon fontSize="small" />
+                <Tag width={24} height={24} color="#4E5A63" />
                 {viz?.tags.map((t) => (
                   <Chip
                     key={t.key + t.tag}
