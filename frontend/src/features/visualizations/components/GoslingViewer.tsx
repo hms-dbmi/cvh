@@ -167,6 +167,7 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
         DatasetMenuButton={DatasetActionsMenu}
         userMode="admin"
         onPublish={publishViz}
+        _isPublished={data?.published}
       />
     </Box>
   );
