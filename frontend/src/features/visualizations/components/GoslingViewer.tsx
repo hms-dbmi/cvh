@@ -11,7 +11,7 @@ import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStor
 import { useUpdateVisualization } from "../api/useVisualizations";
 import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
-
+import formatVisualization from "../utils/formatVisualization.ts";
 type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
 interface GoslingViewerProps {
@@ -47,24 +47,6 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
     }
     return formatCvhDatasetsAsGoslingDatasets(datasets);
   }, [datasets]);
-};
-
-const formatVisualization = (
-  viz?: components["schemas"]["VisualizationOut"]
-) => {
-  if (!viz) {
-    return undefined;
-  }
-
-  return {
-    note: "",
-    name: viz.name,
-    id: viz.uuid,
-    spec: viz?.conf,
-    usedDataIds: [],
-    isPublished: viz?.published,
-    // name: dataset.source_url.replace(/^.*[\\/]/, ""),
-  } as ComponentProps<typeof GoslingDesignerVEC>["visualization"];
 };
 
 function GoslingViewer({ projectId }: GoslingViewerProps) {
@@ -147,6 +129,23 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
     [updateViz, toastError, selectedVizId]
   );
 
+  const publishViz = useCallback(() => {
+    try {
+      if (!selectedVizId) {
+        return;
+      }
+      updateViz({
+        body: { published: true },
+        params: {
+          path: { visualization_uuid: selectedVizId },
+        },
+      });
+    } catch (e) {
+      toastError("Error publishing visualization");
+      console.error(e);
+    }
+  }, [updateViz, toastError, selectedVizId]);
+
   if (!formattedDatasets) {
     return null;
   }
@@ -167,13 +166,8 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
         DatasetsPanel={DataList}
         DatasetMenuButton={DatasetActionsMenu}
         userMode="admin"
-      >
-        <Box
-          sx={{
-            background: "#FFF",
-          }}
-        ></Box>
-      </GoslingDesignerVEC>
+        onPublish={publishViz}
+      />
     </Box>
   );
 }

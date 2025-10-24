@@ -13,12 +13,9 @@ import Avatar from "@mui/material/Avatar";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import ListItemText from "@mui/material/ListItemText";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 //TODO: Replace ICONS
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 
 import { useAuth0 } from "@auth0/auth0-react";
 import GoslingIcon from "../../../assets/gosling.svg?react";
@@ -32,6 +29,7 @@ import useGetProjects, {
 import { LoginButton, LogoutButton } from "./AuthButtons";
 import AddProjectButton from "../../projects/components/AddProjectButton";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
+import { CaretDown, CaretUp, Users } from "@phosphor-icons/react";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   const { data } = useGetProjectMembers(projectId);
@@ -43,11 +41,13 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
         backgroundColor: "black",
         color: "#fff",
         borderRadius: "8px",
-        padding: "8px",
+        padding: " 12px 16px",
       }}
     >
-      <PeopleAltOutlinedIcon sx={{ marginRight: 1 }} />
-      {data && data.length} Collaborators
+      <Users size={20} />
+      <Box sx={{ marginLeft: "4px" }} component="span">
+        {data && data.length} Collaborators
+      </Box>
     </Button>
   );
 }
@@ -105,10 +105,9 @@ function WorkspaceListItem({
             primary={project.name}
             secondary={[
               `${project.project_members_count} collaborators`,
+              <> &middot; </>,
               `updated ${formatRelative(project.modified_timestamp, new Date())}`,
-            ].map((t) => (
-              <>{t} &middot; </>
-            ))}
+            ]}
           />
         </Stack>
       </Stack>
@@ -146,9 +145,9 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
         variant="outlined"
-        sx={{ color: "black", borderColor: "gray", padding: "8px" }}
+        sx={{ color: "black", borderColor: "gray", padding: "8px 16px" }}
         onClick={handleClick}
-        endIcon={open ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
+        endIcon={open ? <CaretDown size={16} /> : <CaretUp size={16} />}
       >
         {firstLetter && (
           <Avatar
@@ -156,7 +155,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
               backgroundColor: generateAvatarColor(currentProject.name),
               width: 24,
               height: 24,
-              marginRight: 1,
+              marginRight: 1.75,
               borderRadius: "4px",
             }}
             variant="square"
@@ -200,7 +199,7 @@ function ProjectsBar() {
   const router = useRouterState();
   const { isAuthenticated } = useAuth0();
 
-  if (!router.location.pathname.startsWith("/project") && isAuthenticated) {
+  if (router.location.pathname === "/" && isAuthenticated) {
     return (
       <Box flexGrow={1} ml={2}>
         <Link to="/project/{-$projectId}">Return to Workspaces</Link>
@@ -208,22 +207,22 @@ function ProjectsBar() {
     );
   }
 
-  if (!projectId) {
-    return null;
+  if (router.location.pathname.startsWith("/project") && projectId) {
+    return (
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        flexGrow={1}
+        ml={2}
+        mr={2}
+      >
+        <WorkspaceMenu projectId={projectId} />
+        <CollaboratorsMenu projectId={projectId} />
+      </Stack>
+    );
   }
 
-  return (
-    <Stack
-      direction="row"
-      justifyContent="space-between"
-      flexGrow={1}
-      ml={2}
-      mr={2}
-    >
-      <WorkspaceMenu projectId={projectId} />
-      <CollaboratorsMenu projectId={projectId} />
-    </Stack>
-  );
+  return <Box flexGrow={1} aria-hidden />;
 }
 
 export default function Header() {
@@ -234,10 +233,14 @@ export default function Header() {
       <AppBar
         position="static"
         color="inherit"
-        sx={{ backgroundColor: "#fff", color: "black" }}
+        sx={{
+          backgroundColor: "#fff",
+          color: "black",
+          borderBottom: "1px solid #CAD5DA",
+        }}
       >
         <Toolbar>
-          <Stack spacing={2} direction="row">
+          <Stack spacing={2} direction="row" alignItems="center">
             <Link to="/">
               <GoslingIcon height={30} />
             </Link>

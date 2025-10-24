@@ -17,6 +17,7 @@ class UserCreated(models.Model):
     modified_timestamp = models.DateTimeField(auto_now=True)
     last_viewed_timestamp = models.DateTimeField(auto_now_add=True)
 
+
     class Meta:
         abstract = True
 
@@ -127,6 +128,8 @@ class VisualizationConf(UserCreated):
     published = models.BooleanField(default=False)
     n_tracks = models.IntegerField(default=0, null=True)
     n_datasets = models.IntegerField(default=0, null=True)
+    published_timestamp = models.DateTimeField(null=True)
+
 
 
 class ProjectMember(models.Model):

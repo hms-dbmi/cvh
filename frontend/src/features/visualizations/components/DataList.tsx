@@ -4,19 +4,23 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import InputBase from "@mui/material/InputBase";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import Button from "@mui/material/Button";
+import {
+  Tag,
+  MagnifyingGlass,
+  DotsThree,
+  Cards,
+  Trash,
+  FileText,
+  CaretDown,
+} from "@phosphor-icons/react";
 
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
@@ -27,7 +31,6 @@ import {
   useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
@@ -68,7 +71,7 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <MoreHorizIcon />
+        <DotsThree height={24} width={24} weight="bold" color="black" />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
@@ -80,7 +83,7 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
         <MenuItem onClick={() => setOpenAddTags(true)}>
           <>
             <ListItemIcon>
-              <LocalOfferOutlinedIcon fontSize="small" />
+              <Tag height={24} width={24} />
             </ListItemIcon>
             Edit Tags
           </>
@@ -88,13 +91,13 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
 
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
-            <ContentCopyOutlinedIcon fontSize="small" />
+            <Cards height={24} width={24} />
           </ListItemIcon>
           Create a Copy
         </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
-            <DeleteOutlinedIcon fontSize="small" />
+            <Trash height={24} width={24} />
           </ListItemIcon>
           Delete
         </MenuItem>
@@ -157,6 +160,13 @@ function DataSelects({ projectId }: { projectId: string }) {
         selectedValues={selectedTags}
         setSelectedValues={setSelectedTags}
       />
+      <Typography
+        variant="subtitle2"
+        component={Button}
+        sx={{ color: "#657681" }}
+      >
+        Reset
+      </Typography>
     </Stack>
   );
 }
@@ -167,14 +177,11 @@ function DataList({
   children,
   projectId,
 }: PropsWithChildren<{ projectId: string }>) {
-  const nameSubstring = useDatasetFiltersStore(
-    (state) => state.nameSubstring
-  );
+  const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
   const setNameSubstring = useDatasetFiltersStore(
     (state) => state.setNameSubstring
   );
-
 
   return (
     <Stack spacing={1}>
@@ -186,10 +193,10 @@ function DataList({
         }}
         id="tags-autocomplete"
         fullWidth
-        placeholder="Search for a dataset..."
+        placeholder="Search for a data source..."
         startAdornment={
           <InputAdornment position="start">
-            <SearchOutlinedIcon />
+            <MagnifyingGlass height={24} width={24} />
           </InputAdornment>
         }
         sx={(theme) => ({
@@ -227,17 +234,17 @@ function DataAccordion({
   return (
     <Accordion disableGutters>
       <AccordionSummary
-        expandIcon={<ArrowDropDownIcon />}
+        expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"
         id="panel1-header"
       >
         <Stack direction="row" spacing={2} alignItems="center">
-          <DescriptionOutlinedIcon />
+          <FileText height={24} width={24} />
           <Typography variant="h5" ml={1} component="span">
-            DATASETS
+            Data Sources
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
-            {datasets?.length} dataset{datasets?.length === 1 ? "" : "s"}
+            {datasets?.length} data source{datasets?.length === 1 ? "" : "s"}
           </Typography>
         </Stack>
       </AccordionSummary>

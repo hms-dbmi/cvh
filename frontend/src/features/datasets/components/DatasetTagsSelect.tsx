@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 import type { components } from "../../../types/schema";
+import { CaretDown } from "@phosphor-icons/react";
 
 type Tag = components["schemas"]["TagOut"];
 
@@ -33,14 +34,15 @@ export default function DatasetTagsSelect({
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <FormControl sx={{ width: "100%" }}>
+    <Box>
+      <FormControl>
         <Select<string[]>
           labelId={`${attribute}-select-label`}
           id={`${attribute}-select`}
           multiple
           value={selectedValues}
           onChange={handleChange}
+          IconComponent={(props) => <CaretDown size={16} {...props} />}
           input={
             <InputBase
               sx={(theme) => ({
@@ -48,6 +50,9 @@ export default function DatasetTagsSelect({
                 padding: "4px 8px",
                 border: `1px solid ${theme.palette.grey[300]}`,
                 background: "#F8F8F8",
+                "#tags-select": {
+                  paddingRight: 0,
+                },
               })}
             />
           }
