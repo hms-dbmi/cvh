@@ -199,7 +199,7 @@ function ProjectsBar() {
   const router = useRouterState();
   const { isAuthenticated } = useAuth0();
 
-  if (!router.location.pathname.startsWith("/project") && isAuthenticated) {
+  if (router.location.pathname === "/" && isAuthenticated) {
     return (
       <Box flexGrow={1} ml={2}>
         <Link to="/project/{-$projectId}">Return to Workspaces</Link>
@@ -207,22 +207,22 @@ function ProjectsBar() {
     );
   }
 
-  if (!projectId) {
-    return null;
+  if (router.location.pathname.startsWith("/project") && projectId) {
+    return (
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        flexGrow={1}
+        ml={2}
+        mr={2}
+      >
+        <WorkspaceMenu projectId={projectId} />
+        <CollaboratorsMenu projectId={projectId} />
+      </Stack>
+    );
   }
 
-  return (
-    <Stack
-      direction="row"
-      justifyContent="space-between"
-      flexGrow={1}
-      ml={2}
-      mr={2}
-    >
-      <WorkspaceMenu projectId={projectId} />
-      <CollaboratorsMenu projectId={projectId} />
-    </Stack>
-  );
+  return <Box flexGrow={1} aria-hidden />;
 }
 
 export default function Header() {
