@@ -152,6 +152,9 @@ function VisualizationListItem({
         border: isSelected ? "2px solid black" : "none",
         borderRadius: "8px",
         marginBottom: "12px",
+        ".MuiListItemSecondaryAction-root": {
+          top: "25%",
+        },
       })}
     >
       <ListItemButton onClick={selectViz} color="primary">
