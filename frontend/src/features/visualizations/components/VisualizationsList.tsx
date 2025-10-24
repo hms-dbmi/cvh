@@ -10,6 +10,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import {
+  useDeleteVisualization,
   useGetProjectVisualizations,
   useGetProjectVisualizationTags,
   useGetVisualization,
@@ -42,25 +43,67 @@ import AddTagButton from "./AddVizTagButton";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import VisualizationThumbnail from "./VisualizationThumbnail";
 import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
+import DialogButtonCopy from "../../../components/DialogButtonCopy";
 
-function ActionsMenu({ visualizationId }: { visualizationId: string }) {
+function ActionsMenu({
+  visualizationId,
+  setSelectedVizId,
+  isSelected,
+}: {
+  visualizationId: string;
+  setSelectedVizId: (id?: string) => void;
+  isSelected: boolean;
+}) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+
   const [openAddTags, setOpenAddTags] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+
   const { projectId } = useParams({ strict: false });
 
   const { data } = useGetVisualization(visualizationId);
 
+  const { mutate: deleteViz } = useDeleteVisualization();
+
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    },
+    [setAnchorEl]
+  );
+
+  const handleClose = useCallback(() => {
+    setAnchorEl(null);
+  }, [setAnchorEl]);
+
+  const submitDelete = useCallback(() => {
+    if (visualizationId) {
+      deleteViz({
+        params: {
+          path: { visualization_uuid: visualizationId },
+        },
+      });
+
+      if (isSelected) {
+        setSelectedVizId(undefined);
+      }
+
+      setOpenDelete(false);
+      handleClose();
+    }
+  }, [
+    setOpenDelete,
+    handleClose,
+    deleteViz,
+    visualizationId,
+    isSelected,
+    setSelectedVizId,
+  ]);
+
   if (!projectId || !data) {
     return null;
   }
-
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
 
   return (
     <div>
@@ -72,6 +115,22 @@ function ActionsMenu({ visualizationId }: { visualizationId: string }) {
         open={openAddTags}
         setOpen={setOpenAddTags}
       />
+      <DialogButtonCopy
+        text={{
+          title: "Delete Visualization?",
+          button: "",
+        }}
+        onSubmit={submitDelete}
+        isMenuItem
+        isButton={false}
+        open={openDelete}
+        setOpen={setOpenDelete}
+      >
+        <Typography>
+          Are you sure you want to delete this visualization? This action is
+          immediate and irreversible.
+        </Typography>
+      </DialogButtonCopy>
       <IconButton
         onClick={handleClick}
         size="small"
@@ -108,7 +167,7 @@ function ActionsMenu({ visualizationId }: { visualizationId: string }) {
           </ListItemIcon>
           Create a Copy
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash width={24} height={24} />
           </ListItemIcon>
@@ -125,7 +184,7 @@ function VisualizationListItem({
   isSelected,
 }: {
   v: components["schemas"]["VisualizationNoConfOut"];
-  setSelectedVizId: (id: string) => void;
+  setSelectedVizId: (id?: string) => void;
   isSelected: boolean;
 }) {
   const selectViz = useCallback(() => {
@@ -137,12 +196,17 @@ function VisualizationListItem({
   if (!v.uuid) {
     return null;
   }
+
   return (
     <ListItem
       disablePadding
       secondaryAction={
         <Box sx={{ heigh: "100%", alignSelf: "start" }}>
-          <ActionsMenu visualizationId={v.uuid} />
+          <ActionsMenu
+            visualizationId={v.uuid}
+            setSelectedVizId={setSelectedVizId}
+            isSelected={isSelected}
+          />
         </Box>
       }
       sx={() => ({
@@ -230,7 +294,7 @@ function VisualizationList({
 }: {
   projectId: string;
   visualizations?: components["schemas"]["VisualizationNoConfOut"][];
-  setSelectedVizId: (id: string) => void;
+  setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
 }) {
   const selectedTags = useVisualizationFiltersStore(
@@ -318,7 +382,7 @@ export default function VisualizationAccordion({
   selectedVizId,
 }: {
   projectId: string;
-  setSelectedVizId: (id: string) => void;
+  setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
 }) {
   const nameSubstring = useVisualizationFiltersStore(

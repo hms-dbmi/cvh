@@ -1,4 +1,4 @@
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useState, useCallback } from "react";
 import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -25,6 +25,7 @@ import {
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 import {
+  useDeleteDataset,
   useGetDataset,
   useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
@@ -34,6 +35,7 @@ import AddTagButton from "../../datasets/components/AddTagButton";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
+import DialogButtonCopy from "../../../components/DialogButtonCopy";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -41,18 +43,39 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const { projectId } = useParams({ strict: false });
 
   const [openAddTags, setOpenAddTags] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+
   const { data } = useGetDataset(datasetID);
+
+  const { mutate: deleteDataset } = useDeleteDataset();
+
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    },
+    [setAnchorEl]
+  );
+
+  const handleClose = useCallback(() => {
+    setAnchorEl(null);
+  }, [setAnchorEl]);
+
+  const submitDelete = useCallback(() => {
+    if (datasetID) {
+      deleteDataset({
+        params: {
+          path: { dataset_uuid: datasetID },
+        },
+      });
+
+      setOpenDelete(false);
+      handleClose();
+    }
+  }, [setOpenDelete, handleClose, deleteDataset, datasetID]);
 
   if (!projectId || !data) {
     return null;
   }
-
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
 
   return (
     <div>
@@ -64,6 +87,22 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
         open={openAddTags}
         setOpen={setOpenAddTags}
       />
+      <DialogButtonCopy
+        text={{
+          title: "Remove Data Source from Workspace?",
+          button: "",
+        }}
+        onSubmit={submitDelete}
+        isMenuItem
+        isButton={false}
+        open={openDelete}
+        setOpen={setOpenDelete}
+      >
+        <Typography>
+          Are you sure you want to remove this dataset from the workspace? This
+          action is immediate and irreversible.
+        </Typography>
+      </DialogButtonCopy>
       <IconButton
         onClick={handleClick}
         size="small"
@@ -88,14 +127,13 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
             Edit Tags
           </>
         </MenuItem>
-
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <Cards height={24} width={24} />
           </ListItemIcon>
           Create a Copy
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash height={24} width={24} />
           </ListItemIcon>

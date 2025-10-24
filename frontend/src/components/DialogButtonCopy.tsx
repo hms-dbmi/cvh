@@ -69,6 +69,7 @@ export default function DialogButtonCopy({
   const submit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
       if (onSubmit) {
+        e?.preventDefault()
         onSubmit(e);
         handleClose();
       }
