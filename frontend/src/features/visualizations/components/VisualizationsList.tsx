@@ -44,7 +44,9 @@ import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import VisualizationThumbnail from "./VisualizationThumbnail";
 import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
+import EditVisualizationDialog from "./EditVisualizationDialog";
 
+// TODO: One instance of dialog using a store.
 function ActionsMenu({
   visualizationId,
   setSelectedVizId,
@@ -59,6 +61,7 @@ function ActionsMenu({
 
   const [openAddTags, setOpenAddTags] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
 
   const { projectId } = useParams({ strict: false });
 
@@ -72,6 +75,8 @@ function ActionsMenu({
     },
     [setAnchorEl]
   );
+
+  const handleOpenEdit = useCallback(() => setOpenEdit(true), [setOpenEdit]);
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);
@@ -115,6 +120,14 @@ function ActionsMenu({
         open={openAddTags}
         setOpen={setOpenAddTags}
       />
+      <EditVisualizationDialog
+        visualizationId={visualizationId}
+        initialDescription={data?.description ?? ""}
+        initialName={data?.name ?? ""}
+        closeMenu={handleClose}
+        open={openEdit}
+        setOpen={setOpenEdit}
+      />
       <DialogButtonCopy
         text={{
           title: "Delete Visualization?",
@@ -147,7 +160,7 @@ function ActionsMenu({
         onClose={handleClose}
         onClick={handleClose}
       >
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleOpenEdit}>
           <ListItemIcon>
             <PencilSimple height={24} width={24} />
           </ListItemIcon>
