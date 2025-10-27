@@ -153,7 +153,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
         variant="outlined"
-        sx={{ color: "black", borderColor: "gray", padding: "8px 16px" }}
+        sx={{ borderColor: "#C8CCCE", padding: "8px 16px" }}
         onClick={handleClick}
         endIcon={open ? <CaretDown size={16} /> : <CaretUp size={16} />}
       >
