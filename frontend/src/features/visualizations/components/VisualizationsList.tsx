@@ -224,47 +224,59 @@ function VisualizationListItem({
       <ListItemButton onClick={selectViz} color="primary">
         <Stack spacing={0.5}>
           <Stack direction="row" spacing={2}>
-            <Box sx={{ alignSelf: "center" }}>
+            <Box>
               <VisualizationThumbnail nTracks={v.n_tracks} />
             </Box>
-            <Stack>
-              <ListItemText
-                slotProps={{
-                  primary: { variant: "subtitle1", component: "p" },
-                }}
-                primary={v.name}
-                secondary={[
-                  `${v.n_tracks} track${v.n_tracks === 1 ? "" : "s"}`,
-                  <> &middot; </>,
-                  `${v.n_datasets} active data source${
-                    v.n_datasets === 1 ? "" : "s"
-                  }`,
-                  <> &middot; </>,
-                  `updated ${formatRelative(v.modified_timestamp, new Date())}`,
-                ]}
-              />
-              {v?.tags?.length > 0 && (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Tag height={20} width={20} color="#4E5A63" />
-                  {v?.tags.map((t) => (
-                    <Chip
-                      key={t.key + t.tag}
-                      label={
-                        <>
-                          <Typography variant="subtitle1" component="span">
-                            {t.key}
-                          </Typography>{" "}
-                          <Typography variant="body2" component="span">
-                            {t.tag}
-                          </Typography>
-                        </>
-                      }
-                    />
-                  ))}
-                </Stack>
-              )}
-            </Stack>
+            <ListItemText
+              slotProps={{
+                primary: { variant: "subtitle1", component: "p" },
+              }}
+              primary={v.name}
+              secondary={[
+                `${v.n_tracks} track${v.n_tracks === 1 ? "" : "s"}`,
+                <> &middot; </>,
+                `${v.n_datasets} active data source${
+                  v.n_datasets === 1 ? "" : "s"
+                }`,
+                <> &middot; </>,
+                `updated ${formatRelative(v.modified_timestamp, new Date())}`,
+              ]}
+            />
           </Stack>
+          {v?.tags?.length > 0 && (
+            <Stack
+              direction="row"
+              spacing={0.5}
+              gap={0.5}
+              alignItems="center"
+              flexWrap="wrap"
+            >
+              <Tag size={20} color="#4E5A63" />
+              {v?.tags.map((t) => (
+                <Chip
+                  key={t.key + t.tag}
+                  label={
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                      >
+                        {t.key}
+                      </Typography>{" "}
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                      >
+                        {t.tag}
+                      </Typography>
+                    </>
+                  }
+                />
+              ))}
+            </Stack>
+          )}
           {v?.published && (
             <Box>
               <Chip

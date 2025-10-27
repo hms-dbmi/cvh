@@ -60,27 +60,41 @@ function PublishedVisualizationPanel({
             <Typography variant="body2">{viz.description}</Typography>
             <Typography variant="body2" sx={{ color: "#4E5A63" }}>
               {[
-                  `${viz.n_tracks} track${viz.n_tracks === 1 ? "" : "s"}`,
-                  <> &middot; </>,
-                  `${viz.n_datasets} active data source${
-                    viz.n_datasets === 1 ? "" : "s"
-                  }`,
-                  <> &middot; </>,
-                  `updated ${formatRelative(viz.modified_timestamp, new Date())}`,
-                ]}
+                `${viz.n_tracks} track${viz.n_tracks === 1 ? "" : "s"}`,
+                <> &middot; </>,
+                `${viz.n_datasets} active data source${
+                  viz.n_datasets === 1 ? "" : "s"
+                }`,
+                <> &middot; </>,
+                `updated ${formatRelative(viz.modified_timestamp, new Date())}`,
+              ]}
             </Typography>
             {viz?.tags?.length > 0 && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Tag width={24} height={24} color="#4E5A63" />
+              <Stack
+                direction="row"
+                spacing={0.5}
+                gap={0.5}
+                alignItems="center"
+                flexWrap="wrap"
+              >
+                <Tag size={20} color="#4E5A63" />
                 {viz?.tags.map((t) => (
                   <Chip
                     key={t.key + t.tag}
                     label={
                       <>
-                        <Typography variant="subtitle1" component="span">
+                        <Typography
+                          variant="subtitle1"
+                          component="span"
+                          sx={{ fontSize: 12 }}
+                        >
                           {t.key}
                         </Typography>{" "}
-                        <Typography variant="body2" component="span">
+                        <Typography
+                          variant="body2"
+                          component="span"
+                          sx={{ fontSize: 12 }}
+                        >
                           {t.tag}
                         </Typography>
                       </>
