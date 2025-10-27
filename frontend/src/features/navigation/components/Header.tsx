@@ -54,7 +54,7 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
     >
       <Users size={20} />
       <Box sx={{ marginLeft: "4px" }} component="span">
-        {data && data.length} Collaborators
+        {data && data.length} Collaborator{data?.length === 1 ? "" : "s"}
       </Box>
     </Button>
   );
@@ -112,7 +112,7 @@ function WorkspaceListItem({
             }}
             primary={project.name}
             secondary={[
-              `${project.project_members_count} collaborators`,
+              `${project.project_members_count} collaborator${project?.project_members_count === 1 ? "" : "s"}`,
               <> &middot; </>,
               `updated ${formatRelative(project.modified_timestamp, new Date())}`,
             ]}
