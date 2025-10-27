@@ -15,6 +15,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
+import Skeleton from "@mui/material/Skeleton";
 
 import { useAuth0 } from "@auth0/auth0-react";
 import GoslingIcon from "../../../assets/gosling.svg?react";
@@ -233,7 +234,7 @@ function ProjectsBar() {
 }
 
 function ProfileMenu() {
-  const { data } = useGetUser();
+  const { data, isLoading } = useGetUser();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openEditProfile, setOpenEditProfile] = useState(false);
   const { logout } = useAuth0();
@@ -259,6 +260,15 @@ function ProfileMenu() {
     setAnchorEl(null);
   }, [setAnchorEl]);
 
+  if (isLoading) {
+    return (
+      <Stack direction="row" alignItems="center">
+        <Skeleton variant="circular" width={36} height={36} />
+        <CaretUp size={20} />
+      </Stack>
+    );
+  }
+
   return (
     <>
       <EditProfileDialog
@@ -281,7 +291,7 @@ function ProfileMenu() {
             backgroundColor: generateAvatarColor(data?.username ?? "zzz"),
             width: "36px",
             height: "36px",
-            fontSize: "1rem"
+            fontSize: "1rem",
           }}
         >
           {data?.first_name?.length && data?.last_name?.length ? (
@@ -309,7 +319,7 @@ function ProfileMenu() {
                 backgroundColor: generateAvatarColor(data?.username ?? "zzz"),
                 width: 36,
                 height: 36,
-                fontSize: "1rem"
+                fontSize: "1rem",
               }}
             >
               {data?.first_name?.length && data?.last_name?.length ? (
@@ -342,7 +352,10 @@ function ProfileMenu() {
           View Profile
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleLogOut} sx={(theme) => theme.typography.button}>
+        <MenuItem
+          onClick={handleLogOut}
+          sx={(theme) => theme.typography.button}
+        >
           <ListItemIcon>
             <SignOut size={16} />
           </ListItemIcon>
