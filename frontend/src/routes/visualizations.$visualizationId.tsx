@@ -62,7 +62,7 @@ function PublishedVisualizationPanel({
               {[
                 `${viz.n_tracks} tracks`,
                 <> &middot; </>,
-                `${viz.n_datasets} active datasets`,
+                `${viz.n_datasets} active data sources`,
                 <> &middot; </>,
                 `updated ${formatRelative(viz.modified_timestamp, new Date())}`,
               ]}

@@ -20,6 +20,8 @@ import requests
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 from .schema import (
+    UserOut,
+    UserIn,
     ProjectIn,
     ProjectOut,
     ProjectOutWithMembersCount,
@@ -186,6 +188,21 @@ class RequestToken(object):
 
     def dict(self) -> dict[str, Any]:
         return self._decoded if self._decoded is not None else {}
+
+
+@api.get("/user", auth=Authorized(), response=UserOut)
+def get_user_info(request):
+    return request.auth
+
+@api.put("/user", auth=Authorized())
+def update_user_info(request, user_in: UserIn):
+    user = get_object_or_404(User, username=request.auth)
+    user_dict = user_in.dict(exclude_unset=True)
+
+    for attr, value in user_dict.items():
+        setattr(user, attr, value)
+    user.save()
+    return {"success": True}
 
 
 def _get_project(project_uuid: str, user: User, error_message: str):
