@@ -241,7 +241,7 @@ function DataAccordion({
         <Stack direction="row" spacing={2} alignItems="center">
           <FileText height={24} width={24} />
           <Typography variant="h5" ml={1} component="span">
-            Data Sources
+            DATA SOURCES
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
             {datasets?.length} data source{datasets?.length === 1 ? "" : "s"}

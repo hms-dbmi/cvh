@@ -22,9 +22,7 @@ export default function DatasetsList({
   return (
     <Stack>
       <Stack direction="row" justifyContent="space-between" width="100%">
-        <Typography variant="h5">
-          Data Sources
-        </Typography>
+        <Typography variant="h5">DATA SOURCES </Typography>
         <AddDatasetButton />
       </Stack>
       <List>

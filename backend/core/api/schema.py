@@ -27,6 +27,16 @@ shared_output_fields = [
 ]
 
 
+class UserOut(Schema):
+    username: str
+    first_name: str
+    last_name: str
+    email: EmailStr
+
+class UserIn(OptionalSchema):
+    first_name: str
+    last_name: str
+
 class ProjectIn(Schema):
     name: str
     description: str

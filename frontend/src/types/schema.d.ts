@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Info */
+        get: operations["api_api_get_user_info"];
+        /** Update User Info */
+        put: operations["api_api_update_user_info"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/members": {
         parameters: {
             query?: never;
@@ -307,6 +325,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** UserOut */
+        UserOut: {
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /** UserIn */
+        UserIn: {
+            /** First Name */
+            first_name?: string;
+            /** Last Name */
+            last_name?: string;
+        };
         /** ProjectMemberIn */
         ProjectMemberIn: {
             /**
@@ -922,6 +961,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    api_api_get_user_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    api_api_update_user_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
     api_api_update_project_member: {
         parameters: {
             query?: never;
