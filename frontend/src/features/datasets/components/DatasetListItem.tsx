@@ -2,16 +2,13 @@ import { useCallback } from "react";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
-import Chip from "@mui/material/Chip";
 
 import type { components } from "../../../types/schema.d.ts";
 import EntityListItem from "../../../components/EntityListItem.tsx";
-import AddTagButton from "./AddTagButton.tsx";
 import EntityDates from "../../../components/EntityDates.tsx";
 
 export default function DatasetListItem({
   dataset,
-  projectId,
   selectItem,
   isSelected,
 }: {
@@ -51,12 +48,6 @@ export default function DatasetListItem({
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               Assay Type: {dataset.data_type}
             </Typography>
-          </Stack>
-          <Stack direction="row" spacing={1} alignItems="center">
-            {dataset?.combined_tags?.map((tag) => (
-              <Chip key={tag} label={tag} variant="outlined" />
-            ))}
-            <AddTagButton datasetId={dataset.uuid} projectId={projectId} />
           </Stack>
           <EntityDates
             created={dataset.created_timestamp}
