@@ -15,7 +15,7 @@ Parameters:
   TaskName:
     Type: String
     Description: The name of the service task
-    Default: "gosling-dmc-api-no-lb"
+    Default: "gosling-dmc-api-lb"
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3 
@@ -32,6 +32,19 @@ Parameters:
     Type: String
     Description: The security group ID attached to the database
     Default: "sg-064851831f18d03a0"
+  HostedZoneName:
+    Description: Hosted Zone Name
+    Type: String
+    Default: gosling-lang.org
+  HostedZoneId:
+    Description: Hosted Zone ID
+    Type: String
+    Default: Z085595833A98LWBFS157
+  RootDomainName:
+    Description: Domain name for the website (api.designer.gosling-lang.org)
+    Default: api.designer.gosling-lang.org
+    Type: String
+
 
 Resources:
   # Security Group for the Load Balancer
@@ -59,6 +72,22 @@ Resources:
           Value: 'gosling-dmc'
       VpcId: !Ref VpcId
 
+  CertificateManagerCertificate:
+      Type: AWS::CertificateManager::Certificate
+      Properties:
+          # naked domain
+          DomainName: !Ref RootDomainName
+          # add www to certificate
+          SubjectAlternativeNames:
+              - !Sub 'www.${RootDomainName}'
+          ValidationMethod: DNS
+          DomainValidationOptions:
+              # DNS record for the naked domain
+              - DomainName: !Ref RootDomainName
+                HostedZoneId: !Ref HostedZoneId
+              # DNS record for the www domain
+              - DomainName: !Sub 'www.${RootDomainName}'
+                HostedZoneId: !Ref HostedZoneId
 
   # Load Balancer
   # External load balancer
@@ -125,7 +154,7 @@ Resources:
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub "${AWS::StackName}-gosling-dmc-api"
+      Name: !Sub "${AWS::StackName}-tg"
       HealthCheckPath: /health     
       Port: 8000
       Protocol: HTTP
@@ -139,6 +168,27 @@ Resources:
       VpcId: !Ref VpcId
  
 
+  Route53RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+        # keep the . suffix
+        HostedZoneName: !Sub '${HostedZoneName}.'
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html#cfn-route53-aliastarget-hostedzoneid
+        Comment: Zone apex alias.
+        RecordSets:
+            - Name: !Ref RootDomainName
+              Type: A
+              AliasTarget:
+                  DNSName: !GetAtt LoadBalancer.DNSName
+                  EvaluateTargetHealth: false
+                  HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+            - Name: !Sub 'www.${RootDomainName}'
+              Type: A
+              AliasTarget:
+                  DNSName: !GetAtt LoadBalancer.DNSName
+                  EvaluateTargetHealth: false
+                  HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+
   # # Load Balancer Listener
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -147,8 +197,11 @@ Resources:
         - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
           Type: 'forward'
       LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates: 
+        - CertificateArn: !Ref CertificateManagerCertificate
     DependsOn:
       - LoadBalancer
 
