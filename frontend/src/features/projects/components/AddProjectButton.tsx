@@ -13,8 +13,8 @@ import DialogButton from "../../../components/DialogButton";
 import { useCreateProject } from "../api/useProjects";
 
 const text = {
-  button: "Add Project",
-  title: "Add Project",
+  button: "Create New Workspace",
+  title: "Create New Workspace",
 };
 
 interface FormValues {

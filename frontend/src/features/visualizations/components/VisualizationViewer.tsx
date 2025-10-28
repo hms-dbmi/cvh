@@ -1,12 +1,10 @@
 import "gosling-designer-vec/build/style.css";
 
-import type { components } from "../../../types/schema";
 import GoslingViewer from "./GoslingViewer.tsx";
 
 interface VisualizationViewerProps {
   projectId: string;
   visualizationType: string;
-  datasets?: components["schemas"]["DatasetOut"][];
   readonly?: boolean;
   onSave?: (newConf: string) => void;
 }

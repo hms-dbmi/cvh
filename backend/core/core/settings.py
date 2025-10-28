@@ -82,7 +82,7 @@ def get_ecs_allowed_hosts(uri):
 
 
 if METADATA_URI:
-    ecs_hosts = get_ecs_allowed_hosts(METADATA_URI)
+    ecs_hosts = get_ecs_allowed_hosts(METADATA_URI) or []
     ALLOWED_HOSTS.extend(ecs_hosts)
 
 
@@ -106,6 +106,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "core.middleware.HealthCheckMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

@@ -17,6 +17,7 @@ class UserCreated(models.Model):
     modified_timestamp = models.DateTimeField(auto_now=True)
     last_viewed_timestamp = models.DateTimeField(auto_now_add=True)
 
+
     class Meta:
         abstract = True
 
@@ -38,8 +39,9 @@ class ProjectsManager(models.Manager):
             super(ProjectsManager, self)
             .get_queryset()
             .annotate(
-                datasets_count=Count("dataset",distinct=True),
-            ).annotate(
+                datasets_count=Count("dataset", distinct=True),
+            )
+            .annotate(
                 visualizations_count=Count("visualizationconf", distinct=True),
             )
         )
@@ -73,15 +75,10 @@ class ProjectsManager(models.Manager):
         return self.get_projects_with_permission(user=user, permission=1)
 
     def get_write_projects(self, user: int):
-        return self.get_projects_with_permission(user=user, permission=1)
+        return self.get_projects_with_permission(user=user, permission=2)
 
     def get_admin_projects(self, user: int):
         return self.get_projects_with_permission(user=user, permission=3)
-
-
-class Tag(models.Model):
-    tag = models.CharField(max_length=50)
-    key = models.CharField(max_length=50, blank=True, null=True)
 
 
 class Project(UserCreated):
@@ -90,33 +87,19 @@ class Project(UserCreated):
         Group, on_delete=models.CASCADE, blank=True, null=True
     )
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-    tags = models.ManyToManyField(Tag)
     objects = ProjectsManager()
 
 
-class TagsManager(models.Manager):
-    def get_queryset(self):
-        return (
-            super(TagsManager, self)
-            .get_queryset()
-            .annotate(
-                combined_tag=Case(
-                    When(
-                        tags__key__isnull=False,
-                        then=Concat("tags__key", Value(":"), "tags__tag"),
-                    ),
-                    default="tags__tag",
-                    output_field=CharField(),
-                )
-            )
-            .annotate(
-                combined_tags=ArrayAgg(
-                    "combined_tag",
-                    filter=Q(combined_tag__isnull=False),
-                    default=Value([]),
-                )
-            )
-        )
+class Tag(models.Model):
+    tag = models.CharField(max_length=50)
+    key = models.CharField(max_length=50, blank=True, null=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
+    project_key = models.ForeignKey(
+        Project, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+    def __str__(self):
+        return f"{self.key}: {self.tag}"
 
 
 class Dataset(UserCreated):
@@ -135,8 +118,6 @@ class Dataset(UserCreated):
     data_column = models.JSONField(null=True, blank=True)
     row_names = ArrayField(models.CharField(max_length=500), null=True, blank=True)
 
-    objects = TagsManager()
-
 
 class VisualizationConf(UserCreated):
     conf = models.JSONField(null=True)
@@ -145,8 +126,11 @@ class VisualizationConf(UserCreated):
     )
     tags = models.ManyToManyField(Tag)
     published = models.BooleanField(default=False)
+    n_tracks = models.IntegerField(default=0, null=True)
+    n_datasets = models.IntegerField(default=0, null=True)
+    published_timestamp = models.DateTimeField(null=True)
 
-    objects = TagsManager()
+
 
 class ProjectMember(models.Model):
     class Permissions(models.IntegerChoices):

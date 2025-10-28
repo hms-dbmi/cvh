@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Info */
+        get: operations["api_api_get_user_info"];
+        /** Update User Info */
+        put: operations["api_api_update_user_info"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/members": {
         parameters: {
             query?: never;
@@ -147,6 +165,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/fields/{project_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Datasets Field Values */
+        get: operations["api_api_get_project_datasets_field_values"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/tags/{project_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Datasets Tags */
+        get: operations["api_api_get_project_datasets_tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/uuid/{dataset_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dataset */
+        get: operations["api_api_get_dataset"];
+        put?: never;
+        post?: never;
+        /** Delete Dataset */
+        delete: operations["api_api_delete_dataset"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tags": {
         parameters: {
             query?: never;
@@ -199,6 +269,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/visualizations/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Visualizations Tags */
+        get: operations["api_api_get_project_visualizations_Tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/visualizations/{visualization_uuid}": {
         parameters: {
             query?: never;
@@ -239,6 +326,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** UserOut */
+        UserOut: {
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /** UserIn */
+        UserIn: {
+            /** First Name */
+            first_name?: string;
+            /** Last Name */
+            last_name?: string;
+        };
         /** ProjectMemberIn */
         ProjectMemberIn: {
             /**
@@ -305,12 +413,52 @@ export interface components {
              */
             offset: number;
         };
-        /** PagedProjectOut */
-        PagedProjectOut: {
+        /** PagedProjectOutWithMembersCount */
+        PagedProjectOutWithMembersCount: {
             /** Items */
-            items: components["schemas"]["ProjectOut"][];
+            items: components["schemas"]["ProjectOutWithMembersCount"][];
             /** Count */
             count: number;
+        };
+        /** ProjectOutWithMembersCount */
+        ProjectOutWithMembersCount: {
+            /** Datasets Count */
+            datasets_count: number;
+            /** Visualizations Count */
+            visualizations_count: number;
+            /** Permissions */
+            permissions?: number | null;
+            /**
+             * Private
+             * @default true
+             */
+            private: boolean;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: date-time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: date-time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: date-time
+             */
+            last_viewed_timestamp: string;
+            /** Project Members Count */
+            project_members_count: number;
         };
         /** ProjectOut */
         ProjectOut: {
@@ -358,6 +506,13 @@ export interface components {
             description?: string;
             /** Private */
             private?: boolean;
+        };
+        /** PagedProjectOut */
+        PagedProjectOut: {
+            /** Items */
+            items: components["schemas"]["ProjectOut"][];
+            /** Count */
+            count: number;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -505,8 +660,6 @@ export interface components {
         };
         /** DatasetOut */
         DatasetOut: {
-            /** Combined Tags */
-            combined_tags: string[];
             /** Source Url */
             source_url: string;
             /** File Type */
@@ -563,24 +716,86 @@ export interface components {
             /** Tag */
             tag: string;
             /** Key */
-            key?: string | null;
+            key: string;
+        };
+        /** TagsIn */
+        TagsIn: {
+            /** Tags */
+            tags: components["schemas"]["TagIn"][];
             /**
              * Uuid
              * Format: uuid4
              */
             uuid: string;
-            /** Project Uuid */
-            project_uuid?: string | null;
+            /**
+             * Project Uuid
+             * Format: uuid4
+             */
+            project_uuid: string;
         };
-        /** QuerySchema */
-        QuerySchema: {
+        /** DatasetQuerySchema */
+        DatasetQuerySchema: {
             /** Tags */
             tags?: string[];
+            /** Assembly */
+            assembly?: string[];
+            /** File Type */
+            file_type?: string[];
+            /** Name */
+            name?: string;
         };
-        /** PagedTagOut */
-        PagedTagOut: {
+        /** DatasetWithTagsOut */
+        DatasetWithTagsOut: {
+            /** Source Url */
+            source_url: string;
+            /** File Type */
+            file_type: string;
+            /** Data Type */
+            data_type: string;
+            /** Assembly */
+            assembly?: string | null;
+            /** Data Column */
+            data_column?: Record<string, never> | null;
+            /**
+             * Headers
+             * @default false
+             */
+            headers: boolean;
+            /** Index Url */
+            index_url?: string | null;
+            /** Separator */
+            separator?: string | null;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: date-time
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: date-time
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: date-time
+             */
+            last_viewed_timestamp: string;
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
+        };
+        /** PagedDatasetWithTagsOut */
+        PagedDatasetWithTagsOut: {
             /** Items */
-            items: components["schemas"]["TagOut"][];
+            items: components["schemas"]["DatasetWithTagsOut"][];
             /** Count */
             count: number;
         };
@@ -590,6 +805,18 @@ export interface components {
             tag: string;
             /** Key */
             key?: string | null;
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid?: string;
+        };
+        /** PagedTagOut */
+        PagedTagOut: {
+            /** Items */
+            items: components["schemas"]["TagOut"][];
+            /** Count */
+            count: number;
         };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
@@ -600,13 +827,25 @@ export interface components {
         };
         /** VisualizationNoConfOut */
         VisualizationNoConfOut: {
-            /** Combined Tags */
-            combined_tags: string[];
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
             /**
              * Published
              * @default false
              */
             published: boolean;
+            /**
+             * N Tracks
+             * @default 0
+             */
+            n_tracks: number | null;
+            /**
+             * N Datasets
+             * @default 0
+             */
+            n_datasets: number | null;
+            /** Published Timestamp */
+            published_timestamp?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -632,6 +871,13 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
+        };
         /** VisualizationIn */
         VisualizationIn: {
             /**
@@ -646,8 +892,8 @@ export interface components {
         };
         /** VisualizationOut */
         VisualizationOut: {
-            /** Combined Tags */
-            combined_tags: string[];
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
             /** Conf */
             conf?: Record<string, never> | null;
             /**
@@ -655,6 +901,18 @@ export interface components {
              * @default false
              */
             published: boolean;
+            /**
+             * N Tracks
+             * @default 0
+             */
+            n_tracks: number | null;
+            /**
+             * N Datasets
+             * @default 0
+             */
+            n_datasets: number | null;
+            /** Published Timestamp */
+            published_timestamp?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -690,13 +948,10 @@ export interface components {
             conf?: Record<string, never> | null;
             /** Published */
             published?: boolean;
-        };
-        /** VizTagIn */
-        VizTagIn: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key?: string | null;
+            /** N Tracks */
+            n_tracks?: number | null;
+            /** N Datasets */
+            n_datasets?: number | null;
         };
     };
     responses: never;
@@ -707,6 +962,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    api_api_get_user_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    api_api_update_user_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
     api_api_update_project_member: {
         parameters: {
             query?: never;
@@ -813,7 +1112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedProjectOut"];
+                    "application/json": components["schemas"]["PagedProjectOutWithMembersCount"];
                 };
             };
         };
@@ -1009,7 +1308,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TagIn"];
+                "application/json": components["schemas"]["TagsIn"];
             };
         };
         responses: {
@@ -1026,6 +1325,9 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
                 page?: number;
             };
             header?: never;
@@ -1042,8 +1344,96 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedDatasetOut"];
+                    "application/json": components["schemas"]["PagedDatasetWithTagsOut"];
                 };
+            };
+        };
+    };
+    api_api_get_project_datasets_field_values: {
+        parameters: {
+            query: {
+                field: "assembly" | "file_type";
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    api_api_get_project_datasets_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
+                };
+            };
+        };
+    };
+    api_api_get_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetWithTagsOut"];
+                };
+            };
+        };
+    };
+    api_api_delete_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1075,6 +1465,9 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
                 limit?: number;
                 offset?: number;
             };
@@ -1100,6 +1493,7 @@ export interface operations {
             query: {
                 project_uuid: string;
                 tags?: string[];
+                name?: string;
             };
             header?: never;
             path?: never;
@@ -1138,6 +1532,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VisualizationIn"];
+                };
+            };
+        };
+    };
+    api_api_get_project_visualizations_Tags: {
+        parameters: {
+            query: {
+                project_uuid: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
                 };
             };
         };
@@ -1219,7 +1635,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VizTagIn"];
+                "application/json": components["schemas"]["TagsIn"];
             };
         };
         responses: {

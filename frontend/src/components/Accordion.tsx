@@ -7,7 +7,7 @@ import AccordionDetails, {
   AccordionDetailsProps,
 } from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { CaretUp } from "@phosphor-icons/react";
 
 export default function BasicAccordion({
   id,
@@ -29,7 +29,7 @@ export default function BasicAccordion({
       {...accordionProps}
     >
       <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
+        expandIcon={<CaretUp size={16} />}
         aria-controls={`${id}-content`}
         id="id"
         {...summaryProps}

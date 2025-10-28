@@ -1,39 +1,108 @@
-import { useState } from "react";
+import { PropsWithChildren, useState, useCallback } from "react";
+import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import InputBase from "@mui/material/InputBase";
+import Button from "@mui/material/Button";
+import {
+  Tag,
+  MagnifyingGlass,
+  DotsThree,
+  Cards,
+  Trash,
+  FileText,
+  CaretDown,
+} from "@phosphor-icons/react";
+
 import type { components } from "../../../types/schema";
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
+import {
+  useDeleteDataset,
+  useGetDataset,
+  useGetPaginatedProjectDatasets,
+  useGetProjectDatasetFieldValues,
+  useGetProjectDatasetTags,
+} from "../../datasets/api/useDatasets";
+import AddTagButton from "../../datasets/components/AddTagButton";
+import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
+import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
+import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
+import DialogButtonCopy from "../../../components/DialogButtonCopy";
 
-/*eslint-disable */
-// @ts-ignore TODO: Remove ignore.
-function ActionsMenu() {
+export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
+  const { projectId } = useParams({ strict: false });
+
+  const [openAddTags, setOpenAddTags] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+
+  const { data } = useGetDataset(datasetID);
+
+  const { mutate: deleteDataset } = useDeleteDataset();
+
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    },
+    [setAnchorEl]
+  );
+
+  const handleClose = useCallback(() => {
     setAnchorEl(null);
-  };
+  }, [setAnchorEl]);
+
+  const submitDelete = useCallback(() => {
+    if (datasetID) {
+      deleteDataset({
+        params: {
+          path: { dataset_uuid: datasetID },
+        },
+      });
+
+      setOpenDelete(false);
+      handleClose();
+    }
+  }, [setOpenDelete, handleClose, deleteDataset, datasetID]);
+
+  if (!projectId || !data) {
+    return null;
+  }
 
   return (
     <div>
+      <AddTagButton
+        datasetId={datasetID}
+        projectId={projectId}
+        dataset={data}
+        closeMenu={handleClose}
+        open={openAddTags}
+        setOpen={setOpenAddTags}
+      />
+      <DialogButtonCopy
+        text={{
+          title: "Remove Data Source from Workspace?",
+          button: "",
+        }}
+        onSubmit={submitDelete}
+        isMenuItem
+        isButton={false}
+        open={openDelete}
+        setOpen={setOpenDelete}
+      >
+        <Typography>
+          Are you sure you want to remove this dataset from the workspace? This
+          action is immediate and irreversible.
+        </Typography>
+      </DialogButtonCopy>
       <IconButton
         onClick={handleClick}
         size="small"
@@ -41,7 +110,7 @@ function ActionsMenu() {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <MoreHorizIcon />
+        <DotsThree height={24} width={24} weight="bold" color="black" />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
@@ -50,21 +119,23 @@ function ActionsMenu() {
         onClose={handleClose}
         onClick={handleClose}
       >
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon>
-            <EditOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          Edit Details
+        <MenuItem onClick={() => setOpenAddTags(true)}>
+          <>
+            <ListItemIcon>
+              <Tag height={24} width={24} />
+            </ListItemIcon>
+            Edit Tags
+          </>
         </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
-            <ContentCopyOutlinedIcon fontSize="small" />
+            <Cards height={24} width={24} />
           </ListItemIcon>
           Create a Copy
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
-            <DeleteOutlinedIcon fontSize="small" />
+            <Trash height={24} width={24} />
           </ListItemIcon>
           Delete
         </MenuItem>
@@ -72,97 +143,162 @@ function ActionsMenu() {
     </div>
   );
 }
-/* eslint-enable */
 
-function DataList({
-  projectId,
-  datasets,
-}: {
-  projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
-}) {
-  const [input, setInput] = useState<string>("");
+function DataSelects({ projectId }: { projectId: string }) {
+  const selectedAssemblies = useDatasetFiltersStore(
+    (state) => state.selectedAssemblies
+  );
+  const selectedFileTypes = useDatasetFiltersStore(
+    (state) => state.selectedFileTypes
+  );
 
-  if (!datasets) {
-    return null;
-  }
+  const selectedTags = useDatasetFiltersStore((state) => state.selectedTags);
+  const setSelectedAssemblies = useDatasetFiltersStore(
+    (state) => state.setSelectedAssemblies
+  );
+
+  const setSelectedFileTypes = useDatasetFiltersStore(
+    (state) => state.setSelectedFileTypes
+  );
+
+  const setSelectedTags = useDatasetFiltersStore(
+    (state) => state.setSelectedTags
+  );
+  const { data: assemblyData } = useGetProjectDatasetFieldValues(
+    projectId,
+    "assembly"
+  );
+
+  const { data: fileTypeData } = useGetProjectDatasetFieldValues(
+    projectId,
+    "file_type"
+  );
+
+  const { data: tagsData } = useGetProjectDatasetTags(projectId);
+
   return (
-    <Stack spacing={0.75}>
-      <TextField
-        value={input}
-        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-          setInput(event.target.value);
-        }}
-        id="tags-autocomplete"
-        fullWidth
-        placeholder="Search for a dataset..."
-        slotProps={{
-          input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton>
-                  <FilterAltIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
-          },
-        }}
+    <Stack direction="row" spacing={1}>
+      <DatasetAttributeSelect
+        attribute="assembly"
+        label="Assembly"
+        values={assemblyData ?? []}
+        selectedValues={selectedAssemblies}
+        setSelectedValues={setSelectedAssemblies}
       />
-      <Stack direction="row" spacing={1}>
-        <AddDatasetButton projectId={projectId} />
-      </Stack>
-      {/*<List>
-        {datasets
-          ?.filter((d) => {
-            if (input.length) {
-              return d.name.includes(input);
-            }
-            return true;
-          })
-          .map((v) => (
-            <ListItem disablePadding secondaryAction={<ActionsMenu />}>
-              <ListItemButton>
-                <ListItemText
-                  primary={v.name}
-                  secondary={[v.source_url, "updated 2 hours ago"].map((t) => (
-                    <>{t} &middot; </>
-                  ))}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-      </List>*/}
+      <DatasetAttributeSelect
+        attribute="file_type"
+        label="File Type"
+        values={fileTypeData ?? []}
+        selectedValues={selectedFileTypes}
+        setSelectedValues={setSelectedFileTypes}
+      />
+      <DatasetTagsSelect
+        attribute="tags"
+        values={tagsData ?? []}
+        selectedValues={selectedTags}
+        setSelectedValues={setSelectedTags}
+      />
+      <Typography
+        variant="subtitle2"
+        component={Button}
+        sx={{ color: "#657681" }}
+      >
+        Reset
+      </Typography>
     </Stack>
   );
 }
 
-export default function DataAccordion({
+type Dataset = components["schemas"]["DatasetOut"];
+
+function DataList({
+  children,
   projectId,
-  datasets,
-}: {
-  projectId: string;
-  datasets?: components["schemas"]["DatasetOut"][];
-}) {
+}: PropsWithChildren<{ projectId: string }>) {
+  const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
+
+  const setNameSubstring = useDatasetFiltersStore(
+    (state) => state.setNameSubstring
+  );
+
+  return (
+    <Stack spacing={1}>
+      <InputBase
+        value={nameSubstring}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          //TODO: Debounce
+          setNameSubstring(event.target.value);
+        }}
+        id="tags-autocomplete"
+        fullWidth
+        placeholder="Search for a data source..."
+        startAdornment={
+          <InputAdornment position="start">
+            <MagnifyingGlass height={24} width={24} />
+          </InputAdornment>
+        }
+        sx={(theme) => ({
+          borderRadius: "4px",
+          paddingLeft: "4px",
+          paddingRight: "12px",
+          paddingTop: "8px",
+          paddingBottom: "8px",
+          border: `1px solid ${theme.palette.grey[300]}`,
+          background: "#F8F8F8",
+          input: {
+            height: "20px",
+            padding: "0px",
+          },
+        })}
+      />
+      <Stack direction="row" spacing={1}>
+        <AddDatasetButton projectId={projectId} />
+      </Stack>
+      <DataSelects projectId={projectId} />
+      {children}
+    </Stack>
+  );
+}
+
+function DataAccordion({
+  projectId,
+  children,
+}: PropsWithChildren<{ projectId: string }>) {
+  const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
+
+  const datasets: Required<Dataset>[] =
+    data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
+
   return (
     <Accordion disableGutters>
       <AccordionSummary
-        expandIcon={<ArrowDropDownIcon />}
+        expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"
         id="panel1-header"
       >
         <Stack direction="row" spacing={2} alignItems="center">
-          <DescriptionOutlinedIcon />
-          <Typography variant="h6" ml={1} component="span">
-            DATASETS
+          <FileText height={24} width={24} />
+          <Typography variant="h5" ml={1} component="span">
+            DATA SOURCES
           </Typography>
           <Typography variant="body2" component="span" color="textSecondary">
-            {datasets?.length} dataset{datasets?.length === 1 ? "" : "s"}
+            {datasets?.length} data source{datasets?.length === 1 ? "" : "s"}
           </Typography>
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <DataList projectId={projectId} datasets={datasets} />
+        <DataList projectId={projectId}>{children}</DataList>
       </AccordionDetails>
     </Accordion>
   );
+}
+
+export default function Wrapper({ children }: PropsWithChildren) {
+  const { projectId } = useParams({ strict: false });
+
+  if (!projectId) {
+    return null;
+  }
+
+  return <DataAccordion projectId={projectId}>{children}</DataAccordion>;
 }
