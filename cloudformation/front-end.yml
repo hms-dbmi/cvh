@@ -4,12 +4,15 @@ Parameters:
     RootDomainName:
         Description: Domain name for the website (beta.designer.gosling-lang.org)
         Type: String
+        Default: designer.gosling-lang.org
     HostedZoneId:
         Description: Hosted Zone ID
         Type: String
+        Default: Z085595833A98LWBFS157
     HostedZoneName:
         Description: Hosted Zone Name
         Type: String
+        Default: gosling-lang.org
 
 Resources:
     # Two buckets are created for website hosting - the RootBucket hosts the content,

@@ -1,11 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   ECS Fargate Cluster and Task Definition
-Parameters:
-  EcsClusterName:
-    Type: String
-    Description: The name of the ECS Cluster
-    Default: "gosling-dmc-api-no-lb"    
+Parameters:   
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: The VPC
@@ -19,7 +15,7 @@ Parameters:
   TaskName:
     Type: String
     Description: The name of the service task
-    Default: "gosling-dmc-api-no-lb"
+    Default: "gosling-dmc-api-lb"
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3 
@@ -36,20 +32,37 @@ Parameters:
     Type: String
     Description: The security group ID attached to the database
     Default: "sg-064851831f18d03a0"
+  HostedZoneName:
+    Description: Hosted Zone Name
+    Type: String
+    Default: gosling-lang.org
+  HostedZoneId:
+    Description: Hosted Zone ID
+    Type: String
+    Default: Z085595833A98LWBFS157
+  RootDomainName:
+    Description: Domain name for the website (api.designer.gosling-lang.org)
+    Default: api.designer.gosling-lang.org
+    Type: String
+
 
 Resources:
   # Security Group for the Load Balancer
   LoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "LoadBalancer Security Group"
+      GroupDescription: !Sub "${AWS::StackName} LoadBalancer SG"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          IpProtocol: -1
-          # Description: Allow from anyone on port 80
-          # FromPort: 80
-          # IpProtocol: tcp
-          # ToPort: 80
+          Description: Allow from anyone on port 80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: Allow from anyone on port 443
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
       Tags: 
         - Key: Name
           Value: !Sub
@@ -59,22 +72,25 @@ Resources:
           Value: 'gosling-dmc'
       VpcId: !Ref VpcId
 
+  CertificateManagerCertificate:
+      Type: AWS::CertificateManager::Certificate
+      Properties:
+          # naked domain
+          DomainName: !Ref RootDomainName
+          # add www to certificate
+          SubjectAlternativeNames:
+              - !Sub 'www.${RootDomainName}'
+          ValidationMethod: DNS
+          DomainValidationOptions:
+              # DNS record for the naked domain
+              - DomainName: !Ref RootDomainName
+                HostedZoneId: !Ref HostedZoneId
+              # DNS record for the www domain
+              - DomainName: !Sub 'www.${RootDomainName}'
+                HostedZoneId: !Ref HostedZoneId
 
   # Load Balancer
-  # Internal load balancer
-  # LoadBalancer:
-  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-  #   Properties:
-  #     Scheme: internal
-  #     SecurityGroups:
-  #       - !GetAtt LoadBalancerSG.GroupId
-  #     Subnets: !Ref PrivateSubnetIds
-  #     Tags: 
-  #       - Key: project
-  #         Value: 'gosling-dmc'
-  #     Type: application
-  # 
-  # External load balancer - as alternate to above internal version
+  # External load balancer
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -95,18 +111,18 @@ Resources:
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "ECS Security Group"
+      GroupDescription: !Sub "${AWS::StackName} ECS SG"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 8000
-          # CidrIp: 0.0.0.0/0
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 80
-          # CidrIp: 0.0.0.0/0
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -138,9 +154,11 @@ Resources:
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      Name: !Sub "${AWS::StackName}-tg"
       HealthCheckPath: /health     
       Port: 8000
       Protocol: HTTP
+      # ProtocolVersion: HTTP2
       Tags:
         - Key: project
           Value: 'gosling-dmc'
@@ -150,7 +168,28 @@ Resources:
       VpcId: !Ref VpcId
  
 
-  # Load Balancer Listener
+  Route53RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+        # keep the . suffix
+        HostedZoneName: !Sub '${HostedZoneName}.'
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html#cfn-route53-aliastarget-hostedzoneid
+        Comment: Zone apex alias.
+        RecordSets:
+            - Name: !Ref RootDomainName
+              Type: A
+              AliasTarget:
+                  DNSName: !GetAtt LoadBalancer.DNSName
+                  EvaluateTargetHealth: false
+                  HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+            - Name: !Sub 'www.${RootDomainName}'
+              Type: A
+              AliasTarget:
+                  DNSName: !GetAtt LoadBalancer.DNSName
+                  EvaluateTargetHealth: false
+                  HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+
+  # # Load Balancer Listener
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -158,8 +197,11 @@ Resources:
         - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
           Type: 'forward'
       LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates: 
+        - CertificateArn: !Ref CertificateManagerCertificate
     DependsOn:
       - LoadBalancer
 
@@ -167,7 +209,7 @@ Resources:
   ECSFargateCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Ref EcsClusterName
+      ClusterName: !Sub "gosling-dmc-api-${AWS::StackName}"
       Tags: 
         - Key: project
           Value: 'gosling-dmc'
@@ -206,7 +248,7 @@ Resources:
     DependsOn:
       - LoadBalancerListenerTargetGroupECS
       - LoadBalancer
-  #     - LoadBalancerListener
+      - LoadBalancerListener
 
   # ECS Task Definition
   ECSServiceTaskDefinition:
@@ -217,6 +259,8 @@ Resources:
           Image: !Ref ImageURI 
           PortMappings:
             - ContainerPort: 8000
+              Protocol: tcp
+            - ContainerPort: 80
               Protocol: tcp
           EnvironmentFiles: 
             - Type: s3
@@ -462,18 +506,24 @@ Outputs:
     Description: The ECS cluster task definition
     Value: !Ref ECSServiceTaskDefinition
 
-  # ECSClusterService: 
-  #   Description: The ECS cluster service definition
-  #   Value: !Ref ECSService
+  ECSClusterService: 
+    Description: The name of the ECS Service
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: ECSClusterService
+
+  ECSClusterServiceArn: 
+    Description: The ECS cluster service definition
+    Value: !Ref ECSService
 
   ECSExecutionRole: 
     Description: The ECS execution role
     Value: !Ref ECSExecutionRole
 
-  # LoadBalancerDNSName:
-  #   Description: "DNS name of the load balancer"
-  #   Value: !GetAtt LoadBalancer.DNSName
+  LoadBalancerDNSName:
+    Description: "DNS name of the load balancer"
+    Value: !GetAtt LoadBalancer.DNSName
 
-  # ExternalUrl:
-  #   Description: The url of the external load balancer
-  #   Value: !Sub http://${LoadBalancer.DNSName}
+  LoadBalancerURL:
+    Description: The url of the external load balancer
+    Value: !Sub http://${LoadBalancer.DNSName}
