@@ -5,7 +5,7 @@ import { useAuth0, GenericError } from "@auth0/auth0-react";
 const authParams = {
     authorizationParams: {
       audience: import.meta.env.VITE_API_AUDIENCE,
-      scope: "read:current_user",
+      scope: "read:current_user email",
     },
   };
 
