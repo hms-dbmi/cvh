@@ -150,12 +150,20 @@ class RequestToken(object):
             username = self._decoded.get("sub")
             username = username.replace("|", "_")
             user = User.objects.get(username=username)
+
+            if not user.email:
+                user_info = self.__get_user_info__(self._token)
+                email = user_info.get("email")
+                if email:
+                    setattr(user, "email", email)
+                    user.save()
+
         except User.DoesNotExist:
             user_info = self.__get_user_info__(self._token)
             username = user_info.get("sub")
             email = user_info.get("email")
             # username = user_info.get("sub")
-            if not username:
+            if not username or not email:
                 return None
 
             # The format of user_id is
@@ -192,7 +200,7 @@ class RequestToken(object):
 
 @api.get("/user", auth=Authorized(), response=UserOut)
 def get_user_info(request):
-    return request.auth
+    return get_object_or_404(User, username=request.auth)
 
 @api.put("/user", auth=Authorized())
 def update_user_info(request, user_in: UserIn):
