@@ -12,6 +12,7 @@ import { useUpdateVisualization } from "../api/useVisualizations";
 import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
 import formatVisualization from "../utils/formatVisualization.ts";
+import PublishedVizMenu from "./PublishedVizMenu.tsx";
 type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
 interface GoslingViewerProps {
@@ -50,7 +51,9 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
 };
 
 function GoslingViewer({ projectId }: GoslingViewerProps) {
-  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(undefined);
+  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
+    undefined
+  );
 
   /* eslint-disable */
   // @ts-ignore TODO: Remove ignore.
@@ -162,6 +165,7 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
         DatasetMenuButton={DatasetActionsMenu}
         userMode="admin"
         onPublish={publishViz}
+        PublishMenu={PublishedVizMenu}
       />
     </Box>
   );
