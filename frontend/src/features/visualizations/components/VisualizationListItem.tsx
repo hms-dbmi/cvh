@@ -2,7 +2,6 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import PublishIcon from "@mui/icons-material/Publish";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Chip from "@mui/material/Chip";
 
 import type { components } from "../../../types/schema.d.ts";
 import EntityListItem from "../../../components/EntityListItem.tsx";
@@ -14,7 +13,6 @@ import {
   useDeleteVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations.ts";
-import AddVizTagButton from "./AddVizTagButton.tsx";
 import IconEye from "@mui/icons-material/Visibility";
 import IconEdit from "@mui/icons-material/Edit";
 
@@ -90,12 +88,7 @@ export default function VisualizationListItem({
               {visualization.description}
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center" mt={1}>
-              {visualization?.tags?.map((tag) => (
-                <Chip key={tag} label={tag} variant="outlined" />
-              ))}
-              {showActions && (
-                <AddVizTagButton visualizationId={visualization.uuid} />
-              )}
+
             </Stack>
             <EntityDates
               created={visualization.created_timestamp}
