@@ -45,12 +45,12 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-        aws-region: us-east-2
+        aws-region: us-east-1
 
     - name: Upload to S3
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
       run: |
-        aws s3 sync ./dist s3://gosling-dmc
+        aws s3 sync ./dist s3://designer.gosling-lang.org
     
     - name: Invalidate Cache
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
