@@ -22,42 +22,18 @@ import GoslingIcon from "../../../assets/gosling.svg?react";
 import { Link } from "./Links";
 import { components } from "../../../types/schema";
 import { formatRelative } from "date-fns";
-import useGetProjects, {
-  useGetProjectMembers,
-} from "../../projects/api/useProjects";
+import useGetProjects from "../../projects/api/useProjects";
 
 import { LoginButton } from "./AuthButtons";
 import AddProjectButton from "../../projects/components/AddProjectButton";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
-import {
-  CaretDown,
-  CaretUp,
-  SignOut,
-  User,
-  Users,
-} from "@phosphor-icons/react";
+import { CaretDown, CaretUp, SignOut, User } from "@phosphor-icons/react";
 import { useGetUser } from "../api/useUser";
 import EditProfileDialog from "./EditProfileDialog";
+import ProjectSettings from "../../projects/components/ProjectSettings";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
-  const { data } = useGetProjectMembers(projectId);
-
-  return (
-    <Button
-      color="inherit"
-      sx={{
-        backgroundColor: "black",
-        color: "#fff",
-        borderRadius: "8px",
-        padding: " 12px 16px",
-      }}
-    >
-      <Users size={20} />
-      <Box sx={{ marginLeft: "4px" }} component="span">
-        {data && data.length} Collaborator{data?.length === 1 ? "" : "s"}
-      </Box>
-    </Button>
-  );
+  return <ProjectSettings projectId={projectId} />;
 }
 
 type ProjectOut = components["schemas"]["ProjectOutWithMembersCount"];

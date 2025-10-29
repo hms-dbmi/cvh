@@ -4,16 +4,10 @@ import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import ShareIcon from "@mui/icons-material/Share";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 
-import DialogButton from "../../../components/DialogButton";
 import { useAddProjectMember } from "../api/useProjects";
-
-const text = {
-  button: "Share Project",
-  title: "Share Project",
-};
-
 interface FormValues {
   email: string;
 }
@@ -72,14 +66,11 @@ export default function ShareProjectButton({
   );
 
   return (
-    <DialogButton
-      text={text}
-      onSubmit={handleSubmit(onSubmit)}
-      buttonProps={{ endIcon: <ShareIcon /> }}
-    >
-      <Stack spacing={1} mt={2}>
+    <Box component="form" onSubmit={handleSubmit(onSubmit)} mt={2}>
+      <Stack spacing={1} direction="row">
         <FormTextField name="email" label="E-mail Address" control={control} />
+        <Button type="submit">Invite</Button>
       </Stack>
-    </DialogButton>
+    </Box>
   );
 }

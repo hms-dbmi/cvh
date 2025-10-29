@@ -13,19 +13,18 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SettingsIcon from "@mui/icons-material/Settings";
-import Button from "@mui/material/Button";
+import { Users } from "@phosphor-icons/react";
 
 import type { components } from "../../../types/schema";
 import DialogButton from "../../../components/DialogButton";
 import {
-  useDeleteProject,
   useGetProject,
   useGetProjectMembers,
   useRemoveProjectMember,
   useUpdateProject,
   useUpdateProjectMember,
 } from "../api/useProjects";
+import ShareProjectButton from "./ShareProjectButton";
 
 const PERMISSIONS: Record<number, string> = {
   1: "Read",
@@ -39,11 +38,6 @@ interface PermissionsSelectProps {
   projectId: string;
   email: string;
 }
-
-const text = {
-  button: "Settings",
-  title: "Project Settings",
-};
 
 function PermissionsSelect({
   initialPermission,
@@ -130,7 +124,7 @@ function MemberSettings({
   );
 }
 
-function UpdateAccessSwitch({
+export function UpdateAccessSwitch({
   projectId,
   isPrivate,
 }: {
@@ -167,17 +161,20 @@ function UpdateAccessSwitch({
 
 function ProjectSettings({ projectId }: { projectId: string }) {
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
+  const { data: projectMembers } = useGetProjectMembers(projectId);
+
   const {
     data: projectData,
     isLoading: isLoadingProject,
     isError: isErrorProject,
   } = useGetProject(projectId);
 
+  /*
   const { mutate } = useDeleteProject();
-
   const handleDeleteProject = useCallback(() => {
     mutate({ params: { path: { project_uuid: projectId } } });
   }, [mutate, projectId]);
+ */
 
   if (
     isLoading ||
@@ -191,19 +188,32 @@ function ProjectSettings({ projectId }: { projectId: string }) {
   }
   return (
     <DialogButton
-      text={text}
-      buttonProps={{ endIcon: <SettingsIcon /> }}
+      text={{
+        button: (
+          <>
+            <Users size={20} />
+            <Box sx={{ marginLeft: "4px" }} component="span">
+              {projectMembers && projectMembers.length} Collaborator
+              {projectMembers?.length === 1 ? "" : "s"}
+            </Box>
+          </>
+        ),
+        title: "Workspace Sharing",
+      }}
+      buttonProps={{
+        color: "inherit",
+        sx: {
+          backgroundColor: "black",
+          color: "#fff",
+          borderRadius: "8px",
+          padding: " 12px 16px",
+        },
+      }}
       isForm={false}
     >
+      <ShareProjectButton projectId={projectId} />
       <Box p={2}>
-        <Typography variant="h6">Project Access</Typography>
-        <UpdateAccessSwitch
-          projectId={projectId}
-          isPrivate={projectData.private}
-        />
-      </Box>
-      <Box p={2}>
-        <Typography variant="h6">Project Members</Typography>
+        <Typography variant="h6">Current Users on Workspace</Typography>
       </Box>
       <List>
         {data.map((member) => (
@@ -214,11 +224,6 @@ function ProjectSettings({ projectId }: { projectId: string }) {
           />
         ))}
       </List>
-      <Box p={2}>
-        <Button onClick={handleDeleteProject} color="error" variant="contained">
-          Delete Project
-        </Button>
-      </Box>
     </DialogButton>
   );
 }
