@@ -53,6 +53,8 @@ type DialogProps =
       onSubmit?: undefined;
     } & ActionProps);
 
+const sharedButtonProps = { sx: { padding: "12px 16px", borderRadius: "8px" } };
+
 export default function DialogButton({
   text,
   onSubmit,
@@ -128,10 +130,24 @@ export default function DialogButton({
           {children}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>{text.cancelButton ?? "Cancel"}</Button>
+          {isForm ? (
+            <Button onClick={handleClose} {...sharedButtonProps}>
+              {text.cancelButton ?? "Cancel"}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={handleClose}
+              {...sharedButtonProps}
+            >
+              Done
+            </Button>
+          )}
           {actionButtons && actionButtons}
           {isForm && !actionButtons && (
-            <Button type="submit">{text.submitButton ?? "Submit"}</Button>
+            <Button variant="contained" type="submit" {...sharedButtonProps}>
+              {text.submitButton ?? "Submit"}
+            </Button>
           )}
         </DialogActions>
       </Dialog>

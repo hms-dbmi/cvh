@@ -14,7 +14,9 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Users } from "@phosphor-icons/react";
+import Avatar from "@mui/material/Avatar";
 
+import generateAvatarColor from "../../../utils/generateAvatarColor";
 import type { components } from "../../../types/schema";
 import DialogButton from "../../../components/DialogButton";
 import {
@@ -103,7 +105,31 @@ function MemberSettings({
         width="100%"
         spacing={2}
       >
-        <Typography>{member.email}</Typography>
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Avatar
+            sx={{
+              backgroundColor: generateAvatarColor(member?.email),
+              width: 32,
+              height: 32,
+              fontSize: "0.9rem",
+              "& .MuiAvatar-fallback": {
+                display: "none",
+              },
+            }}
+          >
+            {member?.first_name?.length && member?.last_name?.length
+              ? `${member?.first_name[0]}${member?.last_name[0]}`
+              : null}
+          </Avatar>
+          <Stack>
+            {Boolean(member?.first_name && member?.last_name) && (
+              <Typography variant="h6" component="p">
+                {member.first_name} {member.last_name}
+              </Typography>
+            )}
+            <Typography variant="body2">{member.email}</Typography>
+          </Stack>
+        </Stack>
         <Stack direction="row" spacing={1}>
           <PermissionsSelect
             initialPermission={member.permissions}
