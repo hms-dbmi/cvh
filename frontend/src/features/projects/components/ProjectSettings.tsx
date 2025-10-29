@@ -5,7 +5,7 @@ import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
+import MenuItem, { MenuItemProps } from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
@@ -15,6 +15,7 @@ import Box from "@mui/material/Box";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Users } from "@phosphor-icons/react";
 import Avatar from "@mui/material/Avatar";
+import { Check } from "@phosphor-icons/react";
 
 import generateAvatarColor from "../../../utils/generateAvatarColor";
 import type { components } from "../../../types/schema";
@@ -27,13 +28,61 @@ import {
   useUpdateProjectMember,
 } from "../api/useProjects";
 import ShareProjectButton from "./ShareProjectButton";
+import { ListItemIcon, ListItemText } from "@mui/material";
 
 const PERMISSIONS: Record<number, string> = {
-  1: "Read",
-  2: "Write",
+  1: "Viewer",
+  2: "Editor",
   3: "Admin",
   4: "Owner",
 };
+
+const permissionsText: Record<
+  keyof typeof PERMISSIONS,
+  Record<"primary" | "secondary", string>
+> = {
+  1: {
+    primary: "Viewer",
+    secondary: "View visualizations and data",
+  },
+  2: {
+    primary: "Editor",
+    secondary: "Add data, edit visualizations",
+  },
+  3: {
+    primary: "Admin",
+    secondary: "Add data, edit visualizations, add new users",
+  },
+  4: {
+    primary: "Owner",
+    secondary: "Owner",
+  },
+};
+
+function PermissionMenuItem({
+  isSelected,
+  permission,
+  value,
+  ...rest
+}: {
+  isSelected: boolean;
+  permission: keyof typeof PERMISSIONS;
+} & MenuItemProps) {
+  const { primary, secondary } = permissionsText[permission];
+
+  return (
+    <MenuItem value={value} {...rest}>
+      {isSelected ? (
+        <ListItemIcon>
+          <Check size={24} color="#0072B2" />
+        </ListItemIcon>
+      ) : (
+        <Box width={36} height={24} aria-hidden></Box>
+      )}
+      <ListItemText primary={primary} secondary={secondary} />
+    </MenuItem>
+  );
+}
 
 interface PermissionsSelectProps {
   initialPermission: keyof typeof PERMISSIONS;
@@ -72,11 +121,15 @@ function PermissionsSelect({
         inputProps={{ "aria-label": "Without label" }}
         onChange={handleChange}
         disabled={initialPermission === 4}
+        renderValue={(value) => PERMISSIONS[value]}
       >
         {Object.entries(PERMISSIONS).map(([k, v]) => (
-          <MenuItem key={v} value={k}>
-            {v}
-          </MenuItem>
+          <PermissionMenuItem
+            key={v}
+            value={k}
+            permission={Number(k)}
+            isSelected={Number(k) === initialPermission}
+          />
         ))}
       </Select>
     </FormControl>
@@ -239,9 +292,11 @@ function ProjectSettings({ projectId }: { projectId: string }) {
     >
       <ShareProjectButton projectId={projectId} />
       <Box p={2}>
-        <Typography variant="h6">Current Users on Workspace</Typography>
+        <Typography variant="h6" component="p" sx={{ color: "#657681" }}>
+          Current Users on Workspace
+        </Typography>
       </Box>
-      <List>
+      <List disablePadding>
         {data.map((member) => (
           <MemberSettings
             key={member.email}

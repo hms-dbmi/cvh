@@ -16,6 +16,7 @@ function FormTextField({
   name,
   control,
   label,
+  ...rest
 }: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
   const { field, fieldState } = useController({
     name,
@@ -26,13 +27,14 @@ function FormTextField({
   return (
     <TextField
       label={label || name}
-      fullWidth
       error={fieldState.error !== undefined}
       helperText={fieldState?.error?.message}
       {...field}
       slotProps={{
         inputLabel: { shrink: true },
       }}
+      sx={{ flexGrow: 1 }}
+      {...rest}
     />
   );
 }
@@ -48,7 +50,7 @@ export default function ShareProjectButton({
 }: {
   projectId: string;
 }) {
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control, formState } = useForm({
     defaultValues: {
       email: "",
     },
@@ -67,9 +69,21 @@ export default function ShareProjectButton({
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} mt={2}>
-      <Stack spacing={1} direction="row">
-        <FormTextField name="email" label="E-mail Address" control={control} />
-        <Button type="submit">Invite</Button>
+      <Stack spacing={1} direction="row" >
+        <FormTextField name="email" label="E-mail Address" control={control}  placeholder="Add an email..."/>
+        <Stack>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!formState.isValid}
+            sx={{
+              padding: "12px 16px",
+              mt: 1
+            }}
+          >
+            Invite
+          </Button>
+        </Stack>
       </Stack>
     </Box>
   );
