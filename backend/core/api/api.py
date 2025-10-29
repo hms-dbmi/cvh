@@ -202,6 +202,7 @@ class RequestToken(object):
 def get_user_info(request):
     return get_object_or_404(User, username=request.auth)
 
+
 @api.put("/user", auth=Authorized())
 def update_user_info(request, user_in: UserIn):
     user = get_object_or_404(User, username=request.auth)
@@ -279,7 +280,10 @@ def get_project_members(request, project_uuid: str):
         user=request.auth, project_uuid=project_uuid
     )
     project_members = ProjectMember.objects.filter(project_key=project).values(
-        "permissions", email=F("user_key__email")
+        "permissions",
+        email=F("user_key__email"),
+        first_name=F("user_key__first_name"),
+        last_name=F("user_key__last_name"),
     )
     return project_members
 

@@ -226,7 +226,8 @@ class ProjectMemberUpdate(ModelSchema):
 
 class ProjectMemberOut(ModelSchema):
     email: EmailStr
-
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     class Meta:
         model = ProjectMember
         fields = ["permissions"]
