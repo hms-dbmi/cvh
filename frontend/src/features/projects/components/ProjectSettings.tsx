@@ -22,7 +22,6 @@ import DialogButton from "../../../components/DialogButton";
 import {
   useGetProject,
   useGetProjectMembers,
-  useGetProjectPermissions,
   useRemoveProjectMember,
   useUpdateProject,
   useUpdateProjectMember,
@@ -256,7 +255,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
     isError: isErrorProject,
   } = useGetProject(projectId);
 
-  const { data: permissionsData } = useGetProjectPermissions(projectId);
+  const { data: permissionsData } = useGetProject(projectId);
   /*
   const { mutate } = useDeleteProject();
   const handleDeleteProject = useCallback(() => {
@@ -299,7 +298,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
       }}
       isForm={false}
     >
-      {permissionsData && permissionsData?.permissions >= 3 ? (
+      {permissionsData?.permissions && permissionsData?.permissions >= 3 ? (
         <ShareProjectButton projectId={projectId} />
       ) : (
         <Box p={1.5} sx={{ backgroundColor: "#F5F7FA" }}>
@@ -320,7 +319,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
             key={member.email}
             member={member}
             projectId={projectId}
-            permissions={permissionsData?.permissions}
+            permissions={permissionsData?.permissions ?? 0}
           />
         ))}
       </List>

@@ -152,15 +152,6 @@ function useGetProjectMembers(projectId: string) {
   });
 }
 
-function useGetProjectPermissions(projectId: string) {
-  const client = useClient();
-  return client.useQuery("get", permissionsPath, {
-    params: {
-      path: { project_uuid: projectId },
-    },
-  });
-}
-
 export {
   useCreateProject,
   useGetProject,
@@ -171,6 +162,5 @@ export {
   useRemoveProjectMember,
   useDeleteProject,
   useUpdateProject,
-  useGetProjectPermissions,
 };
 export default useGetProjects;

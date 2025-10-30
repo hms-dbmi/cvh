@@ -35,7 +35,6 @@ from .schema import (
     PartialVisualizationUpdate,
     ProjectMemberIn,
     ProjectMemberOut,
-    ProjectPermissionOut,
     ProjectMemberUpdate,
     PartialProjectIn,
     TagsIn,
@@ -234,7 +233,8 @@ def add_project_member(request, member: ProjectMemberIn):
         user=request.auth, project_uuid=member.project_uuid
     )
     user = get_object_or_404(User, email=member.email)
-    ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
+    ProjectMember.objects.create(
+        project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
 
@@ -279,24 +279,6 @@ def delete_project_member(request, member: ProjectMemberIn):
 
 
 @api.get(
-    "/projects/{project_uuid}/permissions",
-    auth=Authorized(),
-    response=ProjectPermissionOut,
-)
-def get_project_permissions(request, project_uuid: str):
-    try:
-        project = Project.objects.get_read_project(
-            user=request.auth, project_uuid=project_uuid
-        )
-    except Project.DoesNotExist:
-        raise Http404("Failed to get project permissions.")
-    permissions = get_object_or_404(
-        ProjectMember, project_key=project, user_key=request.auth
-    )
-    return permissions
-
-
-@api.get(
     "/projects/{project_uuid}/members",
     auth=Authorized(),
     response=List[ProjectMemberOut],
@@ -322,7 +304,8 @@ def get_project_members(request, project_uuid: str):
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)
-    ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
+    ProjectMember.objects.create(
+        project_key=p, user_key=request.auth, permissions=3)
     return p
 
 
@@ -352,7 +335,8 @@ def delete_project(request, project_uuid: str):
 @paginate
 def get_public_projects(request):
     projects = (
-        Project.objects.filter(private=False).order_by("-modified_timestamp").values()
+        Project.objects.filter(private=False).order_by(
+            "-modified_timestamp").values()
     )
     return projects
 
@@ -395,7 +379,8 @@ def create_dataset(request, dataset: DatasetIn):
             project = Project.objects.get_write_project(
                 user=request.auth, project_uuid=project_uuid
             )
-            Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
+            Dataset.objects.create(
+                **dataset_dict["dataset"], project_key=project)
             return dataset
         except Project.DoesNotExist:
             raise Http404("Failed to create visualization.")
@@ -410,10 +395,12 @@ def update_dataset(request, payload: DatasetUpdate):
         project = Project.objects.get_write_project(
             project_uuid=payload.project_uuid, user=request.auth
         )
-        dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
+        dataset = get_object_or_404(
+            Dataset, uuid=payload.uuid, project_key=project)
         del payload_dict["project_uuid"]
     else:
-        dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
+        dataset = get_object_or_404(
+            Dataset, uuid=payload.uuid, user_key=request.auth)
 
     del payload_dict["uuid"]
     for attr, value in payload_dict.items():
@@ -431,14 +418,17 @@ def tag_dataset(request, payload: TagsIn):
     except Project.DoesNotExist:
         raise Http404("Failed to tag dataset.")
 
-    dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
+    dataset = get_object_or_404(
+        Dataset, uuid=payload.uuid, project_key=project)
 
     tags = []
     for t in payload.tags:
         try:
-            tag = Tag.objects.get(tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.get(
+                tag=t["tag"], key=t["key"], project_key=project)
         except Tag.DoesNotExist:
-            tag = Tag.objects.create(tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.create(
+                tag=t["tag"], key=t["key"], project_key=project)
         tags.append(tag)
 
     dataset.tags.set(tags)
@@ -516,7 +506,8 @@ def get_project_datasets_tags(request, project_uuid: str):
     )
 
     tags = [
-        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
+        dict(tag=item["tags__tag"], key=item["tags__key"],
+             uuid=item["tags__uuid"])
         for item in field_values
     ]
 
@@ -561,7 +552,8 @@ def get_tags(request, sub_str: str = None):
 
     tags = (
         Tag.objects.annotate(
-            full_name=Concat("key", Value(":"), "tag", combined_tag=CharField())
+            full_name=Concat("key", Value(":"), "tag",
+                             combined_tag=CharField())
         )
         .filter(q)
         .distinct()
@@ -628,7 +620,8 @@ def get_project_visualizations_Tags(request, project_uuid: str):
     )
 
     tags = [
-        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
+        dict(tag=item["tags__tag"], key=item["tags__key"],
+             uuid=item["tags__uuid"])
         for item in field_values
     ]
 
@@ -637,13 +630,15 @@ def get_project_visualizations_Tags(request, project_uuid: str):
 
 @api.get("/visualizations/{visualization_uuid}", response=VisualizationOut)
 def get_visualization(request, visualization_uuid: str):
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid)
     return visualization
 
 
 @api.delete("/visualizations/{visualization_uuid}", auth=Authorized())
 def delete_visualization(request, visualization_uuid: str):
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid)
     try:
         Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
@@ -660,7 +655,8 @@ def update_visualization(
     request, visualization_uuid: str, payload: PartialVisualizationUpdate
 ):
     payload_dict = payload.dict(exclude_unset=True)
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid)
     try:
         Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
@@ -678,7 +674,8 @@ def update_visualization(
 
 @api.put("/visualizations/{visualization_uuid}/tags", auth=Authorized())
 def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid)
     try:
         project = Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
@@ -688,9 +685,11 @@ def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
     tags = []
     for t in payload.tags:
         try:
-            tag = Tag.objects.get(tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.get(
+                tag=t["tag"], key=t["key"], project_key=project)
         except Tag.DoesNotExist:
-            tag = Tag.objects.create(tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.create(
+                tag=t["tag"], key=t["key"], project_key=project)
         tags.append(tag)
 
     visualization.tags.set(tags)
