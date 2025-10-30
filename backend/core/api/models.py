@@ -137,7 +137,6 @@ class ProjectMember(models.Model):
         read = 1, "read"
         write = 2, "write"
         admin = 3, "admin"
-        owner = 4, "owner"
 
     project_key = models.ForeignKey(
         Project, on_delete=models.CASCADE, blank=True, null=True

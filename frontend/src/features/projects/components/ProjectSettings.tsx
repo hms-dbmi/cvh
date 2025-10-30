@@ -12,8 +12,7 @@ import Switch from "@mui/material/Switch";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Users } from "@phosphor-icons/react";
+import { Trash, Users } from "@phosphor-icons/react";
 import Avatar from "@mui/material/Avatar";
 import { Check } from "@phosphor-icons/react";
 
@@ -36,7 +35,6 @@ const PERMISSIONS: Record<number, string> = {
   1: "Viewer",
   2: "Editor",
   3: "Admin",
-  4: "Owner",
 };
 
 const permissionsText: Record<
@@ -54,10 +52,6 @@ const permissionsText: Record<
   3: {
     primary: "Admin",
     secondary: "Add data, edit visualizations, add new users",
-  },
-  4: {
-    primary: "Owner",
-    secondary: "Owner",
   },
 };
 
@@ -170,7 +164,7 @@ function MemberSettings({
         <Stack direction="row" spacing={3} alignItems="center">
           <Avatar
             sx={{
-              backgroundColor: generateAvatarColor(member?.email),
+              backgroundColor: generateAvatarColor(member?.username),
               width: 32,
               height: 32,
               fontSize: "0.9rem",
@@ -203,10 +197,10 @@ function MemberSettings({
             <IconButton
               size="medium"
               disabled={disableInputs}
-              color="error"
               onClick={handleRemoveProjectMember}
+              sx={{ fontColor: "#8A9EA8" }}
             >
-              <DeleteIcon fontSize="inherit" />
+              <Trash size={24} />
             </IconButton>
           </Stack>
         ) : (

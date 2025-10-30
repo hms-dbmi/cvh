@@ -181,7 +181,7 @@ class RequestToken(object):
                 user_key=user,
             )
             ProjectMember.objects.create(
-                project_key=project, user_key=user, permissions=4
+                project_key=project, user_key=user, permissions=3
             )
 
         return user
@@ -249,6 +249,9 @@ def update_project_member(request, member: ProjectMemberUpdate):
         ProjectMember, user_key__email=member.email, project_key=project
     )
 
+    if project_member.user_key == request.auth:
+        raise PermissionDenied()
+
     del member_dict["project_uuid"]
     for attr, value in member_dict.items():
         setattr(project_member, attr, value)
@@ -269,7 +272,7 @@ def delete_project_member(request, member: ProjectMemberIn):
     project_member = get_object_or_404(
         ProjectMember, user_key__email=member.email, project_key=project
     )
-    if project_member.permissions >= 4:
+    if project_member.user_key == request.auth:
         raise PermissionDenied()
     project_member.delete()
     return {"success": True}
@@ -300,7 +303,7 @@ def get_project_permissions(request, project_uuid: str):
 )
 def get_project_members(request, project_uuid: str):
     try:
-        project = Project.objects.get_admin_project(
+        project = Project.objects.get_read_project(
             user=request.auth, project_uuid=project_uuid
         )
     except Project.DoesNotExist:
@@ -319,7 +322,7 @@ def get_project_members(request, project_uuid: str):
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)
-    ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=4)
+    ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
     return p
 
 
