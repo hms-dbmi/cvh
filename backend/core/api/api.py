@@ -35,6 +35,7 @@ from .schema import (
     PartialVisualizationUpdate,
     ProjectMemberIn,
     ProjectMemberOut,
+    ProjectPermissionOut,
     ProjectMemberUpdate,
     PartialProjectIn,
     TagsIn,
@@ -257,13 +258,17 @@ def update_project_member(request, member: ProjectMemberUpdate):
 
 @api.delete("/projects/members", auth=Authorized())
 def delete_project_member(request, member: ProjectMemberIn):
-    project = Project.objects.get_admin_project(
-        user=request.auth, project_uuid=member.project_uuid
-    )
+    try:
+        project = Project.objects.get_admin_project(
+            user=request.auth, project_uuid=member.project_uuid
+        )
+
+    except Project.DoesNotExist:
+        raise Http404("Failed to remove project member.")
+
     project_member = get_object_or_404(
         ProjectMember, user_key__email=member.email, project_key=project
     )
-
     if project_member.permissions >= 4:
         raise PermissionDenied()
     project_member.delete()
@@ -271,16 +276,38 @@ def delete_project_member(request, member: ProjectMemberIn):
 
 
 @api.get(
-    "/projects/members/{project_uuid}",
+    "/projects/{project_uuid}/permissions",
+    auth=Authorized(),
+    response=ProjectPermissionOut,
+)
+def get_project_permissions(request, project_uuid: str):
+    try:
+        project = Project.objects.get_read_project(
+            user=request.auth, project_uuid=project_uuid
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to get project permissions.")
+    permissions = get_object_or_404(
+        ProjectMember, project_key=project, user_key=request.auth
+    )
+    return permissions
+
+
+@api.get(
+    "/projects/{project_uuid}/members",
     auth=Authorized(),
     response=List[ProjectMemberOut],
 )
 def get_project_members(request, project_uuid: str):
-    project = Project.objects.get_admin_project(
-        user=request.auth, project_uuid=project_uuid
-    )
+    try:
+        project = Project.objects.get_admin_project(
+            user=request.auth, project_uuid=project_uuid
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to get project members.")
     project_members = ProjectMember.objects.filter(project_key=project).values(
         "permissions",
+        username=F("user_key__username"),
         email=F("user_key__email"),
         first_name=F("user_key__first_name"),
         last_name=F("user_key__last_name"),

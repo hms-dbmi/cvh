@@ -23,12 +23,14 @@ import DialogButton from "../../../components/DialogButton";
 import {
   useGetProject,
   useGetProjectMembers,
+  useGetProjectPermissions,
   useRemoveProjectMember,
   useUpdateProject,
   useUpdateProjectMember,
 } from "../api/useProjects";
 import ShareProjectButton from "./ShareProjectButton";
 import { ListItemIcon, ListItemText } from "@mui/material";
+import { useGetUser } from "../../navigation/api/useUser";
 
 const PERMISSIONS: Record<number, string> = {
   1: "Viewer",
@@ -88,12 +90,14 @@ interface PermissionsSelectProps {
   initialPermission: keyof typeof PERMISSIONS;
   projectId: string;
   email: string;
+  disabled: boolean;
 }
 
 function PermissionsSelect({
   initialPermission,
   projectId,
   email,
+  disabled,
 }: PermissionsSelectProps) {
   const { mutate } = useUpdateProjectMember();
 
@@ -120,7 +124,7 @@ function PermissionsSelect({
         label="Role"
         inputProps={{ "aria-label": "Without label" }}
         onChange={handleChange}
-        disabled={initialPermission === 4}
+        disabled={disabled}
         renderValue={(value) => PERMISSIONS[value]}
       >
         {Object.entries(PERMISSIONS).map(([k, v]) => (
@@ -137,9 +141,11 @@ function PermissionsSelect({
 }
 
 function MemberSettings({
+  permissions = 0,
   member,
   projectId,
 }: {
+  permissions?: number;
   member: components["schemas"]["ProjectMemberOut"];
   projectId: string;
 }) {
@@ -148,6 +154,9 @@ function MemberSettings({
   const handleRemoveProjectMember = useCallback(() => {
     mutate({ body: { project_uuid: projectId, email: member.email } });
   }, [mutate, projectId, member.email]);
+  const { data: userData } = useGetUser();
+
+  const disableInputs = !userData || userData.username === member.username;
 
   return (
     <ListItem key={member.email}>
@@ -183,21 +192,28 @@ function MemberSettings({
             <Typography variant="body2">{member.email}</Typography>
           </Stack>
         </Stack>
-        <Stack direction="row" spacing={1}>
-          <PermissionsSelect
-            initialPermission={member.permissions}
-            projectId={projectId}
-            email={member.email}
-          />
-          <IconButton
-            size="medium"
-            disabled={member.permissions === 4}
-            color="error"
-            onClick={handleRemoveProjectMember}
-          >
-            <DeleteIcon fontSize="inherit" />
-          </IconButton>
-        </Stack>
+        {permissions >= 3 ? (
+          <Stack direction="row" spacing={1}>
+            <PermissionsSelect
+              initialPermission={member.permissions}
+              projectId={projectId}
+              email={member.email}
+              disabled={disableInputs}
+            />
+            <IconButton
+              size="medium"
+              disabled={disableInputs}
+              color="error"
+              onClick={handleRemoveProjectMember}
+            >
+              <DeleteIcon fontSize="inherit" />
+            </IconButton>
+          </Stack>
+        ) : (
+          <Typography variant="button" component="p">
+            {PERMISSIONS[member.permissions]}
+          </Typography>
+        )}
       </Stack>
     </ListItem>
   );
@@ -240,14 +256,13 @@ export function UpdateAccessSwitch({
 
 function ProjectSettings({ projectId }: { projectId: string }) {
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
-  const { data: projectMembers } = useGetProjectMembers(projectId);
-
   const {
     data: projectData,
     isLoading: isLoadingProject,
     isError: isErrorProject,
   } = useGetProject(projectId);
 
+  const { data: permissionsData } = useGetProjectPermissions(projectId);
   /*
   const { mutate } = useDeleteProject();
   const handleDeleteProject = useCallback(() => {
@@ -272,8 +287,8 @@ function ProjectSettings({ projectId }: { projectId: string }) {
           <>
             <Users size={20} />
             <Box sx={{ marginLeft: "4px" }} component="span">
-              {projectMembers && projectMembers.length} Collaborator
-              {projectMembers?.length === 1 ? "" : "s"}
+              {data && data.length} Collaborator
+              {data?.length === 1 ? "" : "s"}
             </Box>
           </>
         ),
@@ -285,12 +300,21 @@ function ProjectSettings({ projectId }: { projectId: string }) {
           backgroundColor: "black",
           color: "#fff",
           borderRadius: "8px",
-          padding: " 12px 16px",
+          padding: "12px 16px",
         },
       }}
       isForm={false}
     >
-      <ShareProjectButton projectId={projectId} />
+      {permissionsData && permissionsData?.permissions >= 3 ? (
+        <ShareProjectButton projectId={projectId} />
+      ) : (
+        <Box p={1.5} sx={{ backgroundColor: "#F5F7FA" }}>
+          <Typography>
+            Only administrators can share the workspace with new users or change
+            user permissions. Please contact them for assistance.
+          </Typography>
+        </Box>
+      )}
       <Box p={2}>
         <Typography variant="h6" component="p" sx={{ color: "#657681" }}>
           Current Users on Workspace
@@ -302,6 +326,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
             key={member.email}
             member={member}
             projectId={projectId}
+            permissions={permissionsData?.permissions}
           />
         ))}
       </List>

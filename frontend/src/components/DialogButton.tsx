@@ -121,9 +121,14 @@ export default function DialogButton({
         }
         fullWidth
         maxWidth="md"
+        sx={{
+          ".MuiDialog-paper": {
+            padding: 2,
+          },
+        }}
       >
         <DialogTitle>{text.title}</DialogTitle>
-        <DialogContent sx={{ p: 2 }}>
+        <DialogContent>
           {text.description && (
             <DialogContentText>{text.description}</DialogContentText>
           )}

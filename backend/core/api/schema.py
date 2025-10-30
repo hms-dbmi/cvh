@@ -33,9 +33,11 @@ class UserOut(Schema):
     last_name: str
     email: EmailStr
 
+
 class UserIn(OptionalSchema):
     first_name: str
     last_name: str
+
 
 class ProjectIn(Schema):
     name: str
@@ -226,8 +228,16 @@ class ProjectMemberUpdate(ModelSchema):
 
 class ProjectMemberOut(ModelSchema):
     email: EmailStr
+    username: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+
+    class Meta:
+        model = ProjectMember
+        fields = ["permissions"]
+
+
+class ProjectPermissionOut(ModelSchema):
     class Meta:
         model = ProjectMember
         fields = ["permissions"]

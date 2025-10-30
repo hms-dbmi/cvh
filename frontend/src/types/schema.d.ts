@@ -41,7 +41,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects/members/{project_uuid}": {
+    "/api/projects/{project_uuid}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Permissions */
+        get: operations["api_api_get_project_permissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_uuid}/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -378,6 +395,14 @@ export interface components {
              */
             permissions: number;
         };
+        /** ProjectPermissionOut */
+        ProjectPermissionOut: {
+            /**
+             * Permissions
+             * @default 1
+             */
+            permissions: number;
+        };
         /** ProjectMemberOut */
         ProjectMemberOut: {
             /**
@@ -385,6 +410,8 @@ export interface components {
              * Format: email
              */
             email: string;
+            /** Username */
+            username: string;
             /** First Name */
             first_name?: string | null;
             /** Last Name */
@@ -1071,6 +1098,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_api_get_project_permissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectPermissionOut"];
+                };
             };
         };
     };
