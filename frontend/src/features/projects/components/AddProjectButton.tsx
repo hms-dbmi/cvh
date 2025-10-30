@@ -1,9 +1,5 @@
-import { useCallback, ChangeEvent } from "react";
+import { useCallback } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Switch, { SwitchProps } from "@mui/material/Switch";
-import FormControlLabel, {
-  FormControlLabelProps,
-} from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +16,6 @@ const text = {
 interface FormValues {
   name: string;
   description: string;
-  priv: boolean;
 }
 
 function FormTextField({
@@ -48,44 +43,10 @@ function FormTextField({
   );
 }
 
-function FormSwitch({
-  name,
-  label,
-  control,
-}: UseControllerProps<FormValues> &
-  Partial<SwitchProps> &
-  Pick<FormControlLabelProps, "label">) {
-  const { field } = useController({
-    name,
-    control,
-    rules: { required: true },
-  });
-
-  if (typeof field.value !== "boolean") {
-    return null;
-  }
-
-  return (
-    <FormControlLabel
-      label={label}
-      control={
-        <Switch
-          checked={field.value}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            field.onChange(e.target.checked)
-          }
-          inputProps={{ "aria-label": "controlled" }}
-        />
-      }
-    />
-  );
-}
-
 const schema = z
   .object({
     name: z.string(),
     description: z.string(),
-    priv: z.boolean(),
   })
   .required();
 
@@ -94,7 +55,6 @@ export default function AddProjectButton() {
     defaultValues: {
       name: "",
       description: "",
-      priv: true,
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -103,8 +63,8 @@ export default function AddProjectButton() {
   const { mutate } = useCreateProject();
 
   const onSubmit = useCallback(
-    ({ name, description, priv }: FormValues) => {
-      mutate({ body: { name, description, private: priv } });
+    ({ name, description }: FormValues) => {
+      mutate({ body: { name, description, private: true } });
     },
     [mutate]
   );
@@ -118,7 +78,6 @@ export default function AddProjectButton() {
           label="Description"
           control={control}
         />
-        <FormSwitch name="priv" control={control} label="Private" />
       </Stack>
     </DialogButton>
   );
