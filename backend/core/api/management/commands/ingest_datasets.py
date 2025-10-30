@@ -61,7 +61,7 @@ class Command(BaseCommand):
             )
 
             ProjectMember.objects.create(
-                project_key=project, user_key=creator, permissions=4
+                project_key=project, user_key=creator, permissions=3
             )
 
             datasets = [

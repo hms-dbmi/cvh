@@ -41,7 +41,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects/members/{project_uuid}": {
+    "/api/projects/{project_uuid}/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -385,6 +385,12 @@ export interface components {
              * Format: email
              */
             email: string;
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
             /**
              * Permissions
              * @default 1
@@ -1000,9 +1006,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["UserOut"];
-                };
+                content?: never;
             };
         };
     };

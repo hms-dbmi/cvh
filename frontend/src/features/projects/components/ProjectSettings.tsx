@@ -5,50 +5,92 @@ import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
+import MenuItem, { MenuItemProps } from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SettingsIcon from "@mui/icons-material/Settings";
-import Button from "@mui/material/Button";
+import { Trash, Users } from "@phosphor-icons/react";
+import Avatar from "@mui/material/Avatar";
+import { Check } from "@phosphor-icons/react";
 
+import generateAvatarColor from "../../../utils/generateAvatarColor";
 import type { components } from "../../../types/schema";
 import DialogButton from "../../../components/DialogButton";
 import {
-  useDeleteProject,
   useGetProject,
   useGetProjectMembers,
   useRemoveProjectMember,
   useUpdateProject,
   useUpdateProjectMember,
 } from "../api/useProjects";
+import ShareProjectButton from "./ShareProjectButton";
+import { ListItemIcon, ListItemText } from "@mui/material";
+import { useGetUser } from "../../navigation/api/useUser";
 
 const PERMISSIONS: Record<number, string> = {
-  1: "Read",
-  2: "Write",
+  1: "Viewer",
+  2: "Editor",
   3: "Admin",
-  4: "Owner",
 };
+
+const permissionsText: Record<
+  keyof typeof PERMISSIONS,
+  Record<"primary" | "secondary", string>
+> = {
+  1: {
+    primary: "Viewer",
+    secondary: "View visualizations and data",
+  },
+  2: {
+    primary: "Editor",
+    secondary: "Add data, edit visualizations",
+  },
+  3: {
+    primary: "Admin",
+    secondary: "Add data, edit visualizations, add new users",
+  },
+};
+
+function PermissionMenuItem({
+  isSelected,
+  permission,
+  value,
+  ...rest
+}: {
+  isSelected: boolean;
+  permission: keyof typeof PERMISSIONS;
+} & MenuItemProps) {
+  const { primary, secondary } = permissionsText[permission];
+
+  return (
+    <MenuItem value={value} {...rest}>
+      {isSelected ? (
+        <ListItemIcon>
+          <Check size={24} color="#0072B2" />
+        </ListItemIcon>
+      ) : (
+        <Box width={36} height={24} aria-hidden></Box>
+      )}
+      <ListItemText primary={primary} secondary={secondary} />
+    </MenuItem>
+  );
+}
 
 interface PermissionsSelectProps {
   initialPermission: keyof typeof PERMISSIONS;
   projectId: string;
   email: string;
+  disabled: boolean;
 }
-
-const text = {
-  button: "Settings",
-  title: "Project Settings",
-};
 
 function PermissionsSelect({
   initialPermission,
   projectId,
   email,
+  disabled,
 }: PermissionsSelectProps) {
   const { mutate } = useUpdateProjectMember();
 
@@ -75,12 +117,16 @@ function PermissionsSelect({
         label="Role"
         inputProps={{ "aria-label": "Without label" }}
         onChange={handleChange}
-        disabled={initialPermission === 4}
+        disabled={disabled}
+        renderValue={(value) => PERMISSIONS[value]}
       >
         {Object.entries(PERMISSIONS).map(([k, v]) => (
-          <MenuItem key={v} value={k}>
-            {v}
-          </MenuItem>
+          <PermissionMenuItem
+            key={v}
+            value={k}
+            permission={Number(k)}
+            isSelected={Number(k) === initialPermission}
+          />
         ))}
       </Select>
     </FormControl>
@@ -88,9 +134,11 @@ function PermissionsSelect({
 }
 
 function MemberSettings({
+  permissions = 0,
   member,
   projectId,
 }: {
+  permissions?: number;
   member: components["schemas"]["ProjectMemberOut"];
   projectId: string;
 }) {
@@ -99,6 +147,9 @@ function MemberSettings({
   const handleRemoveProjectMember = useCallback(() => {
     mutate({ body: { project_uuid: projectId, email: member.email } });
   }, [mutate, projectId, member.email]);
+  const { data: userData } = useGetUser();
+
+  const disableInputs = !userData || userData.username === member.username;
 
   return (
     <ListItem key={member.email}>
@@ -109,28 +160,59 @@ function MemberSettings({
         width="100%"
         spacing={2}
       >
-        <Typography>{member.email}</Typography>
-        <Stack direction="row" spacing={1}>
-          <PermissionsSelect
-            initialPermission={member.permissions}
-            projectId={projectId}
-            email={member.email}
-          />
-          <IconButton
-            size="medium"
-            disabled={member.permissions === 4}
-            color="error"
-            onClick={handleRemoveProjectMember}
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Avatar
+            sx={{
+              backgroundColor: generateAvatarColor(member?.username),
+              width: 32,
+              height: 32,
+              fontSize: "0.9rem",
+              "& .MuiAvatar-fallback": {
+                display: "none",
+              },
+            }}
           >
-            <DeleteIcon fontSize="inherit" />
-          </IconButton>
+            {member?.first_name?.length && member?.last_name?.length
+              ? `${member?.first_name[0]}${member?.last_name[0]}`
+              : null}
+          </Avatar>
+          <Stack>
+            {Boolean(member?.first_name && member?.last_name) && (
+              <Typography variant="h6" component="p">
+                {member.first_name} {member.last_name}
+              </Typography>
+            )}
+            <Typography variant="body2">{member.email}</Typography>
+          </Stack>
         </Stack>
+        {permissions >= 3 ? (
+          <Stack direction="row" spacing={1}>
+            <PermissionsSelect
+              initialPermission={member.permissions}
+              projectId={projectId}
+              email={member.email}
+              disabled={disableInputs}
+            />
+            <IconButton
+              size="medium"
+              disabled={disableInputs}
+              onClick={handleRemoveProjectMember}
+              sx={{ fontColor: "#8A9EA8" }}
+            >
+              <Trash size={24} />
+            </IconButton>
+          </Stack>
+        ) : (
+          <Typography variant="button" component="p">
+            {PERMISSIONS[member.permissions]}
+          </Typography>
+        )}
       </Stack>
     </ListItem>
   );
 }
 
-function UpdateAccessSwitch({
+export function UpdateAccessSwitch({
   projectId,
   isPrivate,
 }: {
@@ -173,11 +255,13 @@ function ProjectSettings({ projectId }: { projectId: string }) {
     isError: isErrorProject,
   } = useGetProject(projectId);
 
+  const { data: permissionsData } = useGetProject(projectId);
+  /*
   const { mutate } = useDeleteProject();
-
   const handleDeleteProject = useCallback(() => {
     mutate({ params: { path: { project_uuid: projectId } } });
   }, [mutate, projectId]);
+ */
 
   if (
     isLoading ||
@@ -191,34 +275,54 @@ function ProjectSettings({ projectId }: { projectId: string }) {
   }
   return (
     <DialogButton
-      text={text}
-      buttonProps={{ endIcon: <SettingsIcon /> }}
+      text={{
+        button: (
+          <>
+            <Users size={20} />
+            <Box sx={{ marginLeft: "4px" }} component="span">
+              {data && data.length} Collaborator
+              {data?.length === 1 ? "" : "s"}
+            </Box>
+          </>
+        ),
+        title: "Workspace Sharing",
+      }}
+      buttonProps={{
+        color: "inherit",
+        sx: {
+          backgroundColor: "black",
+          color: "#fff",
+          borderRadius: "8px",
+          padding: "12px 16px",
+        },
+      }}
       isForm={false}
     >
+      {permissionsData?.permissions && permissionsData?.permissions >= 3 ? (
+        <ShareProjectButton projectId={projectId} />
+      ) : (
+        <Box p={1.5} sx={{ backgroundColor: "#F5F7FA" }}>
+          <Typography>
+            Only administrators can share the workspace with new users or change
+            user permissions. Please contact them for assistance.
+          </Typography>
+        </Box>
+      )}
       <Box p={2}>
-        <Typography variant="h6">Project Access</Typography>
-        <UpdateAccessSwitch
-          projectId={projectId}
-          isPrivate={projectData.private}
-        />
+        <Typography variant="h6" component="p" sx={{ color: "#657681" }}>
+          Current Users on Workspace
+        </Typography>
       </Box>
-      <Box p={2}>
-        <Typography variant="h6">Project Members</Typography>
-      </Box>
-      <List>
+      <List disablePadding>
         {data.map((member) => (
           <MemberSettings
             key={member.email}
             member={member}
             projectId={projectId}
+            permissions={permissionsData?.permissions ?? 0}
           />
         ))}
       </List>
-      <Box p={2}>
-        <Button onClick={handleDeleteProject} color="error" variant="contained">
-          Delete Project
-        </Button>
-      </Box>
     </DialogButton>
   );
 }

@@ -16,16 +16,18 @@ import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStor
 
 type Props = {
   visualizationID: string;
+  closeMenu: () => void;
 };
 
-function PublishedVizMenu({ visualizationID }: Props) {
+function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
   const handleCopyClick = useHandleCopyClick();
   const path = `/visualizations/${visualizationID}`;
   const { toastError } = useSnackbarActions();
 
   const handleCopy = useCallback(() => {
     handleCopyClick(`${window.location.origin}/${path}`);
-  }, [handleCopyClick, path]);
+    closeMenu();
+  }, [handleCopyClick, path, closeMenu]);
 
   const { mutate: updateViz } = useUpdateVisualization();
 
@@ -40,15 +42,16 @@ function PublishedVizMenu({ visualizationID }: Props) {
           path: { visualization_uuid: visualizationID },
         },
       });
+      closeMenu();
     } catch (e) {
       toastError("Error publishing visualization");
       console.error(e);
     }
-  }, [updateViz, toastError, visualizationID]);
+  }, [updateViz, toastError, visualizationID, closeMenu]);
 
   return (
     <>
-      <LinkMenuItem to={path} target="_blank" component="a">
+      <LinkMenuItem to={path} target="_blank" component="a" onClick={closeMenu}>
         <ListItemIcon>
           <PresentationChart size={24} />
         </ListItemIcon>
