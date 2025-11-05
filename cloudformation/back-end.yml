@@ -114,12 +114,12 @@ Resources:
       GroupDescription: !Sub "${AWS::StackName} ECS SG"
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 0
+          FromPort: 8000
           ToPort: 8000
           CidrIp: 0.0.0.0/0
           # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
         - IpProtocol: tcp
-          FromPort: 0
+          FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
           # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
