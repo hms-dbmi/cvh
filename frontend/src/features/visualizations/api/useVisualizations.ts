@@ -105,10 +105,10 @@ function useDeleteVisualization() {
 }
 
 function useGetPublishedVisualizations({
-  tags,
+  tags = [],
   options,
 }: {
-  tags: { tag: string }[];
+  tags?: { tag: string }[];
   options?: QueryOptions;
 }) {
   const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
