@@ -16,6 +16,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 import json
+import sys
 
 env.read_env()
 # Override in .env for local development
@@ -30,8 +31,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+IS_DEVELOPMENT_SERVER = 'runserver' in sys.argv
+
+if IS_DEVELOPMENT_SERVER:
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = True
+else:
+    DEBUG = False
 
 ALLOWED_HOSTS = []
 METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI_V4")
@@ -179,7 +185,7 @@ DATABASES = {
         "HOST": env.str("DB_HOST"),
         "PORT": env.int("DB_PORT"),
         'OPTIONS': {
-            'sslmode': 'require',
+            'sslmode': 'allow' if IS_DEVELOPMENT_SERVER else 'require',
         },
     }
 }
