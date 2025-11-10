@@ -286,7 +286,7 @@ function DatasetSelectionButton({
       onClick={onClick}
       {...buttonProps}
       fullWidth
-      endIcon={<Info size={24} color={"#4E5A63"} />}
+      endIcon={<Info size={24} color={isSelected ? "#ffffff" : "#4E5A63"} />}
     >
       {value}
     </Button>
