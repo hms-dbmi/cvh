@@ -17,7 +17,7 @@ function Provider({ children }: PropsWithChildren) {
         authorizationParams={{
           redirect_uri: window.location.origin,
           audience: import.meta.env.VITE_API_AUDIENCE,
-          scope: "read:current_user",
+          scope: "read:current_user email",
         }}
       >
         <QueryClientProvider client={queryClient}>
