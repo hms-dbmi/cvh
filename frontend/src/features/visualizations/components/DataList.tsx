@@ -36,6 +36,7 @@ import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSe
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
+import { useGetProject } from "../../projects/api/useProjects";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -222,6 +223,10 @@ function DataList({
     (state) => state.setNameSubstring
   );
 
+  const { data } = useGetProject(projectId);
+
+  const hasWritePermissions = data?.permissions && data?.permissions >= 2;
+
   return (
     <Stack spacing={1}>
       <InputBase
@@ -252,9 +257,11 @@ function DataList({
           },
         })}
       />
-      <Stack direction="row" spacing={1}>
-        <AddDatasetButton projectId={projectId} />
-      </Stack>
+      {hasWritePermissions && (
+        <Stack direction="row" spacing={1}>
+          <AddDatasetButton projectId={projectId} />
+        </Stack>
+      )}
       <DataSelects projectId={projectId} />
       {children}
     </Stack>

@@ -168,6 +168,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
             projectId={projectId}
             setSelectedVizId={setSelectedVizId}
             selectedVizId={selectedVizId}
+            permissions={permissions}
           />
         }
         DatasetsPanel={DataList}
