@@ -184,7 +184,9 @@ const SUPPORTED_ASSEMBLIES = [
 const base = z.object({
   name: z.string(),
   description: z.string(),
-  source_url: z.string(),
+  source_url: z.string().refine((value) => /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value), {
+    message: 'Must be a vaild HTTPS URL.',
+  }),
   data_type: z.string(),
   assembly: z.enum([
     "hg38",
@@ -196,7 +198,7 @@ const base = z.object({
     "mm9",
     "unknown",
   ]),
-});
+}).required()
 
 const simple = base.extend({
   file_type: z.enum(["bigwig", "vector", "cooler"]),
