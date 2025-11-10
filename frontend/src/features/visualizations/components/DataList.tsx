@@ -270,7 +270,7 @@ function DataAccordion({
     data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
 
   return (
-    <Accordion disableGutters>
+    <Accordion disableGutters defaultExpanded>
       <AccordionSummary
         expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"

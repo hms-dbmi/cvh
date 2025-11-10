@@ -427,7 +427,7 @@ export default function VisualizationAccordion({
   });
 
   return (
-    <Accordion disableGutters>
+    <Accordion disableGutters defaultExpanded>
       <AccordionSummary
         expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"
