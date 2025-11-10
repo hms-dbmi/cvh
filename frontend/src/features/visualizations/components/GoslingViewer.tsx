@@ -103,6 +103,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
   const { mutate: updateViz } = useUpdateVisualization();
   const { toastError } = useSnackbarActions();
 
+  const hasWritePermissions = permissions >= 2;
   const saveViz = useCallback(
     ({
       vis,
@@ -118,7 +119,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
       const n_datasets = nDatasets;
 
       try {
-        if (!selectedVizId || permissions < 2) {
+        if (!selectedVizId || !hasWritePermissions) {
           return;
         }
         updateViz({
@@ -132,12 +133,12 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
         console.error(e);
       }
     },
-    [updateViz, toastError, selectedVizId, permissions]
+    [updateViz, toastError, selectedVizId, hasWritePermissions]
   );
 
   const publishViz = useCallback(() => {
     try {
-      if (!selectedVizId || permissions < 2) {
+      if (!selectedVizId || !hasWritePermissions) {
         return;
       }
       updateViz({
@@ -150,7 +151,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
       toastError("Error publishing visualization");
       console.error(e);
     }
-  }, [updateViz, toastError, selectedVizId, permissions]);
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
   if (!formattedDatasets) {
     return null;
@@ -170,7 +171,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
           />
         }
         DatasetsPanel={DataList}
-        DatasetMenuButton={DatasetActionsMenu}
+        DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
         // @ts-expect-error TODO: Remove ignore.
         userMode={PERMISSIONS?.[permissions] ?? "guest"}
         onPublish={publishViz}
