@@ -305,6 +305,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/visualizations/{visualization_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Visualization */
+        get: operations["api_api_get_public_visualization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/visualizations/{visualization_uuid}/tags": {
         parameters: {
             query?: never;
@@ -824,6 +841,13 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
+        };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
             /** Items */
@@ -835,6 +859,8 @@ export interface components {
         VisualizationNoConfOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
+            /** Author */
+            author?: string | null;
             /**
              * Published
              * @default false
@@ -877,13 +903,6 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** VisualizationQuerySchema */
-        VisualizationQuerySchema: {
-            /** Tags */
-            tags?: string[];
-            /** Name */
-            name?: string;
-        };
         /** VisualizationIn */
         VisualizationIn: {
             /**
@@ -893,6 +912,8 @@ export interface components {
             project_uuid: string;
             /** Description */
             description?: string | null;
+            /** Author */
+            author?: string | null;
             /** Name */
             name: string;
         };
@@ -902,6 +923,8 @@ export interface components {
             tags: components["schemas"]["TagOut"][];
             /** Conf */
             conf?: Record<string, never> | null;
+            /** Author */
+            author?: string | null;
             /**
              * Published
              * @default false
@@ -950,6 +973,8 @@ export interface components {
             name?: string;
             /** Description */
             description?: string | null;
+            /** Author */
+            author?: string | null;
             /** Conf */
             conf?: Record<string, never> | null;
             /** Published */
@@ -1469,8 +1494,6 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
-                assembly?: string[];
-                file_type?: string[];
                 name?: string;
                 limit?: number;
                 offset?: number;
@@ -1535,7 +1558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VisualizationIn"];
+                    "application/json": components["schemas"]["VisualizationNoConfOut"];
                 };
             };
         };
@@ -1625,6 +1648,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_api_get_public_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationOut"];
+                };
             };
         };
     };

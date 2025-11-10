@@ -184,7 +184,9 @@ const SUPPORTED_ASSEMBLIES = [
 const base = z.object({
   name: z.string(),
   description: z.string(),
-  source_url: z.string(),
+  source_url: z.string().refine((value) => /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value), {
+    message: 'Must be a vaild HTTPS URL.',
+  }),
   data_type: z.string(),
   assembly: z.enum([
     "hg38",
@@ -196,7 +198,7 @@ const base = z.object({
     "mm9",
     "unknown",
   ]),
-});
+}).required()
 
 const simple = base.extend({
   file_type: z.enum(["bigwig", "vector", "cooler"]),
@@ -286,7 +288,7 @@ function DatasetSelectionButton({
       onClick={onClick}
       {...buttonProps}
       fullWidth
-      endIcon={<Info size={24} color={"#4E5A63"} />}
+      endIcon={<Info size={24} color={isSelected ? "#ffffff" : "#4E5A63"} />}
     >
       {value}
     </Button>
@@ -369,7 +371,7 @@ function AssemblySelect({ name, control }: UseControllerProps<FormValues>) {
 
   return (
     <FormControl>
-      <FormLabel id="demo-controlled-radio-buttons-group">Gender</FormLabel>
+      <FormLabel id="demo-controlled-radio-buttons-group">Assembly</FormLabel>
       <RadioGroup
         aria-labelledby="demo-controlled-radio-buttons-group"
         name="controlled-radio-buttons-group"
@@ -459,7 +461,7 @@ export default function AddDatasetButton({
 }: {
   projectId?: string;
 }) {
-  const { handleSubmit, control, getValues } = useForm({
+  const { handleSubmit, control, watch, reset } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -472,20 +474,27 @@ export default function AddDatasetButton({
   });
   const { mutate } = useCreateDataset();
 
-  const fileType = getValues("file_type");
+  const fileType = watch("file_type");
+
+  const [tab, setTab] = useState(1);
+
+  const handleReset = useCallback(() => {
+    reset();
+    setTab(1);
+  }, [reset, setTab]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
       if (projectId) {
         mutate({ body: { dataset: formData, project_uuid: projectId } });
+        reset();
         return;
       }
       mutate({ body: { dataset: formData } });
+      reset();
     },
-    [mutate, projectId]
+    [mutate, projectId, reset]
   );
-
-  const [tab, setTab] = useState(1);
 
   const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
     setTab(newTab);
@@ -500,9 +509,13 @@ export default function AddDatasetButton({
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
       }}
       actionButtons={
-        tab === 1 ? <Button onClick={() => setTab(2)}>Next</Button> : undefined
+        tab === 1 ? (
+          <Button onClick={() => setTab(2)} disabled={!fileType?.length}>
+            Next
+          </Button>
+        ) : undefined
       }
-      onClose={() => setTab(1)}
+      onClose={handleReset}
     >
       <TabContext value={tab}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>

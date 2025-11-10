@@ -59,14 +59,31 @@ function useGetVisualization(visualizationId: string) {
   });
 }
 
-function useCreateVisualization() {
+function useGetPublishedVisualization(visualizationId: string) {
+  const client = useClient();
+
+
+  return client.useQuery("get", `${publicPath}/{visualization_uuid}`, {
+    params: {
+      path: { visualization_uuid: visualizationId },
+    },
+  });
+}
+
+function useCreateVisualization(setSelectedVizId?: (id: string) => void) {
   const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () =>{
+    onSuccess: (data) =>{
       toastSuccess("Successfully created visualization.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+
+      const uuid = data?.uuid;
+
+      if(uuid && setSelectedVizId){
+        setSelectedVizId(uuid);
+      }
     },
     onError: () => {
       toastError("Failed to create visualization.");
@@ -150,5 +167,6 @@ export {
   useDeleteVisualization,
   useGetPublishedVisualizations,
   useTagVisualization,
-  useGetProjectVisualizationTags
+  useGetProjectVisualizationTags,
+  useGetPublishedVisualization
 };

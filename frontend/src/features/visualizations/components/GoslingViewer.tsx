@@ -19,7 +19,15 @@ interface GoslingViewerProps {
   projectId: string;
   datasets?: Dataset[];
   readonly?: boolean;
+  permissions: number;
 }
+
+const PERMISSIONS: Record<number, string> = {
+  0: "guest",
+  1: "viewer",
+  2: "editor",
+  3: "admin",
+};
 
 // TODO: This needs to be revisited to support fields etc
 const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]) => {
@@ -50,7 +58,7 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
   }, [datasets]);
 };
 
-function GoslingViewer({ projectId }: GoslingViewerProps) {
+function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
   const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
     undefined
   );
@@ -95,6 +103,7 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
   const { mutate: updateViz } = useUpdateVisualization();
   const { toastError } = useSnackbarActions();
 
+  const hasWritePermissions = permissions >= 2;
   const saveViz = useCallback(
     ({
       vis,
@@ -110,7 +119,7 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
       const n_datasets = nDatasets;
 
       try {
-        if (!selectedVizId) {
+        if (!selectedVizId || !hasWritePermissions) {
           return;
         }
         updateViz({
@@ -124,12 +133,12 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
         console.error(e);
       }
     },
-    [updateViz, toastError, selectedVizId]
+    [updateViz, toastError, selectedVizId, hasWritePermissions]
   );
 
   const publishViz = useCallback(() => {
     try {
-      if (!selectedVizId) {
+      if (!selectedVizId || !hasWritePermissions) {
         return;
       }
       updateViz({
@@ -142,7 +151,7 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
       toastError("Error publishing visualization");
       console.error(e);
     }
-  }, [updateViz, toastError, selectedVizId]);
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
   if (!formattedDatasets) {
     return null;
@@ -159,11 +168,13 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
             projectId={projectId}
             setSelectedVizId={setSelectedVizId}
             selectedVizId={selectedVizId}
+            permissions={permissions}
           />
         }
         DatasetsPanel={DataList}
-        DatasetMenuButton={DatasetActionsMenu}
-        userMode="admin"
+        DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
+        // @ts-expect-error TODO: Remove ignore.
+        userMode={PERMISSIONS?.[permissions] ?? "guest"}
         onPublish={publishViz}
         PublishMenu={PublishedVizMenu}
       />

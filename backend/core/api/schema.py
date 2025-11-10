@@ -171,6 +171,7 @@ class DatasetWithTagsOut(DatasetOut):
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4
     description: Optional[str] = None
+    author: Optional[str] = None
 
     class Meta:
         model = VisualizationConf
@@ -183,6 +184,7 @@ class VisualizationNoConfOut(ModelSchema):
     class Meta:
         model = VisualizationConf
         fields = [
+            "author",
             "published",
             "n_tracks",
             "n_datasets",
@@ -198,6 +200,7 @@ class VisualizationOut(ModelSchema):
         model = VisualizationConf
         fields = [
             "conf",
+            "author",
             "published",
             "n_tracks",
             "n_datasets",
@@ -209,7 +212,7 @@ class VisualizationOut(ModelSchema):
 class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
-        fields = ["name", "description", "conf", "published", "n_tracks", "n_datasets"]
+        fields = ["name", "description", "author", "conf", "published", "n_tracks", "n_datasets"]
 
 
 class ProjectMemberIn(Schema):

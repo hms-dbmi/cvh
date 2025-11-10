@@ -18,6 +18,7 @@ const text = {
 interface FormValues {
   name: string;
   description?: string;
+  author?: string;
 }
 
 function FormTextField({
@@ -50,30 +51,35 @@ function FormTextField({
 const schema = z.object({
   name: z.string(),
   description: z.string().optional(),
+  author: z.string().optional(),
 });
 
 export default function AddVisualizationButton({
   projectId,
+  setSelectedVizId,
 }: {
+  setSelectedVizId?: (id?: string) => void;
   projectId: string;
 }) {
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       name: "",
       description: undefined,
+      author: undefined,
     },
     mode: "onChange",
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useCreateVisualization();
+  const { mutate } = useCreateVisualization(setSelectedVizId);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
       mutate({ body: { ...formData, project_uuid: projectId } });
+      reset();
       return;
     },
-    [mutate, projectId]
+    [mutate, projectId, reset]
   );
 
   return (
@@ -84,16 +90,16 @@ export default function AddVisualizationButton({
         startIcon: <Plus size={20} weight="fill" />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
       }}
+      onClose={reset}
     >
-      <Stack direction="row" spacing={2} mt={2}>
-        <Stack spacing={1} minWidth={300}>
-          <FormTextField name="name" label="Name" control={control} />
-          <FormTextField
-            name="description"
-            label="Description"
-            control={control}
-          />
-        </Stack>
+      <Stack spacing={2} minWidth={300} mt={2}>
+        <FormTextField name="name" label="Name" control={control} />
+        <FormTextField
+          name="description"
+          label="Description"
+          control={control}
+        />
+        <FormTextField name="author" label="Author" control={control} />
       </Stack>
     </DialogButton>
   );

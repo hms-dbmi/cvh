@@ -1,4 +1,10 @@
-import { PropsWithChildren, ReactNode, useCallback, FormEvent } from "react";
+import {
+  PropsWithChildren,
+  ReactNode,
+  useCallback,
+  FormEvent,
+  useEffect,
+} from "react";
 
 import Button, { ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -55,27 +61,34 @@ export default function DialogButtonCopy({
   onClose,
   open,
   setOpen,
+  onOpen,
   children,
   actionButtons,
   isForm = true,
 }: PropsWithChildren<DialogProps>) {
   const handleClose = useCallback(() => {
+    setOpen(false);
     if (onClose) {
       onClose();
     }
-    setOpen(false);
   }, [setOpen, onClose]);
 
   const submit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
       if (onSubmit) {
-        e?.preventDefault()
+        e?.preventDefault();
         onSubmit(e);
         handleClose();
       }
     },
     [onSubmit, handleClose]
   );
+
+  useEffect(() => {
+    if (open && onOpen) {
+      onOpen();
+    }
+  }, [open, onOpen]);
 
   return (
     <>

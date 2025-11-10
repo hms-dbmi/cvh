@@ -16,7 +16,7 @@ import {
   Tag,
   MagnifyingGlass,
   DotsThree,
-  Cards,
+  // Cards,
   Trash,
   FileText,
   CaretDown,
@@ -36,6 +36,7 @@ import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSe
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
+import { useGetProject } from "../../projects/api/useProjects";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -127,12 +128,13 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
             Edit Tags
           </>
         </MenuItem>
+        {/*
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <Cards height={24} width={24} />
           </ListItemIcon>
           Create a Copy
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash height={24} width={24} />
@@ -221,6 +223,10 @@ function DataList({
     (state) => state.setNameSubstring
   );
 
+  const { data } = useGetProject(projectId);
+
+  const hasWritePermissions = data?.permissions && data?.permissions >= 2;
+
   return (
     <Stack spacing={1}>
       <InputBase
@@ -251,9 +257,11 @@ function DataList({
           },
         })}
       />
-      <Stack direction="row" spacing={1}>
-        <AddDatasetButton projectId={projectId} />
-      </Stack>
+      {hasWritePermissions && (
+        <Stack direction="row" spacing={1}>
+          <AddDatasetButton projectId={projectId} />
+        </Stack>
+      )}
       <DataSelects projectId={projectId} />
       {children}
     </Stack>
@@ -270,7 +278,7 @@ function DataAccordion({
     data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
 
   return (
-    <Accordion disableGutters>
+    <Accordion disableGutters defaultExpanded>
       <AccordionSummary
         expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"

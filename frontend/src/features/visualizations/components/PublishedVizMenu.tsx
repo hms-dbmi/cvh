@@ -25,7 +25,7 @@ function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
   const { toastError } = useSnackbarActions();
 
   const handleCopy = useCallback(() => {
-    handleCopyClick(`${window.location.origin}/${path}`);
+    handleCopyClick(`${window.location.origin}${path}`);
     closeMenu();
   }, [handleCopyClick, path, closeMenu]);
 

@@ -42,6 +42,7 @@ export default function DatasetTagsSelect({
           multiple
           value={selectedValues}
           onChange={handleChange}
+          disabled={values.length === 0}
           IconComponent={(props) => <CaretDown size={16} {...props} />}
           input={
             <InputBase

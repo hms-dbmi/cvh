@@ -24,7 +24,7 @@ import {
   MagnifyingGlass,
   DotsThree,
   PencilSimple,
-  Cards,
+  // Cards,
   Trash,
   CaretDown,
 } from "@phosphor-icons/react";
@@ -122,8 +122,9 @@ function ActionsMenu({
       />
       <EditVisualizationDialog
         visualizationId={visualizationId}
-        initialDescription={data?.description ?? ""}
-        initialName={data?.name ?? ""}
+        initialDescription={data?.description || undefined}
+        initialName={data?.name}
+        initialAuthor={data?.author || undefined}
         closeMenu={handleClose}
         open={openEdit}
         setOpen={setOpenEdit}
@@ -174,12 +175,12 @@ function ActionsMenu({
             Edit Tags
           </>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        {/* <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <Cards width={24} height={24} />
           </ListItemIcon>
           Create a Copy
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash width={24} height={24} />
@@ -195,10 +196,12 @@ function VisualizationListItem({
   v,
   setSelectedVizId,
   isSelected,
+  permissions,
 }: {
   v: components["schemas"]["VisualizationNoConfOut"];
   setSelectedVizId: (id?: string) => void;
   isSelected: boolean;
+  permissions: number;
 }) {
   const selectViz = useCallback(() => {
     if (v?.uuid) {
@@ -210,17 +213,21 @@ function VisualizationListItem({
     return null;
   }
 
+  const hasWritePermissions = permissions >= 2;
+
   return (
     <ListItem
       disablePadding
       secondaryAction={
-        <Box sx={{ heigh: "100%", alignSelf: "start" }}>
-          <ActionsMenu
-            visualizationId={v.uuid}
-            setSelectedVizId={setSelectedVizId}
-            isSelected={isSelected}
-          />
-        </Box>
+        hasWritePermissions ? (
+          <Box sx={{ heigh: "100%", alignSelf: "start" }}>
+            <ActionsMenu
+              visualizationId={v.uuid}
+              setSelectedVizId={setSelectedVizId}
+              isSelected={isSelected}
+            />
+          </Box>
+        ) : null
       }
       sx={() => ({
         boxShadow: isSelected
@@ -318,11 +325,13 @@ function VisualizationList({
   visualizations = [],
   setSelectedVizId,
   selectedVizId,
+  permissions,
 }: {
   projectId: string;
   visualizations?: components["schemas"]["VisualizationNoConfOut"][];
   setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
+  permissions: number;
 }) {
   const selectedTags = useVisualizationFiltersStore(
     (state) => state.selectedTags
@@ -341,6 +350,8 @@ function VisualizationList({
   );
 
   const { data: tagsData } = useGetProjectVisualizationTags(projectId);
+
+  const hasWritePermissions = permissions >= 2;
 
   return (
     <Stack spacing={1}>
@@ -371,9 +382,14 @@ function VisualizationList({
           },
         })}
       />
-      <Stack direction="row" spacing={1}>
-        <AddVisualizationButton projectId={projectId} />
-      </Stack>
+      {hasWritePermissions && (
+        <Stack direction="row" spacing={1}>
+          <AddVisualizationButton
+            projectId={projectId}
+            setSelectedVizId={setSelectedVizId}
+          />
+        </Stack>
+      )}
       <Stack direction="row" spacing={1}>
         <DatasetTagsSelect
           attribute="tags"
@@ -396,6 +412,7 @@ function VisualizationList({
             isSelected={v.uuid === selectedVizId}
             setSelectedVizId={setSelectedVizId}
             key={v.name}
+            permissions={permissions}
           />
         ))}
       </List>
@@ -407,10 +424,12 @@ export default function VisualizationAccordion({
   projectId,
   setSelectedVizId,
   selectedVizId,
+  permissions,
 }: {
   projectId: string;
   setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
+  permissions: number;
 }) {
   const nameSubstring = useVisualizationFiltersStore(
     (state) => state.nameSubstring
@@ -427,7 +446,7 @@ export default function VisualizationAccordion({
   });
 
   return (
-    <Accordion disableGutters>
+    <Accordion disableGutters defaultExpanded>
       <AccordionSummary
         expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"
@@ -450,6 +469,7 @@ export default function VisualizationAccordion({
           visualizations={visualizations}
           setSelectedVizId={setSelectedVizId}
           selectedVizId={selectedVizId}
+          permissions={permissions}
         />
       </AccordionDetails>
     </Accordion>
