@@ -305,6 +305,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/visualizations/{visualization_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Visualization */
+        get: operations["api_api_get_public_visualization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/visualizations/{visualization_uuid}/tags": {
         parameters: {
             query?: never;
@@ -1631,6 +1648,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_api_get_public_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationOut"];
+                };
             };
         };
     };

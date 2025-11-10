@@ -627,12 +627,25 @@ def get_project_visualizations_Tags(request, project_uuid: str):
     return tags
 
 
-@api.get("/visualizations/{visualization_uuid}", response=VisualizationOut)
+@api.get("/visualizations/{visualization_uuid}", response=VisualizationOut, auth=Authorized())
 def get_visualization(request, visualization_uuid: str):
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid)
+    try:
+        visualization = get_object_or_404(
+            VisualizationConf, uuid=visualization_uuid)
+        Project.objects.get_read_project(
+            project_uuid=visualization.project_key.uuid, user=request.auth
+        )
+    except VisualizationConf.DoesNotExist:
+        raise Http404("Failed to find visualization.")
+    except Project.DoesNotExist:
+        raise Http404("Failed to find visualization.")
     return visualization
 
+@api.get("/public/visualizations/{visualization_uuid}", response=VisualizationOut, auth=Authorized())
+def get_public_visualization(request, visualization_uuid: str):
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid, published=True)
+    return visualization
 
 @api.delete("/visualizations/{visualization_uuid}", auth=Authorized())
 def delete_visualization(request, visualization_uuid: str):

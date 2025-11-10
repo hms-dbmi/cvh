@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useGetVisualization } from "../features/visualizations/api/useVisualizations";
+import { useGetPublishedVisualization } from "../features/visualizations/api/useVisualizations";
 
 import { GoslingDesignerVEC } from "gosling-designer-vec";
 import formatVisualization from "../features/visualizations/utils/formatVisualization";
@@ -113,7 +113,7 @@ function PublishedVisualizationPanel({
 function RouteComponent() {
   const { visualizationId } = Route.useParams();
 
-  const { data } = useGetVisualization(visualizationId);
+  const { data } = useGetPublishedVisualization(visualizationId);
 
   if (!data) {
     return null;

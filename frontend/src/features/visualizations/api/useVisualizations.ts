@@ -59,6 +59,17 @@ function useGetVisualization(visualizationId: string) {
   });
 }
 
+function useGetPublishedVisualization(visualizationId: string) {
+  const client = useClient();
+
+
+  return client.useQuery("get", `${publicPath}/{visualization_uuid}`, {
+    params: {
+      path: { visualization_uuid: visualizationId },
+    },
+  });
+}
+
 function useCreateVisualization(setSelectedVizId?: (id: string) => void) {
   const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
@@ -156,5 +167,6 @@ export {
   useDeleteVisualization,
   useGetPublishedVisualizations,
   useTagVisualization,
-  useGetProjectVisualizationTags
+  useGetProjectVisualizationTags,
+  useGetPublishedVisualization
 };

@@ -24,6 +24,8 @@ function PublishedGridItem({
         alignItems: "flex-start",
         padding: 0,
       }}
+      component="a"
+      href={`/visualizations/${visualization.uuid}`}
     >
       <Stack direction="column" width="100%">
         <ListItemText
@@ -43,8 +45,14 @@ function PublishedGridItem({
         {Boolean(visualization?.tags?.length) && (
           <Box>
             <Divider />
-            <Stack p={1.5} spacing={0.5} direction="row" flexWrap="wrap" alignItems="center">
-            <Tag size={20} color="#4E5A63" />
+            <Stack
+              p={1.5}
+              spacing={0.5}
+              direction="row"
+              flexWrap="wrap"
+              alignItems="center"
+            >
+              <Tag size={20} color="#4E5A63" />
               {visualization?.tags.map((t) => (
                 <Box key={t.key + t.tag}>
                   <Chip
