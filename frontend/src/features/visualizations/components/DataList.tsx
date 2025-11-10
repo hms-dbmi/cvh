@@ -16,7 +16,7 @@ import {
   Tag,
   MagnifyingGlass,
   DotsThree,
-  Cards,
+  // Cards,
   Trash,
   FileText,
   CaretDown,
@@ -127,12 +127,13 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
             Edit Tags
           </>
         </MenuItem>
+        {/*
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <Cards height={24} width={24} />
           </ListItemIcon>
           Create a Copy
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash height={24} width={24} />

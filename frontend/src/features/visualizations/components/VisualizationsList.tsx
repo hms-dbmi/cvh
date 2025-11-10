@@ -24,7 +24,7 @@ import {
   MagnifyingGlass,
   DotsThree,
   PencilSimple,
-  Cards,
+  // Cards,
   Trash,
   CaretDown,
 } from "@phosphor-icons/react";
@@ -175,12 +175,12 @@ function ActionsMenu({
             Edit Tags
           </>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        {/* <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <Cards width={24} height={24} />
           </ListItemIcon>
           Create a Copy
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash width={24} height={24} />
@@ -373,7 +373,10 @@ function VisualizationList({
         })}
       />
       <Stack direction="row" spacing={1}>
-        <AddVisualizationButton projectId={projectId} setSelectedVizId={setSelectedVizId} />
+        <AddVisualizationButton
+          projectId={projectId}
+          setSelectedVizId={setSelectedVizId}
+        />
       </Stack>
       <Stack direction="row" spacing={1}>
         <DatasetTagsSelect
