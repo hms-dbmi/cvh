@@ -569,7 +569,7 @@ class VisualizationQuerySchema(Schema):
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
 @paginate
 def get_published_visualizations(
-    request, query_filters: DatasetQuerySchema = Query(...)
+    request, query_filters: VisualizationQuerySchema = Query(...)
 ):
     q = Q()
     if query_filters.tags:
@@ -579,7 +579,6 @@ def get_published_visualizations(
         VisualizationConf.objects.filter(Q(published=True) & q)
         .order_by("-modified_timestamp")
         .distinct()
-        .values()
     )
     return visualizations
 
