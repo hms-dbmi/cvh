@@ -124,6 +124,7 @@ class VisualizationConf(UserCreated):
     project_key = models.ForeignKey(
         Project, on_delete=models.CASCADE, blank=True, null=True
     )
+    author = models.CharField(max_length=100, null=True)
     tags = models.ManyToManyField(Tag)
     published = models.BooleanField(default=False)
     n_tracks = models.IntegerField(default=0, null=True)

@@ -122,8 +122,9 @@ function ActionsMenu({
       />
       <EditVisualizationDialog
         visualizationId={visualizationId}
-        initialDescription={data?.description ?? ""}
-        initialName={data?.name ?? ""}
+        initialDescription={data?.description || undefined}
+        initialName={data?.name}
+        initialAuthor={data?.author || undefined}
         closeMenu={handleClose}
         open={openEdit}
         setOpen={setOpenEdit}

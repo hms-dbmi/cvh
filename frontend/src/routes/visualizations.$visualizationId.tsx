@@ -27,7 +27,7 @@ function PublishedVisualizationPanel({
 }) {
   return (
     <>
-      <Accordion disableGutters>
+      <Accordion disableGutters defaultExpanded>
         <AccordionSummary
           expandIcon={<CaretDown size={20} />}
           aria-controls="panel1-content"
@@ -55,7 +55,7 @@ function PublishedVisualizationPanel({
             <Typography variant="body2">
               {viz?.published_timestamp && (
                 <>Published {formatISO(viz.published_timestamp)}</>
-              )}
+              )}{viz?.author && <> by {viz.author}</>}
             </Typography>
             <Typography variant="body2">{viz.description}</Typography>
             <Typography variant="body2" sx={{ color: "#4E5A63" }}>

@@ -18,6 +18,7 @@ const text = {
 interface FormValues {
   name: string;
   description?: string;
+  author?: string;
 }
 
 function FormTextField({
@@ -50,6 +51,7 @@ function FormTextField({
 const schema = z.object({
   name: z.string(),
   description: z.string().optional(),
+  author: z.string().optional(),
 });
 
 export default function AddVisualizationButton({
@@ -63,6 +65,7 @@ export default function AddVisualizationButton({
     defaultValues: {
       name: "",
       description: undefined,
+      author: undefined,
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -96,6 +99,7 @@ export default function AddVisualizationButton({
           label="Description"
           control={control}
         />
+        <FormTextField name="author" label="Author" control={control} />
       </Stack>
     </DialogButton>
   );

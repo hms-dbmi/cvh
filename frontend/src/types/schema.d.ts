@@ -842,6 +842,8 @@ export interface components {
         VisualizationNoConfOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
+            /** Author */
+            author?: string | null;
             /**
              * Published
              * @default false
@@ -893,6 +895,8 @@ export interface components {
             project_uuid: string;
             /** Description */
             description?: string | null;
+            /** Author */
+            author?: string | null;
             /** Name */
             name: string;
         };
@@ -902,6 +906,8 @@ export interface components {
             tags: components["schemas"]["TagOut"][];
             /** Conf */
             conf?: Record<string, never> | null;
+            /** Author */
+            author?: string | null;
             /**
              * Published
              * @default false
@@ -950,6 +956,8 @@ export interface components {
             name?: string;
             /** Description */
             description?: string | null;
+            /** Author */
+            author?: string | null;
             /** Conf */
             conf?: Record<string, never> | null;
             /** Published */
