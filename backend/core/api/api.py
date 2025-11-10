@@ -695,7 +695,7 @@ def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
     return {"success": True}
 
 
-@api.post("/visualizations", auth=Authorized(), response={201: VisualizationIn})
+@api.post("/visualizations", auth=Authorized(), response={201: VisualizationNoConfOut})
 def create_visualization(request, visualization: VisualizationIn):
     visualization_dict = visualization.dict()
     project_uuid = visualization_dict.get("project_uuid")
@@ -707,5 +707,5 @@ def create_visualization(request, visualization: VisualizationIn):
         )
     except Project.DoesNotExist:
         raise Http404("Failed to create visualization.")
-    VisualizationConf.objects.create(**visualization_dict, project_key=project)
-    return visualization
+    viz = VisualizationConf.objects.create(**visualization_dict, project_key=project)
+    return viz

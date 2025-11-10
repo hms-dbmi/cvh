@@ -372,7 +372,7 @@ function VisualizationList({
         })}
       />
       <Stack direction="row" spacing={1}>
-        <AddVisualizationButton projectId={projectId} />
+        <AddVisualizationButton projectId={projectId} setSelectedVizId={setSelectedVizId} />
       </Stack>
       <Stack direction="row" spacing={1}>
         <DatasetTagsSelect

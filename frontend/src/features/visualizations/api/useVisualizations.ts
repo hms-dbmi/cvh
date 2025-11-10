@@ -59,14 +59,20 @@ function useGetVisualization(visualizationId: string) {
   });
 }
 
-function useCreateVisualization() {
+function useCreateVisualization(setSelectedVizId?: (id: string) => void) {
   const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () =>{
+    onSuccess: (data) =>{
       toastSuccess("Successfully created visualization.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+
+      const uuid = data?.uuid;
+
+      if(uuid && setSelectedVizId){
+        setSelectedVizId(uuid);
+      }
     },
     onError: () => {
       toastError("Failed to create visualization.");

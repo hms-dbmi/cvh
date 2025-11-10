@@ -824,6 +824,13 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
+        };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
             /** Items */
@@ -876,13 +883,6 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
-        };
-        /** VisualizationQuerySchema */
-        VisualizationQuerySchema: {
-            /** Tags */
-            tags?: string[];
-            /** Name */
-            name?: string;
         };
         /** VisualizationIn */
         VisualizationIn: {
@@ -1469,8 +1469,6 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
-                assembly?: string[];
-                file_type?: string[];
                 name?: string;
                 limit?: number;
                 offset?: number;
@@ -1535,7 +1533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VisualizationIn"];
+                    "application/json": components["schemas"]["VisualizationNoConfOut"];
                 };
             };
         };
