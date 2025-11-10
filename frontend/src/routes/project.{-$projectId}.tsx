@@ -30,18 +30,25 @@ function RouteComponent() {
 }
 
 function ProjectsPage({ projectId }: { projectId: string }) {
-  const { isLoading: isLoadingProject, isError: isErrorProject } =
-    useGetProject(projectId);
+  const {
+    isLoading: isLoadingProject,
+    isError: isErrorProject,
+    data: project,
+  } = useGetProject(projectId);
 
   const isLoading = isLoadingProject;
 
   const isError = isErrorProject;
 
-  if (isLoading || isError) {
+  if (isLoading || isError || !project) {
     return null;
   }
 
   return (
-    <VisualizationViewer projectId={projectId} visualizationType="gosling" />
+    <VisualizationViewer
+      projectId={projectId}
+      visualizationType="gosling"
+      permissions={project?.permissions ?? 0}
+    />
   );
 }

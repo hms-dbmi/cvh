@@ -19,7 +19,15 @@ interface GoslingViewerProps {
   projectId: string;
   datasets?: Dataset[];
   readonly?: boolean;
+  permissions: number;
 }
+
+const PERMISSIONS: Record<number, string> = {
+  0: "guest",
+  1: "viewer",
+  2: "editor",
+  3: "admin",
+};
 
 // TODO: This needs to be revisited to support fields etc
 const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]) => {
@@ -50,7 +58,7 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
   }, [datasets]);
 };
 
-function GoslingViewer({ projectId }: GoslingViewerProps) {
+function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
   const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
     undefined
   );
@@ -163,7 +171,8 @@ function GoslingViewer({ projectId }: GoslingViewerProps) {
         }
         DatasetsPanel={DataList}
         DatasetMenuButton={DatasetActionsMenu}
-        userMode="admin"
+        // @ts-expect-error TODO: Remove ignore.
+        userMode={PERMISSIONS?.[permissions] ?? "guest"}
         onPublish={publishViz}
         PublishMenu={PublishedVizMenu}
       />
