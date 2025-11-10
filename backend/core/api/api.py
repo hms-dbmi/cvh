@@ -641,7 +641,7 @@ def get_visualization(request, visualization_uuid: str):
         raise Http404("Failed to find visualization.")
     return visualization
 
-@api.get("/public/visualizations/{visualization_uuid}", response=VisualizationOut, auth=Authorized())
+@api.get("/public/visualizations/{visualization_uuid}", response=VisualizationOut)
 def get_public_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(
         VisualizationConf, uuid=visualization_uuid, published=True)

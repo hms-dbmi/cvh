@@ -6,29 +6,106 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { LoginButton } from "../features/navigation/components/AuthButtons";
 import { Typography } from "@mui/material";
 import PublishedVisualizationGrid from "../features/visualizations/components/PublishedVisualizationGrid";
+import UpperGridSVG from "../assets/homepage/background-grid-upper.svg";
+import { ArrowBendUpRight } from "@phosphor-icons/react";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
 });
 
+function Images() {
+  return (
+    <Stack direction="row" spacing={2} marginTop="50px" marginBottom="125px">
+      <Box>
+        <Box
+          sx={{ backgroundColor: "#fff", borderRadius: "16px 16px 0 16px" }}
+          height={250}
+          width={450}
+        />
+        <Stack
+          sx={{
+            borderRadius: "0 0 8px 8px",
+            backgroundColor: "#fff",
+            padding: "8px 12px ",
+            float: "right",
+            border: "1px solid #C8CCCE",
+          }}
+          direction="row"
+          spacing={1}
+        >
+          <Typography variant="button" component="p">
+            View Visualization
+          </Typography>
+          <ArrowBendUpRight color="#4E5A63" size={20} />
+        </Stack>
+      </Box>
+      <Box>
+        <Box
+          sx={{
+            backgroundColor: "#fff",
+            marginTop: "125px",
+            borderRadius: "16px 16px 0 16px",
+          }}
+          height={250}
+          width={450}
+        />
+        <Stack
+          sx={{
+            borderRadius: " 0 0 8px 8px",
+            backgroundColor: "#fff",
+            padding: "8px 12px ",
+            float: "right",
+            border: "1px solid #C8CCCE",
+          }}
+          direction="row"
+          spacing={1}
+        >
+          <Typography variant="button" component="p">
+            View Visualization
+          </Typography>
+          <ArrowBendUpRight color="#4E5A63" size={20} />
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
 function RouteComponent() {
   const { isAuthenticated, isLoading } = useAuth0();
 
   return (
-    <Box height="100%" width="100%">
+    <Box height="100%" width="100%" marginBottom="100px">
       <Stack height="100%" width="100%" alignItems="center">
-        <Stack spacing={2} maxWidth={1000} marginY={8}>
-          <Typography variant="h1" component="h1">
-            Create and Share Interactive Genomics Data Visualizations
-          </Typography>
-          <Typography variant="h2" component="p" sx={{ fontWeight: 300 }}>
-            Join our community of researchers and data scientists to explore,
-            visualize and collaborate on complex datasets.
-          </Typography>
+        <Stack
+          alignItems="center"
+          sx={{ backgroundImage: `url(${UpperGridSVG})` }}
+          width="100%"
+        >
+          <Stack spacing={2} marginY={8} alignItems="center">
+            <Typography
+              variant="h1"
+              component="h1"
+              textAlign="center"
+              maxWidth={650}
+              sx={{ fontSize: "45px", fontWeight: 500, lineHeight: "52px" }}
+            >
+              Create and Share Interactive Genomics Data Visualizations
+            </Typography>
+            <Typography
+              variant="h2"
+              component="p"
+              sx={{ fontWeight: 300, lineHeight: "36px" }}
+              maxWidth={800}
+            >
+              Join our community of researchers and data scientists to explore,
+              visualize and collaborate on complex datasets.
+            </Typography>
+          </Stack>
+          <Images />
         </Stack>
         <Stack spacing={5} width="100%" alignItems="center">
           <Box width="90%">
-          <PublishedVisualizationGrid />
+            <PublishedVisualizationGrid />
           </Box>
           {!isAuthenticated && !isLoading && (
             <Stack
