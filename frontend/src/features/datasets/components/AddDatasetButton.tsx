@@ -369,7 +369,7 @@ function AssemblySelect({ name, control }: UseControllerProps<FormValues>) {
 
   return (
     <FormControl>
-      <FormLabel id="demo-controlled-radio-buttons-group">Gender</FormLabel>
+      <FormLabel id="demo-controlled-radio-buttons-group">Assembly</FormLabel>
       <RadioGroup
         aria-labelledby="demo-controlled-radio-buttons-group"
         name="controlled-radio-buttons-group"
@@ -459,7 +459,7 @@ export default function AddDatasetButton({
 }: {
   projectId?: string;
 }) {
-  const { handleSubmit, control, getValues } = useForm({
+  const { handleSubmit, control, watch, reset } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -472,20 +472,27 @@ export default function AddDatasetButton({
   });
   const { mutate } = useCreateDataset();
 
-  const fileType = getValues("file_type");
+  const fileType = watch("file_type");
+
+  const [tab, setTab] = useState(1);
+
+  const handleReset = useCallback(() => {
+    reset();
+    setTab(1);
+  }, [reset, setTab]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
       if (projectId) {
         mutate({ body: { dataset: formData, project_uuid: projectId } });
+        reset();
         return;
       }
       mutate({ body: { dataset: formData } });
+      reset();
     },
-    [mutate, projectId]
+    [mutate, projectId, reset]
   );
-
-  const [tab, setTab] = useState(1);
 
   const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
     setTab(newTab);
@@ -500,9 +507,13 @@ export default function AddDatasetButton({
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
       }}
       actionButtons={
-        tab === 1 ? <Button onClick={() => setTab(2)}>Next</Button> : undefined
+        tab === 1 ? (
+          <Button onClick={() => setTab(2)} disabled={!fileType?.length}>
+            Next
+          </Button>
+        ) : undefined
       }
-      onClose={() => setTab(1)}
+      onClose={handleReset}
     >
       <TabContext value={tab}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
