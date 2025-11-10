@@ -79,9 +79,9 @@ export default function AddTagButton({
     return acc;
   }, []);
 
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
-      tags: initialTags,
+      tags: initialTags.length ? initialTags : [{ tagKey: "", tagValue: "" }],
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -142,6 +142,7 @@ export default function AddTagButton({
       onOpen={closeMenu}
       open={open}
       setOpen={setOpen}
+      onClose={reset}
     >
       <Stack component="form" spacing={2} p={2}>
         {fields.map((_v, i) => (
