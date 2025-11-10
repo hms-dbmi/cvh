@@ -12,7 +12,7 @@ export const Route = createFileRoute("/")({
 });
 
 function RouteComponent() {
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth0();
 
   return (
     <Box height="100%" width="100%">
@@ -30,7 +30,7 @@ function RouteComponent() {
           <Box width="90%">
           <PublishedVisualizationGrid />
           </Box>
-          {!isAuthenticated && (
+          {!isAuthenticated && !isLoading && (
             <Stack
               sx={{ backgroundColor: "black" }}
               paddingX={7}

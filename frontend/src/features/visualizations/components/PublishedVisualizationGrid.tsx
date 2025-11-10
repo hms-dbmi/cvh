@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
+import { Tag } from "@phosphor-icons/react";
 
 function PublishedGridItem({
   visualization,
@@ -42,7 +43,8 @@ function PublishedGridItem({
         {Boolean(visualization?.tags?.length) && (
           <Box>
             <Divider />
-            <Stack p={1.5} spacing={0.5} direction="row" flexWrap="wrap">
+            <Stack p={1.5} spacing={0.5} direction="row" flexWrap="wrap" alignItems="center">
+            <Tag size={20} color="#4E5A63" />
               {visualization?.tags.map((t) => (
                 <Box key={t.key + t.tag}>
                   <Chip
@@ -79,16 +81,21 @@ function PublishedVisualizationGrid() {
   const { data } = useGetPublishedVisualizations({
     options: { params: { query: { limit: 20 } } },
   });
+
+  if (!data) {
+    return null;
+  }
   return (
     <Stack width="100%" spacing={3}>
       <Typography component="p" variant="h4">
         Public Visualizations
       </Typography>
-      <Typography component="p" variant="h5">Discover our top picks</Typography>
+      <Typography component="p" variant="h5">
+        Discover our top picks
+      </Typography>
       <Grid container spacing={2} width="100%">
         {data?.items?.map((v) => (
           <Grid size={3}>
-            {" "}
             <PublishedGridItem visualization={v} />
           </Grid>
         ))}
