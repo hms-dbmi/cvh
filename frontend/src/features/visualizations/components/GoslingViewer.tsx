@@ -118,7 +118,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
       const n_datasets = nDatasets;
 
       try {
-        if (!selectedVizId) {
+        if (!selectedVizId || permissions < 2) {
           return;
         }
         updateViz({
@@ -132,12 +132,12 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
         console.error(e);
       }
     },
-    [updateViz, toastError, selectedVizId]
+    [updateViz, toastError, selectedVizId, permissions]
   );
 
   const publishViz = useCallback(() => {
     try {
-      if (!selectedVizId) {
+      if (!selectedVizId || permissions < 2) {
         return;
       }
       updateViz({
@@ -150,7 +150,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
       toastError("Error publishing visualization");
       console.error(e);
     }
-  }, [updateViz, toastError, selectedVizId]);
+  }, [updateViz, toastError, selectedVizId, permissions]);
 
   if (!formattedDatasets) {
     return null;
