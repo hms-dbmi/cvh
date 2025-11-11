@@ -44,6 +44,11 @@ interface BaseValues {
     | "unknown";
 }
 
+type DataColumn = [
+  string,
+  "nominal" | "quantitative" | "chromosome" | "genomic" | "key",
+][];
+
 interface Simple extends BaseValues {
   file_type: "bigwig" | "vector" | "cooler";
 }
@@ -52,34 +57,30 @@ interface MultiVec extends BaseValues {
   file_type: "multivec";
   row_names: string[];
 }
+
+interface Bam extends BaseValues {
+  file_type: "bam";
+  index_url: string;
+}
 interface IndexAndColumn extends BaseValues {
   file_type: "vcf" | "bed" | "gff";
   index_url: string;
-  data_column?: Record<
-    string,
-    "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-  >;
+  data_column?: DataColumn;
 }
 
 interface ColumnOnly extends BaseValues {
   file_type: "beddb";
-  data_column?: Record<
-    string,
-    "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-  >;
+  data_column?: DataColumn;
 }
 
 interface CSV extends BaseValues {
   file_type: "csv";
   headers: boolean;
   separator: string;
-  data_column: Record<
-    string,
-    "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-  >;
+  data_column: DataColumn;
 }
 
-type FormValues = Simple | MultiVec | IndexAndColumn | ColumnOnly | CSV;
+type FormValues = Simple | Bam | MultiVec | IndexAndColumn | ColumnOnly | CSV;
 
 function FormTextField({
   name,
@@ -162,6 +163,7 @@ const SUPPORTED_FILE_TYPES = [
   "bigwig",
   "vector",
   "multivec",
+  "bam",
   "cooler",
   "vcf",
   "bed",
@@ -184,9 +186,15 @@ const SUPPORTED_ASSEMBLIES = [
 const base = z.object({
   name: z.string(),
   description: z.string(),
-  source_url: z.string().refine((value) => /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value), {
-    message: 'Must be a vaild HTTPS URL.',
-  }),
+  source_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      {
+        message: "Must be a vaild HTTPS URL.",
+      }
+    ),
   data_type: z.string(),
   assembly: z.enum([
     "hg38",
@@ -198,7 +206,7 @@ const base = z.object({
     "mm9",
     "unknown",
   ]),
-}).required()
+});
 
 const simple = base.extend({
   file_type: z.enum(["bigwig", "vector", "cooler"]),
@@ -209,13 +217,36 @@ const multiVec = base.extend({
   row_names: z.array(z.string()),
 });
 
+const bam = base.extend({
+  file_type: z.enum(["bam"]),
+  index_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      {
+        message: "Must be a vaild HTTPS URL.",
+      }
+    ),
+});
+
 const indexAndColumn = base.extend({
   file_type: z.enum(["vcf", "bed", "gff"]),
-  index_url: z.string(),
+  index_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      {
+        message: "Must be a vaild HTTPS URL.",
+      }
+    ),
   data_column: z
-    .record(
-      z.string(),
-      z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"])
+    .array(
+      z.tuple([
+        z.string(),
+        z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"]),
+      ])
     )
     .optional(),
 });
@@ -223,9 +254,11 @@ const indexAndColumn = base.extend({
 const columnOnly = base.extend({
   file_type: z.literal("beddb"),
   data_column: z
-    .record(
-      z.string(),
-      z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"])
+    .array(
+      z.tuple([
+        z.string(),
+        z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"]),
+      ])
     )
     .optional(),
 });
@@ -234,15 +267,19 @@ const csv = base.extend({
   file_type: z.literal("csv"),
   headers: z.boolean(),
   separator: z.string(),
-  data_column: z.record(
-    z.string(),
-    z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"])
-  ),
+  data_column: z
+    .array(
+      z.tuple([
+        z.string(),
+        z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"]),
+      ])
+    )
 });
 
 const schema = z.discriminatedUnion("file_type", [
   simple,
   multiVec,
+  bam,
   indexAndColumn,
   columnOnly,
   csv,

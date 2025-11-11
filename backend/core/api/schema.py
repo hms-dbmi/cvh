@@ -1,6 +1,6 @@
 from ninja import Schema, ModelSchema
 from pydantic import UUID4, EmailStr, Field
-from typing import Optional, Any, List, Literal, Union, Annotated
+from typing import Optional, Any, List, Literal, Union, Annotated, Tuple
 from typing_extensions import Dict, TypedDict
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
@@ -80,10 +80,13 @@ class GoslingDesignerMultiVec(GoslingDataCommon):
     file_type: Literal["multivec"]
     row_names: List[str]
 
+class GoslingDesignerBam(GoslingDataCommon):
+    file_type: Literal["bam"]
+    index_url: str
 
 class GoslingDesignerDataColumn(Schema):
-    data_column: Optional[
-        Dict[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
+    data_column: List[
+        Tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
     ] = None
 
 
@@ -100,14 +103,15 @@ class GoslingDesignerCSV(GoslingDataCommon):
     file_type: Literal["csv"]
     separator: str
     headers: bool
-    data_column: Dict[
-        str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]
+    data_column: List[
+        Tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
     ]
 
 
 GoslingDesignerModel = Annotated[
     Union[
         GoslingDatasetSimple,
+        GoslingDesignerBam,
         GoslingDesignerMultiVec,
         GoslingDesignerIndex,
         GoslingDesignerBEDB,

@@ -542,7 +542,7 @@ export interface components {
             /** Project Uuid */
             project_uuid?: string | null;
             /** Dataset */
-            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
+            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
         };
         /** GoslingDatasetSimple */
         GoslingDatasetSimple: {
@@ -568,9 +568,10 @@ export interface components {
         /** GoslingDesignerBEDB */
         GoslingDesignerBEDB: {
             /** Data Column */
-            data_column?: {
-                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
-            } | null;
+            data_column?: [
+                string,
+                "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
+            ][];
             /**
              * Assembly
              * @enum {string}
@@ -589,6 +590,29 @@ export interface components {
              * @enum {string}
              */
             file_type: "beddb";
+        };
+        /** GoslingDesignerBam */
+        GoslingDesignerBam: {
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "bam";
+            /** Index Url */
+            index_url: string;
         };
         /** GoslingDesignerCSV */
         GoslingDesignerCSV: {
@@ -615,16 +639,18 @@ export interface components {
             /** Headers */
             headers: boolean;
             /** Data Column */
-            data_column: {
-                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
-            };
+            data_column: [
+                string,
+                "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
+            ][];
         };
         /** GoslingDesignerIndex */
         GoslingDesignerIndex: {
             /** Data Column */
-            data_column?: {
-                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
-            } | null;
+            data_column?: [
+                string,
+                "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
+            ][];
             /**
              * Assembly
              * @enum {string}
@@ -674,7 +700,7 @@ export interface components {
             /** Project Uuid */
             project_uuid?: string | null;
             /** Dataset */
-            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
+            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
             /**
              * Uuid
              * Format: uuid4
