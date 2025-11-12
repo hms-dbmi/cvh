@@ -14,14 +14,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Images() {
+
   return (
-    <Stack direction="row" spacing={2} marginTop="50px" marginBottom="125px">
+    <Stack direction="row" spacing={4} marginTop="50px" marginBottom="125px">
       <Box>
         <Box
-          sx={{ backgroundColor: "#fff", borderRadius: "16px 16px 0 16px" }}
-          height={250}
-          width={450}
+          component="img"
+          sx={{ backgroundColor: "#fff", borderRadius: "16px 16px 0 16px", padding: 1 }}
+          height={270}
+          width={470}
+          src={`${import.meta.env.VITE_CLOUDFRONT_URL}/hic_3d.png`}
         />
+
         <Stack
           sx={{
             borderRadius: "0 0 8px 8px",
@@ -31,7 +35,7 @@ function Images() {
             border: "1px solid #C8CCCE",
           }}
           direction="row"
-          spacing={1}
+          spacing={3}
         >
           <Typography variant="button" component="p">
             View Visualization
@@ -40,20 +44,18 @@ function Images() {
         </Stack>
       </Box>
       <Box>
-        <Box
-          sx={{
-            backgroundColor: "#fff",
-            marginTop: "125px",
-            borderRadius: "16px 16px 0 16px",
-          }}
-          height={250}
-          width={450}
+      <Box
+          component="img"
+          sx={{ backgroundColor: "#fff", borderRadius: "16px 16px 0 16px", padding: 1 }}
+          height={270}
+          width={470}
+          src={`${import.meta.env.VITE_CLOUDFRONT_URL}/corces.png`}
         />
         <Stack
           sx={{
             borderRadius: " 0 0 8px 8px",
             backgroundColor: "#fff",
-            padding: "8px 12px ",
+            padding: "8px 12px",
             float: "right",
             border: "1px solid #C8CCCE",
           }}
