@@ -361,9 +361,11 @@ export default function Header() {
             <Link to="/">
               <GoslingIcon height={30} />
             </Link>
-            <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
-              Gosling Designer
-            </Typography>
+            <Link to="/" sx={{ textDecoration: "none" }}>
+              <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
+                Gosling Designer
+              </Typography>
+            </Link>
           </Stack>
           <ProjectsBar />
           <Stack direction="row" spacing={1}>
