@@ -62,7 +62,7 @@ interface Simple extends BaseValues {
 
 interface MultiVec extends BaseValues {
   file_type: "multivec";
-  row_names: string[];
+  row_names: { value: string }[];
 }
 
 interface Bam extends BaseValues {
@@ -223,7 +223,7 @@ const simple = base.extend({
 
 const multiVec = base.extend({
   file_type: z.enum(["multivec"]),
-  row_names: z.array(z.string()),
+  row_names: z.array(z.object({ value: z.string() })),
 });
 
 const columnOptions = [
@@ -391,7 +391,6 @@ function SelectDataType({
                         onChange={field.onChange}
                         value={fileType}
                         isSelected={field.value === fileType}
-                        disabled={["multivec"].includes(fileType)}
                       />
                     </Grid>
                   );
@@ -415,7 +414,6 @@ function SelectDataType({
                     onChange={field.onChange}
                     value={fileType}
                     isSelected={field.value === fileType}
-                    disabled={["csv", "multivec"].includes(fileType)}
                   />
                 </Grid>
               ))}
@@ -467,7 +465,6 @@ function CSVFields({
     defaultValue: false,
   });
 
-  console.log(field);
   return (
     <Stack direction="row" spacing={3}>
       <FormTextField name="separator" label="Separator" control={control} />
@@ -509,9 +506,14 @@ function BasicFields({
       <Stack spacing={1}>
         <Typography>File Information</Typography>
         <FormTextField name="source_url" label="Source URL" control={control} />
-        {field?.value && INDEX_AND_COLUMN_TYPES.includes(field?.value) && (
-          <FormTextField name="index_url" label="Index URL" control={control} />
-        )}
+        {field?.value &&
+          ["bam", ...INDEX_AND_COLUMN_TYPES].includes(field?.value) && (
+            <FormTextField
+              name="index_url"
+              label="Index URL"
+              control={control}
+            />
+          )}
         <FormTextField name="name" label="Name" control={control} />
         <FormTextField
           name="description"
@@ -525,6 +527,44 @@ function BasicFields({
   );
 }
 
+function RowNames({
+  control,
+}: Pick<UseControllerProps<FormValues>, "control">) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "row_names",
+  });
+
+  return (
+    <Box>
+      <Stack spacing={1.5}>
+        <Typography>Row Names</Typography>
+        {fields.map((_v, i) => (
+          <Stack direction="row" spacing={1} key={_v.id}>
+            <FormTextField
+              name={`row_names.${i}`}
+              label="Row Name"
+              control={control}
+              placeholder="Row name..."
+            />
+            <IconButton onClick={() => remove(i)}>
+              <Trash size={24} color="#8A9EA8" />
+            </IconButton>
+          </Stack>
+        ))}
+      </Stack>
+      <Button
+        variant="contained"
+        sx={{ backgroundColor: "#EFF3F5", marginTop: 2 }}
+        color="inherit"
+        onClick={() => append({ value: "" })}
+      >
+        New Row Name
+      </Button>
+    </Box>
+  );
+}
+
 function DataColumns({
   control,
 }: Pick<UseControllerProps<FormValues>, "control">) {
@@ -532,7 +572,6 @@ function DataColumns({
     control,
     name: "data_column",
   });
-
   return (
     <Box>
       <Stack spacing={1.5}>
@@ -568,6 +607,7 @@ function DataColumns({
     </Box>
   );
 }
+
 export default function AddDatasetButton({
   projectId,
 }: {
@@ -640,8 +680,20 @@ export default function AddDatasetButton({
             },
           });
         } else if (
+          formData?.file_type === "multivec" &&
+          "row_names" in formData &&
+          formData?.row_names?.length
+        ) {
+          const row_names = formData?.row_names.map((v) => v?.value);
+
+          mutate({
+            body: {
+              dataset: { ...formData, ...{ row_names } },
+              project_uuid: projectId,
+            },
+          });
+        } else if (
           formData?.file_type === "bam" ||
-          formData?.file_type === "multivec" ||
           formData?.file_type === "bigwig" ||
           formData?.file_type === "vector" ||
           formData?.file_type === "cooler"
@@ -660,6 +712,7 @@ export default function AddDatasetButton({
     [mutate, projectId, handleReset]
   );
 
+  console.log(errors);
   const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
     setTab(newTab);
   };
@@ -671,7 +724,6 @@ export default function AddDatasetButton({
       buttonProps={{
         startIcon: <UploadSimple size={20} />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
-        disabled: Object.keys(errors)?.length > 0,
       }}
       actionButtons={
         tab === 1 ? (
@@ -704,6 +756,7 @@ export default function AddDatasetButton({
         <TabPanel value={2}>
           <Stack spacing={3}>
             <BasicFields control={control} />
+            {fileType === "multivec" && <RowNames control={control} />}
             {["vcf", "bed", "gff", "csv", "beddb"].includes(fileType) && (
               <DataColumns control={control} />
             )}
