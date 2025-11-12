@@ -225,7 +225,7 @@ const simple = base.extend({
 
 const multiVec = base.extend({
   file_type: z.enum(["multivec"]),
-  row_names: z.array(z.object({ value: z.string() })),
+  row_names: z.array(z.object({ value: z.string() })).min(1),
 });
 
 const columnOptions = [
@@ -342,10 +342,10 @@ const tooltips: Record<string, string> = {
 };
 
 const TooltipIcon = forwardRef<SVGSVGElement, IconProps>(function MyComponent(
-  { size, color }: IconProps,
+  props,
   ref
 ) {
-  return <Info size={size} color={color} ref={ref} />;
+  return <Info {...props} ref={ref} />;
 });
 
 function DatasetSelectionButton({
@@ -382,7 +382,6 @@ function DatasetSelectionButton({
         sx: sharedSxProps,
       };
 
-  console.log(value);
   return (
     <Button
       {...rest}
@@ -575,7 +574,11 @@ function BasicFields({
 
 function RowNames({
   control,
-}: Pick<UseControllerProps<FormValues>, "control">) {
+  errorMessage,
+}: { errorMessage?: string | false } & Pick<
+  UseControllerProps<FormValues>,
+  "control"
+>) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "row_names",
@@ -585,6 +588,7 @@ function RowNames({
     <Box>
       <Stack spacing={1.5}>
         <Typography>Row Names</Typography>
+        {errorMessage && <FormHelperText error>{errorMessage}</FormHelperText>}
         {fields.map((_v, i) => (
           <Stack direction="row" spacing={1} key={_v.id}>
             <FormTextField
@@ -805,7 +809,15 @@ export default function AddDatasetButton({
         <TabPanel value={2}>
           <Stack spacing={3}>
             <BasicFields control={control} />
-            {fileType === "multivec" && <RowNames control={control} />}
+            {fileType === "multivec" && (
+              <RowNames
+                control={control}
+                errorMessage={
+                  "row_names" in formState.errors &&
+                  formState?.errors?.["row_names"]?.message
+                }
+              />
+            )}
             {["vcf", "bed", "gff", "csv", "beddb"].includes(fileType) && (
               <DataColumns
                 control={control}
