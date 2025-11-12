@@ -2,7 +2,12 @@ import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button, { ButtonProps } from "@mui/material/Button";
-import { useForm, useController, UseControllerProps } from "react-hook-form";
+import {
+  useForm,
+  useController,
+  UseControllerProps,
+  useFieldArray,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import FormGroup from "@mui/material/FormGroup";
@@ -21,7 +26,10 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Switch from "@mui/material/Switch";
-import { UploadSimple, Info } from "@phosphor-icons/react";
+import { UploadSimple, Info, Trash } from "@phosphor-icons/react";
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import FormHelperText from "@mui/material/FormHelperText";
 
 const text = {
   button: "Add Data Source",
@@ -44,46 +52,48 @@ interface BaseValues {
     | "unknown";
 }
 
+type DataColumn = {
+  name: string;
+  type: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
+}[];
+
 interface Simple extends BaseValues {
   file_type: "bigwig" | "vector" | "cooler";
 }
 
 interface MultiVec extends BaseValues {
   file_type: "multivec";
-  row_names: string[];
+  row_names: { value: string }[];
+}
+
+interface Bam extends BaseValues {
+  file_type: "bam";
+  index_url: string;
 }
 interface IndexAndColumn extends BaseValues {
   file_type: "vcf" | "bed" | "gff";
   index_url: string;
-  data_column?: Record<
-    string,
-    "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-  >;
+  data_column?: DataColumn;
 }
 
 interface ColumnOnly extends BaseValues {
   file_type: "beddb";
-  data_column?: Record<
-    string,
-    "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-  >;
+  data_column?: DataColumn;
 }
 
 interface CSV extends BaseValues {
   file_type: "csv";
   headers: boolean;
   separator: string;
-  data_column: Record<
-    string,
-    "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-  >;
+  data_column: DataColumn;
 }
 
-type FormValues = Simple | MultiVec | IndexAndColumn | ColumnOnly | CSV;
+type FormValues = Simple | Bam | MultiVec | IndexAndColumn | ColumnOnly | CSV;
 
 function FormTextField({
   name,
   control,
+  defaultValue,
   label,
   ...rest
 }: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
@@ -91,6 +101,7 @@ function FormTextField({
     name,
     control,
     rules: { required: true },
+    defaultValue,
   });
 
   return (
@@ -108,12 +119,12 @@ function FormTextField({
   );
 }
 
-/*
 function FormSelectField({
   name,
   control,
   label,
   options,
+  defaultValue,
   ...rest
 }: UseControllerProps<FormValues> &
   Partial<TextFieldProps> & { options: string[] }) {
@@ -121,6 +132,7 @@ function FormSelectField({
     name,
     control,
     rules: { required: true },
+    defaultValue,
   });
 
   return (
@@ -144,7 +156,6 @@ function FormSelectField({
     </TextField>
   );
 }
-*/
 
 //TODO: Dedupe enums
 // const BASIC_TYPES = ["bigwig", "vector", "cooler"];
@@ -162,6 +173,7 @@ const SUPPORTED_FILE_TYPES = [
   "bigwig",
   "vector",
   "multivec",
+  "bam",
   "cooler",
   "vcf",
   "bed",
@@ -182,11 +194,17 @@ const SUPPORTED_ASSEMBLIES = [
 ];
 
 const base = z.object({
-  name: z.string(),
+  name: z.string().trim().min(1, { message: "Name cannot be empty" }),
   description: z.string(),
-  source_url: z.string().refine((value) => /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value), {
-    message: 'Must be a vaild HTTPS URL.',
-  }),
+  source_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      {
+        message: "Must be a vaild HTTPS URL.",
+      }
+    ),
   data_type: z.string(),
   assembly: z.enum([
     "hg38",
@@ -198,7 +216,7 @@ const base = z.object({
     "mm9",
     "unknown",
   ]),
-}).required()
+});
 
 const simple = base.extend({
   file_type: z.enum(["bigwig", "vector", "cooler"]),
@@ -206,16 +224,53 @@ const simple = base.extend({
 
 const multiVec = base.extend({
   file_type: z.enum(["multivec"]),
-  row_names: z.array(z.string()),
+  row_names: z.array(z.object({ value: z.string() })),
+});
+
+const columnOptions = [
+  "nominal",
+  "quantitative",
+  "chromosome",
+  "genomic",
+  "key",
+];
+
+const bam = base.extend({
+  file_type: z.enum(["bam"]),
+  index_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      {
+        message: "Must be a vaild HTTPS URL.",
+      }
+    ),
 });
 
 const indexAndColumn = base.extend({
   file_type: z.enum(["vcf", "bed", "gff"]),
-  index_url: z.string(),
+  index_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      {
+        message: "Must be a vaild HTTPS URL.",
+      }
+    ),
   data_column: z
-    .record(
-      z.string(),
-      z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"])
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.enum([
+          "nominal",
+          "quantitative",
+          "chromosome",
+          "genomic",
+          "key",
+        ]),
+      })
     )
     .optional(),
 });
@@ -223,9 +278,17 @@ const indexAndColumn = base.extend({
 const columnOnly = base.extend({
   file_type: z.literal("beddb"),
   data_column: z
-    .record(
-      z.string(),
-      z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"])
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.enum([
+          "nominal",
+          "quantitative",
+          "chromosome",
+          "genomic",
+          "key",
+        ]),
+      })
     )
     .optional(),
 });
@@ -233,16 +296,27 @@ const columnOnly = base.extend({
 const csv = base.extend({
   file_type: z.literal("csv"),
   headers: z.boolean(),
-  separator: z.string(),
-  data_column: z.record(
-    z.string(),
-    z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"])
-  ),
+  separator: z.string().trim().min(1),
+  data_column: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.enum([
+          "nominal",
+          "quantitative",
+          "chromosome",
+          "genomic",
+          "key",
+        ]),
+      })
+    )
+    .min(1),
 });
 
 const schema = z.discriminatedUnion("file_type", [
   simple,
   multiVec,
+  bam,
   indexAndColumn,
   columnOnly,
   csv,
@@ -326,7 +400,6 @@ function SelectDataType({
                         onChange={field.onChange}
                         value={fileType}
                         isSelected={field.value === fileType}
-                        disabled={["csv", "multivec"].includes(fileType)}
                       />
                     </Grid>
                   );
@@ -350,7 +423,6 @@ function SelectDataType({
                     onChange={field.onChange}
                     value={fileType}
                     isSelected={field.value === fileType}
-                    disabled={["csv", "multivec"].includes(fileType)}
                   />
                 </Grid>
               ))}
@@ -399,15 +471,18 @@ function CSVFields({
     name: "headers",
     control,
     rules: { required: true },
+    defaultValue: false,
   });
+
   return (
     <Stack direction="row" spacing={3}>
       <FormTextField name="separator" label="Separator" control={control} />
       <FormControlLabel
         control={
           <Switch
+            {...field}
+            onChange={(_e, checked) => field.onChange(checked)}
             checked={field.value}
-            onChange={field.onChange}
             slotProps={{ input: { "aria-label": "controlled" } }}
           />
         }
@@ -440,9 +515,14 @@ function BasicFields({
       <Stack spacing={1}>
         <Typography>File Information</Typography>
         <FormTextField name="source_url" label="Source URL" control={control} />
-        {field?.value && INDEX_AND_COLUMN_TYPES.includes(field?.value) && (
-          <FormTextField name="index_url" label="Index URL" control={control} />
-        )}
+        {field?.value &&
+          ["bam", ...INDEX_AND_COLUMN_TYPES].includes(field?.value) && (
+            <FormTextField
+              name="index_url"
+              label="Index URL"
+              control={control}
+            />
+          )}
         <FormTextField name="name" label="Name" control={control} />
         <FormTextField
           name="description"
@@ -456,12 +536,100 @@ function BasicFields({
   );
 }
 
+function RowNames({
+  control,
+}: Pick<UseControllerProps<FormValues>, "control">) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "row_names",
+  });
+
+  return (
+    <Box>
+      <Stack spacing={1.5}>
+        <Typography>Row Names</Typography>
+        {fields.map((_v, i) => (
+          <Stack direction="row" spacing={1} key={_v.id}>
+            <FormTextField
+              name={`row_names.${i}.value`}
+              label="Row Name"
+              control={control}
+              placeholder="Row name..."
+            />
+            <IconButton onClick={() => remove(i)}>
+              <Trash size={24} color="#8A9EA8" />
+            </IconButton>
+          </Stack>
+        ))}
+      </Stack>
+      <Button
+        variant="contained"
+        sx={{ backgroundColor: "#EFF3F5", marginTop: 2 }}
+        color="inherit"
+        onClick={() => append({ value: "" })}
+      >
+        New Row Name
+      </Button>
+    </Box>
+  );
+}
+
+function DataColumns({
+  control,
+  errorMessage,
+}: { errorMessage?: string | false } & Pick<
+  UseControllerProps<FormValues>,
+  "control"
+>) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "data_column",
+  });
+  return (
+    <Box>
+      <Stack spacing={1.5}>
+        <Typography>Data Column Headers</Typography>
+        {errorMessage && <FormHelperText error>{errorMessage}</FormHelperText>}
+        {fields.map((_v, i) => (
+          <Stack direction="row" spacing={1}>
+            <FormTextField
+              name={`data_column.${i}.name`}
+              label="Column Name"
+              control={control}
+              placeholder="Column name..."
+            />
+            <FormSelectField
+              name={`data_column.${i}.type`}
+              label="Column Title"
+              control={control}
+              options={columnOptions}
+            />
+            <IconButton onClick={() => remove(i)}>
+              <Trash size={24} color="#8A9EA8" />
+            </IconButton>
+          </Stack>
+        ))}
+      </Stack>
+      <Button
+        variant="contained"
+        sx={{ backgroundColor: "#EFF3F5", marginTop: 2 }}
+        color="inherit"
+        onClick={() => append({ name: "", type: "nominal" })}
+      >
+        New Column
+      </Button>
+    </Box>
+  );
+}
+
 export default function AddDatasetButton({
   projectId,
 }: {
   projectId?: string;
 }) {
-  const { handleSubmit, control, watch, reset } = useForm({
+  const [open, setOpen] = useState(false);
+
+  const { handleSubmit, control, watch, reset, formState } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -480,20 +648,79 @@ export default function AddDatasetButton({
 
   const handleReset = useCallback(() => {
     reset();
+    setOpen(false);
     setTab(1);
   }, [reset, setTab]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
       if (projectId) {
-        mutate({ body: { dataset: formData, project_uuid: projectId } });
-        reset();
+        if (
+          "data_column" in formData &&
+          formData?.data_column?.length &&
+          ["vcf", "bed", "gff", "csv", "beddb"].includes(formData?.file_type)
+        ) {
+          const data_column = formData?.data_column.reduce<
+            [
+              string,
+              "nominal" | "quantitative" | "chromosome" | "genomic" | "key",
+            ][]
+          >((acc, curr) => {
+            if (columnOptions.includes(curr.type)) {
+              acc.push([curr.name, curr.type]);
+            }
+            return acc;
+          }, []);
+
+          mutate({
+            body: {
+              dataset: { ...formData, ...{ data_column } },
+              project_uuid: projectId,
+            },
+          });
+        } else if (
+          formData?.file_type === "vcf" ||
+          formData?.file_type === "bed" ||
+          formData?.file_type === "gff" ||
+          formData?.file_type === "beddb"
+        ) {
+          mutate({
+            body: {
+              dataset: { ...formData, data_column: undefined },
+              project_uuid: projectId,
+            },
+          });
+        } else if (
+          formData?.file_type === "multivec" &&
+          "row_names" in formData &&
+          formData?.row_names?.length
+        ) {
+          const row_names = formData?.row_names.map((v) => v?.value);
+
+          mutate({
+            body: {
+              dataset: { ...formData, ...{ row_names } },
+              project_uuid: projectId,
+            },
+          });
+        } else if (
+          formData?.file_type === "bam" ||
+          formData?.file_type === "bigwig" ||
+          formData?.file_type === "vector" ||
+          formData?.file_type === "cooler"
+        ) {
+          mutate({
+            body: {
+              dataset: formData,
+              project_uuid: projectId,
+            },
+          });
+        }
+        handleReset();
         return;
       }
-      mutate({ body: { dataset: formData } });
-      reset();
     },
-    [mutate, projectId, reset]
+    [mutate, projectId, handleReset]
   );
 
   const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
@@ -502,6 +729,8 @@ export default function AddDatasetButton({
 
   return (
     <DialogButton
+      open={open}
+      setOpen={setOpen}
       text={text}
       onSubmit={handleSubmit(onSubmit)}
       buttonProps={{
@@ -537,7 +766,19 @@ export default function AddDatasetButton({
           />
         </TabPanel>
         <TabPanel value={2}>
-          <BasicFields control={control} />
+          <Stack spacing={3}>
+            <BasicFields control={control} />
+            {fileType === "multivec" && <RowNames control={control} />}
+            {["vcf", "bed", "gff", "csv", "beddb"].includes(fileType) && (
+              <DataColumns
+                control={control}
+                errorMessage={
+                  "data_column" in formState.errors &&
+                  formState?.errors?.["data_column"]?.message
+                }
+              />
+            )}
+          </Stack>
         </TabPanel>
       </TabContext>
     </DialogButton>

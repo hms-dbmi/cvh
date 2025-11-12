@@ -2,7 +2,6 @@ import {
   PropsWithChildren,
   ReactNode,
   useCallback,
-  useState,
   FormEvent,
 } from "react";
 
@@ -23,6 +22,8 @@ interface DialogText {
 }
 
 interface CoreFormDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onClose?: () => void;
   onOpen?: () => void;
   text: DialogText;
@@ -56,6 +57,8 @@ type DialogProps =
 const sharedButtonProps = { sx: { padding: "12px 16px", borderRadius: "8px" } };
 
 export default function DialogButton({
+  open,
+  setOpen,
   text,
   onSubmit,
   onClose,
@@ -68,8 +71,6 @@ export default function DialogButton({
   isButton = true,
   isMenuItem = false,
 }: PropsWithChildren<DialogProps>) {
-  const [open, setOpen] = useState(false);
-
   const handleClickOpen = useCallback(() => {
     if (onOpen) {
       // onOpen();
@@ -88,10 +89,9 @@ export default function DialogButton({
     (e: FormEvent<HTMLFormElement>) => {
       if (onSubmit) {
         onSubmit(e);
-        handleClose();
       }
     },
-    [onSubmit, handleClose]
+    [onSubmit]
   );
 
   return (

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
@@ -41,7 +41,7 @@ function FormTextField({
 }
 
 const schema = z.object({
-  name: z.string(),
+  name: z.string().trim().min(1, { message: "Name cannot be empty" }),
   description: z.string().optional(),
   author: z.string().optional(),
 });
@@ -84,17 +84,26 @@ export default function EditVisualizationDialog({
           author,
         },
       });
+      setOpen(false);
     },
-    [mutate, visualizationId]
+    [mutate, visualizationId, setOpen]
   );
 
+  useEffect(() => {
+    reset({
+      name: initialName,
+      description: initialDescription,
+      author: initialAuthor,
+    });
+  }, [reset, initialName, initialDescription, initialAuthor, open]);
+
   const handleReset = useCallback(() => {
-   reset({
-    name: initialName,
-    description: initialDescription,
-    author: initialAuthor,
-  })
-  }, [initialAuthor, initialDescription, initialName, reset])
+    reset({
+      name: initialName,
+      description: initialDescription,
+      author: initialAuthor,
+    });
+  }, [initialAuthor, initialDescription, initialName, reset]);
 
   return (
     <DialogButtonCopy
