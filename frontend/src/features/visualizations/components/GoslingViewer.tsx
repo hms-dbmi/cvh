@@ -42,6 +42,7 @@ const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]) => {
     header: dataset?.headers ?? undefined,
     separator: dataset?.separator ?? undefined,
     note: dataset?.description ?? undefined,
+    rowNames: dataset?.row_names ?? undefined,
     ...(dataset.file_type === "csv"
       ? { fields: dataset?.data_column ?? undefined }
       : { optionalFields: dataset?.data_column ?? undefined }),
