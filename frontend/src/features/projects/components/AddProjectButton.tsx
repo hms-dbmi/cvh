@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
@@ -45,13 +45,14 @@ function FormTextField({
 
 const schema = z
   .object({
-    name: z.string(),
+    name: z.string().trim().min(1, { message: "Name cannot be empty" }),
     description: z.string(),
   })
   .required();
 
 export default function AddProjectButton() {
-  const { handleSubmit, control } = useForm({
+  const [open, setOpen] = useState(false);
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -62,15 +63,26 @@ export default function AddProjectButton() {
 
   const { mutate } = useCreateProject();
 
+  const handleReset = useCallback(() => {
+    setOpen(false);
+    reset();
+  }, [setOpen, reset]);
+
   const onSubmit = useCallback(
     ({ name, description }: FormValues) => {
       mutate({ body: { name, description, private: true } });
+      handleReset();
     },
-    [mutate]
+    [mutate, handleReset]
   );
 
   return (
-    <DialogButton text={text} onSubmit={handleSubmit(onSubmit)}>
+    <DialogButton
+      open={open}
+      setOpen={setOpen}
+      text={text}
+      onSubmit={handleSubmit(onSubmit)}
+    >
       <Stack spacing={1} mt={2}>
         <FormTextField name="name" label="Name" control={control} />
         <FormTextField
