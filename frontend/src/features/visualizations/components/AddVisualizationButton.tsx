@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
@@ -61,6 +61,8 @@ export default function AddVisualizationButton({
   setSelectedVizId?: (id?: string) => void;
   projectId: string;
 }) {
+  const [open, setOpen] = useState(false);
+
   const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       name: "",
@@ -71,19 +73,26 @@ export default function AddVisualizationButton({
     resolver: zodResolver(schema),
   });
 
+  const handleReset = useCallback(() => {
+    reset();
+    setOpen(false);
+  }, [reset, setOpen]);
+
   const { mutate } = useCreateVisualization(setSelectedVizId);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
       mutate({ body: { ...formData, project_uuid: projectId } });
-      reset();
+      handleReset();
       return;
     },
-    [mutate, projectId, reset]
+    [mutate, projectId, handleReset]
   );
 
   return (
     <DialogButton
+      open={open}
+      setOpen={setOpen}
       text={text}
       onSubmit={handleSubmit(onSubmit)}
       buttonProps={{
