@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
@@ -56,7 +56,7 @@ export default function EditProfileDialog({
   setOpen: (o: boolean) => void;
   open: boolean;
 }) {
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       firstName: initialFirstName ?? "",
       lastName: initialLastName ?? "",
@@ -67,6 +67,13 @@ export default function EditProfileDialog({
 
   const { mutate } = useUpdateUser();
 
+  useEffect(() => {
+    reset({
+      firstName: initialFirstName ?? "",
+      lastName: initialLastName ?? "",
+    });
+  }, [reset, initialFirstName, initialLastName, open]);
+
   const onSubmit = useCallback(
     ({ firstName, lastName }: FormValues) => {
       mutate({
@@ -75,8 +82,9 @@ export default function EditProfileDialog({
           last_name: lastName,
         },
       });
+      setOpen(false);
     },
-    [mutate]
+    [mutate, setOpen]
   );
 
   return (
