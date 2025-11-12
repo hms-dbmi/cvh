@@ -49,7 +49,7 @@ function FormTextField({
 }
 
 const schema = z.object({
-  name: z.string(),
+  name: z.string().trim().min(1, { message: "Name cannot be empty" }),
   description: z.string().optional(),
   author: z.string().optional(),
 });
