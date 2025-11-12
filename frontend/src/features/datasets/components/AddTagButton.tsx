@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
@@ -69,14 +69,19 @@ export default function AddTagButton({
   setOpen: (o: boolean) => void;
   open: boolean;
 }) {
-  const initialTags = dataset.tags.reduce<
-    { tagKey: string; tagValue: string }[]
-  >((acc, { tag, key }) => {
-    if (tag && key) {
-      acc.push({ tagKey: key, tagValue: tag });
-    }
-    return acc;
-  }, []);
+  const initialTags = useMemo(
+    () =>
+      dataset.tags.reduce<{ tagKey: string; tagValue: string }[]>(
+        (acc, { tag, key }) => {
+          if (tag && key) {
+            acc.push({ tagKey: key, tagValue: tag });
+          }
+          return acc;
+        },
+        []
+      ),
+    [dataset.tags]
+  );
 
   const { handleSubmit, control, reset } = useForm({
     defaultValues: {
@@ -88,16 +93,14 @@ export default function AddTagButton({
 
   const { mutate } = useTagDataset();
 
-  const [showTextField, setShowTextField] = useState(false);
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: "tags",
   });
 
-  const toggleTextField = useCallback(() => {
-    setShowTextField(!showTextField);
-  }, [setShowTextField, showTextField]);
+  useEffect(() => {
+    reset({ tags: initialTags });
+  }, [reset, initialTags]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
@@ -112,9 +115,9 @@ export default function AddTagButton({
       mutate({
         body: { tags: tagsList, uuid: datasetId, project_uuid: projectId },
       });
-      toggleTextField();
+      setOpen(false);
     },
-    [mutate, toggleTextField, datasetId, projectId]
+    [mutate, datasetId, projectId, setOpen]
   );
 
   return (
