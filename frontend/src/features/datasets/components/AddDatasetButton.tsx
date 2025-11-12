@@ -712,7 +712,6 @@ export default function AddDatasetButton({
     [mutate, projectId, handleReset]
   );
 
-  console.log(errors);
   const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
     setTab(newTab);
   };
