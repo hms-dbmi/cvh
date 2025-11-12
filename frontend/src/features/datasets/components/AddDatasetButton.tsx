@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, forwardRef } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button, { ButtonProps } from "@mui/material/Button";
@@ -26,10 +26,11 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Switch from "@mui/material/Switch";
-import { UploadSimple, Info, Trash } from "@phosphor-icons/react";
+import { UploadSimple, Info, Trash, IconProps } from "@phosphor-icons/react";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import FormHelperText from "@mui/material/FormHelperText";
+import Tooltip from "@mui/material/Tooltip";
 
 const text = {
   button: "Add Data Source",
@@ -224,7 +225,9 @@ const simple = base.extend({
 
 const multiVec = base.extend({
   file_type: z.enum(["multivec"]),
-  row_names: z.array(z.object({ value: z.string() })),
+  row_names: z.array(z.object({ value: z.string() })).min(1, {
+    message: "Row names cannot be empty",
+  }),
 });
 
 const columnOptions = [
@@ -310,7 +313,7 @@ const csv = base.extend({
         ]),
       })
     )
-    .min(1),
+    .min(1, { message: "Data column headers cannot be empty" }),
 });
 
 const schema = z.discriminatedUnion("file_type", [
@@ -321,6 +324,30 @@ const schema = z.discriminatedUnion("file_type", [
   columnOnly,
   csv,
 ]);
+
+const tooltips: Record<string, string> = {
+  bam: "Binary Alignment Map (BAM) is the comprehensive raw data of genome sequencing; it consists of the lossless, compressed binary representation of the Sequence Alignment Map-files.",
+  bigwig:
+    "Binary Wiggle (BigWig) is a file format for dense, continuous genomic data.",
+  cooler:
+    "Cooler is a format for storing genomic interaction matrices in a scalable, compressed, and indexed HDF5 structure.",
+  vcf: "Variant Call Format (VCF) contains information about genetic variants. Must have an accompanying index file.",
+  bed: "Browser Extensible Data (BED) format defines genomic regions or intervals. Must have an accompanying index file.",
+  gff: "General Feature Format (GFF) describes genomic features and their coordinates. Must have an accompanying index file.",
+  beddb:
+    "BED Database (BEDDB) is a database-optimized format derived from BED for scalable data exploration.",
+  csv: "Any small enough tabular data files, such as tsv, csv, BED, BEDPE, and GFF, can be loaded using csv data specification",
+  multivec:
+    "Two-dimensional quantitative values, one axis for genomic coordinate and the other for different samples, can be converted into HiGlass multivector format data.",
+  vector:
+    "One-dimensional quantitative values along genomic position (e.g., bigwig) can be converted into HiGlass vector format data.",
+};
+
+const TooltipIcon = forwardRef<SVGSVGElement, IconProps>(
+  function MyComponent(props, ref) {
+    return <Info {...props} ref={ref} />;
+  }
+);
 
 function DatasetSelectionButton({
   onChange,
@@ -362,7 +389,17 @@ function DatasetSelectionButton({
       onClick={onClick}
       {...buttonProps}
       fullWidth
-      endIcon={<Info size={24} color={isSelected ? "#ffffff" : "#4E5A63"} />}
+      endIcon={
+        <Tooltip
+          title={
+            value in tooltips && tooltips?.[value]
+              ? tooltips?.[value]
+              : undefined
+          }
+        >
+          <TooltipIcon size={24} color={isSelected ? "#ffffff" : "#4E5A63"} />
+        </Tooltip>
+      }
     >
       {value}
     </Button>
@@ -538,7 +575,11 @@ function BasicFields({
 
 function RowNames({
   control,
-}: Pick<UseControllerProps<FormValues>, "control">) {
+  errorMessage,
+}: { errorMessage?: string | false } & Pick<
+  UseControllerProps<FormValues>,
+  "control"
+>) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "row_names",
@@ -548,6 +589,7 @@ function RowNames({
     <Box>
       <Stack spacing={1.5}>
         <Typography>Row Names</Typography>
+        {errorMessage && <FormHelperText error>{errorMessage}</FormHelperText>}
         {fields.map((_v, i) => (
           <Stack direction="row" spacing={1} key={_v.id}>
             <FormTextField
@@ -768,7 +810,15 @@ export default function AddDatasetButton({
         <TabPanel value={2}>
           <Stack spacing={3}>
             <BasicFields control={control} />
-            {fileType === "multivec" && <RowNames control={control} />}
+            {fileType === "multivec" && (
+              <RowNames
+                control={control}
+                errorMessage={
+                  "row_names" in formState.errors &&
+                  formState?.errors?.["row_names"]?.message
+                }
+              />
+            )}
             {["vcf", "bed", "gff", "csv", "beddb"].includes(fileType) && (
               <DataColumns
                 control={control}
