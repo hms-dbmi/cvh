@@ -225,7 +225,9 @@ const simple = base.extend({
 
 const multiVec = base.extend({
   file_type: z.enum(["multivec"]),
-  row_names: z.array(z.object({ value: z.string() })).min(1),
+  row_names: z.array(z.object({ value: z.string() })).min(1, {
+    message: "Row names cannot be empty",
+  }),
 });
 
 const columnOptions = [
@@ -311,7 +313,7 @@ const csv = base.extend({
         ]),
       })
     )
-    .min(1),
+    .min(1, { message: "Data column headers cannot be empty" }),
 });
 
 const schema = z.discriminatedUnion("file_type", [
@@ -341,12 +343,11 @@ const tooltips: Record<string, string> = {
     "One-dimensional quantitative values along genomic position (e.g., bigwig) can be converted into HiGlass vector format data.",
 };
 
-const TooltipIcon = forwardRef<SVGSVGElement, IconProps>(function MyComponent(
-  props,
-  ref
-) {
-  return <Info {...props} ref={ref} />;
-});
+const TooltipIcon = forwardRef<SVGSVGElement, IconProps>(
+  function MyComponent(props, ref) {
+    return <Info {...props} ref={ref} />;
+  }
+);
 
 function DatasetSelectionButton({
   onChange,
