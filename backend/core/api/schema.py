@@ -144,6 +144,7 @@ class DatasetOut(ModelSchema):
             "data_type",
             "assembly",
             "data_column",
+            "row_names",
             "headers",
             "index_url",
             "separator",

@@ -719,6 +719,8 @@ export interface components {
             assembly?: string | null;
             /** Data Column */
             data_column?: Record<string, never> | null;
+            /** Row Names */
+            row_names?: unknown[] | null;
             /**
              * Headers
              * @default false
@@ -805,6 +807,8 @@ export interface components {
             assembly?: string | null;
             /** Data Column */
             data_column?: Record<string, never> | null;
+            /** Row Names */
+            row_names?: unknown[] | null;
             /**
              * Headers
              * @default false

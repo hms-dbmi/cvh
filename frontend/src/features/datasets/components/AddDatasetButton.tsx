@@ -29,6 +29,7 @@ import Switch from "@mui/material/Switch";
 import { UploadSimple, Info, Trash } from "@phosphor-icons/react";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
+import FormHelperText from "@mui/material/FormHelperText";
 
 const text = {
   button: "Add Data Source",
@@ -193,7 +194,7 @@ const SUPPORTED_ASSEMBLIES = [
 ];
 
 const base = z.object({
-  name: z.string().min(1, { message: "Name cannot be empty" }),
+  name: z.string().trim().min(1, { message: "Name cannot be empty" }),
   description: z.string(),
   source_url: z
     .string()
@@ -295,13 +296,21 @@ const columnOnly = base.extend({
 const csv = base.extend({
   file_type: z.literal("csv"),
   headers: z.boolean(),
-  separator: z.string(),
-  data_column: z.array(
-    z.object({
-      name: z.string(),
-      type: z.enum(["nominal", "quantitative", "chromosome", "genomic", "key"]),
-    })
-  ),
+  separator: z.string().trim().min(1),
+  data_column: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.enum([
+          "nominal",
+          "quantitative",
+          "chromosome",
+          "genomic",
+          "key",
+        ]),
+      })
+    )
+    .min(1),
 });
 
 const schema = z.discriminatedUnion("file_type", [
@@ -542,7 +551,7 @@ function RowNames({
         {fields.map((_v, i) => (
           <Stack direction="row" spacing={1} key={_v.id}>
             <FormTextField
-              name={`row_names.${i}`}
+              name={`row_names.${i}.value`}
               label="Row Name"
               control={control}
               placeholder="Row name..."
@@ -567,7 +576,11 @@ function RowNames({
 
 function DataColumns({
   control,
-}: Pick<UseControllerProps<FormValues>, "control">) {
+  errorMessage,
+}: { errorMessage?: string | false } & Pick<
+  UseControllerProps<FormValues>,
+  "control"
+>) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "data_column",
@@ -576,6 +589,7 @@ function DataColumns({
     <Box>
       <Stack spacing={1.5}>
         <Typography>Data Column Headers</Typography>
+        {errorMessage && <FormHelperText error>{errorMessage}</FormHelperText>}
         {fields.map((_v, i) => (
           <Stack direction="row" spacing={1}>
             <FormTextField
@@ -613,13 +627,9 @@ export default function AddDatasetButton({
 }: {
   projectId?: string;
 }) {
-  const {
-    handleSubmit,
-    control,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm({
+  const [open, setOpen] = useState(false);
+
+  const { handleSubmit, control, watch, reset, formState } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -638,6 +648,7 @@ export default function AddDatasetButton({
 
   const handleReset = useCallback(() => {
     reset();
+    setOpen(false);
     setTab(1);
   }, [reset, setTab]);
 
@@ -718,6 +729,8 @@ export default function AddDatasetButton({
 
   return (
     <DialogButton
+      open={open}
+      setOpen={setOpen}
       text={text}
       onSubmit={handleSubmit(onSubmit)}
       buttonProps={{
@@ -757,7 +770,13 @@ export default function AddDatasetButton({
             <BasicFields control={control} />
             {fileType === "multivec" && <RowNames control={control} />}
             {["vcf", "bed", "gff", "csv", "beddb"].includes(fileType) && (
-              <DataColumns control={control} />
+              <DataColumns
+                control={control}
+                errorMessage={
+                  "data_column" in formState.errors &&
+                  formState?.errors?.["data_column"]?.message
+                }
+              />
             )}
           </Stack>
         </TabPanel>
