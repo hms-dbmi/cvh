@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 
 import DialogButton from "../../../components/DialogButton";
 import { Typography } from "@mui/material";
+import { useAddExample } from "../api/useExamples";
 
 const text = {
   button: "Example Data Sources",
@@ -114,7 +115,7 @@ const examples: {
     title: "3D and HiC Matrix",
     description:
       "Interactive visualization showing 3D genome structures of single diploid human cells.",
-    fileTypes: ["csv", "multivec"],
+    fileTypes: ["csv", "cooler"],
     dataSources: ["Tan-2018_GSM3271347_gm12878_01.csv", "hffc6-hic-hg38"],
     imageSrc: "hic_3d.png",
   },
@@ -138,9 +139,39 @@ const examples: {
   },
 ];
 
-export default function AddExamplesDatasets() {
+export default function AddExamplesDatasets({
+  project_uuid,
+}: {
+  project_uuid: string;
+}) {
   const [open, setOpen] = useState(false);
   const [selectedExample, setSelectedExample] = useState<1 | 2 | 3>();
+
+  const { mutate } = useAddExample();
+
+  const addExample = useCallback(() => {
+    if (selectedExample) {
+      mutate({
+        body: {
+          example_id: selectedExample,
+          project_uuid,
+          include_visualizations: false,
+        },
+      });
+    }
+  }, [selectedExample, project_uuid, mutate]);
+
+  const addExampleWithViz = useCallback(() => {
+    if (selectedExample) {
+      mutate({
+        body: {
+          example_id: selectedExample,
+          project_uuid,
+          include_visualizations: true,
+        },
+      });
+    }
+  }, [selectedExample, project_uuid, mutate]);
 
   return (
     <DialogButton
@@ -154,12 +185,14 @@ export default function AddExamplesDatasets() {
           <Button
             variant="outlined"
             sx={{ padding: "12px 16px", borderRadius: "8px" }}
+            onClick={addExampleWithViz}
           >
             Add Selected Data Sources + Visualizations
           </Button>
           <Button
             variant="contained"
             sx={{ padding: "12px 16px", borderRadius: "8px" }}
+            onClick={addExample}
           >
             Add Selected Data Sources to Workspace
           </Button>

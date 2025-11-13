@@ -131,6 +131,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Example Datasets */
+        post: operations["api_api_create_example_datasets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasets/tags": {
         parameters: {
             query?: never;
@@ -762,6 +779,21 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** ExampleDatasetIn */
+        ExampleDatasetIn: {
+            /**
+             * Project Uuid
+             * Format: uuid4
+             */
+            project_uuid: string;
+            /** Include Visualizations */
+            include_visualizations: boolean;
+            /**
+             * Example Id
+             * @enum {integer}
+             */
+            example_id: 1 | 2 | 3;
+        };
         /** TagIn */
         TagIn: {
             /** Tag */
@@ -1355,6 +1387,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DatasetIn"];
                 };
+            };
+        };
+    };
+    api_api_create_example_datasets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExampleDatasetIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

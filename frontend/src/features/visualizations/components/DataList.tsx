@@ -299,7 +299,7 @@ function DataAccordion({
         {datasets?.length ? (
           <DataList projectId={projectId}>{children}</DataList>
         ) : (
-          <AddExamplesDatasets />
+          <AddExamplesDatasets project_uuid={projectId} />
         )}
       </AccordionDetails>
     </Accordion>
