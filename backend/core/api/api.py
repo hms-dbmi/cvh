@@ -750,7 +750,6 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
 
     for d in data:
         dataset_tags = d.get("tags", [])
-        print(d)
         try:
             del d["tags"]
         except KeyError:
@@ -767,8 +766,6 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
                     tag=t["tag"], key=t["key"], project_key=project
                 )
             tags.append(tag)
-        print(dataset_tags)
-        print(tags)
 
         dataset.tags.set(tags)
 
