@@ -353,6 +353,11 @@ function VisualizationList({
 
   const hasWritePermissions = permissions >= 2;
 
+  const handleReset = useCallback(() => {
+    setSelectedTags([]);
+    setNameSubstring("");
+  }, [setSelectedTags, setNameSubstring]);
+
   return (
     <Stack spacing={1}>
       <InputBase
@@ -401,6 +406,11 @@ function VisualizationList({
           variant="subtitle2"
           component={Button}
           sx={{ color: "#657681" }}
+          onClick={handleReset}
+          disabled={
+            selectedTags.length === 0 &&
+            nameSubstring.length === 0
+          }
         >
           Reset
         </Typography>
