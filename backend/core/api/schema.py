@@ -85,9 +85,9 @@ class GoslingDesignerBam(GoslingDataCommon):
     index_url: str
 
 class GoslingDesignerDataColumn(Schema):
-    data_column: List[
+    data_column: Optional[List[
         Tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
-    ] = None
+    ]] = None
 
 
 class GoslingDesignerIndex(GoslingDataCommon, GoslingDesignerDataColumn):
