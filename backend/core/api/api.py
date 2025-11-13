@@ -184,6 +184,9 @@ class RequestToken(object):
                 project_key=project, user_key=user, permissions=3
             )
 
+            VisualizationConf.objects.create(project_key=project, name="Visualization 1")
+
+
         return user
 
     def hasPermission(self, permission: str) -> bool:
@@ -305,6 +308,7 @@ def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)
     ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
+    VisualizationConf.objects.create(project_key=p, name="Visualization 1")
     return p
 
 
