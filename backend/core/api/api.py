@@ -745,7 +745,7 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
     except Project.DoesNotExist:
         raise Http404("Failed to add example data.")
 
-    example = example_datasets[2]
+    example = example_datasets[payload.example_id]
     data = example.get("data", [])
 
     for d in data:

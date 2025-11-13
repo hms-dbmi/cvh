@@ -23,10 +23,10 @@ function ExampleDataSource({
   dataSources,
 }: {
   setSelectedExample: React.Dispatch<
-    React.SetStateAction<1 | 2 | 3 | undefined>
+    React.SetStateAction<1 | 2 | undefined>
   >;
-  exampleID: 1 | 2 | 3;
-  selectedExample?: 1 | 2 | 3;
+  exampleID: 1 | 2;
+  selectedExample?: 1 | 2;
   title: string;
   description: string;
   fileTypes: string[];
@@ -43,7 +43,7 @@ function ExampleDataSource({
   return (
     <Stack
       onClick={select}
-      width="calc(100% / 3)"
+      width="calc(100% / 2)"
       spacing={1}
       sx={{
         borderRadius: "4px",
@@ -90,7 +90,7 @@ function ExampleDataSource({
 }
 
 const examples: {
-  exampleID: 1 | 2 | 3;
+  exampleID: 1 | 2;
   title: string;
   description: string;
   fileTypes: string[];
@@ -119,6 +119,7 @@ const examples: {
     dataSources: ["Tan-2018_GSM3271347_gm12878_01.csv", "hffc6-hic-hg38"],
     imageSrc: "hic_3d.png",
   },
+  /*
   {
     exampleID: 3,
     title: "Corces (diff title)",
@@ -137,6 +138,7 @@ const examples: {
     ],
     imageSrc: "corces.png",
   },
+  */
 ];
 
 export default function AddExamplesDatasets({
@@ -145,7 +147,7 @@ export default function AddExamplesDatasets({
   project_uuid: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [selectedExample, setSelectedExample] = useState<1 | 2 | 3>();
+  const [selectedExample, setSelectedExample] = useState<1 | 2>();
 
   const { mutate } = useAddExample();
 
@@ -187,7 +189,7 @@ export default function AddExamplesDatasets({
             sx={{ padding: "12px 16px", borderRadius: "8px" }}
             onClick={addExampleWithViz}
           >
-            Add Selected Data Sources + Visualizations
+            Add Selected Data Sources + Visualization
           </Button>
           <Button
             variant="contained"
