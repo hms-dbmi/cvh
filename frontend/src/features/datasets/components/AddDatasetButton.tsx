@@ -677,7 +677,7 @@ export default function AddDatasetButton({
       description: "",
       source_url: "",
       data_type: "",
-      assembly: "unknown",
+      assembly: "hg38",
     },
     mode: "onChange",
     resolver: zodResolver(schema),
