@@ -665,8 +665,10 @@ function DataColumns({
 }
 
 export default function AddDatasetButton({
+  buttonProps,
   projectId,
 }: {
+  buttonProps?: Partial<ButtonProps>;
   projectId?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -778,6 +780,7 @@ export default function AddDatasetButton({
       buttonProps={{
         startIcon: <UploadSimple size={20} />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
+        ...buttonProps,
       }}
       actionButtons={
         tab === 1 ? (

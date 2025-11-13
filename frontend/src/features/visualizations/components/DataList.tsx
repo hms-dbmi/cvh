@@ -37,6 +37,8 @@ import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useGetProject } from "../../projects/api/useProjects";
+import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
+import NoDataSVG from "../../../assets/nodata.svg?react";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -277,6 +279,11 @@ function DataAccordion({
   const datasets: Required<Dataset>[] =
     data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
 
+  const { data: permissionsData } = useGetProject(projectId);
+
+  const hasWritePermissions =
+    permissionsData?.permissions && permissionsData?.permissions >= 2;
+
   return (
     <Accordion disableGutters defaultExpanded>
       <AccordionSummary
@@ -295,7 +302,28 @@ function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <DataList projectId={projectId}>{children}</DataList>
+        {datasets?.length ? (
+          <DataList projectId={projectId}>{children}</DataList>
+        ) : (
+          <Stack>
+            <NoDataSVG />
+            <Stack direction="row" spacing={1}>
+              <AddDatasetButton
+                projectId={projectId}
+                buttonProps={{
+                  variant: "contained",
+                  disabled: !hasWritePermissions,
+                }}
+              />
+              <AddExamplesDatasets
+                project_uuid={projectId}
+                buttonProps={{
+                  disabled: !hasWritePermissions,
+                }}
+              />
+            </Stack>
+          </Stack>
+        )}
       </AccordionDetails>
     </Accordion>
   );

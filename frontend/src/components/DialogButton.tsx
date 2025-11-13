@@ -1,9 +1,4 @@
-import {
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  FormEvent,
-} from "react";
+import { PropsWithChildren, ReactNode, useCallback, FormEvent } from "react";
 
 import Button, { ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -28,6 +23,7 @@ interface CoreFormDialogProps {
   onOpen?: () => void;
   text: DialogText;
   actionButtons?: ReactNode;
+  closeButtonProps?: Partial<ButtonProps>;
 }
 
 type ActionProps =
@@ -63,6 +59,7 @@ export default function DialogButton({
   onSubmit,
   onClose,
   onOpen,
+  closeButtonProps,
   buttonProps,
   menuItemProps,
   children,
@@ -136,7 +133,11 @@ export default function DialogButton({
         </DialogContent>
         <DialogActions>
           {isForm ? (
-            <Button onClick={handleClose} {...sharedButtonProps}>
+            <Button
+              onClick={handleClose}
+              {...sharedButtonProps}
+              {...closeButtonProps}
+            >
               {text.cancelButton ?? "Cancel"}
             </Button>
           ) : (
@@ -144,6 +145,7 @@ export default function DialogButton({
               variant="contained"
               onClick={handleClose}
               {...sharedButtonProps}
+              {...closeButtonProps}
             >
               Done
             </Button>
