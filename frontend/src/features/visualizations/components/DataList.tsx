@@ -279,6 +279,11 @@ function DataAccordion({
   const datasets: Required<Dataset>[] =
     data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
 
+  const { data: permissionsData } = useGetProject(projectId);
+
+  const hasWritePermissions =
+    permissionsData?.permissions && permissionsData?.permissions >= 2;
+
   return (
     <Accordion disableGutters defaultExpanded>
       <AccordionSummary
@@ -307,9 +312,15 @@ function DataAccordion({
                 projectId={projectId}
                 buttonProps={{
                   variant: "contained",
+                  disabled: !hasWritePermissions,
                 }}
               />
-              <AddExamplesDatasets project_uuid={projectId} />
+              <AddExamplesDatasets
+                project_uuid={projectId}
+                buttonProps={{
+                  disabled: !hasWritePermissions,
+                }}
+              />
             </Stack>
           </Stack>
         )}

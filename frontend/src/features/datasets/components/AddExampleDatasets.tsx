@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
+import Button, { ButtonProps } from "@mui/material/Button";
 
 import DialogButton from "../../../components/DialogButton";
 import { Typography } from "@mui/material";
@@ -147,8 +147,10 @@ const examples: {
 
 export default function AddExamplesDatasets({
   project_uuid,
+  buttonProps,
 }: {
   project_uuid: string;
+  buttonProps?: Partial<ButtonProps>;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedExample, setSelectedExample] = useState<1 | 2>();
@@ -191,7 +193,7 @@ export default function AddExamplesDatasets({
       text={text}
       isForm={false}
       closeButtonProps={{ variant: "text" }}
-      buttonProps={{ sx: { padding: "8px 12px", borderRadius: "8px" } }}
+      buttonProps={{ sx: { padding: "8px 12px", borderRadius: "8px" }, ...buttonProps }}
       onClose={resetSelectedExample}
       actionButtons={
         <Stack spacing={1} direction="row">
