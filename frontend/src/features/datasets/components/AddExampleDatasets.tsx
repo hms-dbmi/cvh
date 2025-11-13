@@ -6,9 +6,15 @@ import Button from "@mui/material/Button";
 import DialogButton from "../../../components/DialogButton";
 import { Typography } from "@mui/material";
 import { useAddExample } from "../api/useExamples";
+import { FileText } from "@phosphor-icons/react";
 
 const text = {
-  button: "Example Data Sources",
+  button: (
+    <>
+      <FileText size={20} />
+      <Box ml={1}>Example Data Sources</Box>
+    </>
+  ),
   title: "Example Data Sources",
 };
 
@@ -22,9 +28,7 @@ function ExampleDataSource({
   imageSrc,
   dataSources,
 }: {
-  setSelectedExample: React.Dispatch<
-    React.SetStateAction<1 | 2 | undefined>
-  >;
+  setSelectedExample: React.Dispatch<React.SetStateAction<1 | 2 | undefined>>;
   exampleID: 1 | 2;
   selectedExample?: 1 | 2;
   title: string;
@@ -175,6 +179,11 @@ export default function AddExamplesDatasets({
     }
   }, [selectedExample, project_uuid, mutate]);
 
+  const resetSelectedExample = useCallback(
+    () => setSelectedExample(undefined),
+    [setSelectedExample]
+  );
+
   return (
     <DialogButton
       open={open}
@@ -182,12 +191,15 @@ export default function AddExamplesDatasets({
       text={text}
       isForm={false}
       closeButtonProps={{ variant: "text" }}
+      buttonProps={{ sx: { padding: "8px 12px", borderRadius: "8px" } }}
+      onClose={resetSelectedExample}
       actionButtons={
         <Stack spacing={1} direction="row">
           <Button
             variant="outlined"
             sx={{ padding: "12px 16px", borderRadius: "8px" }}
             onClick={addExampleWithViz}
+            disabled={!selectedExample}
           >
             Add Selected Data Sources + Visualization
           </Button>
@@ -195,6 +207,7 @@ export default function AddExamplesDatasets({
             variant="contained"
             sx={{ padding: "12px 16px", borderRadius: "8px" }}
             onClick={addExample}
+            disabled={!selectedExample}
           >
             Add Selected Data Sources to Workspace
           </Button>

@@ -38,6 +38,7 @@ import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useGetProject } from "../../projects/api/useProjects";
 import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
+import NoDataSVG from "../../../assets/nodata.svg?react";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -299,7 +300,18 @@ function DataAccordion({
         {datasets?.length ? (
           <DataList projectId={projectId}>{children}</DataList>
         ) : (
-          <AddExamplesDatasets project_uuid={projectId} />
+          <Stack>
+            <NoDataSVG />
+            <Stack direction="row" spacing={1}>
+              <AddDatasetButton
+                projectId={projectId}
+                buttonProps={{
+                  variant: "contained",
+                }}
+              />
+              <AddExamplesDatasets project_uuid={projectId} />
+            </Stack>
+          </Stack>
         )}
       </AccordionDetails>
     </Accordion>
