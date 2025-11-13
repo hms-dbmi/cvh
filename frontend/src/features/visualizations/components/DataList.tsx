@@ -180,6 +180,24 @@ function DataSelects({ projectId }: { projectId: string }) {
 
   const { data: tagsData } = useGetProjectDatasetTags(projectId);
 
+  const setNameSubstring = useDatasetFiltersStore(
+    (state) => state.setNameSubstring
+  );
+
+  const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
+
+  const handleReset = useCallback(() => {
+    setSelectedAssemblies([]);
+    setSelectedFileTypes([]);
+    setSelectedTags([]);
+    setNameSubstring("");
+  }, [
+    setSelectedAssemblies,
+    setSelectedFileTypes,
+    setSelectedTags,
+    setNameSubstring,
+  ]);
+
   return (
     <Stack direction="row" spacing={1}>
       <DatasetAttributeSelect
@@ -206,6 +224,13 @@ function DataSelects({ projectId }: { projectId: string }) {
         variant="subtitle2"
         component={Button}
         sx={{ color: "#657681" }}
+        onClick={handleReset}
+        disabled={
+          selectedAssemblies.length === 0 &&
+          selectedTags.length === 0 &&
+          selectedFileTypes.length === 0 &&
+          nameSubstring.length === 0
+        }
       >
         Reset
       </Typography>
