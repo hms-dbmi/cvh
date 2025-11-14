@@ -51,31 +51,32 @@ function PublishedGridItem({
               direction="row"
               flexWrap="wrap"
               alignItems="center"
+              gap={0.5}
             >
               <Tag size={20} color="#4E5A63" />
               {visualization?.tags.map((t) => (
-                <Box key={t.key + t.tag}>
-                  <Chip
-                    label={
-                      <>
-                        <Typography
-                          variant="subtitle1"
-                          component="span"
-                          sx={{ fontSize: 12 }}
-                        >
-                          {t.key}
-                        </Typography>{" "}
-                        <Typography
-                          variant="body2"
-                          component="span"
-                          sx={{ fontSize: 12 }}
-                        >
-                          {t.tag}
-                        </Typography>
-                      </>
-                    }
-                  />
-                </Box>
+                <Chip
+                  key={t.key + t.tag}
+                  label={
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                        marginRight={0.5}
+                      >
+                        {t.key}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                      >
+                        {t.tag}
+                      </Typography>
+                    </>
+                  }
+                />
               ))}
             </Stack>
           </Box>

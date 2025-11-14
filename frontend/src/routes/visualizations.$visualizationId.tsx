@@ -55,7 +55,8 @@ function PublishedVisualizationPanel({
             <Typography variant="body2">
               {viz?.published_timestamp && (
                 <>Published {formatISO(viz.published_timestamp)}</>
-              )}{viz?.author && <> by {viz.author}</>}
+              )}
+              {viz?.author && <> by {viz.author}</>}
             </Typography>
             <Typography variant="body2">{viz.description}</Typography>
             <Typography variant="body2" sx={{ color: "#4E5A63" }}>
@@ -87,9 +88,10 @@ function PublishedVisualizationPanel({
                           variant="subtitle1"
                           component="span"
                           sx={{ fontSize: 12 }}
+                          marginRight={0.5}
                         >
                           {t.key}
-                        </Typography>{" "}
+                        </Typography>
                         <Typography
                           variant="body2"
                           component="span"
