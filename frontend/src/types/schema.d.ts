@@ -588,7 +588,7 @@ export interface components {
             data_column?: [
                 string,
                 "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-            ][];
+            ][] | null;
             /**
              * Assembly
              * @enum {string}
@@ -667,7 +667,7 @@ export interface components {
             data_column?: [
                 string,
                 "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
-            ][];
+            ][] | null;
             /**
              * Assembly
              * @enum {string}
@@ -792,7 +792,7 @@ export interface components {
              * Example Id
              * @enum {integer}
              */
-            example_id: 1 | 2 | 3;
+            example_id: 1 | 2;
         };
         /** TagIn */
         TagIn: {
@@ -909,6 +909,8 @@ export interface components {
             tags?: string[];
             /** Name */
             name?: string;
+            /** Uuids */
+            uuids?: string[];
         };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
@@ -1579,6 +1581,7 @@ export interface operations {
             query?: {
                 tags?: string[];
                 name?: string;
+                uuids?: string[];
                 limit?: number;
                 offset?: number;
             };
@@ -1605,6 +1608,7 @@ export interface operations {
                 project_uuid: string;
                 tags?: string[];
                 name?: string;
+                uuids?: string[];
             };
             header?: never;
             path?: never;
