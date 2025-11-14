@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 
 import { useAddProjectMember } from "../api/useProjects";
 interface FormValues {
@@ -69,8 +70,13 @@ export default function ShareProjectButton({
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} mt={2}>
-      <Stack spacing={1} direction="row" >
-        <FormTextField name="email" label="E-mail Address" control={control}  placeholder="Add an email..."/>
+      <Stack spacing={1} direction="row">
+        <FormTextField
+          name="email"
+          label="E-mail Address"
+          control={control}
+          placeholder="Add an email..."
+        />
         <Stack>
           <Button
             type="submit"
@@ -78,13 +84,16 @@ export default function ShareProjectButton({
             disabled={!formState.isValid}
             sx={{
               padding: "12px 16px",
-              mt: 1
+              mt: 1,
             }}
           >
             Invite
           </Button>
         </Stack>
       </Stack>
+      <Typography sx={{ marginLeft: "14px", fontSize: "11px", fontWeight: 500 }}>
+        Invited collaborator must have an account
+      </Typography>
     </Box>
   );
 }
