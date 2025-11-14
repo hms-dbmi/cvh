@@ -17,6 +17,7 @@ from jwt.exceptions import DecodeError
 from typing import Any, List, Literal
 from environs import env
 import requests
+from pydantic import UUID4
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 from .schema import (
@@ -949,6 +950,7 @@ def get_tags(request, sub_str: str = None):
 class VisualizationQuerySchema(Schema):
     tags: List[str] = Field(None, alias="tags")
     name: str = Field(None, alias="name")
+    uuids: List[UUID4] = Field(None, alias="uuids")
 
 
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
@@ -960,6 +962,8 @@ def get_published_visualizations(
     if query_filters.tags:
         t = Tag.objects.filter(tag__in=query_filters.tags)
         q &= Q(tags__in=t)
+    if query_filters.uuids:
+        q &= Q(uuid__in=query_filters.uuids)
     visualizations = (
         VisualizationConf.objects.filter(Q(published=True) & q)
         .order_by("-modified_timestamp")
@@ -983,6 +987,8 @@ def get_project_visualizations(
         q &= Q(tags__in=t)
     if query_filters.name:
         q &= Q(name__icontains=query_filters.name)
+    if query_filters.uuids:
+        q &= Q(uuid__in=query_filters.uuids)
     visualizations = (
         VisualizationConf.objects.filter(Q(project_key=project) & q)
         .distinct()

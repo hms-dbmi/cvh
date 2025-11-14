@@ -8,19 +8,23 @@ import { Typography } from "@mui/material";
 import PublishedVisualizationGrid from "../features/visualizations/components/PublishedVisualizationGrid";
 import UpperGridSVG from "../assets/homepage/background-grid-upper.svg";
 import { ArrowBendUpRight } from "@phosphor-icons/react";
+import { Link } from "../features/navigation/components/Links";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
 });
 
 function Images() {
-
   return (
     <Stack direction="row" spacing={4} marginTop="50px" marginBottom="125px">
       <Box>
         <Box
           component="img"
-          sx={{ backgroundColor: "#fff", borderRadius: "16px 16px 0 16px", padding: 1 }}
+          sx={{
+            backgroundColor: "#fff",
+            borderRadius: "16px 16px 0 16px",
+            padding: 1,
+          }}
           height={270}
           width={470}
           src={`${import.meta.env.VITE_CLOUDFRONT_URL}/hic_3d.png`}
@@ -37,16 +41,25 @@ function Images() {
           direction="row"
           spacing={3}
         >
-          <Typography variant="button" component="p">
+          <Typography
+            variant="button"
+            component={Link}
+            to="/visualizations/0628ce1c-b287-44b9-b643-0f83f4c0e832"
+            sx={{ textDecoration: "none" }}
+          >
             View Visualization
           </Typography>
           <ArrowBendUpRight color="#4E5A63" size={20} />
         </Stack>
       </Box>
       <Box>
-      <Box
+        <Box
           component="img"
-          sx={{ backgroundColor: "#fff", borderRadius: "16px 16px 0 16px", padding: 1 }}
+          sx={{
+            backgroundColor: "#fff",
+            borderRadius: "16px 16px 0 16px",
+            padding: 1,
+          }}
           height={270}
           width={470}
           src={`${import.meta.env.VITE_CLOUDFRONT_URL}/corces.png`}
@@ -62,7 +75,12 @@ function Images() {
           direction="row"
           spacing={1}
         >
-          <Typography variant="button" component="p">
+          <Typography
+            variant="button"
+            component={Link}
+            to="/visualizations/ed8bd474-b29f-4754-9592-c1c0e5e1c847"
+            sx={{ textDecoration: "none" }}
+          >
             View Visualization
           </Typography>
           <ArrowBendUpRight color="#4E5A63" size={20} />

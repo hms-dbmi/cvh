@@ -103,7 +103,7 @@ class Tag(models.Model):
 
 
 class Dataset(UserCreated):
-    source_url = models.URLField(max_length=500)
+    source_url = models.URLField(max_length=1000)
     file_type = models.CharField(max_length=50)
     data_type = models.CharField(max_length=50)
     project_key = models.ForeignKey(
@@ -112,7 +112,7 @@ class Dataset(UserCreated):
     user_key = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     tags = models.ManyToManyField(Tag)
     assembly = models.CharField(max_length=50, null=True)
-    index_url = models.CharField(max_length=500, null=True)
+    index_url = models.CharField(max_length=1000, null=True)
     separator = models.CharField(max_length=50, null=True)
     headers = models.BooleanField(default=False)
     data_column = models.JSONField(null=True, blank=True)

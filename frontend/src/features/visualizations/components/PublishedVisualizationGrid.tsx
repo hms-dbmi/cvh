@@ -51,31 +51,32 @@ function PublishedGridItem({
               direction="row"
               flexWrap="wrap"
               alignItems="center"
+              gap={0.5}
             >
               <Tag size={20} color="#4E5A63" />
               {visualization?.tags.map((t) => (
-                <Box key={t.key + t.tag}>
-                  <Chip
-                    label={
-                      <>
-                        <Typography
-                          variant="subtitle1"
-                          component="span"
-                          sx={{ fontSize: 12 }}
-                        >
-                          {t.key}
-                        </Typography>{" "}
-                        <Typography
-                          variant="body2"
-                          component="span"
-                          sx={{ fontSize: 12 }}
-                        >
-                          {t.tag}
-                        </Typography>
-                      </>
-                    }
-                  />
-                </Box>
+                <Chip
+                  key={t.key + t.tag}
+                  label={
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                        marginRight={0.5}
+                      >
+                        {t.key}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                      >
+                        {t.tag}
+                      </Typography>
+                    </>
+                  }
+                />
               ))}
             </Stack>
           </Box>
@@ -89,6 +90,21 @@ function PublishedVisualizationGrid() {
   const { data } = useGetPublishedVisualizations({
     options: { params: { query: { limit: 20 } } },
   });
+  const { data: topPicks } = useGetPublishedVisualizations({
+    options: {
+      params: {
+        query: {
+          limit: 20,
+          uuids: [
+            "fe47c693-0407-4b40-aa00-9b058fa9a09f",
+            "8f49e547-6c05-417c-a18f-89b0dab97679",
+            "0628ce1c-b287-44b9-b643-0f83f4c0e832",
+            "ed8bd474-b29f-4754-9592-c1c0e5e1c847",
+          ],
+        },
+      },
+    },
+  });
 
   if (!data) {
     return null;
@@ -98,8 +114,22 @@ function PublishedVisualizationGrid() {
       <Typography component="p" variant="h4">
         Public Visualizations
       </Typography>
+      {Boolean(topPicks?.items?.length) && (
+        <>
+          <Typography component="p" variant="h5">
+            Discover our top picks
+          </Typography>
+          <Grid container spacing={2} width="100%">
+            {topPicks?.items?.map((v) => (
+              <Grid size={3}>
+                <PublishedGridItem visualization={v} />
+              </Grid>
+            ))}
+          </Grid>
+        </>
+      )}
       <Typography component="p" variant="h5">
-        Discover our top picks
+        Recently created visualizations
       </Typography>
       <Grid container spacing={2} width="100%">
         {data?.items?.map((v) => (

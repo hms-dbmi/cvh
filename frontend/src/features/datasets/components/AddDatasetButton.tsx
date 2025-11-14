@@ -195,8 +195,14 @@ const SUPPORTED_ASSEMBLIES = [
 ];
 
 const base = z.object({
-  name: z.string().trim().min(1, { message: "Name cannot be empty" }),
-  description: z.string(),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name cannot be empty" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  description: z
+    .string()
+    .max(300, { message: "Description must be less than 300 characters" }),
   source_url: z
     .string()
     .refine(

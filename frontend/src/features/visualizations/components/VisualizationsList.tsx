@@ -241,8 +241,8 @@ function VisualizationListItem({
         },
       })}
     >
-      <ListItemButton onClick={selectViz} color="primary">
-        <Stack spacing={0.5}>
+      <ListItemButton onClick={selectViz} color="primary" sx={{width: "100%"}}>
+        <Stack spacing={0.5} width="100%">
           <Stack direction="row" spacing={2}>
             <Box>
               <VisualizationThumbnail nTracks={v.n_tracks} />
@@ -281,9 +281,10 @@ function VisualizationListItem({
                         variant="subtitle1"
                         component="span"
                         sx={{ fontSize: 12 }}
+                        marginRight={0.5}
                       >
                         {t.key}
-                      </Typography>{" "}
+                      </Typography>
                       <Typography
                         variant="body2"
                         component="span"
