@@ -41,8 +41,15 @@ function FormTextField({
 }
 
 const schema = z.object({
-  name: z.string().trim().min(1, { message: "Name cannot be empty" }),
-  description: z.string().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name cannot be empty" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  description: z
+    .string()
+    .max(300, { message: "Description must be less than 300 characters" })
+    .optional(),
   author: z.string().optional(),
 });
 
