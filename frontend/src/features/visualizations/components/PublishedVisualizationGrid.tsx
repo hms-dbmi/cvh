@@ -117,7 +117,7 @@ function PublishedVisualizationGrid() {
       {Boolean(topPicks?.items?.length) && (
         <>
           <Typography component="p" variant="h5">
-            Discover our top picks
+            Discover Our Top Picks
           </Typography>
           <Grid container spacing={2} width="100%">
             {topPicks?.items?.map((v) => (
@@ -129,7 +129,7 @@ function PublishedVisualizationGrid() {
         </>
       )}
       <Typography component="p" variant="h5">
-        Recently created visualizations
+        Browse Recently Published Visualizations
       </Typography>
       <Grid container spacing={2} width="100%">
         {data?.items?.map((v) => (
