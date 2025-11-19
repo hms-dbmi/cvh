@@ -436,7 +436,7 @@ function SelectDataType({
             </Typography>
             <Grid container spacing={1}>
               {SUPPORTED_FILE_TYPES.map((fileType) => {
-                if (!["multivec", "vector"].includes(fileType)) {
+                if (!["multivec", "vector", "beddb"].includes(fileType)) {
                   return (
                     <Grid size={4}>
                       <DatasetSelectionButton
@@ -460,7 +460,7 @@ function SelectDataType({
               data and setting up the server, please visit the HiGlass website.
             </Typography>
             <Grid container spacing={1}>
-              {["multivec", "vector"].map((fileType) => (
+              {["multivec", "vector", "beddb"].map((fileType) => (
                 <Grid size={4}>
                   <DatasetSelectionButton
                     onChange={field.onChange}
