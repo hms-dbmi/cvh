@@ -44,7 +44,7 @@ function Images() {
           <Typography
             variant="button"
             component={Link}
-            to="/visualizations/0628ce1c-b287-44b9-b643-0f83f4c0e832"
+            to="/visualizations/e01fca12-14bc-4825-b83b-662fa67750a1"
             sx={{ textDecoration: "none" }}
           >
             View Visualization
