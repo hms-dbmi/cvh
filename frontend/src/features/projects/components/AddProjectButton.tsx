@@ -33,6 +33,7 @@ function FormTextField({
     <TextField
       label={label || name}
       fullWidth
+      onKeyDown={(e) => e.stopPropagation()}
       error={fieldState.error !== undefined}
       helperText={fieldState?.error?.message}
       {...field}
