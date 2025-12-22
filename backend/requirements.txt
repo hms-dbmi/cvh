@@ -45,7 +45,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-marshmallow==3.26.1
+marshmallow==3.26.2
     # via environs
 packaging==24.2
     # via
