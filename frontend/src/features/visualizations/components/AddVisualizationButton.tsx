@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
@@ -18,6 +18,7 @@ const text = {
 interface FormValues {
   name: string;
   description?: string;
+  author?: string;
 }
 
 function FormTextField({
@@ -48,52 +49,73 @@ function FormTextField({
 }
 
 const schema = z.object({
-  name: z.string(),
-  description: z.string().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name cannot be empty" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  description: z
+    .string()
+    .max(300, { message: "Description must be less than 300 characters" })
+    .optional(),
+  author: z.string().optional(),
 });
 
 export default function AddVisualizationButton({
   projectId,
+  setSelectedVizId,
 }: {
+  setSelectedVizId?: (id?: string) => void;
   projectId: string;
 }) {
-  const { handleSubmit, control } = useForm({
+  const [open, setOpen] = useState(false);
+
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       name: "",
       description: undefined,
+      author: undefined,
     },
     mode: "onChange",
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useCreateVisualization();
+  const handleReset = useCallback(() => {
+    reset();
+    setOpen(false);
+  }, [reset, setOpen]);
+
+  const { mutate } = useCreateVisualization(setSelectedVizId);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
       mutate({ body: { ...formData, project_uuid: projectId } });
+      handleReset();
       return;
     },
-    [mutate, projectId]
+    [mutate, projectId, handleReset]
   );
 
   return (
     <DialogButton
+      open={open}
+      setOpen={setOpen}
       text={text}
       onSubmit={handleSubmit(onSubmit)}
       buttonProps={{
         startIcon: <Plus size={20} weight="fill" />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
       }}
+      onClose={reset}
     >
-      <Stack direction="row" spacing={2} mt={2}>
-        <Stack spacing={1} minWidth={300}>
-          <FormTextField name="name" label="Name" control={control} />
-          <FormTextField
-            name="description"
-            label="Description"
-            control={control}
-          />
-        </Stack>
+      <Stack spacing={2} minWidth={300} mt={2}>
+        <FormTextField name="name" label="Name" control={control} />
+        <FormTextField
+          name="description"
+          label="Description"
+          control={control}
+        />
+        <FormTextField name="author" label="Author" control={control} />
       </Stack>
     </DialogButton>
   );

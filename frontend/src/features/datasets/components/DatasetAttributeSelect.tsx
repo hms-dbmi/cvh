@@ -42,6 +42,7 @@ export default function DatasetAttributeSelect({
           value={selectedValues}
           onChange={handleChange}
           IconComponent={(props) => <CaretDown size={16} {...props} />}
+          disabled={values.length === 0}
           input={
             <InputBase
               sx={(theme) => ({

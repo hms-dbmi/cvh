@@ -17,6 +17,7 @@ from jwt.exceptions import DecodeError
 from typing import Any, List, Literal
 from environs import env
 import requests
+from pydantic import UUID4
 
 from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
 from .schema import (
@@ -26,6 +27,7 @@ from .schema import (
     ProjectOut,
     ProjectOutWithMembersCount,
     DatasetIn,
+    ExampleDatasetIn,
     DatasetOut,
     DatasetUpdate,
     DatasetWithTagsOut,
@@ -183,6 +185,9 @@ class RequestToken(object):
                 project_key=project, user_key=user, permissions=3
             )
 
+            VisualizationConf.objects.create(project_key=project, name="Visualization 1")
+
+
         return user
 
     def hasPermission(self, permission: str) -> bool:
@@ -233,8 +238,7 @@ def add_project_member(request, member: ProjectMemberIn):
         user=request.auth, project_uuid=member.project_uuid
     )
     user = get_object_or_404(User, email=member.email)
-    ProjectMember.objects.create(
-        project_key=project, user_key=user, permissions=1)
+    ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
 
@@ -304,8 +308,8 @@ def get_project_members(request, project_uuid: str):
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)
-    ProjectMember.objects.create(
-        project_key=p, user_key=request.auth, permissions=3)
+    ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
+    VisualizationConf.objects.create(project_key=p, name="Visualization 1")
     return p
 
 
@@ -335,8 +339,7 @@ def delete_project(request, project_uuid: str):
 @paginate
 def get_public_projects(request):
     projects = (
-        Project.objects.filter(private=False).order_by(
-            "-modified_timestamp").values()
+        Project.objects.filter(private=False).order_by("-modified_timestamp").values()
     )
     return projects
 
@@ -379,13 +382,403 @@ def create_dataset(request, dataset: DatasetIn):
             project = Project.objects.get_write_project(
                 user=request.auth, project_uuid=project_uuid
             )
-            Dataset.objects.create(
-                **dataset_dict["dataset"], project_key=project)
+            Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
             return dataset
         except Project.DoesNotExist:
             raise Http404("Failed to create visualization.")
     Dataset.objects.create(**dataset_dict.dataset, user_key=request.auth)
     return dataset
+
+
+two_basic_views = {
+    "responsiveSize": {"width": False, "height": False},
+    "spacing": 100,
+    "views": [
+        {
+            "id": "view-1",
+            "layout": "linear",
+            "tracks": [
+                {
+                    "id": "track-1",
+                    "data": {
+                        "url": "https://s3.amazonaws.com/gosling-lang.org/data/HFFc6_H3K4me3.bigWig",
+                        "type": "bigwig",
+                        "binSize": 8,
+                    },
+                    "mark": "bar",
+                    "x": {"field": "start", "type": "genomic"},
+                    "xe": {"field": "end", "type": "genomic"},
+                    "y": {"field": "value", "type": "quantitative", "grid": True},
+                    "width": 600,
+                    "height": 100,
+                }
+            ],
+        },
+        {
+            "id": "view-2",
+            "layout": "circular",
+            "xDomain": {"chromosome": "chr1"},
+            "tracks": [
+                {
+                    "id": "track-4",
+                    "data": {
+                        "url": "https://s3.amazonaws.com/gosling-lang.org/data/HFFc6_H3K4me3.bigWig",
+                        "type": "bigwig",
+                        "binSize": 8,
+                    },
+                    "mark": "bar",
+                    "x": {"field": "start", "type": "genomic"},
+                    "xe": {"field": "end", "type": "genomic"},
+                    "y": {"field": "value", "type": "quantitative", "grid": True},
+                    "width": 600,
+                    "height": 100,
+                },
+                {
+                    "id": "track-5",
+                    "data": {
+                        "url": "https://server.gosling-lang.org/api/v1/tileset_info/?d=cistrome-multivec",
+                        "type": "multivec",
+                        "categories": [
+                            "GSM2048305",
+                            "GSM1375210",
+                            "GSM2048292",
+                            "GSM2048310",
+                        ],
+                        "binSize": 4,
+                    },
+                    "mark": "line",
+                    "x": {"field": "position", "type": "genomic"},
+                    "y": {"field": "value", "type": "quantitative", "grid": True},
+                    "color": {"field": "category", "type": "nominal"},
+                    "width": 600,
+                    "height": 100,
+                },
+                {
+                    "id": "track-6",
+                    "data": {
+                        "type": "csv",
+                        "url": "https://somatic-browser-test.s3.amazonaws.com/SRR7890905/SRR7890905.gripss.filtered.bedpe",
+                        "genomicFieldsToConvert": [
+                            {
+                                "chromosomeField": "chrom1",
+                                "genomicFields": ["start1", "end1"],
+                            },
+                            {
+                                "chromosomeField": "chrom2",
+                                "genomicFields": ["start2", "end2"],
+                            },
+                        ],
+                        "separator": "\t",
+                    },
+                    "mark": "withinLink",
+                    "x": {"field": "start1", "type": "genomic"},
+                    "xe": {"field": "end2", "type": "genomic"},
+                    "opacity": {"value": 0.5},
+                    "style": {"linkStyle": "circular", "linkMinHeight": 0.7},
+                    "width": 600,
+                    "height": 100,
+                },
+            ],
+        },
+    ],
+}
+
+hic_3d = {
+    "id": "a874f802-f1a6-458b-807a-d7399c306add",
+    "views": [
+        {
+            "id": "d5f3303b-0b00-4943-b6a5-139a437f97da",
+            "views": [
+                {
+                    "id": "VIEW 1",
+                    "style": {
+                        "outline": "#C7C7C7",
+                        "outlineWidth": 1,
+                        "enableSmoothPath": True,
+                    },
+                    "layout": {
+                        "type": "spatial",
+                        "model": {
+                            "url": "https://pub-5c3f8ce35c924114a178c6e929fc3ac7.r2.dev/Tan-2018_GSM3271347_gm12878_01.csv",
+                            "xyz": ["x", "y", "z"],
+                            "type": "csv",
+                            "position": "coord",
+                            "chromosome": "chr",
+                        },
+                    },
+                    "tracks": [
+                        {
+                            "style": {
+                                "outline": "transparent",
+                                "background": "transparent",
+                            },
+                            "id": "dummy-track-VIEW 1-0",
+                            "type": "dummy-track",
+                            "height": 6,
+                            "width": 6,
+                        },
+                        {
+                            "style": {
+                                "outline": "#C7C7C7",
+                                "outlineWidth": 1,
+                                "enableSmoothPath": True,
+                            },
+                            "x": {"type": "genomic", "field": "coord"},
+                            "id": "d97f6c7f-9086-46c5-a4ac-051bc186bfa9",
+                            "data": {
+                                "url": "https://pub-5c3f8ce35c924114a178c6e929fc3ac7.r2.dev/Tan-2018_GSM3271347_gm12878_01.csv",
+                                "type": "csv",
+                                "separator": ",",
+                                "genomicFieldsToConvert": [
+                                    {
+                                        "genomicFields": ["coord"],
+                                        "chromosomeField": "chr",
+                                    }
+                                ],
+                            },
+                            "mark": "sphere",
+                            "color": {"type": "nominal", "field": "chr"},
+                            "width": 450,
+                            "height": 450,
+                            "stroke": {"value": "white"},
+                            "opacity": {"value": 0.8},
+                            "spacing": 0.1,
+                            "strokeWidth": {"value": 1},
+                        },
+                        {
+                            "style": {
+                                "outline": "transparent",
+                                "background": "transparent",
+                            },
+                            "id": "dummy-track-VIEW 1-last",
+                            "type": "dummy-track",
+                            "height": 6,
+                            "width": 6,
+                        },
+                    ],
+                }
+            ],
+            "spacing": 90,
+            "arrangement": "vertical",
+        },
+        {
+            "id": "6d7b08b0-e4f3-46f8-9b33-ee0cfa389d5c",
+            "views": [
+                {
+                    "id": "VIEW 2",
+                    "style": {
+                        "outline": "#C7C7C7",
+                        "outlineWidth": 1,
+                        "enableSmoothPath": True,
+                    },
+                    "tracks": [
+                        {
+                            "style": {
+                                "outline": "transparent",
+                                "background": "transparent",
+                            },
+                            "id": "dummy-track-VIEW 2-0",
+                            "type": "dummy-track",
+                            "height": 6,
+                            "width": 6,
+                        },
+                        {
+                            "style": {
+                                "outline": "#C7C7C7",
+                                "outlineWidth": 1,
+                                "enableSmoothPath": True,
+                            },
+                            "x": {"type": "genomic", "field": "start"},
+                            "y": {"axis": "left", "type": "genomic", "field": "start2"},
+                            "id": "6d40c05e-13ca-427f-a347-50e3ae65fb98",
+                            "xe": {"type": "genomic", "field": "end"},
+                            "ye": {"type": "genomic", "field": "end2"},
+                            "data": {
+                                "url": "https://server.gosling-lang.org/api/v1/tileset_info/?d=hffc6-hic-hg38",
+                                "type": "matrix",
+                            },
+                            "mark": "rect",
+                            "color": {
+                                "type": "quantitative",
+                                "field": "value",
+                                "range": "hot",
+                                "legend": False,
+                            },
+                            "title": "HFFc6 Hi-C",
+                            "width": 450,
+                            "height": 450,
+                            "xDomain": {"interval": [200000000, 1500000000]},
+                            "linkingId": "9b11160c-ee1c-4bc3-87c1-b0510722a7b0",
+                        },
+                        {
+                            "style": {
+                                "outline": "transparent",
+                                "background": "transparent",
+                            },
+                            "id": "dummy-track-VIEW 2-last",
+                            "type": "dummy-track",
+                            "height": 6,
+                            "width": 6,
+                        },
+                    ],
+                }
+            ],
+            "spacing": 90,
+            "arrangement": "vertical",
+        },
+    ],
+    "spacing": 90,
+    "arrangement": "horizontal",
+}
+
+
+@api.post("/examples", auth=Authorized())
+def create_example_datasets(request, payload: ExampleDatasetIn):
+    example_datasets = {
+        1: {
+            "visualization": {
+                "name": "Two Basic Views",
+                "description": "Two views in both linear and circular layouts. Data: Schwarzer et al. (2017) (PMCID: PMC5687303) and Cistrome DB Zheng R. et al. (2019).",
+                "conf": two_basic_views,
+            },
+            "data": [
+                {
+                    "name": "HFFc6_H3K4me3.bigwig",
+                    "file_type": "bigwig",
+                    "data_type": "",
+                    "source_url": "https://s3.amazonaws.com/gosling-lang.org/data/HFFc6_H3K4me3.bigWig",
+                    "assembly": "hg38",
+                    "tags": [
+                        {"key": "project", "tag": "Hi-C"},
+                        {"key": "publication", "tag": "Schwarzer et al. 2017"},
+                    ],
+                },
+                {
+                    "name": "H3K27ac.multivec",
+                    "file_type": "multivec",
+                    "data_type": "",
+                    "source_url": "https://server.gosling-lang.org/api/v1/tileset_info/?d=cistrome-multivec",
+                    "assembly": "hg38",
+                    "row_names": [
+                        "GSM2048305",
+                        "GSM1375210",
+                        "GSM2048292",
+                        "GSM2048310",
+                    ],
+                    "tags": [
+                        {"key": "project", "tag": "Cistrome"},
+                        {"key": "assay_type", "tag": "ChIP-seq & ATAC-seq"},
+                        {"key": "publication", "tag": "L'Yi et al. 2023"},
+                    ],
+                },
+                {
+                    "name": "SRR7890905.gripss.filtered.bedpe",
+                    "file_type": "csv",
+                    "source_url": "https://somatic-browser-test.s3.amazonaws.com/SRR7890905/SRR7890905.gripss.filtered.bedpe",
+                    "separator": "\t",
+                    "headers": True,
+                    "data_column": [
+                        ["chrom1", "chromosome"],
+                        ["start1", "genomic"],
+                        ["end1", "genomic"],
+                        ["chrom2", "chromosome"],
+                        ["start2", "genomic"],
+                        ["end2", "genomic"],
+                        ["sv_id", "key"],
+                        ["pe_support", "quantitative"],
+                        ["strand1", "nominal"],
+                        ["strand2", "nominal"],
+                        ["svclass", "nominal"],
+                        ["svmethod", "nominal"],
+                    ],
+                    "assembly": "hg38",
+                    "tags": [
+                        {"key": "project", "tag": "chromoscope"},
+                        {"key": "sample", "tag": "SRR7890905_Hartwig"},
+                        {"key": "data_type", "tag": "SV"},
+                    ],
+                },
+            ],
+        },
+        2: {
+            "visualization": {
+                "name": "3D + Hi-C",
+                "description": "Interactive visualization showing 3D genome structures of single diploid human cells (View 1) and a Hi-C matrix (View 2). Data: Tan et al. (2018) and Schwarzer et al. (2017).",
+                "conf": hic_3d,
+            },
+            "data": [
+                {
+                    "name": "Tan-2018_GSM3271347_gm12878_01.csv",
+                    "file_type": "csv",
+                    "data_type": "",
+                    "source_url": "https://pub-5c3f8ce35c924114a178c6e929fc3ac7.r2.dev/Tan-2018_GSM3271347_gm12878_01.csv",
+                    "headers": True,
+                    "separator": ",",
+                    "data_column": [
+                        ["x", "quantitative"],
+                        ["y", "quantitative"],
+                        ["z", "quantitative"],
+                        ["chr", "chromosome"],
+                        ["coord", "genomic"],
+                        ["patmat", "nominal"],
+                    ],
+                    "assembly": "hg38",
+                    "tags": [
+                        {"key": "data_type", "tag": "spatial"},
+                        {"key": "publication", "tag": "Tan et al. 2018"},
+                    ],
+                },
+                {
+                    "name": "hffc6-hic-hg38.cooler",
+                    "file_type": "cooler",
+                    "data_type": "",
+                    "source_url": "https://server.gosling-lang.org/api/v1/tileset_info/?d=hffc6-hic-hg38",
+                    "assembly": "hg38",
+                    "tags": [
+                        {"key": "project", "tag": "Hi-C"},
+                        {"key": "assay_type", "tag": "Hi-C"},
+                        {"key": "publication", "tag": "Schwarzer et al. 2017"},
+                    ],
+                },
+            ],
+        },
+    }
+    try:
+        project = Project.objects.get_write_project(
+            user=request.auth, project_uuid=payload.project_uuid
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to add example data.")
+
+    example = example_datasets[payload.example_id]
+    data = example.get("data", [])
+
+    for d in data:
+        dataset_tags = d.get("tags", [])
+        try:
+            del d["tags"]
+        except KeyError:
+            pass
+
+        dataset = Dataset.objects.create(**d, project_key=project)
+
+        tags = []
+        for t in dataset_tags:
+            try:
+                tag = Tag.objects.get(tag=t["tag"], key=t["key"], project_key=project)
+            except Tag.DoesNotExist:
+                tag = Tag.objects.create(
+                    tag=t["tag"], key=t["key"], project_key=project
+                )
+            tags.append(tag)
+
+        dataset.tags.set(tags)
+
+    if payload.include_visualizations:
+        viz = example.get("visualization", {})
+        VisualizationConf.objects.create(**viz, project_key=project)
+
+    return {"success": True}
 
 
 @api.put("/datasets", auth=Authorized())
@@ -395,12 +788,10 @@ def update_dataset(request, payload: DatasetUpdate):
         project = Project.objects.get_write_project(
             project_uuid=payload.project_uuid, user=request.auth
         )
-        dataset = get_object_or_404(
-            Dataset, uuid=payload.uuid, project_key=project)
+        dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
         del payload_dict["project_uuid"]
     else:
-        dataset = get_object_or_404(
-            Dataset, uuid=payload.uuid, user_key=request.auth)
+        dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
 
     del payload_dict["uuid"]
     for attr, value in payload_dict.items():
@@ -418,17 +809,14 @@ def tag_dataset(request, payload: TagsIn):
     except Project.DoesNotExist:
         raise Http404("Failed to tag dataset.")
 
-    dataset = get_object_or_404(
-        Dataset, uuid=payload.uuid, project_key=project)
+    dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
 
     tags = []
     for t in payload.tags:
         try:
-            tag = Tag.objects.get(
-                tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.get(tag=t["tag"], key=t["key"], project_key=project)
         except Tag.DoesNotExist:
-            tag = Tag.objects.create(
-                tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.create(tag=t["tag"], key=t["key"], project_key=project)
         tags.append(tag)
 
     dataset.tags.set(tags)
@@ -506,8 +894,7 @@ def get_project_datasets_tags(request, project_uuid: str):
     )
 
     tags = [
-        dict(tag=item["tags__tag"], key=item["tags__key"],
-             uuid=item["tags__uuid"])
+        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
         for item in field_values
     ]
 
@@ -552,8 +939,7 @@ def get_tags(request, sub_str: str = None):
 
     tags = (
         Tag.objects.annotate(
-            full_name=Concat("key", Value(":"), "tag",
-                             combined_tag=CharField())
+            full_name=Concat("key", Value(":"), "tag", combined_tag=CharField())
         )
         .filter(q)
         .distinct()
@@ -564,22 +950,24 @@ def get_tags(request, sub_str: str = None):
 class VisualizationQuerySchema(Schema):
     tags: List[str] = Field(None, alias="tags")
     name: str = Field(None, alias="name")
+    uuids: List[UUID4] = Field(None, alias="uuids")
 
 
 @api.get("/public/visualizations", response=List[VisualizationNoConfOut])
 @paginate
 def get_published_visualizations(
-    request, query_filters: DatasetQuerySchema = Query(...)
+    request, query_filters: VisualizationQuerySchema = Query(...)
 ):
     q = Q()
     if query_filters.tags:
         t = Tag.objects.filter(tag__in=query_filters.tags)
         q &= Q(tags__in=t)
+    if query_filters.uuids:
+        q &= Q(uuid__in=query_filters.uuids)
     visualizations = (
         VisualizationConf.objects.filter(Q(published=True) & q)
         .order_by("-modified_timestamp")
         .distinct()
-        .values()
     )
     return visualizations
 
@@ -599,6 +987,8 @@ def get_project_visualizations(
         q &= Q(tags__in=t)
     if query_filters.name:
         q &= Q(name__icontains=query_filters.name)
+    if query_filters.uuids:
+        q &= Q(uuid__in=query_filters.uuids)
     visualizations = (
         VisualizationConf.objects.filter(Q(project_key=project) & q)
         .distinct()
@@ -620,25 +1010,40 @@ def get_project_visualizations_Tags(request, project_uuid: str):
     )
 
     tags = [
-        dict(tag=item["tags__tag"], key=item["tags__key"],
-             uuid=item["tags__uuid"])
+        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
         for item in field_values
     ]
 
     return tags
 
 
-@api.get("/visualizations/{visualization_uuid}", response=VisualizationOut)
+@api.get(
+    "/visualizations/{visualization_uuid}", response=VisualizationOut, auth=Authorized()
+)
 def get_visualization(request, visualization_uuid: str):
+    try:
+        visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+        Project.objects.get_read_project(
+            project_uuid=visualization.project_key.uuid, user=request.auth
+        )
+    except VisualizationConf.DoesNotExist:
+        raise Http404("Failed to find visualization.")
+    except Project.DoesNotExist:
+        raise Http404("Failed to find visualization.")
+    return visualization
+
+
+@api.get("/public/visualizations/{visualization_uuid}", response=VisualizationOut)
+def get_public_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid)
+        VisualizationConf, uuid=visualization_uuid, published=True
+    )
     return visualization
 
 
 @api.delete("/visualizations/{visualization_uuid}", auth=Authorized())
 def delete_visualization(request, visualization_uuid: str):
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
         Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
@@ -655,8 +1060,7 @@ def update_visualization(
     request, visualization_uuid: str, payload: PartialVisualizationUpdate
 ):
     payload_dict = payload.dict(exclude_unset=True)
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
         Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
@@ -674,8 +1078,7 @@ def update_visualization(
 
 @api.put("/visualizations/{visualization_uuid}/tags", auth=Authorized())
 def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
         project = Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid, user=request.auth
@@ -685,18 +1088,16 @@ def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
     tags = []
     for t in payload.tags:
         try:
-            tag = Tag.objects.get(
-                tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.get(tag=t["tag"], key=t["key"], project_key=project)
         except Tag.DoesNotExist:
-            tag = Tag.objects.create(
-                tag=t["tag"], key=t["key"], project_key=project)
+            tag = Tag.objects.create(tag=t["tag"], key=t["key"], project_key=project)
         tags.append(tag)
 
     visualization.tags.set(tags)
     return {"success": True}
 
 
-@api.post("/visualizations", auth=Authorized(), response={201: VisualizationIn})
+@api.post("/visualizations", auth=Authorized(), response={201: VisualizationNoConfOut})
 def create_visualization(request, visualization: VisualizationIn):
     visualization_dict = visualization.dict()
     project_uuid = visualization_dict.get("project_uuid")
@@ -708,5 +1109,5 @@ def create_visualization(request, visualization: VisualizationIn):
         )
     except Project.DoesNotExist:
         raise Http404("Failed to create visualization.")
-    VisualizationConf.objects.create(**visualization_dict, project_key=project)
-    return visualization
+    viz = VisualizationConf.objects.create(**visualization_dict, project_key=project)
+    return viz

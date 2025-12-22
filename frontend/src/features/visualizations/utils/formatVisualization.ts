@@ -10,7 +10,7 @@ export default function formatVisualization (
     }
   
     return {
-      note: "",
+      note: viz?.description,
       name: viz.name,
       id: viz.uuid,
       spec: viz?.conf,

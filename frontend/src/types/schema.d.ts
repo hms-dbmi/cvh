@@ -131,6 +131,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Example Datasets */
+        post: operations["api_api_create_example_datasets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasets/tags": {
         parameters: {
             query?: never;
@@ -300,6 +317,23 @@ export interface paths {
         post?: never;
         /** Delete Visualization */
         delete: operations["api_api_delete_visualization"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/visualizations/{visualization_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Visualization */
+        get: operations["api_api_get_public_visualization"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -525,7 +559,7 @@ export interface components {
             /** Project Uuid */
             project_uuid?: string | null;
             /** Dataset */
-            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
+            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
         };
         /** GoslingDatasetSimple */
         GoslingDatasetSimple: {
@@ -551,9 +585,10 @@ export interface components {
         /** GoslingDesignerBEDB */
         GoslingDesignerBEDB: {
             /** Data Column */
-            data_column?: {
-                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
-            } | null;
+            data_column?: [
+                string,
+                "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
+            ][] | null;
             /**
              * Assembly
              * @enum {string}
@@ -572,6 +607,29 @@ export interface components {
              * @enum {string}
              */
             file_type: "beddb";
+        };
+        /** GoslingDesignerBam */
+        GoslingDesignerBam: {
+            /**
+             * Assembly
+             * @enum {string}
+             */
+            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "bam";
+            /** Index Url */
+            index_url: string;
         };
         /** GoslingDesignerCSV */
         GoslingDesignerCSV: {
@@ -598,16 +656,18 @@ export interface components {
             /** Headers */
             headers: boolean;
             /** Data Column */
-            data_column: {
-                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
-            };
+            data_column: [
+                string,
+                "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
+            ][];
         };
         /** GoslingDesignerIndex */
         GoslingDesignerIndex: {
             /** Data Column */
-            data_column?: {
-                [key: string]: "nominal" | "quantitative" | "chromosome" | "genomic" | "key";
-            } | null;
+            data_column?: [
+                string,
+                "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
+            ][] | null;
             /**
              * Assembly
              * @enum {string}
@@ -657,7 +717,7 @@ export interface components {
             /** Project Uuid */
             project_uuid?: string | null;
             /** Dataset */
-            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
+            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
             /**
              * Uuid
              * Format: uuid4
@@ -676,6 +736,8 @@ export interface components {
             assembly?: string | null;
             /** Data Column */
             data_column?: Record<string, never> | null;
+            /** Row Names */
+            row_names?: unknown[] | null;
             /**
              * Headers
              * @default false
@@ -716,6 +778,21 @@ export interface components {
             items: components["schemas"]["DatasetOut"][];
             /** Count */
             count: number;
+        };
+        /** ExampleDatasetIn */
+        ExampleDatasetIn: {
+            /**
+             * Project Uuid
+             * Format: uuid4
+             */
+            project_uuid: string;
+            /** Include Visualizations */
+            include_visualizations: boolean;
+            /**
+             * Example Id
+             * @enum {integer}
+             */
+            example_id: 1 | 2;
         };
         /** TagIn */
         TagIn: {
@@ -762,6 +839,8 @@ export interface components {
             assembly?: string | null;
             /** Data Column */
             data_column?: Record<string, never> | null;
+            /** Row Names */
+            row_names?: unknown[] | null;
             /**
              * Headers
              * @default false
@@ -824,6 +903,15 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** VisualizationQuerySchema */
+        VisualizationQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Name */
+            name?: string;
+            /** Uuids */
+            uuids?: string[];
+        };
         /** PagedVisualizationNoConfOut */
         PagedVisualizationNoConfOut: {
             /** Items */
@@ -835,6 +923,8 @@ export interface components {
         VisualizationNoConfOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
+            /** Author */
+            author?: string | null;
             /**
              * Published
              * @default false
@@ -877,13 +967,6 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** VisualizationQuerySchema */
-        VisualizationQuerySchema: {
-            /** Tags */
-            tags?: string[];
-            /** Name */
-            name?: string;
-        };
         /** VisualizationIn */
         VisualizationIn: {
             /**
@@ -893,6 +976,8 @@ export interface components {
             project_uuid: string;
             /** Description */
             description?: string | null;
+            /** Author */
+            author?: string | null;
             /** Name */
             name: string;
         };
@@ -902,6 +987,8 @@ export interface components {
             tags: components["schemas"]["TagOut"][];
             /** Conf */
             conf?: Record<string, never> | null;
+            /** Author */
+            author?: string | null;
             /**
              * Published
              * @default false
@@ -950,6 +1037,8 @@ export interface components {
             name?: string;
             /** Description */
             description?: string | null;
+            /** Author */
+            author?: string | null;
             /** Conf */
             conf?: Record<string, never> | null;
             /** Published */
@@ -1303,6 +1392,28 @@ export interface operations {
             };
         };
     };
+    api_api_create_example_datasets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExampleDatasetIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_api_tag_dataset: {
         parameters: {
             query?: never;
@@ -1469,9 +1580,8 @@ export interface operations {
         parameters: {
             query?: {
                 tags?: string[];
-                assembly?: string[];
-                file_type?: string[];
                 name?: string;
+                uuids?: string[];
                 limit?: number;
                 offset?: number;
             };
@@ -1498,6 +1608,7 @@ export interface operations {
                 project_uuid: string;
                 tags?: string[];
                 name?: string;
+                uuids?: string[];
             };
             header?: never;
             path?: never;
@@ -1535,7 +1646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VisualizationIn"];
+                    "application/json": components["schemas"]["VisualizationNoConfOut"];
                 };
             };
         };
@@ -1625,6 +1736,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_api_get_public_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationOut"];
+                };
             };
         };
     };

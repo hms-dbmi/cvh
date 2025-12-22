@@ -1,4 +1,4 @@
-import { useCallback, ChangeEvent } from "react";
+import { useCallback, ChangeEvent, useState } from "react";
 
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -248,6 +248,7 @@ export function UpdateAccessSwitch({
 }
 
 function ProjectSettings({ projectId }: { projectId: string }) {
+  const [open, setOpen] = useState(false);
   const { isLoading, isError, data } = useGetProjectMembers(projectId);
   const {
     data: projectData,
@@ -275,6 +276,8 @@ function ProjectSettings({ projectId }: { projectId: string }) {
   }
   return (
     <DialogButton
+      open={open}
+      setOpen={setOpen}
       text={{
         button: (
           <>

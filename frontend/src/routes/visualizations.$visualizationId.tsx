@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useGetVisualization } from "../features/visualizations/api/useVisualizations";
+import { useGetPublishedVisualization } from "../features/visualizations/api/useVisualizations";
 
 import { GoslingDesignerVEC } from "gosling-designer-vec";
 import formatVisualization from "../features/visualizations/utils/formatVisualization";
@@ -27,7 +27,7 @@ function PublishedVisualizationPanel({
 }) {
   return (
     <>
-      <Accordion disableGutters>
+      <Accordion disableGutters defaultExpanded>
         <AccordionSummary
           expandIcon={<CaretDown size={20} />}
           aria-controls="panel1-content"
@@ -56,6 +56,7 @@ function PublishedVisualizationPanel({
               {viz?.published_timestamp && (
                 <>Published {formatISO(viz.published_timestamp)}</>
               )}
+              {viz?.author && <> by {viz.author}</>}
             </Typography>
             <Typography variant="body2">{viz.description}</Typography>
             <Typography variant="body2" sx={{ color: "#4E5A63" }}>
@@ -87,9 +88,10 @@ function PublishedVisualizationPanel({
                           variant="subtitle1"
                           component="span"
                           sx={{ fontSize: 12 }}
+                          marginRight={0.5}
                         >
                           {t.key}
-                        </Typography>{" "}
+                        </Typography>
                         <Typography
                           variant="body2"
                           component="span"
@@ -113,7 +115,7 @@ function PublishedVisualizationPanel({
 function RouteComponent() {
   const { visualizationId } = Route.useParams();
 
-  const { data } = useGetVisualization(visualizationId);
+  const { data } = useGetPublishedVisualization(visualizationId);
 
   if (!data) {
     return null;

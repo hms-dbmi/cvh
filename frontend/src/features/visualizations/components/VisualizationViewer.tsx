@@ -7,6 +7,7 @@ interface VisualizationViewerProps {
   visualizationType: string;
   readonly?: boolean;
   onSave?: (newConf: string) => void;
+  permissions: number,
 }
 
 function VisualizationViewer({

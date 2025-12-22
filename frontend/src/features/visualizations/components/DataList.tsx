@@ -16,7 +16,7 @@ import {
   Tag,
   MagnifyingGlass,
   DotsThree,
-  Cards,
+  // Cards,
   Trash,
   FileText,
   CaretDown,
@@ -36,6 +36,9 @@ import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSe
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
+import { useGetProject } from "../../projects/api/useProjects";
+import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
+import NoDataSVG from "../../../assets/nodata.svg?react";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -127,12 +130,13 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
             Edit Tags
           </>
         </MenuItem>
+        {/*
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <Cards height={24} width={24} />
           </ListItemIcon>
           Create a Copy
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem onClick={() => setOpenDelete(true)}>
           <ListItemIcon>
             <Trash height={24} width={24} />
@@ -176,6 +180,24 @@ function DataSelects({ projectId }: { projectId: string }) {
 
   const { data: tagsData } = useGetProjectDatasetTags(projectId);
 
+  const setNameSubstring = useDatasetFiltersStore(
+    (state) => state.setNameSubstring
+  );
+
+  const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
+
+  const handleReset = useCallback(() => {
+    setSelectedAssemblies([]);
+    setSelectedFileTypes([]);
+    setSelectedTags([]);
+    setNameSubstring("");
+  }, [
+    setSelectedAssemblies,
+    setSelectedFileTypes,
+    setSelectedTags,
+    setNameSubstring,
+  ]);
+
   return (
     <Stack direction="row" spacing={1}>
       <DatasetAttributeSelect
@@ -202,6 +224,13 @@ function DataSelects({ projectId }: { projectId: string }) {
         variant="subtitle2"
         component={Button}
         sx={{ color: "#657681" }}
+        onClick={handleReset}
+        disabled={
+          selectedAssemblies.length === 0 &&
+          selectedTags.length === 0 &&
+          selectedFileTypes.length === 0 &&
+          nameSubstring.length === 0
+        }
       >
         Reset
       </Typography>
@@ -220,6 +249,10 @@ function DataList({
   const setNameSubstring = useDatasetFiltersStore(
     (state) => state.setNameSubstring
   );
+
+  const { data } = useGetProject(projectId);
+
+  const hasWritePermissions = data?.permissions && data?.permissions >= 2;
 
   return (
     <Stack spacing={1}>
@@ -251,9 +284,11 @@ function DataList({
           },
         })}
       />
-      <Stack direction="row" spacing={1}>
-        <AddDatasetButton projectId={projectId} />
-      </Stack>
+      {hasWritePermissions && (
+        <Stack direction="row" spacing={1}>
+          <AddDatasetButton projectId={projectId} />
+        </Stack>
+      )}
       <DataSelects projectId={projectId} />
       {children}
     </Stack>
@@ -269,8 +304,13 @@ function DataAccordion({
   const datasets: Required<Dataset>[] =
     data?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
 
+  const { data: permissionsData } = useGetProject(projectId);
+
+  const hasWritePermissions =
+    permissionsData?.permissions && permissionsData?.permissions >= 2;
+
   return (
-    <Accordion disableGutters>
+    <Accordion disableGutters defaultExpanded>
       <AccordionSummary
         expandIcon={<CaretDown size={20} />}
         aria-controls="panel1-content"
@@ -287,7 +327,28 @@ function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <DataList projectId={projectId}>{children}</DataList>
+        {datasets?.length ? (
+          <DataList projectId={projectId}>{children}</DataList>
+        ) : (
+          <Stack>
+            <NoDataSVG />
+            <Stack direction="row" spacing={1}>
+              <AddDatasetButton
+                projectId={projectId}
+                buttonProps={{
+                  variant: "contained",
+                  disabled: !hasWritePermissions,
+                }}
+              />
+              <AddExamplesDatasets
+                project_uuid={projectId}
+                buttonProps={{
+                  disabled: !hasWritePermissions,
+                }}
+              />
+            </Stack>
+          </Stack>
+        )}
       </AccordionDetails>
     </Accordion>
   );

@@ -16,6 +16,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 import json
+import sys
 
 env.read_env()
 # Override in .env for local development
@@ -30,8 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+IS_DEVELOPMENT_SERVER = DEBUG
 
 ALLOWED_HOSTS = []
 METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI_V4")
@@ -170,6 +170,11 @@ if METADATA_URI:
     DB_USER = db_secrets["username"]
     DB_PASSWORD = db_secrets["password"]
 
+DB_OPTIONS = {}
+
+if not IS_DEVELOPMENT_SERVER or METADATA_URI:
+    DB_OPTIONS["sslmode"] = "require"
+
 DATABASES = {
     "default": {
         "ENGINE": env.str("DB_ENGINE"),
@@ -178,12 +183,9 @@ DATABASES = {
         "PASSWORD": DB_PASSWORD,
         "HOST": env.str("DB_HOST"),
         "PORT": env.int("DB_PORT"),
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
+        'OPTIONS': DB_OPTIONS,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

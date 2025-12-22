@@ -1,10 +1,4 @@
-import {
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  useState,
-  FormEvent,
-} from "react";
+import { PropsWithChildren, ReactNode, useCallback, FormEvent } from "react";
 
 import Button, { ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -23,10 +17,13 @@ interface DialogText {
 }
 
 interface CoreFormDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onClose?: () => void;
   onOpen?: () => void;
   text: DialogText;
   actionButtons?: ReactNode;
+  closeButtonProps?: Partial<ButtonProps>;
 }
 
 type ActionProps =
@@ -56,10 +53,13 @@ type DialogProps =
 const sharedButtonProps = { sx: { padding: "12px 16px", borderRadius: "8px" } };
 
 export default function DialogButton({
+  open,
+  setOpen,
   text,
   onSubmit,
   onClose,
   onOpen,
+  closeButtonProps,
   buttonProps,
   menuItemProps,
   children,
@@ -68,8 +68,6 @@ export default function DialogButton({
   isButton = true,
   isMenuItem = false,
 }: PropsWithChildren<DialogProps>) {
-  const [open, setOpen] = useState(false);
-
   const handleClickOpen = useCallback(() => {
     if (onOpen) {
       // onOpen();
@@ -88,10 +86,9 @@ export default function DialogButton({
     (e: FormEvent<HTMLFormElement>) => {
       if (onSubmit) {
         onSubmit(e);
-        handleClose();
       }
     },
-    [onSubmit, handleClose]
+    [onSubmit]
   );
 
   return (
@@ -136,7 +133,11 @@ export default function DialogButton({
         </DialogContent>
         <DialogActions>
           {isForm ? (
-            <Button onClick={handleClose} {...sharedButtonProps}>
+            <Button
+              onClick={handleClose}
+              {...sharedButtonProps}
+              {...closeButtonProps}
+            >
               {text.cancelButton ?? "Cancel"}
             </Button>
           ) : (
@@ -144,6 +145,7 @@ export default function DialogButton({
               variant="contained"
               onClick={handleClose}
               {...sharedButtonProps}
+              {...closeButtonProps}
             >
               Done
             </Button>

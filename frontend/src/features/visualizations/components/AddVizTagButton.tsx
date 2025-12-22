@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
@@ -70,18 +70,23 @@ export default function AddTagButton({
   setOpen: (o: boolean) => void;
   open: boolean;
 }) {
-  const initialTags = visualization.tags.reduce<
-    { tagKey: string; tagValue: string }[]
-  >((acc, { tag, key }) => {
-    if (tag && key) {
-      acc.push({ tagKey: key, tagValue: tag });
-    }
-    return acc;
-  }, []);
+  const initialTags = useMemo(
+    () =>
+      visualization.tags.reduce<{ tagKey: string; tagValue: string }[]>(
+        (acc, { tag, key }) => {
+          if (tag && key) {
+            acc.push({ tagKey: key, tagValue: tag });
+          }
+          return acc;
+        },
+        []
+      ),
+    [visualization.tags]
+  );
 
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
-      tags: initialTags,
+      tags: initialTags.length ? initialTags : [{ tagKey: "", tagValue: "" }],
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -89,16 +94,14 @@ export default function AddTagButton({
 
   const { mutate } = useTagVisualization();
 
-  const [showTextField, setShowTextField] = useState(false);
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: "tags",
   });
 
-  const toggleTextField = useCallback(() => {
-    setShowTextField(!showTextField);
-  }, [setShowTextField, showTextField]);
+  useEffect(() => {
+    reset({ tags: initialTags });
+  }, [reset, initialTags]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
@@ -118,9 +121,9 @@ export default function AddTagButton({
           project_uuid: projectId,
         },
       });
-      toggleTextField();
+      setOpen(false);
     },
-    [mutate, toggleTextField, visualizationId, projectId]
+    [mutate, visualizationId, projectId, setOpen]
   );
 
   return (
@@ -142,6 +145,7 @@ export default function AddTagButton({
       onOpen={closeMenu}
       open={open}
       setOpen={setOpen}
+      onClose={reset}
     >
       <Stack component="form" spacing={2} p={2}>
         {fields.map((_v, i) => (
