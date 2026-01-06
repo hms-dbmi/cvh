@@ -9,9 +9,6 @@ Parameters:
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Default: "subnet-0b17025a76b1d74a3,subnet-0d2e5b8795e4569c0,subnet-059c833c815115bb5"
-  # PrivateSubnetIds:
-  #   Type: List<AWS::EC2::Subnet::Id>
-  #   Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
   TaskName:
     Type: String
     Description: The name of the service task
@@ -89,7 +86,6 @@ Resources:
               - DomainName: !Sub 'www.${RootDomainName}'
                 HostedZoneId: !Ref HostedZoneId
 
-  # Load Balancer
   # External load balancer
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -114,15 +110,13 @@ Resources:
       GroupDescription: !Sub "${AWS::StackName} ECS SG"
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 0
+          FromPort: 8000
           ToPort: 8000
-          CidrIp: 0.0.0.0/0
-          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
         - IpProtocol: tcp
-          FromPort: 0
+          FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
-          # SourceSecurityGroupId: !Ref 'LoadBalancerSG'
+          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
@@ -189,7 +183,7 @@ Resources:
                   EvaluateTargetHealth: false
                   HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
 
-  # # Load Balancer Listener
+  # Load Balancer Listener
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -236,7 +230,6 @@ Resources:
           SecurityGroups:
             - !GetAtt ECSSecurityGroup.GroupId
           Subnets: !Ref PublicSubnetIds
-          # Subnets: !Join [ ",", [!Ref PrivateSubnetIds, !Ref PublicSubnetIds] ]
       Tags: 
         - Key: Name
           Value: !Sub
@@ -436,68 +429,8 @@ Resources:
             - '${StackName}:ECSExecutionRole'
             - StackName: !Ref AWS::StackName
 
-  # # Create the VPC Link configured with the private subnets. Security groups are kept empty here, but can be configured as required.
-  # VpcLink:
-  #   Type: 'AWS::ApiGatewayV2::VpcLink'
-  #   Properties:
-  #     Name: APIGWVpcLinkToPrivateHTTPEndpoint-2
-  #     SubnetIds: !Ref PrivateSubnetIds
-  #     SecurityGroupIds: []
-  #   DependsOn:
-  #     - TaskContainerRole
-  #     - ECSServiceTaskDefinition
-
-  # # Create the API Gateway HTTP endpoint
-  # APIGWHTTPEndpoint:
-  #   Type: 'AWS::ApiGatewayV2::Api'
-  #   Properties:
-  #     Name: serverlessland-pvt-endpoint
-  #     ProtocolType: HTTP
-  # # Create the API Gateway HTTP_PROXY integration between the created API and the private load balancer via the VPC Link.
-  # # Ensure that the 'DependsOn' attribute has the VPC Link dependency.
-  # # This is to ensure that the VPC Link is created successfully before the integration and the API GW routes are created.
-  # APIGWHTTPEndpointIntegration:
-  #   Type: 'AWS::ApiGatewayV2::Integration'
-  #   Properties:
-  #     ApiId: !Ref APIGWHTTPEndpoint
-  #     IntegrationType: HTTP_PROXY
-  #     ConnectionId: !Ref VpcLink
-  #     ConnectionType: VPC_LINK
-  #     IntegrationMethod: ANY
-  #     IntegrationUri: !Ref LoadBalancerListener
-  #     PayloadFormatVersion: '1.0'
-  #   DependsOn:
-  #   - VpcLink
-  #   - APIGWHTTPEndpoint
-  #   - LoadBalancerListener
-  # # API GW route with ANY method
-  # APIGWRoute:
-  #   Type: 'AWS::ApiGatewayV2::Route'
-  #   Properties:
-  #     ApiId: !Ref APIGWHTTPEndpoint
-  #     RouteKey: 'ANY /{proxy+}'
-  #     Target: !Join 
-  #       - /
-  #       - - integrations
-  #         - !Ref APIGWHTTPEndpointIntegration
-  #   DependsOn:
-  #   - APIGWHTTPEndpointIntegration
-  # # Set a default stage
-  # APIStageDefault:
-  #   Type: 'AWS::ApiGatewayV2::Stage'
-  #   Properties:
-  #     ApiId: !Ref APIGWHTTPEndpoint
-  #     StageName: $default
-  #     AutoDeploy: true
-  #   DependsOn:
-  #     - APIGWHTTPEndpoint
 
 Outputs:
-  # Generated API GW endpoint URL that can be used to access the application running on a private ECS Fargate cluster.
-  # APIGWEndpoint:
-  #   Description: API Gateway Endpoint
-  #   Value: !GetAtt APIGWHTTPEndpoint.ApiEndpoint
-
   ECSCluster: 
     Description: A reference to the ECS cluster
     Value: !Ref ECSFargateCluster
