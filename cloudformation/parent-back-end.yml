@@ -14,14 +14,10 @@ Parameters:
     Type: String
     Description: The URI of the image to deploy
     Default: "765139173785.dkr.ecr.us-east-2.amazonaws.com/gosling/dmc:latest"
-  DbInfo:
+  DBUserName:
     Type: String
-    Description: The ARN of the database secret in Secrets Manager
+    Description: The database main username
     NoEcho: true
-  DbSG:
-    Type: String
-    Description: The security group ID attached to the database
-    Default: "sg-064851831f18d03a0"
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
@@ -44,6 +40,13 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: /path_to_template/nested-template.yaml #replace with s3
+  Database:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: /path_to_template/nested-template.yaml #replace with s3 
+      Parameters:
+        DBUserName: !Ref DBUserName
+        DBSecurityGroupId: !GetAtt Network.Outputs.SecurityGroup
   Backend:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -52,6 +55,7 @@ Resources:
         PublicSubnetIds: !GetAtt Network.Outputs.PublicSubnets
         ECSSecurityGroupId: !GetAtt Network.Outputs.ECSSecurityGroupId
         LBSecurityGroupId: !GetAtt Network.Outputs.LBSecurityGroupId
+        DBKeyARN: !GetAtt Database.Outputs.DBKeyARN
         VpcId: !GetAtt Network.Outputs.VPC
         TaskName: !Ref TaskName
         TaskEnvFile: !Ref TaskEnvFile

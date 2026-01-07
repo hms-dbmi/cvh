@@ -21,30 +21,26 @@ Parameters:
   TaskName:
     Type: String
     Description: The name of the service task
-    Default: "gosling-dmc-api-lb"
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3
     Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env.env"
+    NoEcho: true
   ImageURI:
     Type: String
     Description: The URI of the image to deploy
-    Default: "765139173785.dkr.ecr.us-east-2.amazonaws.com/gosling/dmc:latest"
-  DbInfo:
+  DBKeyARN:
     Type: String
     Description: The ARN of the database secret in Secrets Manager
     NoEcho: true
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
-    Default: gosling-lang.org
   HostedZoneId:
     Description: Hosted Zone ID
     Type: String
-    Default: Z085595833A98LWBFS157
   RootDomainName:
     Description: Domain name for the website (api.designer.gosling-lang.org)
-    Default: api.designer.gosling-lang.org
     Type: String
   Environment:
     Type: String
@@ -314,7 +310,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref DbInfo
+                Resource: !Ref DBKeyARN
               - Sid: ECR
                 Effect: Allow
                 Action:
@@ -378,7 +374,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref DbInfo
+                Resource: !Ref DBKeyARN
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
             Version: 2012-10-17

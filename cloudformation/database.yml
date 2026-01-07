@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Database
+
+Parameters:
+  DBUserName:
+    Type: String
+    Description: The database main username
+    NoEcho: true
+  DBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The database's security group ID
+
+Resources:
+  KMSKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: DB KMS Key
+      EnableKeyRotation: false
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: !Ref "AWS::StackName"
+        Statement:
+          - Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                Fn::Sub: "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+  MyDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBSecurityGroups:
+        - !Ref DBSecurityGroupId
+      AllocatedStorage: "20"
+      BackupRetentionPeriod: 7
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      MasterUsername: !Ref DBUserName
+      ManageMasterUserPassword: true
+      MasterUserSecret:
+        KmsKeyId: !Ref KMSKey
+
+Outputs:
+  DBKeyARN:
+    Description: The ARN of the KMS DB Key
+    Value: !GetAtt KMSKey.Arn

@@ -1,5 +1,5 @@
 Description: Deploy a static website
-
+# Must be deployed on us-east-1
 Parameters:
     RootDomainName:
         Description: Domain name for the website
