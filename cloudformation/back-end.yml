@@ -12,6 +12,12 @@ Parameters:
   # PrivateSubnetIds:
   #   Type: List<AWS::EC2::Subnet::Id>
   #   Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
+  ECSSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The ID of the ECS Security Group
+  LBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The ID of the LB Security Group
   TaskName:
     Type: String
     Description: The name of the service task
@@ -28,10 +34,6 @@ Parameters:
     Type: String
     Description: The ARN of the database secret in Secrets Manager
     NoEcho: true
-  DbSG:
-    Type: String
-    Description: The security group ID attached to the database
-    Default: "sg-064851831f18d03a0"
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
@@ -53,31 +55,6 @@ Conditions:
   IsProd: !Equals [!Ref Environment, prod]
 
 Resources:
-  # Security Group for the Load Balancer
-  LoadBalancerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Sub "${AWS::StackName} LoadBalancer SG"
-      SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 80
-          FromPort: 80
-          IpProtocol: tcp
-          ToPort: 80
-        - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 443
-          FromPort: 443
-          IpProtocol: tcp
-          ToPort: 443
-      Tags:
-        - Key: Name
-          Value: !Sub
-            - "${StackName}:ECSService"
-            - StackName: !Ref AWS::StackName
-        - Key: project
-          Value: "gosling-dmc"
-      VpcId: !Ref VpcId
-
   CertificateManagerCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
@@ -133,53 +110,12 @@ Resources:
           Value: "30"
       Scheme: internet-facing
       SecurityGroups:
-        - !GetAtt LoadBalancerSG.GroupId
+        - !Ref LBSecurityGroupId
       Subnets: !Ref PublicSubnetIds
       Tags:
         - Key: project
           Value: "gosling-dmc"
       Type: application
-
-  # ECS Security Group
-  ECSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Sub "${AWS::StackName} ECS SG"
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 8000
-          ToPort: 8000
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
-      SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
-          Description: Allow all outbound traffic by default
-          IpProtocol: "-1"
-      Tags:
-        - Key: project
-          Value: "gosling-dmc"
-      VpcId: !Ref VpcId
-
-  # Access to RDS from ECS Security Group
-  RDSOutboundRule:
-    Type: AWS::EC2::SecurityGroupEgress
-    Properties:
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-      DestinationSecurityGroupId: !Ref DbSG
-      GroupId: !GetAtt ECSSecurityGroup.GroupId
-  InboundRule:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
-      GroupId: !Ref DbSG
 
   # Target Group for ECS Service
   LoadBalancerListenerTargetGroupECS:
@@ -274,7 +210,7 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !GetAtt ECSSecurityGroup.GroupId
+            - !Ref ECSSecurityGroupId
           Subnets: !Ref PublicSubnetIds
       Tags:
         - Key: Name

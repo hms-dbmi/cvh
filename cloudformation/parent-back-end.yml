@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Top-level stack template that deploys a nested stack
+
+Parameters:
+  TaskName:
+    Type: String
+    Description: The name of the service task
+    Default: "gosling-dmc-api-lb"
+  TaskEnvFile:
+    Type: String
+    Description: The ARN for the environment file in S3
+    Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env.env"
+  ImageURI:
+    Type: String
+    Description: The URI of the image to deploy
+    Default: "765139173785.dkr.ecr.us-east-2.amazonaws.com/gosling/dmc:latest"
+  DbInfo:
+    Type: String
+    Description: The ARN of the database secret in Secrets Manager
+    NoEcho: true
+  DbSG:
+    Type: String
+    Description: The security group ID attached to the database
+    Default: "sg-064851831f18d03a0"
+  HostedZoneName:
+    Description: Hosted Zone Name
+    Type: String
+    Default: gosling-lang.org
+  HostedZoneId:
+    Description: Hosted Zone ID
+    Type: String
+    Default: Z085595833A98LWBFS157
+  RootDomainName:
+    Description: Domain name for the website (api.designer.gosling-lang.org)
+    Default: api.designer.gosling-lang.org
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
+
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: /path_to_template/nested-template.yaml #replace with s3
+  Backend:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: /path_to_template/nested-template.yaml #replace with s3
+      Parameters:
+        PublicSubnetIds: !GetAtt Network.Outputs.PublicSubnets
+        ECSSecurityGroupId: !GetAtt Network.Outputs.ECSSecurityGroupId
+        LBSecurityGroupId: !GetAtt Network.Outputs.LBSecurityGroupId
+        VpcId: !GetAtt Network.Outputs.VPC
+        TaskName: !Ref TaskName
+        TaskEnvFile: !Ref TaskEnvFile
+        ImageURI: !Ref ImageURI
+        HostedZoneName: !Ref HostedZoneName
+        HostedZoneId: !Ref HostedZoneId
+        RootDomainName: !Ref RootDomainName
+        Environment: !Ref Environment
+    DependsOn: Network
