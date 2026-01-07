@@ -79,6 +79,11 @@ Parameters:
     AllowedValues:
          - "True"
          - "False"
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
+
 
 Mappings: 
   RegionMap: 
@@ -590,7 +595,8 @@ Resources:
         - !Ref PrivateRouteTableB
       VpcId: !Ref VPC
 
-  # Security Group for the Load Balancer
+# Only custom resources in security groups below
+
   LoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -613,6 +619,10 @@ Resources:
             - StackName: !Ref AWS::StackName
         - Key: project
           Value: "gosling-dmc"
+        - Key: component
+          Value: "gosling-dmc-network"
+        - Key: environment
+          Value: !Ref Environment
       VpcId: !Ref VPC
 
   SecurityGroup:
@@ -627,8 +637,13 @@ Resources:
         SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: !Ref CidrBlock
-
-# Only custom resources in security groups below
+        Tags:
+        - Key: project
+          Value: "gosling-dmc"
+        - Key: component
+          Value: "gosling-dmc-network"
+        - Key: environment
+          Value: !Ref Environment
 
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -650,6 +665,10 @@ Resources:
       Tags:
         - Key: project
           Value: "gosling-dmc"
+        - Key: component
+          Value: "gosling-dmc-network"
+        - Key: environment
+          Value: !Ref Environment
       VpcId: !Ref VPC
 
   VPCRDSOutboundRule:

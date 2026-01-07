@@ -9,6 +9,10 @@ Parameters:
   DBSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: The database's security group ID
+  Environment:
+      Type: String
+      Default: dev
+      AllowedValues: [prod, dev]
 
 Resources:
   KMSKey:
@@ -41,6 +45,13 @@ Resources:
       ManageMasterUserPassword: true
       MasterUserSecret:
         KmsKeyId: !Ref KMSKey
+      Tags:
+        - Key: project
+          Value: "gosling-dmc"
+        - Key: component
+          Value: "gosling-dmc-db"
+        - Key: environment
+          Value: !Ref Environment
 
 Outputs:
   DBKeyARN:

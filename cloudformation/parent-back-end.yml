@@ -47,6 +47,7 @@ Resources:
       Parameters:
         DBUserName: !Ref DBUserName
         DBSecurityGroupId: !GetAtt Network.Outputs.SecurityGroup
+        Environment: !Ref Environment
   Backend:
     Type: AWS::CloudFormation::Stack
     Properties:

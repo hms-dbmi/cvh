@@ -127,6 +127,8 @@ Resources:
           Value: "gosling-dmc"
         - Key: component
           Value: "gosling-dmc-api"
+        - Key: environment
+          Value: !Ref Environment
       TargetType: ip
       VpcId: !Ref VpcId
 
@@ -185,6 +187,10 @@ Resources:
       Tags:
         - Key: project
           Value: "gosling-dmc"
+        - Key: component
+          Value: "gosling-dmc-api"
+        - Key: environment
+          Value: !Ref Environment
 
   # ECS Service
   ECSService:
