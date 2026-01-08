@@ -1,7 +1,5 @@
 # cvh
 
-## Development
-
 ### Installs
 
 - `git`: Suggest [installing Apple XCode](https://developer.apple.com/xcode/).
