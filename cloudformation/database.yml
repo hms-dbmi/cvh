@@ -10,9 +10,12 @@ Parameters:
     Type: AWS::EC2::SecurityGroup::Id
     Description: The database's security group ID
   Environment:
-      Type: String
-      Default: dev
-      AllowedValues: [prod, dev]
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
+  DBName:
+    Type: String
+    Default: gosling_dmc_db
 
 Resources:
   KMSKey:
@@ -32,10 +35,11 @@ Resources:
             Action:
               - "kms:*"
             Resource: "*"
-  MyDB:
+  Database:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBSecurityGroups:
+      DBName: !Ref DBName
+      VPCSecurityGroups:
         - !Ref DBSecurityGroupId
       AllocatedStorage: "20"
       BackupRetentionPeriod: 7

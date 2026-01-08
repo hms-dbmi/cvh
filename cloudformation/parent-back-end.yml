@@ -9,7 +9,7 @@ Parameters:
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3
-    Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env.env"
+    Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env-dev.env"
   ImageURI:
     Type: String
     Description: The URI of the image to deploy
@@ -34,16 +34,25 @@ Parameters:
     Type: String
     Default: dev
     AllowedValues: [prod, dev]
+  NetworkTemplateURL:
+    Type: String
+    Default: https://gosling-dmc-templates-east-1.s3.us-east-1.amazonaws.com/network.yml
+  DatabaseTemplateURL:
+    Type: String
+    Default: https://gosling-dmc-templates-east-1.s3.us-east-1.amazonaws.com/database.yml
+  BackendTemplateURL:
+    Type: String
+    Default: https://gosling-dmc-templates-east-1.s3.us-east-1.amazonaws.com/back-end.yml
 
 Resources:
   Network:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: /path_to_template/nested-template.yaml #replace with s3
+      TemplateURL: !Ref NetworkTemplateURL
   Database:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: /path_to_template/nested-template.yaml #replace with s3 
+      TemplateURL: !Ref DatabaseTemplateURL
       Parameters:
         DBUserName: !Ref DBUserName
         DBSecurityGroupId: !GetAtt Network.Outputs.SecurityGroup
@@ -51,7 +60,7 @@ Resources:
   Backend:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: /path_to_template/nested-template.yaml #replace with s3
+      TemplateURL: !Ref BackendTemplateURL
       Parameters:
         PublicSubnetIds: !GetAtt Network.Outputs.PublicSubnets
         ECSSecurityGroupId: !GetAtt Network.Outputs.ECSSecurityGroupId
