@@ -16,6 +16,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 import json
+import sys
 
 env.read_env()
 # Override in .env for local development
@@ -24,137 +25,183 @@ DEBUG = env.bool("DEBUG", default=False)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.str('SECRET_KEY')
+SECRET_KEY = env.str("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+IS_DEVELOPMENT_SERVER = DEBUG
 
 ALLOWED_HOSTS = []
-METADATA_URI = env.str('ECS_CONTAINER_METADATA_URI')
+METADATA_URI = env.str("ECS_CONTAINER_METADATA_URI_V4")
+
+
+def get_ecs_allowed_hosts(uri):
+    region_name = "us-east-2"
+
+    session = boto3.session.Session()
+    ecs_client = session.client(service_name="ecs", region_name=region_name)
+    ec2_client = session.client(service_name="ec2", region_name=region_name)
+
+    container_metadata = requests.get(uri).json()
+    container_ip = container_metadata["Networks"][0]["IPv4Addresses"][0]
+
+    task_metadata = requests.get(f"{uri}/task").json()
+
+    cluster = task_metadata["Cluster"]
+    task_arn = task_metadata["TaskARN"]
+    try:
+        tasks = ecs_client.describe_tasks(cluster=cluster, tasks=[task_arn])
+    except ClientError as e:
+        raise e
+
+    task = tasks["tasks"][0]
+    attachments = task.get("attachments", [])
+    eni_id = None
+
+    for attachment in attachments:
+        if attachment.get("type") == "ElasticNetworkInterface":
+            details = attachment.get("details", [])
+            for detail in details:
+                if detail.get("name") == "networkInterfaceId":
+                    eni_id = detail.get("value")
+    if eni_id:
+        try:
+            network_interfaces = ec2_client.describe_network_interfaces(
+                NetworkInterfaceIds=[eni_id],
+            )
+        except ClientError as e:
+            raise e
+
+        return [
+            container_ip,
+            network_interfaces["NetworkInterfaces"][0]["Association"]["PublicIp"],
+        ]
+    return [container_ip]
+
 
 if METADATA_URI:
-    container_metadata = requests.get(METADATA_URI).json()
-    ALLOWED_HOSTS.append(container_metadata['Networks'][0]['IPv4Addresses'][0])
+    ecs_hosts = get_ecs_allowed_hosts(METADATA_URI) or []
+    ALLOWED_HOSTS.extend(ecs_hosts)
 
-ENV_ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(',')
+
+ENV_ALLOWED_HOSTS = env.str("ALLOWED_HOSTS").split(",")
 
 if ENV_ALLOWED_HOSTS:
     ALLOWED_HOSTS.extend(ENV_ALLOWED_HOSTS)
 
 
-
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'corsheaders',
-    'api'
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "corsheaders",
+    "api",
+    "health_check",
 ]
 
 MIDDLEWARE = [
-    'core.middleware.HealthCheckMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-     'corsheaders.middleware.CorsMiddleware',
+    "core.middleware.HealthCheckMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
-ROOT_URLCONF = 'core.urls'
+ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
+WSGI_APPLICATION = "core.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-def get_db_secret():
 
+def get_db_secret():
     secret_name = env.str("DB_SECRET_NAME")
-    region_name = "us-east-1"
+    region_name = "us-east-2"
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
     client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
+        service_name="secretsmanager", region_name=region_name)
 
     try:
         get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+            SecretId=secret_name)
     except ClientError as e:
         # For a list of exceptions thrown, see
         # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
         raise e
 
-    return json.loads(get_secret_value_response['SecretString'])
+    return json.loads(get_secret_value_response["SecretString"])
+
 
 DB_USER = env.str("DB_USER")
 DB_PASSWORD = env.str("DB_PASSWORD")
 
 if METADATA_URI:
     db_secrets = get_db_secret()
-    DB_USER = db_secrets['username']
-    DB_PASSWORD = db_secrets['password']
+    DB_USER = db_secrets["username"]
+    DB_PASSWORD = db_secrets["password"]
+
+DB_OPTIONS = {}
+
+if not IS_DEVELOPMENT_SERVER or METADATA_URI:
+    DB_OPTIONS["sslmode"] = "require"
 
 DATABASES = {
     "default": {
         "ENGINE": env.str("DB_ENGINE"),
-        'NAME': env.str("DB_NAME"),
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': env.str("DB_HOST"),
-        'PORT': env.int("DB_PORT"),
+        "NAME": env.str("DB_NAME"),
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "HOST": env.str("DB_HOST"),
+        "PORT": env.int("DB_PORT"),
+        'OPTIONS': DB_OPTIONS,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -162,9 +209,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -174,11 +221,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(',')
+CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(",")

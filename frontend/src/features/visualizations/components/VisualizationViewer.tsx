@@ -1,25 +1,24 @@
-import "@hms-dbmi/gosling-designer-cvh/build/style.css";
+import "gosling-designer-vec/build/style.css";
 
-import type { components } from "../../../types/schema";
 import GoslingViewer from "./GoslingViewer.tsx";
-import VitessceViewer from "./VitessceViewer.tsx";
-
 
 interface VisualizationViewerProps {
-  visualizationId: string;
-  close: () => void;
+  projectId: string;
   visualizationType: string;
-  datasets?: components["schemas"]["DatasetOut"][];
   readonly?: boolean;
   onSave?: (newConf: string) => void;
-};
+  permissions: number,
+}
 
-function VisualizationViewer({ visualizationType, ...props }: VisualizationViewerProps) {
-  switch( visualizationType.toLowerCase() ) {
-    case 'vitessce':
-      return <VitessceViewer {...props} />
+function VisualizationViewer({
+  visualizationType,
+  ...props
+}: VisualizationViewerProps) {
+  switch (visualizationType.toLowerCase()) {
+    case "vitessce":
+      return null;
     default:
-      return <GoslingViewer {...props} />
+      return <GoslingViewer {...props} />;
   }
 }
 

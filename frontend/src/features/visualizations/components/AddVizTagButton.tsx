@@ -1,20 +1,26 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import IconButton from "@mui/material/IconButton";
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
-import CheckIcon from "@mui/icons-material/Check";
+import Button from "@mui/material/Button";
 
-import { useForm, useController, UseControllerProps } from "react-hook-form";
+import {
+  useForm,
+  useController,
+  UseControllerProps,
+  useFieldArray,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import type { components } from "../../../types/schema.d.ts";
 
-import { useTagVisualization } from "../api/useVisualizations";
+import { useTagVisualization } from "../api/useVisualizations.ts";
+import IconButton from "@mui/material/IconButton/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import { Trash, Tag } from "@phosphor-icons/react";
 
 interface FormValues {
-  tagKey?: string;
-  tag: string;
+  tags: { tagKey: string; tagValue: string }[];
 }
 
 function FormTextField({
@@ -42,21 +48,45 @@ function FormTextField({
   );
 }
 
-const schema = z
-  .object({
-    tag: z.string(),
-    tagKey: z.string(),
-  })
-  .required();
+const TagSchema = z.object({
+  tagValue: z.string(),
+  tagKey: z.string(),
+});
 
-export default function AddVizTagButton({
+const schema = z.object({ tags: z.array(TagSchema) });
+
+export default function AddTagButton({
+  projectId,
   visualizationId,
+  visualization,
+  closeMenu,
+  open,
+  setOpen,
 }: {
   visualizationId: string;
+  projectId: string;
+  visualization: components["schemas"]["VisualizationNoConfOut"];
+  closeMenu: () => void;
+  setOpen: (o: boolean) => void;
+  open: boolean;
 }) {
-  const { handleSubmit, control } = useForm({
+  const initialTags = useMemo(
+    () =>
+      visualization.tags.reduce<{ tagKey: string; tagValue: string }[]>(
+        (acc, { tag, key }) => {
+          if (tag && key) {
+            acc.push({ tagKey: key, tagValue: tag });
+          }
+          return acc;
+        },
+        []
+      ),
+    [visualization.tags]
+  );
+
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
-      tag: "",
+      tags: initialTags.length ? initialTags : [{ tagKey: "", tagValue: "" }],
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -64,51 +94,83 @@ export default function AddVizTagButton({
 
   const { mutate } = useTagVisualization();
 
-  const [showTextField, setShowTextField] = useState(false);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "tags",
+  });
 
-  const toggleTextField = useCallback(() => {
-    setShowTextField(!showTextField);
-  }, [setShowTextField, showTextField]);
+  useEffect(() => {
+    reset({ tags: initialTags });
+  }, [reset, initialTags]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
-      const keyField = formData?.tagKey ? { key: formData.tagKey } : {};
+      const tags = formData?.tags;
+
+      const tagsList = Object.values(tags)
+        .map((t) => ({
+          tag: t.tagValue,
+          key: t.tagKey,
+        }))
+        .filter(({ tag, key }) => tag.length && key.length);
       mutate({
         params: { path: { visualization_uuid: visualizationId } },
-        body: { tag: formData.tag, ...keyField },
+        body: {
+          tags: tagsList,
+          uuid: visualizationId,
+          project_uuid: projectId,
+        },
       });
-      toggleTextField();
+      setOpen(false);
     },
-    [mutate, toggleTextField, visualizationId]
+    [mutate, visualizationId, projectId, setOpen]
   );
 
   return (
-    <Stack spacing={1} direction="row">
-      {showTextField && (
-        <Stack
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
-          spacing={1}
-          direction="row"
-        >
-          <FormTextField
-            name="tagKey"
-            label="Key (optional)"
-            control={control}
-          />
-          <FormTextField name="tag" label="Value" control={control} />
-          <IconButton type="submit" size="small">
-            <CheckIcon color="success" />
-          </IconButton>
-        </Stack>
-      )}
-      <IconButton onClick={toggleTextField} size="small">
-        {showTextField ? (
-          <CloseIcon color="error" />
-        ) : (
-          <AddIcon color="success" />
-        )}
-      </IconButton>
-    </Stack>
+    <DialogButtonCopy
+      text={{
+        button: (
+          <>
+            <ListItemIcon>
+              <Tag size={24} color="#4E5A63" />
+            </ListItemIcon>
+            Edit Tags
+          </>
+        ),
+        title: "Add and Edit Visualization Tags",
+      }}
+      onSubmit={handleSubmit(onSubmit)}
+      isMenuItem
+      isButton={false}
+      onOpen={closeMenu}
+      open={open}
+      setOpen={setOpen}
+      onClose={reset}
+    >
+      <Stack component="form" spacing={2} p={2}>
+        {fields.map((_v, i) => (
+          <Stack direction="row" spacing={1}>
+            <FormTextField
+              name={`tags.${i}.tagKey`}
+              label="Title"
+              control={control}
+              placeholder="Tag title..."
+            />
+            <FormTextField
+              name={`tags.${i}.tagValue`}
+              label="Value"
+              control={control}
+              placeholder="Tag value..."
+            />
+            <IconButton onClick={() => remove(i)}>
+              <Trash size={24} color="#8A9EA8" />
+            </IconButton>
+          </Stack>
+        ))}
+        <Button onClick={() => append({ tagKey: "", tagValue: "" })}>
+          Add Tag
+        </Button>
+      </Stack>
+    </DialogButtonCopy>
   );
 }

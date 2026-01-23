@@ -1,109 +1,186 @@
 import { ComponentProps, useCallback, useMemo, useState } from "react";
-import { Frame } from "@hms-dbmi/gosling-designer-cvh";
-import "@hms-dbmi/gosling-designer-cvh/build/style.css";
+import Box from "@mui/material/Box";
 
+import { GoslingDesignerVEC, VisSchema } from "gosling-designer-vec";
+import "gosling-designer-vec/build/style.css";
+import VisualizationsList from "./VisualizationsList.tsx";
+import DataList, { DatasetActionsMenu } from "./DataList.tsx";
 import { useGetVisualization } from "../api/useVisualizations.ts";
-import { Button, Stack } from "@mui/material";
 import type { components } from "../../../types/schema";
-
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import { useUpdateVisualization } from "../api/useVisualizations";
+import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
+import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
+import formatVisualization from "../utils/formatVisualization.ts";
+import PublishedVizMenu from "./PublishedVizMenu.tsx";
+type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
 interface GoslingViewerProps {
-    visualizationId: string;
-    close: () => void;
-    datasets?: components["schemas"]["DatasetOut"][];
-    readonly?: boolean;
-    onSave?: (newConf: string) => void;
-};
-  
-
-// TODO: This needs to be revisited to support fields etc
-const formatCvhDatasetsAsGoslingDatasets = (datasets: components["schemas"]["DatasetOut"][]) => {
-  return datasets.map((dataset) => ({
-    datatype: dataset.data_type,
-    name: dataset.name,
-    id: dataset.name,
-    file: {
-      url: dataset.source_url,
-      name: dataset.source_url.replace(/^.*[\\/]/, ""),
-    }
-  })) as ComponentProps<typeof Frame>['initialDatasets'];
+  projectId: string;
+  datasets?: Dataset[];
+  readonly?: boolean;
+  permissions: number;
 }
 
-const useFormattedDatasets = (datasets: components["schemas"]["DatasetOut"][]) => {
+const PERMISSIONS: Record<number, string> = {
+  0: "guest",
+  1: "viewer",
+  2: "editor",
+  3: "admin",
+};
+
+// TODO: This needs to be revisited to support fields etc
+const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]) => {
+  return datasets.map((dataset) => ({
+    type: dataset.file_type,
+    name: dataset.name,
+    id: dataset.uuid,
+    metadata: {},
+    url: dataset.source_url,
+    assembly: dataset?.assembly ?? undefined,
+    indexURL: dataset?.index_url ?? undefined,
+    header: dataset?.headers ?? undefined,
+    separator: dataset?.separator ?? undefined,
+    note: dataset?.description ?? undefined,
+    rowNames: dataset?.row_names ?? undefined,
+    ...(dataset.file_type === "csv"
+      ? { fields: dataset?.data_column ?? undefined }
+      : { optionalFields: dataset?.data_column ?? undefined }),
+    tags: dataset.tags.map((t) => [t.key, t.tag]),
+    // name: dataset.source_url.replace(/^.*[\\/]/, ""),
+  })) as ComponentProps<typeof GoslingDesignerVEC>["data"];
+};
+
+const useFormattedDatasets = (datasets: Dataset[]) => {
   return useMemo(() => {
     if (!datasets) {
       return [];
     }
     return formatCvhDatasetsAsGoslingDatasets(datasets);
   }, [datasets]);
-}
+};
 
+function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
+  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
+    undefined
+  );
 
-const readonlyStatusOfPanelsAndModes = {
-  data: false,
-  'add-data': false,
-  'track-selection': true,
-  customization: false,
-  templates: false,
-  editor: false,
-  'natural-language': false,
-  history: false,
-  delta: false,
-  explore: true,
-  readonly: true
-}
+  /* eslint-disable */
+  // @ts-ignore TODO: Remove ignore.
+  const { data } = useGetVisualization(selectedVizId);
+  /* eslint-enable */
 
-const defaultStatusOfPanelsAndModes = {
-  data: true,
-  'add-data': false,
-  'track-selection': true,
-  customization: true,
-  templates: true,
-  editor: true,
-  'natural-language': false,
-  history: true,
-  delta: false,
-  explore: false,
-  readonly: true,
-}
-
-
-function GoslingViewer({ visualizationId, close, onSave, datasets = [] }: GoslingViewerProps) {
-  const readonly = onSave === undefined;
-  const { isLoading, isError, data } = useGetVisualization(visualizationId);
-
-  const [changedCode, setChangedCode] = useState("");
-
-  const saveVisualization = useCallback(() => {
+  /* const saveVisualization = useCallback(() => {
     if (changedCode) {
       onSave?.(changedCode);
     }
     close();
-  }, [onSave, close, changedCode]);
+  }, [onSave, close, changedCode]); */
 
-  const formattedDatasets = useFormattedDatasets(datasets);
+  const selectedAssemblies = useDatasetFiltersStore(
+    (state) => state.selectedAssemblies
+  );
+  const selectedFileTypes = useDatasetFiltersStore(
+    (state) => state.selectedFileTypes
+  );
 
-  if (isLoading || isError || !data?.conf || !formattedDatasets) {
+  const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
+
+  const selectedTags = useDatasetFiltersStore((state) => state.selectedTags);
+
+  const { data: datasets } = useGetPaginatedProjectDatasets({
+    projectId,
+    tags: selectedTags,
+    fileTypes: selectedFileTypes,
+    assemblies: selectedAssemblies,
+    name: nameSubstring,
+  });
+
+  const allDatasets: Required<Dataset>[] =
+    datasets?.pages.flatMap((page) => page.items as Required<Dataset>[]) ?? [];
+
+  const formattedDatasets = useFormattedDatasets(allDatasets);
+  const formattedVisualization = formatVisualization(data);
+
+  const { mutate: updateViz } = useUpdateVisualization();
+  const { toastError } = useSnackbarActions();
+
+  const hasWritePermissions = permissions >= 2;
+  const saveViz = useCallback(
+    ({
+      vis,
+      nTracks,
+      nDatasets,
+    }: {
+      vis: VisSchema.GDVis;
+      nTracks: number;
+      nDatasets: number;
+    }) => {
+      const conf = vis?.spec;
+      const n_tracks = nTracks;
+      const n_datasets = nDatasets;
+
+      try {
+        if (!selectedVizId || !hasWritePermissions) {
+          return;
+        }
+        updateViz({
+          body: { conf, n_tracks, n_datasets },
+          params: {
+            path: { visualization_uuid: selectedVizId },
+          },
+        });
+      } catch (e) {
+        toastError("Error saving visualization");
+        console.error(e);
+      }
+    },
+    [updateViz, toastError, selectedVizId, hasWritePermissions]
+  );
+
+  const publishViz = useCallback(() => {
+    try {
+      if (!selectedVizId || !hasWritePermissions) {
+        return;
+      }
+      updateViz({
+        body: { published: true },
+        params: {
+          path: { visualization_uuid: selectedVizId },
+        },
+      });
+    } catch (e) {
+      toastError("Error publishing visualization");
+      console.error(e);
+    }
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
+
+  if (!formattedDatasets) {
     return null;
   }
 
-
   return (
-    <Stack direction='column'>
-      <Stack direction='row' justifyContent='center' width='100%'>
-        {!readonly && <Button onClick={saveVisualization} aria-label="Save Visualization" variant='contained'>Save Visualization</Button>}
-        <Button onClick={close} aria-label="Close Visualization" variant='contained'>Close Visualization</Button>
-        </Stack>
-      <Frame 
-        key={visualizationId}
-        initialSpec={data.conf} 
-        initialDatasets={formattedDatasets} 
-        initialActiveStatusOfPanelsAndModes={
-          readonly ? readonlyStatusOfPanelsAndModes : defaultStatusOfPanelsAndModes
+    <Box sx={{ height: "100%" }}>
+      <GoslingDesignerVEC
+        visualization={formattedVisualization} // or `undefined`
+        data={formattedDatasets} // or `undefined`
+        onChange={saveViz}
+        visualizationPanel={
+          <VisualizationsList
+            projectId={projectId}
+            setSelectedVizId={setSelectedVizId}
+            selectedVizId={selectedVizId}
+            permissions={permissions}
+          />
         }
-        onCodeChange={setChangedCode}
+        DatasetsPanel={DataList}
+        DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
+        // @ts-expect-error TODO: Remove ignore.
+        userMode={PERMISSIONS?.[permissions] ?? "guest"}
+        onPublish={publishViz}
+        PublishMenu={PublishedVizMenu}
       />
-    </Stack>
+    </Box>
   );
 }
 

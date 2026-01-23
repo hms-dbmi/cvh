@@ -5,32 +5,31 @@ import { useAuth0, GenericError } from "@auth0/auth0-react";
 const authParams = {
     authorizationParams: {
       audience: import.meta.env.VITE_API_AUDIENCE,
-      scope: "read:current_user",
+      scope: "read:current_user email",
     },
   };
 
 function useAuthToken(){
     const {
-        getAccessTokenWithPopup,
+        isAuthenticated,
+        isLoading,
         getAccessTokenSilently,
       } = useAuth0();
 
       return useCallback(async () => {
+          if(!isAuthenticated || isLoading){
+            return
+          }
+          
           try {
             const token = await getAccessTokenSilently(authParams);
             return token;
           } catch (e) {
             if (e instanceof GenericError) {
-              if (e.error === "consent_required" || e.error=="login_required") {
-                const popup = window.open("");
-                const token = await getAccessTokenWithPopup(authParams, { popup });
-                return token;
-              } else {
-                throw e;
-              }
+              console.error(e.error)
             }
           }
-      }, [getAccessTokenSilently, getAccessTokenWithPopup])
+      }, [getAccessTokenSilently, isAuthenticated, isLoading])
 }
 
 export {useAuthToken}

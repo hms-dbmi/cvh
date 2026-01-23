@@ -44,12 +44,12 @@ function useClient() {
 }
 
 function buildInvalidateGetQuery(paths: string[]) {
-  return (q: Query<unknown, Error, unknown, string[]>) => {
+  return (q: Query<unknown, Error, unknown, readonly unknown[]>) => {
     const queryKey = q?.queryKey;
 
     if (
       queryKey[0] === "get" &&
-      paths.some((path) => queryKey[1]?.startsWith(path))
+      paths.some((path) => typeof queryKey[1] === 'string' && queryKey[1]?.startsWith(path))
     ) {
       return true;
     }

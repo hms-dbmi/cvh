@@ -19,9 +19,11 @@ function useProjects() {
 
 const path = "/api/projects";
 const publicPath = "/api/public/projects";
-const membersPath = "/api/projects/members/{project_uuid}";
+const membersPath = "/api/projects/{project_uuid}/members";
+const permissionsPath = "/api/projects/{project_uuid}/permissions";
 
-const invalidateGetQuery = buildInvalidateGetQuery([path, publicPath, membersPath])
+
+const invalidateGetQuery = buildInvalidateGetQuery([path, publicPath, membersPath, permissionsPath])
 
 
 function useGetProjects(options?: QueryOptions) {
@@ -141,8 +143,6 @@ function useUpdateProject(){
   });
 }
 
-
-
 function useGetProjectMembers(projectId: string) {
   const client = useClient();
   return client.useQuery("get", membersPath, {
@@ -161,6 +161,6 @@ export {
   useUpdateProjectMember,
   useRemoveProjectMember,
   useDeleteProject,
-  useUpdateProject
+  useUpdateProject,
 };
 export default useGetProjects;

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
@@ -8,19 +8,17 @@ import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
-import MenuItem from "@mui/material/MenuItem";
+import { Plus } from "@phosphor-icons/react";
 
 const text = {
-  button: "Add Visualization",
-  title: "Add Visualization",
+  button: "New Visualization",
+  title: "New Visualization",
 };
 
 interface FormValues {
   name: string;
-  description: string;
-  tool: string;
-  tool_version: string;
-  conf: string;
+  description?: string;
+  author?: string;
 }
 
 function FormTextField({
@@ -50,122 +48,74 @@ function FormTextField({
   );
 }
 
-function FormSelectField({
-  name,
-  control,
-  label,
-  options,
-  ...rest
-}: UseControllerProps<FormValues> & Partial<TextFieldProps> & { options: string[] }) {
-  const { field, fieldState } = useController({
-    name,
-    control,
-    rules: { required: true },
-  });
-
-  return (
-    <TextField
-      select
-      label={label || name}
-      fullWidth
-      error={fieldState.error !== undefined}
-      helperText={fieldState?.error?.message}
-      {...field}
-      slotProps={{
-        inputLabel: { shrink: true },
-      }}
-      {...rest}
-    >
-      {options.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
-}
-
-// TODO: Move this to a more appropriate place
-const SUPPORTED_TOOLS = [
-  "Gosling",
-  "Vitessce"
-]
-
-const schema = z
-  .object({
-    name: z.string(),
-    description: z.string(),
-    tool: z.string(),
-    tool_version: z.string(),
-    conf: z.string(),
-  })
-  .required();
+const schema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name cannot be empty" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  description: z
+    .string()
+    .max(300, { message: "Description must be less than 300 characters" })
+    .optional(),
+  author: z.string().optional(),
+});
 
 export default function AddVisualizationButton({
   projectId,
+  setSelectedVizId,
 }: {
+  setSelectedVizId?: (id?: string) => void;
   projectId: string;
 }) {
-  const { handleSubmit, control } = useForm({
+  const [open, setOpen] = useState(false);
+
+  const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       name: "",
-      description: "",
-      tool: SUPPORTED_TOOLS[0],
-      tool_version: "",
-      conf: "",
+      description: undefined,
+      author: undefined,
     },
     mode: "onChange",
     resolver: zodResolver(schema),
   });
 
-  const { mutate } = useCreateVisualization();
+  const handleReset = useCallback(() => {
+    reset();
+    setOpen(false);
+  }, [reset, setOpen]);
+
+  const { mutate } = useCreateVisualization(setSelectedVizId);
 
   const onSubmit = useCallback(
-    ({ conf, ...formData }: FormValues) => {
-      const c = JSON.parse(conf);
-      mutate({ body: { ...formData, conf: c, project_uuid: projectId } });
+    (formData: FormValues) => {
+      mutate({ body: { ...formData, project_uuid: projectId } });
+      handleReset();
       return;
     },
-    [mutate, projectId]
+    [mutate, projectId, handleReset]
   );
 
   return (
-    <DialogButton text={text} onSubmit={handleSubmit(onSubmit)}>
-      <Stack direction="row" spacing={2} mt={2}>
-        <Stack spacing={1} minWidth={300}>
-          <FormTextField name="name" label="Name" control={control} />
-          <FormTextField
-            name="description"
-            label="Description"
-            control={control}
-          />
-          <FormSelectField
-            name="tool"
-            label="Tool"
-            control={control}
-            options={SUPPORTED_TOOLS}
-            sx={{ flexGrow: 1 }}
-          />
-          <FormTextField
-            name="tool_version"
-            label="Tool Version"
-            control={control}
-          />
-        </Stack>
+    <DialogButton
+      open={open}
+      setOpen={setOpen}
+      text={text}
+      onSubmit={handleSubmit(onSubmit)}
+      buttonProps={{
+        startIcon: <Plus size={20} weight="fill" />,
+        sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
+      }}
+      onClose={reset}
+    >
+      <Stack spacing={2} minWidth={300} mt={2}>
+        <FormTextField name="name" label="Name" control={control} />
         <FormTextField
-          name="conf"
-          label="Configuration"
+          name="description"
+          label="Description"
           control={control}
-          multiline
-          sx={{
-            flexGrow: 1,
-            "& .MuiInputBase-root": {
-              minHeight: "100%",
-              display: "flex",
-              alignItems: "start",
-            },
-          }}
         />
+        <FormTextField name="author" label="Author" control={control} />
       </Stack>
     </DialogButton>
   );

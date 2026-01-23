@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    if: github.repository == 'hms-dbmi/cvh'
+    if: github.repository == 'gosling-lang/gosling-designer-dmc'
     # Available versions:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-24.04
@@ -38,6 +38,7 @@ jobs:
         VITE_AUTH0_CLIENTID: ${{secrets.VITE_AUTH0_CLIENTID}}
         VITE_API_AUDIENCE: ${{secrets.VITE_API_AUDIENCE}}
         VITE_API_URL: ${{secrets.VITE_API_URL}}
+        VITE_CLOUDFRONT_URL: ${{secrets.VITE_CLOUDFRONT_URL}}
       run: npm run build
 
     - name: Configure AWS Credentials
@@ -50,7 +51,7 @@ jobs:
     - name: Upload to S3
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
       run: |
-        aws s3 sync ./dist s3://vis.cfde.cloud
+        aws s3 sync ./dist s3://designer.gosling-lang.org
     
     - name: Invalidate Cache
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}

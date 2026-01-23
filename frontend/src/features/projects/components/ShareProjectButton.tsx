@@ -4,16 +4,11 @@ import Stack from "@mui/material/Stack";
 import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import ShareIcon from "@mui/icons-material/Share";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 
-import DialogButton from "../../../components/DialogButton";
 import { useAddProjectMember } from "../api/useProjects";
-
-const text = {
-  button: "Share Project",
-  title: "Share Project",
-};
-
 interface FormValues {
   email: string;
 }
@@ -22,6 +17,7 @@ function FormTextField({
   name,
   control,
   label,
+  ...rest
 }: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
   const { field, fieldState } = useController({
     name,
@@ -32,13 +28,14 @@ function FormTextField({
   return (
     <TextField
       label={label || name}
-      fullWidth
       error={fieldState.error !== undefined}
       helperText={fieldState?.error?.message}
       {...field}
       slotProps={{
         inputLabel: { shrink: true },
       }}
+      sx={{ flexGrow: 1 }}
+      {...rest}
     />
   );
 }
@@ -54,7 +51,7 @@ export default function ShareProjectButton({
 }: {
   projectId: string;
 }) {
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control, formState } = useForm({
     defaultValues: {
       email: "",
     },
@@ -72,14 +69,31 @@ export default function ShareProjectButton({
   );
 
   return (
-    <DialogButton
-      text={text}
-      onSubmit={handleSubmit(onSubmit)}
-      buttonProps={{ endIcon: <ShareIcon /> }}
-    >
-      <Stack spacing={1} mt={2}>
-        <FormTextField name="email" label="E-mail Address" control={control} />
+    <Box component="form" onSubmit={handleSubmit(onSubmit)} mt={2}>
+      <Stack spacing={1} direction="row">
+        <FormTextField
+          name="email"
+          label="E-mail Address"
+          control={control}
+          placeholder="Add an email..."
+        />
+        <Stack>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!formState.isValid}
+            sx={{
+              padding: "12px 16px",
+              mt: 1,
+            }}
+          >
+            Invite
+          </Button>
+        </Stack>
       </Stack>
-    </DialogButton>
+      <Typography sx={{ marginLeft: "14px", fontSize: "11px", fontWeight: 500 }}>
+        Invited collaborator must have an account
+      </Typography>
+    </Box>
   );
 }

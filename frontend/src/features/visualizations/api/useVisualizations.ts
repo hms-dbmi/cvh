@@ -15,14 +15,28 @@ const invalidateGetQuery = buildInvalidateGetQuery([
   "/api/tags",
 ]);
 
+function hasFilter(filter: Record<string, unknown>) {
+  return Object.keys(filter).length > 0;
+}
+
 function useGetProjectVisualizations({
-  tags,
+  tags =[],
   projectId,
+  name,
 }: {
-  tags: { tag: string }[];
+  tags: string[];
   projectId: string;
+  name?: string;
 }) {
-  const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
+  const tagsFilter = tags.length ? { tags } : {};
+  const nameFilter = name ? { name } : {};
+
+  const queryOptions =
+    hasFilter(tagsFilter) ||
+    hasFilter(nameFilter)
+      ? { ...tagsFilter, ...nameFilter }
+      : {};
+  
   const client = useClient();
   return client.useQuery("get", path, {
     params: {
@@ -36,6 +50,8 @@ function useGetProjectVisualizations({
 
 function useGetVisualization(visualizationId: string) {
   const client = useClient();
+  
+
   return client.useQuery("get", `${path}/{visualization_uuid}`, {
     params: {
       path: { visualization_uuid: visualizationId },
@@ -43,14 +59,31 @@ function useGetVisualization(visualizationId: string) {
   });
 }
 
-function useCreateVisualization() {
+function useGetPublishedVisualization(visualizationId: string) {
+  const client = useClient();
+
+
+  return client.useQuery("get", `${publicPath}/{visualization_uuid}`, {
+    params: {
+      path: { visualization_uuid: visualizationId },
+    },
+  });
+}
+
+function useCreateVisualization(setSelectedVizId?: (id: string) => void) {
   const {toastSuccess, toastError} = useSnackbarActions()
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () =>{
+    onSuccess: (data) =>{
       toastSuccess("Successfully created visualization.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+
+      const uuid = data?.uuid;
+
+      if(uuid && setSelectedVizId){
+        setSelectedVizId(uuid);
+      }
     },
     onError: () => {
       toastError("Failed to create visualization.");
@@ -89,10 +122,10 @@ function useDeleteVisualization() {
 }
 
 function useGetPublishedVisualizations({
-  tags,
+  tags = [],
   options,
 }: {
-  tags: { tag: string }[];
+  tags?: { tag: string }[];
   options?: QueryOptions;
 }) {
   const queryOptions = tags.length ? { tags: tags.map((t) => t.tag) } : {};
@@ -116,6 +149,16 @@ function useTagVisualization() {
   });
 }
 
+function useGetProjectVisualizationTags(project_uuid: string){
+  const client = useClient();
+
+  return client.useQuery("get", `${path}/tags`, {
+    params: {
+      query: { project_uuid },
+    },
+  });
+}
+
 export {
   useGetProjectVisualizations,
   useGetVisualization,
@@ -124,4 +167,6 @@ export {
   useDeleteVisualization,
   useGetPublishedVisualizations,
   useTagVisualization,
+  useGetProjectVisualizationTags,
+  useGetPublishedVisualization
 };
