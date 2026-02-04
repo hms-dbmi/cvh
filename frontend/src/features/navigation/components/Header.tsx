@@ -363,7 +363,7 @@ export default function Header() {
             </Link>
             <Link to="/" sx={{ textDecoration: "none" }}>
               <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
-                Gosling Designer
+                Community Visualization Hub
               </Typography>
             </Link>
           </Stack>
