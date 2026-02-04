@@ -4,15 +4,15 @@ Parameters:
     RootDomainName:
         Description: Domain name for the website
         Type: String
-        Default: designer.gosling-lang.org
+        Default: vis-api.link
     HostedZoneId:
         Description: Hosted Zone ID
         Type: String
-        Default: Z085595833A98LWBFS157
+        Default: Z09477406JQAR0KB7G87
     HostedZoneName:
         Description: Hosted Zone Name
         Type: String
-        Default: gosling-lang.org
+        Default: vis-api.link
     Environment:
         Type: String
         Default: dev
@@ -152,10 +152,20 @@ Resources:
             ValidationMethod: DNS
             DomainValidationOptions:
                 # DNS record for the naked domain
-                - DomainName: !Ref RootDomainName
+                - DomainName: 
+                    !If [
+                        IsProd,
+                        !Ref RootDomainName,
+                        !Sub "${Environment}.${RootDomainName}",
+                    ]
                   HostedZoneId: !Ref HostedZoneId
                 # DNS record for the www domain
-                - DomainName: !Sub "www.${RootDomainName}"
+                - DomainName:
+                    !If [
+                        IsProd,
+                        !Sub "www.${RootDomainName}",
+                        !Sub "www.${Environment}.${RootDomainName}",
+                    ] 
                   HostedZoneId: !Ref HostedZoneId
 
     CloudFrontDistribution:
