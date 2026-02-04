@@ -5,10 +5,10 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: The VPC
-    Default: "vpc-0032aab40699a6b32"
+    Default: "vpc-085e18e944c89a1e7"
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Default: "subnet-0b17025a76b1d74a3,subnet-0d2e5b8795e4569c0,subnet-059c833c815115bb5"
+    Default: "subnet-0f87b522b2920749c,subnet-080cf4dde85922f57,subnet-05b0e6758b969dcfc"
   # PrivateSubnetIds:
   #   Type: List<AWS::EC2::Subnet::Id>
   #   Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
@@ -21,14 +21,16 @@ Parameters:
   TaskName:
     Type: String
     Description: The name of the service task
+    Default: "cvh-api-task"
   TaskEnvFile:
     Type: String
     Description: The ARN for the environment file in S3
-    Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env.env"
+    Default: "arn:aws:s3:::cvh-env-dev/cvh-env-dev.env"
     NoEcho: true
   ImageURI:
     Type: String
     Description: The URI of the image to deploy
+    Default: "605134458779.dkr.ecr.us-east-2.amazonaws.com/cvh-api:latest"
   DBKeyARN:
     Type: String
     Description: The ARN of the database secret in Secrets Manager
@@ -36,11 +38,14 @@ Parameters:
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
+    Default: vis-api.link
   HostedZoneId:
     Description: Hosted Zone ID
     Type: String
+    Default: Z09477406JQAR0KB7G87
   RootDomainName:
-    Description: Domain name for the website (api.designer.gosling-lang.org)
+    Description: Domain name for the website
+    Default: api.vis-api.link
     Type: String
   Environment:
     Type: String
@@ -117,7 +122,7 @@ Resources:
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub "${AWS::StackName}-tg"
+      Name: !Sub "gosling-dmc-tg-${Environment}"
       HealthCheckPath: /health
       Port: 8000
       Protocol: HTTP

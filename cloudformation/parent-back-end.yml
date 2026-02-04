@@ -2,47 +2,20 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Top-level stack template that deploys a nested stack
 
 Parameters:
-  TaskName:
-    Type: String
-    Description: The name of the service task
-    Default: "gosling-dmc-api-lb"
-  TaskEnvFile:
-    Type: String
-    Description: The ARN for the environment file in S3
-    Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env-dev.env"
-  ImageURI:
-    Type: String
-    Description: The URI of the image to deploy
-    Default: "765139173785.dkr.ecr.us-east-2.amazonaws.com/gosling/dmc:latest"
   DBUserName:
     Type: String
     Description: The database main username
     NoEcho: true
-  HostedZoneName:
-    Description: Hosted Zone Name
-    Type: String
-    Default: gosling-lang.org
-  HostedZoneId:
-    Description: Hosted Zone ID
-    Type: String
-    Default: Z085595833A98LWBFS157
-  RootDomainName:
-    Description: Domain name for the website (api.designer.gosling-lang.org)
-    Default: api.designer.gosling-lang.org
-    Type: String
   Environment:
     Type: String
     Default: dev
     AllowedValues: [prod, dev]
   NetworkTemplateURL:
     Type: String
-    Default: https://gosling-dmc-templates-east-1.s3.us-east-1.amazonaws.com/network.yml
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/network.yml
   DatabaseTemplateURL:
     Type: String
-    Default: https://gosling-dmc-templates-east-1.s3.us-east-1.amazonaws.com/database.yml
-  BackendTemplateURL:
-    Type: String
-    Default: https://gosling-dmc-templates-east-1.s3.us-east-1.amazonaws.com/back-end.yml
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/database.yml
 
 Resources:
   Network:
@@ -57,21 +30,5 @@ Resources:
         DBUserName: !Ref DBUserName
         DBSecurityGroupId: !GetAtt Network.Outputs.SecurityGroup
         Environment: !Ref Environment
-  Backend:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Ref BackendTemplateURL
-      Parameters:
-        PublicSubnetIds: !GetAtt Network.Outputs.PublicSubnets
-        ECSSecurityGroupId: !GetAtt Network.Outputs.ECSSecurityGroupId
-        LBSecurityGroupId: !GetAtt Network.Outputs.LBSecurityGroupId
-        DBKeyARN: !GetAtt Database.Outputs.DBKeyARN
-        VpcId: !GetAtt Network.Outputs.VPC
-        TaskName: !Ref TaskName
-        TaskEnvFile: !Ref TaskEnvFile
-        ImageURI: !Ref ImageURI
-        HostedZoneName: !Ref HostedZoneName
-        HostedZoneId: !Ref HostedZoneId
-        RootDomainName: !Ref RootDomainName
-        Environment: !Ref Environment
+        DBSubnetGroup: !GetAtt Network.Outputs.DBSubnetGroup
     DependsOn: Network

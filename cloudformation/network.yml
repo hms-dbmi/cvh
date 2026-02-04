@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: VPC with Multi-AZ Architecture.
   This template creates a highly available VPC infrastructure across multiple Availability Zones.
   It provisions both public and private subnets in two or optionally three AZs, with each subnet configured for 256 IP addresses.
@@ -77,16 +77,15 @@ Parameters:
     Description: Provision optional 3rd set of subnets
     Default: "True"
     AllowedValues:
-         - "True"
-         - "False"
+      - "True"
+      - "False"
   Environment:
     Type: String
     Default: dev
     AllowedValues: [prod, dev]
 
-
-Mappings: 
-  RegionMap: 
+Mappings:
+  RegionMap:
     us-east-1:
       ZoneId1: use1-az6
       ZoneId2: use1-az4
@@ -205,10 +204,9 @@ Mappings:
       ZoneId3: mec1-az1
 
 Conditions:
-     DoProvisionSubnetsC: !Equals [!Ref ProvisionSubnetsC, "True"]
+  DoProvisionSubnetsC: !Equals [!Ref ProvisionSubnetsC, "True"]
 
 Resources:
-
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -217,8 +215,8 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: "Name"
-          Value: !Sub '${AWS::StackName}:CVH'
-  
+          Value: !Sub "${AWS::StackName}:CVH"
+
   VPCFlowLog:
     Type: AWS::EC2::FlowLog
     Properties:
@@ -226,7 +224,7 @@ Resources:
       ResourceType: VPC
       TrafficType: ALL
       LogDestinationType: cloud-watch-logs
-      LogGroupName: !Sub '${AWS::StackName}-VPCFlowLogs'
+      LogGroupName: !Sub "${AWS::StackName}-VPCFlowLogs"
       DeliverLogsPermissionArn: !GetAtt FlowLogRole.Arn
 
   FlowLogRole:
@@ -265,11 +263,11 @@ Resources:
       AvailabilityZone: !GetAtt AvailabiltyZone1.ZoneName
       MapPublicIpOnLaunch: true
       Tags:
-      - Key: Name
-        Value: !Sub
-          - '${StackName}:PublicSubnetA-${AvailabilityZone}'
-          - StackName: !Ref AWS::StackName
-            AvailabilityZone: !GetAtt AvailabiltyZone1.ZoneName
+        - Key: Name
+          Value: !Sub
+            - "${StackName}:PublicSubnetA-${AvailabilityZone}"
+            - StackName: !Ref AWS::StackName
+              AvailabilityZone: !GetAtt AvailabiltyZone1.ZoneName
 
   PublicSubnetB:
     Type: AWS::EC2::Subnet
@@ -279,11 +277,11 @@ Resources:
       AvailabilityZone: !GetAtt AvailabiltyZone2.ZoneName
       MapPublicIpOnLaunch: true
       Tags:
-      - Key: Name
-        Value: !Sub
-          - '${StackName}:PublicSubnetB-${AvailabilityZone}'
-          - StackName: !Ref AWS::StackName
-            AvailabilityZone: !GetAtt AvailabiltyZone2.ZoneName
+        - Key: Name
+          Value: !Sub
+            - "${StackName}:PublicSubnetB-${AvailabilityZone}"
+            - StackName: !Ref AWS::StackName
+              AvailabilityZone: !GetAtt AvailabiltyZone2.ZoneName
 
   PublicSubnetC:
     Type: AWS::EC2::Subnet
@@ -294,11 +292,11 @@ Resources:
       AvailabilityZone: !GetAtt AvailabiltyZone3.ZoneName
       MapPublicIpOnLaunch: true
       Tags:
-      - Key: Name
-        Value: !Sub
-          - '${StackName}:PublicSubnetC-${AvailabilityZone}'
-          - StackName: !Ref AWS::StackName
-            AvailabilityZone: !GetAtt AvailabiltyZone3.ZoneName
+        - Key: Name
+          Value: !Sub
+            - "${StackName}:PublicSubnetC-${AvailabilityZone}"
+            - StackName: !Ref AWS::StackName
+              AvailabilityZone: !GetAtt AvailabiltyZone3.ZoneName
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -314,15 +312,15 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       Tags:
-      - Key: Name
-        Value: !Sub '${AWS::StackName}:PublicRoute'
+        - Key: Name
+          Value: !Sub "${AWS::StackName}:PublicRoute"
   PublicRoute1:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
-  
+
   PublicSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -350,12 +348,12 @@ Resources:
       CidrBlock: !Ref CidrPrivateSubnetA
       MapPublicIpOnLaunch: false
       Tags:
-      - Key: Name
-        Value: !Sub
-          - '${StackName}:PrivateSubnetA-${AvailabilityZone}'
-          - StackName: !Ref AWS::StackName
-            AvailabilityZone: !GetAtt AvailabiltyZone1.ZoneName
-  
+        - Key: Name
+          Value: !Sub
+            - "${StackName}:PrivateSubnetA-${AvailabilityZone}"
+            - StackName: !Ref AWS::StackName
+              AvailabilityZone: !GetAtt AvailabiltyZone1.ZoneName
+
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -364,11 +362,11 @@ Resources:
       CidrBlock: !Ref CidrPrivateSubnetB
       MapPublicIpOnLaunch: false
       Tags:
-      - Key: Name
-        Value: !Sub
-          - '${StackName}:PrivateSubnetB-${AvailabilityZone}'
-          - StackName: !Ref AWS::StackName
-            AvailabilityZone: !GetAtt AvailabiltyZone2.ZoneName
+        - Key: Name
+          Value: !Sub
+            - "${StackName}:PrivateSubnetB-${AvailabilityZone}"
+            - StackName: !Ref AWS::StackName
+              AvailabilityZone: !GetAtt AvailabiltyZone2.ZoneName
 
   PrivateSubnetC:
     Type: AWS::EC2::Subnet
@@ -379,49 +377,11 @@ Resources:
       CidrBlock: !Ref CidrPrivateSubnetC
       MapPublicIpOnLaunch: false
       Tags:
-      - Key: Name
-        Value: !Sub
-          - '${StackName}:PrivateSubnetC-${AvailabilityZone}'
-          - StackName: !Ref AWS::StackName
-            AvailabilityZone: !GetAtt AvailabiltyZone3.ZoneName
-
-  NatGatewayAEIP:
-    Type: AWS::EC2::EIP
-    DependsOn: AttachGateway
-    Properties:
-      Domain: vpc
-      
-  NatGatewayBEIP:
-    Type: AWS::EC2::EIP
-    DependsOn: AttachGateway
-    Properties:
-      Domain: vpc
-
-  NatGatewayCEIP:
-    Condition: DoProvisionSubnetsC
-    Type: AWS::EC2::EIP
-    DependsOn: AttachGateway
-    Properties:
-      Domain: vpc
-
-  NatGatewayA:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGatewayAEIP.AllocationId
-      SubnetId: !Ref PublicSubnetA
-
-  NatGatewayB:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGatewayBEIP.AllocationId
-      SubnetId: !Ref PublicSubnetB
-
-  NatGatewayC:
-    Type: AWS::EC2::NatGateway
-    Condition: DoProvisionSubnetsC
-    Properties:
-      AllocationId: !GetAtt NatGatewayCEIP.AllocationId
-      SubnetId: !Ref PublicSubnetC
+        - Key: Name
+          Value: !Sub
+            - "${StackName}:PrivateSubnetC-${AvailabilityZone}"
+            - StackName: !Ref AWS::StackName
+              AvailabilityZone: !GetAtt AvailabiltyZone3.ZoneName
 
   PrivateRouteTableA:
     Type: AWS::EC2::RouteTable
@@ -429,15 +389,15 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}:PrivateRouteA'
-  
+          Value: !Sub "${AWS::StackName}:PrivateRouteA"
+
   PrivateRouteTableB:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}:PrivateRouteB'
+          Value: !Sub "${AWS::StackName}:PrivateRouteB"
 
   PrivateRouteTableC:
     Type: AWS::EC2::RouteTable
@@ -446,36 +406,14 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}:PrivateRouteC'
-
-  DefaultPrivateRouteA:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTableA
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayA
-      
-  DefaultPrivateRouteB:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTableB
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayB
-
-  DefaultPrivateRouteC:
-    Type: AWS::EC2::Route
-    Condition: DoProvisionSubnetsC
-    Properties:
-      RouteTableId: !Ref PrivateRouteTableC
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayC
+          Value: !Sub "${AWS::StackName}:PrivateRouteC"
 
   PrivateSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTableA
       SubnetId: !Ref PrivateSubnetA
-      
+
   PrivateSubnetBRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -559,43 +497,58 @@ Resources:
       Path: /
       Description: GetAZLambdaFunction
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
               - sts:AssumeRole
             Principal:
               Service:
-                - !Sub 'lambda.${AWS::URLSuffix}'
+                - !Sub "lambda.${AWS::URLSuffix}"
       ManagedPolicyArns:
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
       Policies:
         - PolicyName: GetAZLambdaFunction
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Sid: ec2
                 Effect: Allow
                 Action:
                   - ec2:DescribeAvailabilityZones
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-GetAZLambdaFunction
 
   S3Endpoint:
-    Type: 'AWS::EC2::VPCEndpoint'
+    Type: "AWS::EC2::VPCEndpoint"
     Properties:
-      VpcEndpointType: 'Gateway'
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: "Gateway"
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
       RouteTableIds:
         - !Ref PublicRouteTable
         - !Ref PrivateRouteTableA
         - !Ref PrivateRouteTableB
       VpcId: !Ref VPC
 
-# Only custom resources in security groups below
+  # Only custom resources below
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "Subnet group for the RDS database"
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+        - !If
+          - DoProvisionSubnetsC
+          - !Ref PrivateSubnetC
+          - !Ref AWS::NoValue
+      Tags:
+        - Key: Name
+          Value: "MyRDSDBSubnetGroup"
 
   LoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
@@ -628,16 +581,16 @@ Resources:
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-        GroupDescription: Allow all traffic from resources in VPC
-        VpcId:
-          Ref: VPC
-        SecurityGroupIngress:
+      GroupDescription: Allow all traffic from resources in VPC
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
         - IpProtocol: -1
           CidrIp: !Ref CidrBlock
-        SecurityGroupEgress:
+      SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: !Ref CidrBlock
-        Tags:
+      Tags:
         - Key: project
           Value: "gosling-dmc"
         - Key: component
@@ -705,7 +658,7 @@ Outputs:
       Name: !Sub ${AWS::StackName}-VPC
   PublicSubnets:
     Value: !Join
-      - ','
+      - ","
       - - !Ref PublicSubnetA
         - !Ref PublicSubnetB
         - !If
@@ -717,7 +670,7 @@ Outputs:
       Name: !Sub ${AWS::StackName}-PublicSubnets
   PrivateSubnets:
     Value: !Join
-      - ','
+      - ","
       - - !Ref PrivateSubnetA
         - !Ref PrivateSubnetB
         - !If
@@ -753,3 +706,6 @@ Outputs:
   LBSecurityGroupId:
     Description: The ID of the load balancer security group
     Value: !GetAtt LoadBalancerSG.GroupId
+  DBSubnetGroup:
+    Description: The subnet group for the database
+    Value: !Ref DBSubnetGroup

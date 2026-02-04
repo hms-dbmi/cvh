@@ -15,13 +15,19 @@ Parameters:
     AllowedValues: [prod, dev]
   DBName:
     Type: String
-    Default: gosling_dmc_db
+    Default: cvh_db
+  DBSubnetGroup:
+    Type: String
+    Description: The subnet group for the database
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
 
 Resources:
   KMSKey:
     Type: "AWS::KMS::Key"
     Properties:
-      Description: DB KMS Key
+      Description: !If [IsProd, !Ref DBName, !Sub "${Environment}_${DBName}"]
       EnableKeyRotation: false
       KeyPolicy:
         Version: "2012-10-17"
@@ -38,7 +44,8 @@ Resources:
   Database:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBName: !Ref DBName
+      DBName: !If [IsProd, !Ref DBName, !Sub "${Environment}_${DBName}"]
+      DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
         - !Ref DBSecurityGroupId
       AllocatedStorage: "20"
