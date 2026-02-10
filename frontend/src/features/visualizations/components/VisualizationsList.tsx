@@ -18,6 +18,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
   CaretDown,
+  Code,
   DotsThree,
   Folder,
   GlobeSimpleX,
@@ -42,6 +43,7 @@ import {
 } from "../api/useVisualizations";
 import AddVisualizationButton from "./AddVisualizationButton";
 import AddTagButton from "./AddVizTagButton";
+import EditConfDialog from "./EditConfDialog";
 import EditVisualizationDialog from "./EditVisualizationDialog";
 import VisualizationThumbnail from "./VisualizationThumbnail";
 
@@ -61,6 +63,7 @@ function ActionsMenu({
   const [openAddTags, setOpenAddTags] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openEditConf, setOpenEditConf] = useState(false);
 
   const { projectId } = useParams({ strict: false });
 
@@ -118,6 +121,11 @@ function ActionsMenu({
         open={openEdit}
         setOpen={setOpenEdit}
       />
+      <EditConfDialog
+        visualizationId={visualizationId}
+        open={openEditConf}
+        setOpen={setOpenEditConf}
+      />
       <DialogButtonCopy
         text={{
           title: "Delete Visualization?",
@@ -161,6 +169,12 @@ function ActionsMenu({
             <Tag width={24} height={24} color="#4E5A63" />
           </ListItemIcon>
           Edit Tags
+        </MenuItem>
+        <MenuItem onClick={() => setOpenEditConf(true)}>
+          <ListItemIcon>
+            <Code width={24} height={24} />
+          </ListItemIcon>
+          Edit Conf
         </MenuItem>
         {/* <MenuItem onClick={handleClose}>
           <ListItemIcon>

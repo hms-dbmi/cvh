@@ -45,7 +45,7 @@ function WorkspaceListItem({
 }) {
   const selectedProps = isSelected
     ? { onClick: undefined }
-    : { component: "a", href: `/project/${project.uuid}` };
+    : { component: "a", href: `/project/vitessce/${project.uuid}` };
 
   return (
     <MenuItem
@@ -183,7 +183,7 @@ function ProjectsBar() {
   if (router.location.pathname === "/" && isAuthenticated) {
     return (
       <Box flexGrow={1} ml={2}>
-        <Link to="/project/{-$projectId}">Return to Workspaces</Link>
+        <Link to="/project/vitessce/{-$projectId}">Return to Workspaces</Link>
       </Box>
     );
   }
