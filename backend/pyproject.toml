@@ -17,8 +17,24 @@ dependencies = [
     "pyarrow>=19.0.0",
     "pyjwt[crypto]>=2.10.1",
     "requests>=2.32.3",
-    "ruff>=0.9.3",
 ]
 
 [dependency-groups]
-dev = []
+dev = [
+    "ruff>=0.9.3",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "DJ"]
+ignore = [
+    "DJ001",  # null=True on string fields — existing pattern, changing requires migrations
+    "DJ008",  # missing __str__ — not critical
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "core"]

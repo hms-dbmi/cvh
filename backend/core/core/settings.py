@@ -10,13 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from environs import env
-import requests
-from pathlib import Path
-import boto3
-from botocore.exceptions import ClientError
 import json
-import sys
+from pathlib import Path
+
+import boto3
+import requests
+from botocore.exceptions import ClientError
+from environs import env
 
 env.read_env()
 # Override in .env for local development
@@ -148,12 +148,10 @@ def get_db_secret():
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
-    client = session.client(
-        service_name="secretsmanager", region_name=region_name)
+    client = session.client(service_name="secretsmanager", region_name=region_name)
 
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name)
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
     except ClientError as e:
         # For a list of exceptions thrown, see
         # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
@@ -183,7 +181,7 @@ DATABASES = {
         "PASSWORD": DB_PASSWORD,
         "HOST": env.str("DB_HOST"),
         "PORT": env.int("DB_PORT"),
-        'OPTIONS': DB_OPTIONS,
+        "OPTIONS": DB_OPTIONS,
     }
 }
 
@@ -192,7 +190,7 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # noqa: E501
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
