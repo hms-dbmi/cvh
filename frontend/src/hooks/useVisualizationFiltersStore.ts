@@ -1,24 +1,23 @@
 import { create } from "zustand";
 
 export interface DatasetFiltersState {
-  selectedTags: string[]
+  selectedTags: string[];
   nameSubstring: string;
   setSelectedTags: (tags: string[]) => void;
   setNameSubstring: (name: string) => void;
 }
 
-
 const useStore = create<DatasetFiltersState>((set) => ({
-  nameSubstring: '',
+  nameSubstring: "",
   selectedTags: [],
   setSelectedTags: (tags) => {
     set({
-      selectedTags: tags
+      selectedTags: tags,
     });
   },
   setNameSubstring: (name) => {
     set({
-      nameSubstring: name
+      nameSubstring: name,
     });
   },
 }));

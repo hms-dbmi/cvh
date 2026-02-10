@@ -1,12 +1,11 @@
-import { useCallback, useState } from "react";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Button, { ButtonProps } from "@mui/material/Button";
-
-import DialogButton from "../../../components/DialogButton";
 import { Typography } from "@mui/material";
-import { useAddExample } from "../api/useExamples";
+import Box from "@mui/material/Box";
+import Button, { type ButtonProps } from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import { FileText } from "@phosphor-icons/react";
+import { useCallback, useState } from "react";
+import DialogButton from "../../../components/DialogButton";
+import { useAddExample } from "../api/useExamples";
 
 const text = {
   button: (
@@ -39,7 +38,7 @@ function ExampleDataSource({
 }) {
   const select = useCallback(
     () => setSelectedExample(exampleID),
-    [setSelectedExample, exampleID]
+    [setSelectedExample, exampleID],
   );
 
   const isSelected = exampleID === selectedExample;
@@ -84,7 +83,11 @@ function ExampleDataSource({
       </Typography>
       <Stack spacing={1}>
         {dataSources.map((s) => (
-          <Typography sx={{ overflowWrap: "break-word" }} variant="body2">
+          <Typography
+            key={s}
+            sx={{ overflowWrap: "break-word" }}
+            variant="body2"
+          >
             {s}
           </Typography>
         ))}
@@ -183,7 +186,7 @@ export default function AddExamplesDatasets({
 
   const resetSelectedExample = useCallback(
     () => setSelectedExample(undefined),
-    [setSelectedExample]
+    [],
   );
 
   return (
@@ -193,7 +196,10 @@ export default function AddExamplesDatasets({
       text={text}
       isForm={false}
       closeButtonProps={{ variant: "text" }}
-      buttonProps={{ sx: { padding: "8px 12px", borderRadius: "8px" }, ...buttonProps }}
+      buttonProps={{
+        sx: { padding: "8px 12px", borderRadius: "8px" },
+        ...buttonProps,
+      }}
       onClose={resetSelectedExample}
       actionButtons={
         <Stack spacing={1} direction="row">

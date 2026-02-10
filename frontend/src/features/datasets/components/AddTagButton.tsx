@@ -1,23 +1,22 @@
-import { useCallback, useEffect, useMemo } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-
-import {
-  useForm,
-  useController,
-  UseControllerProps,
-  useFieldArray,
-} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import type { components } from "../../../types/schema.d.ts";
-
-import { useTagDataset } from "../api/useDatasets";
+import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import { Tag, Trash } from "@phosphor-icons/react";
+import { useCallback, useEffect, useMemo } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
+import { z } from "zod";
+import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import type { components } from "../../../types/schema.d.ts";
+import { useTagDataset } from "../api/useDatasets";
+
 interface FormValues {
   tags: { tagKey: string; tagValue: string }[];
 }
@@ -78,9 +77,9 @@ export default function AddTagButton({
           }
           return acc;
         },
-        []
+        [],
       ),
-    [dataset.tags]
+    [dataset.tags],
   );
 
   const { handleSubmit, control, reset } = useForm({
@@ -117,7 +116,7 @@ export default function AddTagButton({
       });
       setOpen(false);
     },
-    [mutate, datasetId, projectId, setOpen]
+    [mutate, datasetId, projectId, setOpen],
   );
 
   return (
@@ -143,7 +142,7 @@ export default function AddTagButton({
     >
       <Stack component="form" spacing={2} p={2}>
         {fields.map((_v, i) => (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} key={_v.id}>
             <FormTextField
               name={`tags.${i}.tagKey`}
               label="Title"

@@ -1,50 +1,49 @@
-import { useCallback, useState } from "react";
-import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import Typography from "@mui/material/Typography";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import {
+  CaretDown,
+  DotsThree,
+  Folder,
+  GlobeSimpleX,
+  MagnifyingGlass,
+  PencilSimple,
+  Tag,
+  // Cards,
+  Trash,
+} from "@phosphor-icons/react";
+import { useParams } from "@tanstack/react-router";
+import { formatRelative } from "date-fns";
+import { useCallback, useState } from "react";
+import DialogButtonCopy from "../../../components/DialogButtonCopy";
+import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
+import type { components } from "../../../types/schema";
+import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
 import {
   useDeleteVisualization,
   useGetProjectVisualizations,
   useGetProjectVisualizationTags,
   useGetVisualization,
 } from "../api/useVisualizations";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
-import {
-  Folder,
-  Tag,
-  GlobeSimpleX,
-  MagnifyingGlass,
-  DotsThree,
-  PencilSimple,
-  // Cards,
-  Trash,
-  CaretDown,
-} from "@phosphor-icons/react";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
-import Box from "@mui/material/Box";
-import InputBase from "@mui/material/InputBase";
-import { formatRelative } from "date-fns";
-
-import type { components } from "../../../types/schema";
 import AddVisualizationButton from "./AddVisualizationButton";
 import AddTagButton from "./AddVizTagButton";
-import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
-import VisualizationThumbnail from "./VisualizationThumbnail";
-import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
-import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import EditVisualizationDialog from "./EditVisualizationDialog";
+import VisualizationThumbnail from "./VisualizationThumbnail";
 
 // TODO: One instance of dialog using a store.
 function ActionsMenu({
@@ -69,18 +68,15 @@ function ActionsMenu({
 
   const { mutate: deleteViz } = useDeleteVisualization();
 
-  const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      setAnchorEl(event.currentTarget);
-    },
-    [setAnchorEl]
-  );
+  const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  }, []);
 
-  const handleOpenEdit = useCallback(() => setOpenEdit(true), [setOpenEdit]);
+  const handleOpenEdit = useCallback(() => setOpenEdit(true), []);
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);
-  }, [setAnchorEl]);
+  }, []);
 
   const submitDelete = useCallback(() => {
     if (visualizationId) {
@@ -97,14 +93,7 @@ function ActionsMenu({
       setOpenDelete(false);
       handleClose();
     }
-  }, [
-    setOpenDelete,
-    handleClose,
-    deleteViz,
-    visualizationId,
-    isSelected,
-    setSelectedVizId,
-  ]);
+  }, [handleClose, deleteViz, visualizationId, isSelected, setSelectedVizId]);
 
   if (!projectId || !data) {
     return null;
@@ -168,12 +157,10 @@ function ActionsMenu({
           Edit Details
         </MenuItem>
         <MenuItem onClick={() => setOpenAddTags(true)}>
-          <>
-            <ListItemIcon>
-              <Tag width={24} height={24} color="#4E5A63" />
-            </ListItemIcon>
-            Edit Tags
-          </>
+          <ListItemIcon>
+            <Tag width={24} height={24} color="#4E5A63" />
+          </ListItemIcon>
+          Edit Tags
         </MenuItem>
         {/* <MenuItem onClick={handleClose}>
           <ListItemIcon>
@@ -241,7 +228,11 @@ function VisualizationListItem({
         },
       })}
     >
-      <ListItemButton onClick={selectViz} color="primary" sx={{width: "100%"}}>
+      <ListItemButton
+        onClick={selectViz}
+        color="primary"
+        sx={{ width: "100%" }}
+      >
         <Stack spacing={0.5} width="100%">
           <Stack direction="row" spacing={2}>
             <Box>
@@ -335,19 +326,19 @@ function VisualizationList({
   permissions: number;
 }) {
   const selectedTags = useVisualizationFiltersStore(
-    (state) => state.selectedTags
+    (state) => state.selectedTags,
   );
 
   const setSelectedTags = useVisualizationFiltersStore(
-    (state) => state.setSelectedTags
+    (state) => state.setSelectedTags,
   );
 
   const nameSubstring = useVisualizationFiltersStore(
-    (state) => state.nameSubstring
+    (state) => state.nameSubstring,
   );
 
   const setNameSubstring = useVisualizationFiltersStore(
-    (state) => state.setNameSubstring
+    (state) => state.setNameSubstring,
   );
 
   const { data: tagsData } = useGetProjectVisualizationTags(projectId);
@@ -408,10 +399,7 @@ function VisualizationList({
           component={Button}
           sx={{ color: "#657681" }}
           onClick={handleReset}
-          disabled={
-            selectedTags.length === 0 &&
-            nameSubstring.length === 0
-          }
+          disabled={selectedTags.length === 0 && nameSubstring.length === 0}
         >
           Reset
         </Typography>
@@ -443,11 +431,11 @@ export default function VisualizationAccordion({
   permissions: number;
 }) {
   const nameSubstring = useVisualizationFiltersStore(
-    (state) => state.nameSubstring
+    (state) => state.nameSubstring,
   );
 
   const selectedTags = useVisualizationFiltersStore(
-    (state) => state.selectedTags
+    (state) => state.selectedTags,
   );
 
   const { data: visualizations } = useGetProjectVisualizations({

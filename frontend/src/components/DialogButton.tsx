@@ -1,12 +1,16 @@
-import { PropsWithChildren, ReactNode, useCallback, FormEvent } from "react";
-
-import Button, { ButtonProps } from "@mui/material/Button";
+import Button, { type ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import MenuItem, { MenuItemProps } from "@mui/material/MenuItem";
+import MenuItem, { type MenuItemProps } from "@mui/material/MenuItem";
+import {
+  type FormEvent,
+  type PropsWithChildren,
+  type ReactNode,
+  useCallback,
+} from "react";
 
 interface DialogText {
   button: ReactNode;
@@ -88,7 +92,7 @@ export default function DialogButton({
         onSubmit(e);
       }
     },
-    [onSubmit]
+    [onSubmit],
   );
 
   return (

@@ -1,13 +1,15 @@
-import { useCallback, useEffect } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-
-import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import { useCallback, useEffect } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useForm,
+} from "react-hook-form";
 import { z } from "zod";
-
-import { useUpdateUser } from "../api/useUser.ts";
 import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import { useUpdateUser } from "../api/useUser.ts";
 
 interface FormValues {
   firstName: string;
@@ -72,7 +74,7 @@ export default function EditProfileDialog({
       firstName: initialFirstName ?? "",
       lastName: initialLastName ?? "",
     });
-  }, [reset, initialFirstName, initialLastName, open]);
+  }, [reset, initialFirstName, initialLastName]);
 
   const onSubmit = useCallback(
     ({ firstName, lastName }: FormValues) => {
@@ -84,7 +86,7 @@ export default function EditProfileDialog({
       });
       setOpen(false);
     },
-    [mutate, setOpen]
+    [mutate, setOpen],
   );
 
   return (

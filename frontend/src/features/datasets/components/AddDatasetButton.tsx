@@ -1,36 +1,41 @@
-import { useCallback, useState, forwardRef } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button, { ButtonProps } from "@mui/material/Button";
-import {
-  useForm,
-  useController,
-  UseControllerProps,
-  useFieldArray,
-} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import FormGroup from "@mui/material/FormGroup";
-import FormControl from "@mui/material/FormControl";
-import DialogButton from "../../../components/DialogButton";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
-import { useCreateDataset } from "../api/useDatasets";
-import Typography from "@mui/material/Typography";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
-import Grid from "@mui/material/Grid2";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
+import Box from "@mui/material/Box";
+import Button, { type ButtonProps } from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
+import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
-import Switch from "@mui/material/Switch";
-import { UploadSimple, Info, Trash, IconProps } from "@phosphor-icons/react";
+import Grid from "@mui/material/Grid2";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
-import FormHelperText from "@mui/material/FormHelperText";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import Tab from "@mui/material/Tab";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import {
+  type IconProps,
+  Info,
+  Trash,
+  UploadSimple,
+} from "@phosphor-icons/react";
+import { forwardRef, useCallback, useState } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
+import { z } from "zod";
+import DialogButton from "../../../components/DialogButton";
+import { useCreateDataset } from "../api/useDatasets";
 
 const text = {
   button: "Add Data Source",
@@ -210,7 +215,7 @@ const base = z.object({
         /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
       {
         message: "Must be a vaild HTTPS URL.",
-      }
+      },
     ),
   data_type: z.string(),
   assembly: z.enum([
@@ -253,7 +258,7 @@ const bam = base.extend({
         /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
       {
         message: "Must be a vaild HTTPS URL.",
-      }
+      },
     ),
 });
 
@@ -266,7 +271,7 @@ const indexAndColumn = base.extend({
         /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
       {
         message: "Must be a vaild HTTPS URL.",
-      }
+      },
     ),
   data_column: z
     .array(
@@ -279,7 +284,7 @@ const indexAndColumn = base.extend({
           "genomic",
           "key",
         ]),
-      })
+      }),
     )
     .optional(),
 });
@@ -297,7 +302,7 @@ const columnOnly = base.extend({
           "genomic",
           "key",
         ]),
-      })
+      }),
     )
     .optional(),
 });
@@ -317,7 +322,7 @@ const csv = base.extend({
           "genomic",
           "key",
         ]),
-      })
+      }),
     )
     .min(1, { message: "Data column headers cannot be empty" }),
 });
@@ -352,7 +357,7 @@ const tooltips: Record<string, string> = {
 const TooltipIcon = forwardRef<SVGSVGElement, IconProps>(
   function MyComponent(props, ref) {
     return <Info {...props} ref={ref} />;
-  }
+  },
 );
 
 function DatasetSelectionButton({
@@ -438,7 +443,7 @@ function SelectDataType({
               {SUPPORTED_FILE_TYPES.map((fileType) => {
                 if (!["multivec", "vector", "beddb"].includes(fileType)) {
                   return (
-                    <Grid size={4}>
+                    <Grid key={fileType} size={4}>
                       <DatasetSelectionButton
                         onChange={field.onChange}
                         value={fileType}
@@ -447,6 +452,7 @@ function SelectDataType({
                     </Grid>
                   );
                 }
+                return null;
               })}
             </Grid>
           </Stack>
@@ -461,7 +467,7 @@ function SelectDataType({
             </Typography>
             <Grid container spacing={1}>
               {["multivec", "vector", "beddb"].map((fileType) => (
-                <Grid size={4}>
+                <Grid key={fileType} size={4}>
                   <DatasetSelectionButton
                     onChange={field.onChange}
                     value={fileType}
@@ -496,6 +502,7 @@ function AssemblySelect({ name, control }: UseControllerProps<FormValues>) {
         <Stack direction="row" spacing={2} flexWrap="wrap">
           {SUPPORTED_ASSEMBLIES.map((assembly) => (
             <FormControlLabel
+              key={assembly}
               value={assembly}
               control={<Radio />}
               label={assembly}
@@ -639,7 +646,7 @@ function DataColumns({
         <Typography>Data Column Headers</Typography>
         {errorMessage && <FormHelperText error>{errorMessage}</FormHelperText>}
         {fields.map((_v, i) => (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} key={_v.id}>
             <FormTextField
               name={`data_column.${i}.name`}
               label="Column Name"
@@ -700,7 +707,7 @@ export default function AddDatasetButton({
     reset();
     setOpen(false);
     setTab(1);
-  }, [reset, setTab]);
+  }, [reset]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
@@ -770,7 +777,7 @@ export default function AddDatasetButton({
         return;
       }
     },
-    [mutate, projectId, handleReset]
+    [mutate, projectId, handleReset],
   );
 
   const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
@@ -824,7 +831,7 @@ export default function AddDatasetButton({
                 control={control}
                 errorMessage={
                   "row_names" in formState.errors &&
-                  formState?.errors?.["row_names"]?.message
+                  formState?.errors?.row_names?.message
                 }
               />
             )}
@@ -833,7 +840,7 @@ export default function AddDatasetButton({
                 control={control}
                 errorMessage={
                   "data_column" in formState.errors &&
-                  formState?.errors?.["data_column"]?.message
+                  formState?.errors?.data_column?.message
                 }
               />
             )}

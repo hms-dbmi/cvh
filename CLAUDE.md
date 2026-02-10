@@ -45,7 +45,9 @@ ruff check .
 npm install
 npm run dev                # Vite dev server
 npm run build              # tsc -b && vite build
-npm run lint               # ESLint
+npm run lint               # Biome check (linting + formatting)
+npm run lint:fix           # Biome check --write (auto-fix)
+npm run format             # Biome format --write
 npm run gen-api-types      # Generate TS types from backend OpenAPI schema (backend must be running)
 ```
 

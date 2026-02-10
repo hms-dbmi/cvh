@@ -1,14 +1,14 @@
-import { useGetPublishedVisualizations } from "../api/useVisualizations";
-import type { components } from "../../../types/schema";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import Grid from "@mui/material/Grid2";
-import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid2";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { Tag } from "@phosphor-icons/react";
+import type { components } from "../../../types/schema";
+import { useGetPublishedVisualizations } from "../api/useVisualizations";
 
 function PublishedGridItem({
   visualization,
@@ -121,7 +121,7 @@ function PublishedVisualizationGrid() {
           </Typography>
           <Grid container spacing={2} width="100%">
             {topPicks?.items?.map((v) => (
-              <Grid size={3}>
+              <Grid key={v.uuid} size={3}>
                 <PublishedGridItem visualization={v} />
               </Grid>
             ))}
@@ -133,7 +133,7 @@ function PublishedVisualizationGrid() {
       </Typography>
       <Grid container spacing={2} width="100%">
         {data?.items?.map((v) => (
-          <Grid size={3}>
+          <Grid key={v.uuid} size={3}>
             <PublishedGridItem visualization={v} />
           </Grid>
         ))}

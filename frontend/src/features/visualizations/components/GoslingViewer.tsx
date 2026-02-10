@@ -1,18 +1,18 @@
-import { ComponentProps, useCallback, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
-
-import { GoslingDesignerVEC, VisSchema } from "gosling-designer-vec";
+import { GoslingDesignerVEC, type VisSchema } from "gosling-designer-vec";
+import { type ComponentProps, useCallback, useMemo, useState } from "react";
 import "gosling-designer-vec/build/style.css";
-import VisualizationsList from "./VisualizationsList.tsx";
-import DataList, { DatasetActionsMenu } from "./DataList.tsx";
-import { useGetVisualization } from "../api/useVisualizations.ts";
-import type { components } from "../../../types/schema";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
-import { useUpdateVisualization } from "../api/useVisualizations";
-import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
+import type { components } from "../../../types/schema";
+import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
+import { useUpdateVisualization } from "../api/useVisualizations";
+import { useGetVisualization } from "../api/useVisualizations.ts";
 import formatVisualization from "../utils/formatVisualization.ts";
+import DataList, { DatasetActionsMenu } from "./DataList.tsx";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
+import VisualizationsList from "./VisualizationsList.tsx";
+
 type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
 interface GoslingViewerProps {
@@ -62,11 +62,11 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
 
 function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
   const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
   /* eslint-disable */
-  // @ts-ignore TODO: Remove ignore.
+  // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
   /* eslint-enable */
 
@@ -78,10 +78,10 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
   }, [onSave, close, changedCode]); */
 
   const selectedAssemblies = useDatasetFiltersStore(
-    (state) => state.selectedAssemblies
+    (state) => state.selectedAssemblies,
   );
   const selectedFileTypes = useDatasetFiltersStore(
-    (state) => state.selectedFileTypes
+    (state) => state.selectedFileTypes,
   );
 
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
@@ -135,7 +135,7 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
         console.error(e);
       }
     },
-    [updateViz, toastError, selectedVizId, hasWritePermissions]
+    [updateViz, toastError, selectedVizId, hasWritePermissions],
   );
 
   const publishViz = useCallback(() => {

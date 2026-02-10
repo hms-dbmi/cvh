@@ -1,7 +1,7 @@
-import { PropsWithChildren, useEffect, useRef } from "react";
-import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
+import Stack from "@mui/material/Stack";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { type PropsWithChildren, useEffect, useRef } from "react";
 
 interface InfiniteScrollListProps<T extends { uuid: string }> {
   count: number;
@@ -63,14 +63,7 @@ export default function InfiniteScrollList<T extends { uuid: string }>({
     if (lastItem.start < scrollLocation) {
       loadMoreItems();
     }
-  }, [
-    virtualizer,
-    hasMoreItems,
-    isLoading,
-    isError,
-    loadMoreItems,
-    items.length,
-  ]);
+  }, [virtualizer, hasMoreItems, isLoading, isError, loadMoreItems]);
 
   return (
     <Stack>
