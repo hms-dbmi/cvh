@@ -46,7 +46,7 @@ type ActionProps =
 
 type DialogProps =
   | (CoreFormDialogProps & {
-      onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+      onSubmit?: (event: React.FormEvent) => void;
       isForm?: true;
     } & ActionProps)
   | (CoreFormDialogProps & {
@@ -87,7 +87,7 @@ export default function DialogButton({
   }, [setOpen, onClose]);
 
   const submit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
+    (e: FormEvent) => {
       if (onSubmit) {
         onSubmit(e);
       }
