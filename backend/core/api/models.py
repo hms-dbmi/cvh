@@ -1,12 +1,9 @@
-from django.db import models
-from django.db.models import Q, Value, Case, When, CharField, Count
-from django.contrib.auth.models import User
-from django.db.models.functions import Concat
-from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.postgres.fields import ArrayField
-
-from django.utils.translation import gettext_lazy as _
 import uuid
+
+from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
+from django.db import models
+from django.db.models import Count, Q
 
 
 class UserCreated(models.Model):
@@ -16,7 +13,6 @@ class UserCreated(models.Model):
     created_timestamp = models.DateTimeField(auto_now_add=True)
     modified_timestamp = models.DateTimeField(auto_now=True)
     last_viewed_timestamp = models.DateTimeField(auto_now_add=True)
-
 
     class Meta:
         abstract = True
@@ -36,7 +32,7 @@ def get_user_projects_query(user, permission):
 class ProjectsManager(models.Manager):
     def get_queryset(self):
         return (
-            super(ProjectsManager, self)
+            super()
             .get_queryset()
             .annotate(
                 datasets_count=Count("dataset", distinct=True),
@@ -130,7 +126,6 @@ class VisualizationConf(UserCreated):
     n_tracks = models.IntegerField(default=0, null=True)
     n_datasets = models.IntegerField(default=0, null=True)
     published_timestamp = models.DateTimeField(null=True)
-
 
 
 class ProjectMember(models.Model):

@@ -1,46 +1,45 @@
-from ninja import NinjaAPI, Query, Schema, Field
+import contextlib
+from typing import Any, Literal
+
+import requests
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Value, CharField, Count
 from django.core.exceptions import PermissionDenied
+from django.db.models import CharField, Count, F, Q, Value
 from django.db.models.functions import Concat
-from django.forms.models import model_to_dict
-from django.utils import timezone
 from django.http import Http404
-
-from ninja.security import HttpBearer
-from ninja.errors import HttpError
-from ninja.pagination import paginate, PageNumberPagination
-
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from environs import env
 from jwt import PyJWKClient, decode
 from jwt.exceptions import DecodeError
-from typing import Any, List, Literal
-from environs import env
-import requests
+from ninja import Field, NinjaAPI, Query, Schema
+from ninja.errors import HttpError
+from ninja.pagination import PageNumberPagination, paginate
+from ninja.security import HttpBearer
 from pydantic import UUID4
 
-from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
+from .models import Dataset, Project, ProjectMember, Tag, VisualizationConf
 from .schema import (
-    UserOut,
-    UserIn,
-    ProjectIn,
-    ProjectOut,
-    ProjectOutWithMembersCount,
     DatasetIn,
-    ExampleDatasetIn,
     DatasetOut,
     DatasetUpdate,
     DatasetWithTagsOut,
-    VisualizationNoConfOut,
-    VisualizationIn,
-    VisualizationOut,
+    ExampleDatasetIn,
+    PartialProjectIn,
     PartialVisualizationUpdate,
+    ProjectIn,
     ProjectMemberIn,
     ProjectMemberOut,
     ProjectMemberUpdate,
-    PartialProjectIn,
-    TagsIn,
+    ProjectOut,
+    ProjectOutWithMembersCount,
     TagOut,
+    TagsIn,
+    UserIn,
+    UserOut,
+    VisualizationIn,
+    VisualizationNoConfOut,
+    VisualizationOut,
 )
 
 api = NinjaAPI()
@@ -73,7 +72,9 @@ def forbidden_exception(request, _):
 
 
 class Authorized(HttpBearer):
-    def __init__(self, permissions: list[str] | None = []):
+    def __init__(self, permissions: list[str] | None = None):
+        if permissions is None:
+            permissions = []
         self.required_permissions = permissions
 
     def authenticate(self, _, token):
@@ -89,7 +90,7 @@ class Authorized(HttpBearer):
         return user
 
 
-class RequestToken(object):
+class RequestToken:
     def __init__(self, token: str) -> None:
         self._token: str = token
 
@@ -127,7 +128,7 @@ class RequestToken(object):
                 issuer=domain,
             )
         except DecodeError:
-            raise HttpError(400, "Could not decode the provided token.")
+            raise HttpError(400, "Could not decode the provided token.") from None
 
     def __get_user_info__(self, token: str) -> dict[str, Any] | None:
         env.read_env()
@@ -157,7 +158,7 @@ class RequestToken(object):
                 user_info = self.__get_user_info__(self._token)
                 email = user_info.get("email")
                 if email:
-                    setattr(user, "email", email)
+                    user.email = email
                     user.save()
 
         except User.DoesNotExist:
@@ -185,8 +186,9 @@ class RequestToken(object):
                 project_key=project, user_key=user, permissions=3
             )
 
-            VisualizationConf.objects.create(project_key=project, name="Visualization 1")
-
+            VisualizationConf.objects.create(
+                project_key=project, name="Visualization 1"
+            )
 
         return user
 
@@ -228,7 +230,7 @@ def _get_project(project_uuid: str, user: User, error_message: str):
                 user=user, project_uuid=project_uuid
             )
         except Project.DoesNotExist:
-            raise Http404(error_message)
+            raise Http404(error_message) from None
     return project
 
 
@@ -271,7 +273,7 @@ def delete_project_member(request, member: ProjectMemberIn):
         )
 
     except Project.DoesNotExist:
-        raise Http404("Failed to remove project member.")
+        raise Http404("Failed to remove project member.") from None
 
     project_member = get_object_or_404(
         ProjectMember, user_key__email=member.email, project_key=project
@@ -285,7 +287,7 @@ def delete_project_member(request, member: ProjectMemberIn):
 @api.get(
     "/projects/{project_uuid}/members",
     auth=Authorized(),
-    response=List[ProjectMemberOut],
+    response=list[ProjectMemberOut],
 )
 def get_project_members(request, project_uuid: str):
     try:
@@ -293,7 +295,7 @@ def get_project_members(request, project_uuid: str):
             user=request.auth, project_uuid=project_uuid
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to get project members.")
+        raise Http404("Failed to get project members.") from None
     project_members = ProjectMember.objects.filter(project_key=project).values(
         "permissions",
         username=F("user_key__username"),
@@ -313,7 +315,7 @@ def create_project(request, project: ProjectIn):
     return p
 
 
-@api.get("/projects", auth=Authorized(), response=List[ProjectOutWithMembersCount])
+@api.get("/projects", auth=Authorized(), response=list[ProjectOutWithMembersCount])
 @paginate
 def get_projects(request):
     projects = (
@@ -335,7 +337,7 @@ def delete_project(request, project_uuid: str):
     return {"success": True}
 
 
-@api.get("/public/projects", auth=Authorized(), response=List[ProjectOut])
+@api.get("/public/projects", auth=Authorized(), response=list[ProjectOut])
 @paginate
 def get_public_projects(request):
     projects = (
@@ -350,12 +352,10 @@ def get_project(request, project_uuid: str):
         user=request.auth, project_uuid=project_uuid, error_message="Project not found."
     )
     permissions = None
-    try:
+    with contextlib.suppress(ProjectMember.DoesNotExist):
         permissions = ProjectMember.objects.get(
             project_key=project, user_key=request.auth
         ).permissions
-    except ProjectMember.DoesNotExist:
-        pass
     return {**project.__dict__, "permissions": permissions}
 
 
@@ -385,7 +385,7 @@ def create_dataset(request, dataset: DatasetIn):
             Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
             return dataset
         except Project.DoesNotExist:
-            raise Http404("Failed to create visualization.")
+            raise Http404("Failed to create visualization.") from None
     Dataset.objects.create(**dataset_dict.dataset, user_key=request.auth)
     return dataset
 
@@ -638,7 +638,11 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
         1: {
             "visualization": {
                 "name": "Two Basic Views",
-                "description": "Two views in both linear and circular layouts. Data: Schwarzer et al. (2017) (PMCID: PMC5687303) and Cistrome DB Zheng R. et al. (2019).",
+                "description": (
+                    "Two views in both linear and circular layouts."
+                    " Data: Schwarzer et al. (2017) (PMCID: PMC5687303)"
+                    " and Cistrome DB Zheng R. et al. (2019)."
+                ),
                 "conf": two_basic_views,
             },
             "data": [
@@ -703,7 +707,12 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
         2: {
             "visualization": {
                 "name": "3D + Hi-C",
-                "description": "Interactive visualization showing 3D genome structures of single diploid human cells (View 1) and a Hi-C matrix (View 2). Data: Tan et al. (2018) and Schwarzer et al. (2017).",
+                "description": (
+                    "Interactive visualization showing 3D genome structures"
+                    " of single diploid human cells (View 1) and a Hi-C"
+                    " matrix (View 2). Data: Tan et al. (2018) and"
+                    " Schwarzer et al. (2017)."
+                ),
                 "conf": hic_3d,
             },
             "data": [
@@ -748,17 +757,15 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
             user=request.auth, project_uuid=payload.project_uuid
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to add example data.")
+        raise Http404("Failed to add example data.") from None
 
     example = example_datasets[payload.example_id]
     data = example.get("data", [])
 
     for d in data:
         dataset_tags = d.get("tags", [])
-        try:
+        with contextlib.suppress(KeyError):
             del d["tags"]
-        except KeyError:
-            pass
 
         dataset = Dataset.objects.create(**d, project_key=project)
 
@@ -807,7 +814,7 @@ def tag_dataset(request, payload: TagsIn):
             project_uuid=payload.project_uuid, user=request.auth
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to tag dataset.")
+        raise Http404("Failed to tag dataset.") from None
 
     dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
 
@@ -823,7 +830,7 @@ def tag_dataset(request, payload: TagsIn):
     return {"success": True}
 
 
-@api.get("/datasets", auth=Authorized(), response=List[DatasetOut])
+@api.get("/datasets", auth=Authorized(), response=list[DatasetOut])
 @paginate
 def get_user_datasets(request):
     datasets = Dataset.objects.filter(user_key=request.auth)
@@ -831,18 +838,20 @@ def get_user_datasets(request):
 
 
 class DatasetQuerySchema(Schema):
-    tags: List[str] = Field(None, alias="tags")
-    assembly: List[str] = Field(None, alias="assembly")
-    file_type: List[str] = Field(None, alias="file_type")
+    tags: list[str] = Field(None, alias="tags")
+    assembly: list[str] = Field(None, alias="assembly")
+    file_type: list[str] = Field(None, alias="file_type")
     name: str = Field(None, alias="name")
 
 
 @api.get(
-    "/datasets/{project_uuid}", auth=Authorized(), response=List[DatasetWithTagsOut]
+    "/datasets/{project_uuid}", auth=Authorized(), response=list[DatasetWithTagsOut]
 )
 @paginate(PageNumberPagination)
 def get_project_datasets(
-    request, project_uuid: str, query_filters: DatasetQuerySchema = Query(...)
+    request,
+    project_uuid: str,
+    query_filters: DatasetQuerySchema = Query(...),  # noqa: B008
 ):
     project = _get_project(
         user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
@@ -866,7 +875,7 @@ def get_project_datasets(
     return datasets
 
 
-@api.get("/datasets/fields/{project_uuid}", auth=Authorized(), response=List[str])
+@api.get("/datasets/fields/{project_uuid}", auth=Authorized(), response=list[str])
 def get_project_datasets_field_values(
     request, project_uuid: str, field: Literal["assembly", "file_type"]
 ):
@@ -881,7 +890,7 @@ def get_project_datasets_field_values(
     return field_values
 
 
-@api.get("/datasets/tags/{project_uuid}", auth=Authorized(), response=List[TagOut])
+@api.get("/datasets/tags/{project_uuid}", auth=Authorized(), response=list[TagOut])
 def get_project_datasets_tags(request, project_uuid: str):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=project_uuid
@@ -911,7 +920,7 @@ def get_dataset(request, dataset_uuid: str):
             project_uuid=dataset.project_key.uuid, user=request.auth
         )
     except Project.DoesNotExist:
-        raise Http404("Dataset not found.")
+        raise Http404("Dataset not found.") from None
 
     return dataset
 
@@ -924,13 +933,13 @@ def delete_dataset(request, dataset_uuid: str):
             project_uuid=dataset.project_key.uuid, user=request.auth
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to delete dataset.")
+        raise Http404("Failed to delete dataset.") from None
 
     dataset.delete()
     return {"success": True}
 
 
-@api.get("/tags", response=List[TagOut])
+@api.get("/tags", response=list[TagOut])
 @paginate
 def get_tags(request, sub_str: str = None):
     q = Q()
@@ -948,15 +957,16 @@ def get_tags(request, sub_str: str = None):
 
 
 class VisualizationQuerySchema(Schema):
-    tags: List[str] = Field(None, alias="tags")
+    tags: list[str] = Field(None, alias="tags")
     name: str = Field(None, alias="name")
-    uuids: List[UUID4] = Field(None, alias="uuids")
+    uuids: list[UUID4] = Field(None, alias="uuids")
 
 
-@api.get("/public/visualizations", response=List[VisualizationNoConfOut])
+@api.get("/public/visualizations", response=list[VisualizationNoConfOut])
 @paginate
 def get_published_visualizations(
-    request, query_filters: VisualizationQuerySchema = Query(...)
+    request,
+    query_filters: VisualizationQuerySchema = Query(...),  # noqa: B008
 ):
     q = Q()
     if query_filters.tags:
@@ -972,9 +982,11 @@ def get_published_visualizations(
     return visualizations
 
 
-@api.get("/visualizations", auth=Authorized(), response=List[VisualizationNoConfOut])
+@api.get("/visualizations", auth=Authorized(), response=list[VisualizationNoConfOut])
 def get_project_visualizations(
-    request, project_uuid: str, query_filters: VisualizationQuerySchema = Query(...)
+    request,
+    project_uuid: str,
+    query_filters: VisualizationQuerySchema = Query(...),  # noqa: B008
 ):
     project = _get_project(
         user=request.auth,
@@ -997,7 +1009,7 @@ def get_project_visualizations(
     return visualizations
 
 
-@api.get("/visualizations/tags", auth=Authorized(), response=List[TagOut])
+@api.get("/visualizations/tags", auth=Authorized(), response=list[TagOut])
 def get_project_visualizations_Tags(request, project_uuid: str):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=project_uuid
@@ -1027,9 +1039,9 @@ def get_visualization(request, visualization_uuid: str):
             project_uuid=visualization.project_key.uuid, user=request.auth
         )
     except VisualizationConf.DoesNotExist:
-        raise Http404("Failed to find visualization.")
+        raise Http404("Failed to find visualization.") from None
     except Project.DoesNotExist:
-        raise Http404("Failed to find visualization.")
+        raise Http404("Failed to find visualization.") from None
     return visualization
 
 
@@ -1049,7 +1061,7 @@ def delete_visualization(request, visualization_uuid: str):
             project_uuid=visualization.project_key.uuid, user=request.auth
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to delete visualization.")
+        raise Http404("Failed to delete visualization.") from None
 
     visualization.delete()
     return {"success": True}
@@ -1066,11 +1078,11 @@ def update_visualization(
             project_uuid=visualization.project_key.uuid, user=request.auth
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to update visualization.")
+        raise Http404("Failed to update visualization.") from None
 
     for attr, value in payload_dict.items():
         if attr == "published":
-            setattr(visualization, "published_timestamp", timezone.now())
+            visualization.published_timestamp = timezone.now()
         setattr(visualization, attr, value)
     visualization.save()
     return {"success": True}
@@ -1084,7 +1096,7 @@ def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
             project_uuid=visualization.project_key.uuid, user=request.auth
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to tag visualization.")
+        raise Http404("Failed to tag visualization.") from None
     tags = []
     for t in payload.tags:
         try:
@@ -1108,6 +1120,6 @@ def create_visualization(request, visualization: VisualizationIn):
             user=request.auth, project_uuid=project_uuid
         )
     except Project.DoesNotExist:
-        raise Http404("Failed to create visualization.")
+        raise Http404("Failed to create visualization.") from None
     viz = VisualizationConf.objects.create(**visualization_dict, project_key=project)
     return viz

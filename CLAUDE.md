@@ -35,8 +35,10 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py runserver
 
-# Lint
-ruff check .
+# Lint and format (ruff is a dev dependency, use via uv run)
+uv run ruff check .            # Lint
+uv run ruff check --fix .      # Lint with auto-fix
+uv run ruff format .           # Format
 ```
 
 ### Frontend (run from `frontend/` directory)
