@@ -46,7 +46,7 @@ type ActionProps =
 
 type DialogProps =
   | (CoreFormDialogProps & {
-      onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+      onSubmit?: (event: React.FormEvent) => void;
       isForm?: true;
     } & ActionProps)
   | (CoreFormDialogProps & {
@@ -73,7 +73,7 @@ export default function DialogButtonCopy({
   }, [setOpen, onClose]);
 
   const submit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
+    (e: FormEvent) => {
       if (onSubmit) {
         e?.preventDefault();
         onSubmit(e);
