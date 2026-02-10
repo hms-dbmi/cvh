@@ -192,7 +192,7 @@ class VisualizationIn(ModelSchema):
 
     class Meta:
         model = VisualizationConf
-        fields = ["name"]
+        fields = ["name", "tool"]
 
 
 class VisualizationNoConfOut(ModelSchema):
@@ -202,6 +202,7 @@ class VisualizationNoConfOut(ModelSchema):
         model = VisualizationConf
         fields = [
             "author",
+            "tool",
             "published",
             "n_tracks",
             "n_datasets",
@@ -218,6 +219,7 @@ class VisualizationOut(ModelSchema):
         fields = [
             "conf",
             "author",
+            "tool",
             "published",
             "n_tracks",
             "n_datasets",
@@ -233,6 +235,7 @@ class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
             "name",
             "description",
             "author",
+            "tool",
             "conf",
             "published",
             "n_tracks",

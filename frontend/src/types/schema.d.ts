@@ -926,6 +926,11 @@ export interface components {
             /** Author */
             author?: string | null;
             /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
+            /**
              * Published
              * @default false
              */
@@ -980,6 +985,11 @@ export interface components {
             author?: string | null;
             /** Name */
             name: string;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
         };
         /** VisualizationOut */
         VisualizationOut: {
@@ -989,6 +999,11 @@ export interface components {
             conf?: Record<string, never> | null;
             /** Author */
             author?: string | null;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
             /**
              * Published
              * @default false
@@ -1039,6 +1054,8 @@ export interface components {
             description?: string | null;
             /** Author */
             author?: string | null;
+            /** Tool */
+            tool?: string;
             /** Conf */
             conf?: Record<string, never> | null;
             /** Published */
@@ -1444,6 +1461,7 @@ export interface operations {
                 file_type?: string[];
                 name?: string;
                 page?: number;
+                page_size?: number | null;
             };
             header?: never;
             path: {
@@ -1555,7 +1573,7 @@ export interface operations {
     api_api_get_tags: {
         parameters: {
             query?: {
-                sub_str?: string;
+                sub_str?: string | null;
                 limit?: number;
                 offset?: number;
             };
