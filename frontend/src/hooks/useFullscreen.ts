@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function useFullscreen(onChange?: (newState: boolean) => void) {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -28,5 +28,5 @@ export default function useFullscreen(onChange?: (newState: boolean) => void) {
     isFullscreen,
     setIsFullscreen,
     close,
-  }
+  };
 }

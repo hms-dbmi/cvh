@@ -1,18 +1,17 @@
-import {
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  FormEvent,
-  useEffect,
-} from "react";
-
-import Button, { ButtonProps } from "@mui/material/Button";
+import Button, { type ButtonProps } from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { MenuItemProps } from "@mui/material/MenuItem";
+import type { MenuItemProps } from "@mui/material/MenuItem";
+import {
+  type FormEvent,
+  type PropsWithChildren,
+  type ReactNode,
+  useCallback,
+  useEffect,
+} from "react";
 
 interface DialogText {
   button: ReactNode;
@@ -81,7 +80,7 @@ export default function DialogButtonCopy({
         handleClose();
       }
     },
-    [onSubmit, handleClose]
+    [onSubmit, handleClose],
   );
 
   useEffect(() => {
@@ -91,38 +90,36 @@ export default function DialogButtonCopy({
   }, [open, onOpen]);
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        slotProps={
-          isForm
-            ? {
-                paper: {
-                  component: "form",
-                  onSubmit: submit,
-                },
-              }
-            : {}
-        }
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle>{text.title}</DialogTitle>
-        <DialogContent sx={{ p: 2 }}>
-          {text.description && (
-            <DialogContentText>{text.description}</DialogContentText>
-          )}
-          {children}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>{text.cancelButton ?? "Cancel"}</Button>
-          {actionButtons && actionButtons}
-          {isForm && !actionButtons && (
-            <Button type="submit">{text.submitButton ?? "Submit"}</Button>
-          )}
-        </DialogActions>
-      </Dialog>
-    </>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      slotProps={
+        isForm
+          ? {
+              paper: {
+                component: "form",
+                onSubmit: submit,
+              },
+            }
+          : {}
+      }
+      fullWidth
+      maxWidth="md"
+    >
+      <DialogTitle>{text.title}</DialogTitle>
+      <DialogContent sx={{ p: 2 }}>
+        {text.description && (
+          <DialogContentText>{text.description}</DialogContentText>
+        )}
+        {children}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>{text.cancelButton ?? "Cancel"}</Button>
+        {actionButtons && actionButtons}
+        {isForm && !actionButtons && (
+          <Button type="submit">{text.submitButton ?? "Submit"}</Button>
+        )}
+      </DialogActions>
+    </Dialog>
   );
 }

@@ -1,20 +1,19 @@
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import PublishIcon from "@mui/icons-material/Publish";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-import type { components } from "../../../types/schema.d.ts";
-import EntityListItem from "../../../components/EntityListItem.tsx";
-import { ListItemProps } from "@mui/material/ListItem";
-import EntityDates from "../../../components/EntityDates.tsx";
+import IconEdit from "@mui/icons-material/Edit";
+import PublishIcon from "@mui/icons-material/Publish";
+import IconEye from "@mui/icons-material/Visibility";
+import type { ListItemProps } from "@mui/material/ListItem";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { useCallback } from "react";
+import EntityDates from "../../../components/EntityDates.tsx";
+import EntityListItem from "../../../components/EntityListItem.tsx";
 import TooltipIconButton from "../../../components/TooltipIconButton.tsx";
+import type { components } from "../../../types/schema.d.ts";
 import {
   useDeleteVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations.ts";
-import IconEye from "@mui/icons-material/Visibility";
-import IconEdit from "@mui/icons-material/Edit";
 
 type Visualization = components["schemas"]["VisualizationNoConfOut"];
 
@@ -87,9 +86,12 @@ export default function VisualizationListItem({
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
               {visualization.description}
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center" mt={1}>
-
-            </Stack>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              mt={1}
+            ></Stack>
             <EntityDates
               created={visualization.created_timestamp}
               modified={visualization.modified_timestamp}

@@ -1,24 +1,23 @@
-import { useCallback, ChangeEvent, useState } from "react";
-
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import Stack from "@mui/material/Stack";
-import IconButton from "@mui/material/IconButton";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem, { MenuItemProps } from "@mui/material/MenuItem";
+import { ListItemIcon, ListItemText } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import MenuItem, { type MenuItemProps } from "@mui/material/MenuItem";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import { Trash, Users } from "@phosphor-icons/react";
-import Avatar from "@mui/material/Avatar";
-import { Check } from "@phosphor-icons/react";
-
-import generateAvatarColor from "../../../utils/generateAvatarColor";
-import type { components } from "../../../types/schema";
+import { Check, Trash, Users } from "@phosphor-icons/react";
+import { type ChangeEvent, useCallback, useState } from "react";
 import DialogButton from "../../../components/DialogButton";
+import type { components } from "../../../types/schema";
+import generateAvatarColor from "../../../utils/generateAvatarColor";
+import { useGetUser } from "../../navigation/api/useUser";
 import {
   useGetProject,
   useGetProjectMembers,
@@ -27,8 +26,6 @@ import {
   useUpdateProjectMember,
 } from "../api/useProjects";
 import ShareProjectButton from "./ShareProjectButton";
-import { ListItemIcon, ListItemText } from "@mui/material";
-import { useGetUser } from "../../navigation/api/useUser";
 
 const PERMISSIONS: Record<number, string> = {
   1: "Viewer",
@@ -104,7 +101,7 @@ function PermissionsSelect({
         },
       });
     },
-    [mutate, projectId, email]
+    [mutate, projectId, email],
   );
 
   return (
@@ -231,7 +228,7 @@ export function UpdateAccessSwitch({
         },
       });
     },
-    [mutate, projectId]
+    [mutate, projectId],
   );
   return (
     <FormControlLabel
@@ -283,7 +280,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
           <>
             <Users size={20} />
             <Box sx={{ marginLeft: "4px" }} component="span">
-              {data && data.length} Collaborator
+              {data?.length} Collaborator
               {data?.length === 1 ? "" : "s"}
             </Box>
           </>

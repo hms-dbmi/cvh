@@ -1,13 +1,13 @@
-import { PropsWithChildren, ReactNode } from "react";
-import Accordion, { AccordionProps } from "@mui/material/Accordion";
-import AccordionSummary, {
-  AccordionSummaryProps,
-} from "@mui/material/AccordionSummary";
+import Accordion, { type AccordionProps } from "@mui/material/Accordion";
 import AccordionDetails, {
-  AccordionDetailsProps,
+  type AccordionDetailsProps,
 } from "@mui/material/AccordionDetails";
+import AccordionSummary, {
+  type AccordionSummaryProps,
+} from "@mui/material/AccordionSummary";
 import Typography from "@mui/material/Typography";
 import { CaretUp } from "@phosphor-icons/react";
+import type { PropsWithChildren, ReactNode } from "react";
 
 export default function BasicAccordion({
   id,

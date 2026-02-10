@@ -1,4 +1,3 @@
-import VisualizationThumbnailNone from "../../../assets/visualization-thumbnails/Property_none.svg?react";
 import VisualizationThumbnail1 from "../../../assets/visualization-thumbnails/Property_1.svg?react";
 import VisualizationThumbnail2 from "../../../assets/visualization-thumbnails/Property_2.svg?react";
 import VisualizationThumbnail3 from "../../../assets/visualization-thumbnails/Property_3.svg?react";
@@ -7,6 +6,7 @@ import VisualizationThumbnail5 from "../../../assets/visualization-thumbnails/Pr
 import VisualizationThumbnail6 from "../../../assets/visualization-thumbnails/Property_6.svg?react";
 import VisualizationThumbnail7 from "../../../assets/visualization-thumbnails/Property_7.svg?react";
 import VisualizationThumbnailMany from "../../../assets/visualization-thumbnails/Property_many.svg?react";
+import VisualizationThumbnailNone from "../../../assets/visualization-thumbnails/Property_none.svg?react";
 
 const sharedProps = {
   height: 65,

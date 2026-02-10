@@ -1,11 +1,10 @@
-import { useCallback } from "react";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
-
-import type { components } from "../../../types/schema.d.ts";
-import EntityListItem from "../../../components/EntityListItem.tsx";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useCallback } from "react";
 import EntityDates from "../../../components/EntityDates.tsx";
+import EntityListItem from "../../../components/EntityListItem.tsx";
+import type { components } from "../../../types/schema.d.ts";
 
 export default function DatasetListItem({
   dataset,

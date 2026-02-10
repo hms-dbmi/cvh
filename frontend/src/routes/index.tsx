@@ -1,14 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
 import { useAuth0 } from "@auth0/auth0-react";
-
-import { LoginButton } from "../features/navigation/components/AuthButtons";
 import { Typography } from "@mui/material";
-import PublishedVisualizationGrid from "../features/visualizations/components/PublishedVisualizationGrid";
-import UpperGridSVG from "../assets/homepage/background-grid-upper.svg";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import { ArrowBendUpRight } from "@phosphor-icons/react";
+import { createFileRoute } from "@tanstack/react-router";
+import UpperGridSVG from "../assets/homepage/background-grid-upper.svg";
+import { LoginButton } from "../features/navigation/components/AuthButtons";
 import { Link } from "../features/navigation/components/Links";
+import PublishedVisualizationGrid from "../features/visualizations/components/PublishedVisualizationGrid";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,

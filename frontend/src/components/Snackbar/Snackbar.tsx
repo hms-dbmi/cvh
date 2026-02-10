@@ -1,12 +1,18 @@
-import React, { forwardRef } from 'react';
-import Snackbar from '@mui/material/Snackbar';
-import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import { SnackbarProviderState, useSnackbarStore } from './useSnackbarStore';
-import { useShallow } from 'zustand/react/shallow'
+import MuiAlert, { type AlertProps } from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
+import type React from "react";
+import { forwardRef } from "react";
+import { useShallow } from "zustand/react/shallow";
+import {
+  type SnackbarProviderState,
+  useSnackbarStore,
+} from "./useSnackbarStore";
 
-const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+const Alert = forwardRef<HTMLDivElement, AlertProps>(
+  function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+  },
+);
 
 const getSnackbarStoreState = (state: SnackbarProviderState) => ({
   message: state.message,
@@ -15,10 +21,15 @@ const getSnackbarStoreState = (state: SnackbarProviderState) => ({
 });
 
 export default function StyledSnackbar() {
-  const { message, snackbarOpen, closeSnackbar } = useSnackbarStore(useShallow(getSnackbarStoreState));
+  const { message, snackbarOpen, closeSnackbar } = useSnackbarStore(
+    useShallow(getSnackbarStoreState),
+  );
 
-  const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
+  const handleClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string,
+  ) => {
+    if (reason === "clickaway") {
       return;
     }
 
@@ -30,8 +41,18 @@ export default function StyledSnackbar() {
   const { severity, message: children, key } = message;
 
   return (
-    <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleClose} key={key}>
-      <Alert icon={false} onClose={handleClose} severity={severity} sx={{ width: '100%' }}>
+    <Snackbar
+      open={snackbarOpen}
+      autoHideDuration={6000}
+      onClose={handleClose}
+      key={key}
+    >
+      <Alert
+        icon={false}
+        onClose={handleClose}
+        severity={severity}
+        sx={{ width: "100%" }}
+      >
         {children}
       </Alert>
     </Snackbar>
