@@ -58,9 +58,9 @@ Resources:
         KmsKeyId: !Ref KMSKey
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-db"
+          Value: "cvh-db"
         - Key: environment
           Value: !Ref Environment
 
