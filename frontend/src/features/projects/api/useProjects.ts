@@ -1,6 +1,10 @@
-import useClient, { QueryOptions, buildInvalidateGetQuery } from "../../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import useClient, {
+  buildInvalidateGetQuery,
+  type QueryOptions,
+} from "../../../api/client";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+
 /*
 function useProjects() {
     const url: string = `${import.meta.env.VITE_API_URL}/api/projects`
@@ -22,9 +26,12 @@ const publicPath = "/api/public/projects";
 const membersPath = "/api/projects/{project_uuid}/members";
 const permissionsPath = "/api/projects/{project_uuid}/permissions";
 
-
-const invalidateGetQuery = buildInvalidateGetQuery([path, publicPath, membersPath, permissionsPath])
-
+const invalidateGetQuery = buildInvalidateGetQuery([
+  path,
+  publicPath,
+  membersPath,
+  permissionsPath,
+]);
 
 function useGetProjects(options?: QueryOptions) {
   const client = useClient();
@@ -42,13 +49,13 @@ function useCreateProject() {
 
   const client = useClient();
   return client.useMutation("post", path, {
-    onSuccess: () =>{
+    onSuccess: () => {
       toastSuccess("Successfully created project.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
       toastError("Failed to create project.");
-    }
+    },
   });
 }
 
@@ -66,32 +73,29 @@ function useAddProjectMember() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("post", "/api/projects/members", {
-    onSuccess: () =>{
+    onSuccess: () => {
       toastSuccess("Successfully shared project.");
 
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
       toastError("Failed to share project.");
-    }
-
+    },
   });
 }
-
 
 function useUpdateProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("put", "/api/projects/members", {
-    onSuccess: () =>{
-      toastSuccess('Updated permissions.');
+    onSuccess: () => {
+      toastSuccess("Updated permissions.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to update permissions.")
-    }
-
+      toastError("Failed to update permissions.");
+    },
   });
 }
 
@@ -100,14 +104,13 @@ function useRemoveProjectMember() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("delete", "/api/projects/members", {
-    onSuccess: () =>{
-      toastSuccess('Removed project member.');
+    onSuccess: () => {
+      toastSuccess("Removed project member.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to remove project member.")
-    }
-
+      toastError("Failed to remove project member.");
+    },
   });
 }
 
@@ -116,30 +119,28 @@ function useDeleteProject() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("delete", "/api/projects/{project_uuid}", {
-    onSuccess: () =>{
-      toastSuccess('Deleted project.');
+    onSuccess: () => {
+      toastSuccess("Deleted project.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to delete project.")
-    }
-
+      toastError("Failed to delete project.");
+    },
   });
 }
 
-function useUpdateProject(){
+function useUpdateProject() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("put", "/api/projects/{project_uuid}", {
-    onSuccess: () =>{
-      toastSuccess('Updated project.');
+    onSuccess: () => {
+      toastSuccess("Updated project.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to update project.")
-    }
-
+      toastError("Failed to update project.");
+    },
   });
 }
 

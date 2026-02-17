@@ -5,20 +5,36 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13.1"
 dependencies = [
-    "boto3>=1.37.17",
-    "django>=5.1.5",
-    "django-cors-headers>=4.7.0",
-    "django-health-check>=3.20.0",
-    "django-ninja>=1.3.0",
-    "email-validator>=2.2.0",
-    "environs>=14.1.0",
-    "gunicorn>=23.0.0",
-    "psycopg[binary]>=3.2.4",
-    "pyarrow>=19.0.0",
-    "pyjwt[crypto]>=2.10.1",
-    "requests>=2.32.3",
-    "ruff>=0.9.3",
+    "boto3~=1.37",
+    "django~=5.1",
+    "django-cors-headers~=4.7",
+    "django-health-check~=3.20",
+    "django-ninja~=1.3",
+    "email-validator~=2.2",
+    "environs~=14.1",
+    "gunicorn~=23.0",
+    "psycopg[binary]~=3.2",
+    "pyarrow~=19.0",
+    "pyjwt[crypto]~=2.10",
+    "requests~=2.32",
 ]
 
 [dependency-groups]
-dev = []
+dev = [
+    "ruff~=0.9",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "DJ"]
+ignore = [
+    "DJ001",  # null=True on string fields — existing pattern, changing requires migrations
+    "DJ008",  # missing __str__ — not critical
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "core"]

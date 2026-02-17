@@ -1,29 +1,30 @@
-import { PropsWithChildren, useState, useCallback } from "react";
-import { useParams } from "@tanstack/react-router";
 import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
+import InputBase from "@mui/material/InputBase";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import InputBase from "@mui/material/InputBase";
-import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import {
-  Tag,
-  MagnifyingGlass,
+  CaretDown,
   DotsThree,
+  FileText,
+  MagnifyingGlass,
+  Tag,
   // Cards,
   Trash,
-  FileText,
-  CaretDown,
 } from "@phosphor-icons/react";
-
+import { useParams } from "@tanstack/react-router";
+import { type PropsWithChildren, useCallback, useState } from "react";
+import NoDataSVG from "../../../assets/nodata.svg?react";
+import DialogButtonCopy from "../../../components/DialogButtonCopy";
+import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import type { components } from "../../../types/schema";
-import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 import {
   useDeleteDataset,
   useGetDataset,
@@ -31,14 +32,12 @@ import {
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
+import AddDatasetButton from "../../datasets/components/AddDatasetButton";
+import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
-import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
-import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useGetProject } from "../../projects/api/useProjects";
-import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
-import NoDataSVG from "../../../assets/nodata.svg?react";
 
 export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -52,16 +51,13 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
 
   const { mutate: deleteDataset } = useDeleteDataset();
 
-  const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      setAnchorEl(event.currentTarget);
-    },
-    [setAnchorEl]
-  );
+  const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  }, []);
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);
-  }, [setAnchorEl]);
+  }, []);
 
   const submitDelete = useCallback(() => {
     if (datasetID) {
@@ -74,7 +70,7 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
       setOpenDelete(false);
       handleClose();
     }
-  }, [setOpenDelete, handleClose, deleteDataset, datasetID]);
+  }, [handleClose, deleteDataset, datasetID]);
 
   if (!projectId || !data) {
     return null;
@@ -123,12 +119,10 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
         onClick={handleClose}
       >
         <MenuItem onClick={() => setOpenAddTags(true)}>
-          <>
-            <ListItemIcon>
-              <Tag height={24} width={24} />
-            </ListItemIcon>
-            Edit Tags
-          </>
+          <ListItemIcon>
+            <Tag height={24} width={24} />
+          </ListItemIcon>
+          Edit Tags
         </MenuItem>
         {/*
         <MenuItem onClick={handleClose}>
@@ -150,38 +144,38 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
 
 function DataSelects({ projectId }: { projectId: string }) {
   const selectedAssemblies = useDatasetFiltersStore(
-    (state) => state.selectedAssemblies
+    (state) => state.selectedAssemblies,
   );
   const selectedFileTypes = useDatasetFiltersStore(
-    (state) => state.selectedFileTypes
+    (state) => state.selectedFileTypes,
   );
 
   const selectedTags = useDatasetFiltersStore((state) => state.selectedTags);
   const setSelectedAssemblies = useDatasetFiltersStore(
-    (state) => state.setSelectedAssemblies
+    (state) => state.setSelectedAssemblies,
   );
 
   const setSelectedFileTypes = useDatasetFiltersStore(
-    (state) => state.setSelectedFileTypes
+    (state) => state.setSelectedFileTypes,
   );
 
   const setSelectedTags = useDatasetFiltersStore(
-    (state) => state.setSelectedTags
+    (state) => state.setSelectedTags,
   );
   const { data: assemblyData } = useGetProjectDatasetFieldValues(
     projectId,
-    "assembly"
+    "assembly",
   );
 
   const { data: fileTypeData } = useGetProjectDatasetFieldValues(
     projectId,
-    "file_type"
+    "file_type",
   );
 
   const { data: tagsData } = useGetProjectDatasetTags(projectId);
 
   const setNameSubstring = useDatasetFiltersStore(
-    (state) => state.setNameSubstring
+    (state) => state.setNameSubstring,
   );
 
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
@@ -247,7 +241,7 @@ function DataList({
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
   const setNameSubstring = useDatasetFiltersStore(
-    (state) => state.setNameSubstring
+    (state) => state.setNameSubstring,
   );
 
   const { data } = useGetProject(projectId);

@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
-import { useSnackbarStore } from '../components/Snackbar/useSnackbarStore';
+import { useSnackbarStore } from "../components/Snackbar/useSnackbarStore";
 
 export const useHandleCopyClick = () => {
   const { toastSuccess, toastError } = useSnackbarStore();
@@ -10,12 +10,14 @@ export const useHandleCopyClick = () => {
         navigator.clipboard
           .writeText(value)
           .then(() => {
-            toastSuccess(`Copied to clipboard.${additionalText ? ` ${additionalText}` : ''}`);
+            toastSuccess(
+              `Copied to clipboard.${additionalText ? ` ${additionalText}` : ""}`,
+            );
           })
           .catch((e) => {
-            console.error('Error copying to clipboard', e);
+            console.error("Error copying to clipboard", e);
             toastError(
-              `Encountered an error while copying, please try again.${additionalText ? ` ${additionalText}` : ''}`,
+              `Encountered an error while copying, please try again.${additionalText ? ` ${additionalText}` : ""}`,
             );
           });
       }, 0);

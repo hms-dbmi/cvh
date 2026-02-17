@@ -1,8 +1,8 @@
-import useClient, {
-  QueryOptions,
-  buildInvalidateGetQuery,
-} from "../../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import useClient, {
+  buildInvalidateGetQuery,
+  type QueryOptions,
+} from "../../../api/client";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const path = "/api/datasets";
@@ -89,7 +89,14 @@ function useGetPaginatedProjectDatasets({
     hasFilter(fileTypeFilter) ||
     hasFilter(assemblyFilter) ||
     hasFilter(nameFilter)
-      ? { query: { ...tagsFilter, ...fileTypeFilter, ...assemblyFilter, ...nameFilter } }
+      ? {
+          query: {
+            ...tagsFilter,
+            ...fileTypeFilter,
+            ...assemblyFilter,
+            ...nameFilter,
+          },
+        }
       : {};
 
   const client = useClient();
@@ -106,7 +113,7 @@ function useGetPaginatedProjectDatasets({
       pageParamName: "page",
       initialPageParam: 1,
       getNextPageParam: getNextPageParam,
-    }
+    },
   );
 }
 
@@ -151,20 +158,19 @@ function useGetDataset(datasetId: string) {
 }
 
 function useDeleteDataset() {
-  const {toastSuccess, toastError} = useSnackbarActions()
+  const { toastSuccess, toastError } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("delete", `${path}/uuid/{dataset_uuid}`, {
-    onSuccess: () =>{
+    onSuccess: () => {
       toastSuccess("Successfully removed data source.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
       toastError("Failed to removed data source.");
-    }
+    },
   });
 }
-
 
 function useTagDataset() {
   const queryClient = useQueryClient();
@@ -177,7 +183,7 @@ function useTagDataset() {
 
 function useGetProjectDatasetFieldValues(
   project_uuid: string,
-  field: "assembly" | "file_type"
+  field: "assembly" | "file_type",
 ) {
   const client = useClient();
 

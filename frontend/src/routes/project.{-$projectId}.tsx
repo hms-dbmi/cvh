@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-
-import { useGetProject } from "../features/projects/api/useProjects";
-import useGetProjects from "../features/projects/api/useProjects";
+import useGetProjects, {
+  useGetProject,
+} from "../features/projects/api/useProjects";
 import VisualizationViewer from "../features/visualizations/components/VisualizationViewer";
 
 export const Route = createFileRoute("/project/{-$projectId}")({

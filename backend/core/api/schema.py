@@ -1,9 +1,9 @@
-from ninja import Schema, ModelSchema
-from pydantic import UUID4, EmailStr, Field
-from typing import Optional, Any, List, Literal, Union, Annotated, Tuple
-from typing_extensions import Dict, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
-from .models import Project, Dataset, VisualizationConf, ProjectMember, Tag
+from ninja import ModelSchema, Schema
+from pydantic import UUID4, EmailStr, Field
+
+from .models import Dataset, Project, ProjectMember, Tag, VisualizationConf
 
 
 class OptionalSchema(Schema):
@@ -53,7 +53,7 @@ class PartialProjectIn(ProjectIn, OptionalSchema):
 class ProjectOut(ModelSchema):
     datasets_count: int
     visualizations_count: int
-    permissions: Optional[int] = None
+    permissions: int | None = None
 
     class Meta:
         model = Project
@@ -78,16 +78,24 @@ class GoslingDatasetSimple(GoslingDataCommon):
 
 class GoslingDesignerMultiVec(GoslingDataCommon):
     file_type: Literal["multivec"]
-    row_names: List[str]
+    row_names: list[str]
+
 
 class GoslingDesignerBam(GoslingDataCommon):
     file_type: Literal["bam"]
     index_url: str
 
+
 class GoslingDesignerDataColumn(Schema):
-    data_column: Optional[List[
-        Tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
-    ]] = None
+    data_column: (
+        list[
+            tuple[
+                str,
+                Literal["nominal", "quantitative", "chromosome", "genomic", "key"],
+            ]
+        ]
+        | None
+    ) = None
 
 
 class GoslingDesignerIndex(GoslingDataCommon, GoslingDesignerDataColumn):
@@ -103,36 +111,36 @@ class GoslingDesignerCSV(GoslingDataCommon):
     file_type: Literal["csv"]
     separator: str
     headers: bool
-    data_column: List[
-        Tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
+    data_column: list[
+        tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
     ]
 
 
 GoslingDesignerModel = Annotated[
-    Union[
-        GoslingDatasetSimple,
-        GoslingDesignerBam,
-        GoslingDesignerMultiVec,
-        GoslingDesignerIndex,
-        GoslingDesignerBEDB,
-        GoslingDesignerCSV,
-    ],
+    GoslingDatasetSimple
+    | GoslingDesignerBam
+    | GoslingDesignerMultiVec
+    | GoslingDesignerIndex
+    | GoslingDesignerBEDB
+    | GoslingDesignerCSV,
     Field(discriminator="file_type"),
 ]
 
 
 class DatasetIn(Schema):
-    project_uuid: Optional[UUID4] = None
+    project_uuid: UUID4 | None = None
     dataset: GoslingDesignerModel
+
 
 class ExampleDatasetIn(Schema):
     project_uuid: UUID4
     include_visualizations: bool
     example_id: Literal[1, 2]
 
+
 class PartialDatasetIn(Schema):
-    project_uuid: Optional[UUID4] = None
-    dataset: Optional[GoslingDesignerModel] = None
+    project_uuid: UUID4 | None = None
+    dataset: GoslingDesignerModel | None = None
 
 
 class DatasetUpdate(PartialDatasetIn):
@@ -162,7 +170,7 @@ class TagIn(TypedDict):
 
 
 class TagsIn(Schema):
-    tags: List[TagIn]
+    tags: list[TagIn]
     uuid: UUID4
     project_uuid: UUID4
 
@@ -174,13 +182,13 @@ class TagOut(ModelSchema):
 
 
 class DatasetWithTagsOut(DatasetOut):
-    tags: List[TagOut]
+    tags: list[TagOut]
 
 
 class VisualizationIn(ModelSchema):
     project_uuid: UUID4
-    description: Optional[str] = None
-    author: Optional[str] = None
+    description: str | None = None
+    author: str | None = None
 
     class Meta:
         model = VisualizationConf
@@ -188,7 +196,7 @@ class VisualizationIn(ModelSchema):
 
 
 class VisualizationNoConfOut(ModelSchema):
-    tags: List[TagOut]
+    tags: list[TagOut]
 
     class Meta:
         model = VisualizationConf
@@ -203,7 +211,7 @@ class VisualizationNoConfOut(ModelSchema):
 
 
 class VisualizationOut(ModelSchema):
-    tags: List[TagOut]
+    tags: list[TagOut]
 
     class Meta:
         model = VisualizationConf
@@ -221,7 +229,15 @@ class VisualizationOut(ModelSchema):
 class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
-        fields = ["name", "description", "author", "conf", "published", "n_tracks", "n_datasets"]
+        fields = [
+            "name",
+            "description",
+            "author",
+            "conf",
+            "published",
+            "n_tracks",
+            "n_datasets",
+        ]
 
 
 class ProjectMemberIn(Schema):
@@ -241,8 +257,8 @@ class ProjectMemberUpdate(ModelSchema):
 class ProjectMemberOut(ModelSchema):
     email: EmailStr
     username: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
     class Meta:
         model = ProjectMember

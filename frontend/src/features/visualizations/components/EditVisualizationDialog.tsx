@@ -1,13 +1,15 @@
-import { useCallback, useEffect } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-
-import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import { useCallback, useEffect } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useForm,
+} from "react-hook-form";
 import { z } from "zod";
-
-import { useUpdateVisualization } from "../api/useVisualizations.ts";
 import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import { useUpdateVisualization } from "../api/useVisualizations.ts";
 
 interface FormValues {
   name: string;
@@ -93,7 +95,7 @@ export default function EditVisualizationDialog({
       });
       setOpen(false);
     },
-    [mutate, visualizationId, setOpen]
+    [mutate, visualizationId, setOpen],
   );
 
   useEffect(() => {
@@ -102,7 +104,7 @@ export default function EditVisualizationDialog({
       description: initialDescription,
       author: initialAuthor,
     });
-  }, [reset, initialName, initialDescription, initialAuthor, open]);
+  }, [reset, initialName, initialDescription, initialAuthor]);
 
   const handleReset = useCallback(() => {
     reset({

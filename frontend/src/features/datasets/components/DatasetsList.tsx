@@ -1,12 +1,11 @@
-import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-
+import type { QueryOptions } from "../../../api/client";
+import { LinkButton } from "../../navigation/components/Links";
+import { useGetUserDatasets } from "../api/useDatasets";
 import AddDatasetButton from "./AddDatasetButton";
 import DatasetListItem from "./DatasetListItem";
-import { useGetUserDatasets } from "../api/useDatasets";
-import { LinkButton } from "../../navigation/components/Links";
-import { QueryOptions } from "../../../api/client";
 
 export default function DatasetsList({
   queryOptions,

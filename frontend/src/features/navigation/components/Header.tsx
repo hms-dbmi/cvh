@@ -1,36 +1,32 @@
-import { useCallback, useState } from "react";
-
-import { useParams, useRouterState } from "@tanstack/react-router";
-
+import { useAuth0 } from "@auth0/auth0-react";
 import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Avatar from "@mui/material/Avatar";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import IconButton from "@mui/material/IconButton";
-import Divider from "@mui/material/Divider";
 import Skeleton from "@mui/material/Skeleton";
-
-import { useAuth0 } from "@auth0/auth0-react";
-import GoslingIcon from "../../../assets/gosling.svg?react";
-import { Link } from "./Links";
-import { components } from "../../../types/schema";
-import { formatRelative } from "date-fns";
-import useGetProjects from "../../projects/api/useProjects";
-
-import { LoginButton } from "./AuthButtons";
-import AddProjectButton from "../../projects/components/AddProjectButton";
-import generateAvatarColor from "../../../utils/generateAvatarColor";
+import Stack from "@mui/material/Stack";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import { CaretDown, CaretUp, SignOut, User } from "@phosphor-icons/react";
-import { useGetUser } from "../api/useUser";
-import EditProfileDialog from "./EditProfileDialog";
+import { useParams, useRouterState } from "@tanstack/react-router";
+import { formatRelative } from "date-fns";
+import { useCallback, useState } from "react";
+import GoslingIcon from "../../../assets/gosling.svg?react";
+import type { components } from "../../../types/schema";
+import generateAvatarColor from "../../../utils/generateAvatarColor";
+import useGetProjects from "../../projects/api/useProjects";
+import AddProjectButton from "../../projects/components/AddProjectButton";
 import ProjectSettings from "../../projects/components/ProjectSettings";
+import { useGetUser } from "../api/useUser";
+import { LoginButton } from "./AuthButtons";
+import EditProfileDialog from "./EditProfileDialog";
+import { Link } from "./Links";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   return <ProjectSettings projectId={projectId} />;
@@ -168,6 +164,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
         </Box>
         {projectsData?.items.map((p) => (
           <WorkspaceListItem
+            key={p.uuid}
             project={p}
             firstLetter={firstLetter}
             isSelected={p.uuid === projectId}
@@ -219,14 +216,11 @@ function ProfileMenu() {
 
   const handleOpenEditProfile = useCallback(() => {
     setOpenEditProfile(true);
-  }, [setOpenEditProfile]);
+  }, []);
 
-  const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      setAnchorEl(event.currentTarget);
-    },
-    [setAnchorEl]
-  );
+  const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  }, []);
 
   const handleLogOut = useCallback(() => {
     logout({ logoutParams: { returnTo: window.location.origin } });
@@ -234,7 +228,7 @@ function ProfileMenu() {
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);
-  }, [setAnchorEl]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -363,7 +357,7 @@ export default function Header() {
             </Link>
             <Link to="/" sx={{ textDecoration: "none" }}>
               <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
-                Gosling Designer
+                Community Visualization Hub
               </Typography>
             </Link>
           </Stack>

@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
-import { create } from "zustand";
 import type { AlertColor } from "@mui/material/Alert";
-import { useShallow } from 'zustand/react/shallow'
+import type { ReactNode } from "react";
+import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 
 export type Severity = AlertColor;
 
@@ -17,7 +17,7 @@ export interface SnackbarProviderState {
   openSnackbar: (
     newMessage: ReactNode,
     severity?: Severity,
-    key?: string | number
+    key?: string | number,
   ) => void;
   closeSnackbar: () => void;
   toastInfo: (message: ReactNode, key?: string | number) => void;
@@ -29,7 +29,7 @@ export interface SnackbarProviderState {
 const formatMessage = (
   newMessage: ReactNode,
   severity: Severity = "info",
-  key: string | number = new Date().getTime()
+  key: string | number = Date.now(),
 ) => {
   const message: SnackbarMessage = {
     message: newMessage,
@@ -42,7 +42,7 @@ const formatMessage = (
 const useStore = create<SnackbarProviderState>((set, get) => ({
   message: undefined,
   snackbarOpen: false,
-  openSnackbar: (newMessage, severity = "info", key = new Date().getTime()) => {
+  openSnackbar: (newMessage, severity = "info", key = Date.now()) => {
     set({
       snackbarOpen: true,
       message: formatMessage(newMessage, severity, key),
@@ -60,14 +60,13 @@ const useStore = create<SnackbarProviderState>((set, get) => ({
   toastWarning: (message, key) => get().openSnackbar(message, "warning", key),
 }));
 
-
 const getSnackActions = (store: SnackbarProviderState) => ({
-    toastError: store.toastError,
-    toastInfo: store.toastInfo,
-    toastWarning: store.toastWarning,
-    toastSuccess: store.toastSuccess,
-    closeSnackbar: store.closeSnackbar,
-  })
+  toastError: store.toastError,
+  toastInfo: store.toastInfo,
+  toastWarning: store.toastWarning,
+  toastSuccess: store.toastSuccess,
+  closeSnackbar: store.closeSnackbar,
+});
 
 const useSnackbarActions = () => {
   return useStore(useShallow(getSnackActions));

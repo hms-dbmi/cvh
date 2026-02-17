@@ -1,18 +1,17 @@
-import { useCallback } from "react";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
 import Divider from "@mui/material/Divider";
-import { LinkMenuItem } from "../../navigation/components/Links";
-
+import ListItemIcon from "@mui/material/ListItemIcon";
+import MenuItem from "@mui/material/MenuItem";
 import {
-  PresentationChart,
-  LinkSimple,
-  Trash,
   ArrowBendUpRight,
+  LinkSimple,
+  PresentationChart,
+  Trash,
 } from "@phosphor-icons/react";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
-import { useUpdateVisualization } from "../api/useVisualizations";
+import { useCallback } from "react";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
+import { LinkMenuItem } from "../../navigation/components/Links";
+import { useUpdateVisualization } from "../api/useVisualizations";
 
 type Props = {
   visualizationID: string;

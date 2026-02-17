@@ -1,14 +1,16 @@
-import { useCallback, useState } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-
-import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import { Plus } from "@phosphor-icons/react";
+import { useCallback, useState } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useForm,
+} from "react-hook-form";
 import { z } from "zod";
-
 import DialogButton from "../../../components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
-import { Plus } from "@phosphor-icons/react";
 
 const text = {
   button: "New Visualization",
@@ -83,7 +85,7 @@ export default function AddVisualizationButton({
   const handleReset = useCallback(() => {
     reset();
     setOpen(false);
-  }, [reset, setOpen]);
+  }, [reset]);
 
   const { mutate } = useCreateVisualization(setSelectedVizId);
 
@@ -93,7 +95,7 @@ export default function AddVisualizationButton({
       handleReset();
       return;
     },
-    [mutate, projectId, handleReset]
+    [mutate, projectId, handleReset],
   );
 
   return (

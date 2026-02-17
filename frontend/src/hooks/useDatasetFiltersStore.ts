@@ -1,9 +1,9 @@
 import { create } from "zustand";
 
 export interface DatasetFiltersState {
-  selectedAssemblies: string[],
-  selectedFileTypes: string[],
-  selectedTags: string[]
+  selectedAssemblies: string[];
+  selectedFileTypes: string[];
+  selectedTags: string[];
   nameSubstring: string;
   setSelectedAssemblies: (assemblies: string[]) => void;
   setSelectedFileTypes: (fileTypes: string[]) => void;
@@ -11,30 +11,29 @@ export interface DatasetFiltersState {
   setNameSubstring: (name: string) => void;
 }
 
-
 const useStore = create<DatasetFiltersState>((set) => ({
-  nameSubstring: '',
+  nameSubstring: "",
   selectedAssemblies: [],
   selectedFileTypes: [],
   selectedTags: [],
   setSelectedAssemblies: (assemblies) => {
     set({
-      selectedAssemblies: assemblies
+      selectedAssemblies: assemblies,
     });
   },
   setSelectedFileTypes: (fileTypes) => {
     set({
-      selectedFileTypes: fileTypes
+      selectedFileTypes: fileTypes,
     });
   },
   setSelectedTags: (tags) => {
     set({
-      selectedTags: tags
+      selectedTags: tags,
     });
   },
   setNameSubstring: (name) => {
     set({
-      nameSubstring: name
+      nameSubstring: name,
     });
   },
 }));

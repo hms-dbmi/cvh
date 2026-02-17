@@ -1,14 +1,19 @@
-import { useCallback } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useCallback } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useForm,
+} from "react-hook-form";
+import { z } from "zod";
 
 import { useAddProjectMember } from "../api/useProjects";
+
 interface FormValues {
   email: string;
 }
@@ -65,7 +70,7 @@ export default function ShareProjectButton({
     ({ email }: FormValues) => {
       mutate({ body: { project_uuid: projectId, email } });
     },
-    [mutate, projectId]
+    [mutate, projectId],
   );
 
   return (
@@ -91,7 +96,9 @@ export default function ShareProjectButton({
           </Button>
         </Stack>
       </Stack>
-      <Typography sx={{ marginLeft: "14px", fontSize: "11px", fontWeight: 500 }}>
+      <Typography
+        sx={{ marginLeft: "14px", fontSize: "11px", fontWeight: 500 }}
+      >
         Invited collaborator must have an account
       </Typography>
     </Box>

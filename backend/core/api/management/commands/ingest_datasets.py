@@ -1,11 +1,10 @@
-from datetime import datetime
+import boto3
+import pyarrow.parquet as pq
 from django.conf import settings
 from django.core.management.base import BaseCommand
-import pyarrow.parquet as pq
 from environs import env
-import boto3
 
-from api.models import Project, Dataset, Tag, User, ProjectMember
+from api.models import Dataset, Project, ProjectMember, Tag, User
 
 fields = ["Biosource", "Biosource Type", "Target"]
 

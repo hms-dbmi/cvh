@@ -1,10 +1,9 @@
-import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
-
+import Typography from "@mui/material/Typography";
+import EntityDates from "../../../components/EntityDates.tsx";
+import EntityListItem from "../../../components/EntityListItem.tsx";
 import type { components } from "../../../types/schema.d.ts";
 import { Link } from "../../navigation/components/Links.tsx";
-import EntityListItem from "../../../components/EntityListItem.tsx";
-import EntityDates from "../../../components/EntityDates.tsx";
 
 function buildCountLabel({ count, label }: { count: number; label: string }) {
   if (count === 1) {
@@ -51,11 +50,12 @@ export default function ProjectListItem({
               `}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.primary" }} noWrap>
-            {`${project.visualizations_count} ${buildCountLabel({
+              {`${project.visualizations_count} ${buildCountLabel({
                 count: project.visualizations_count,
                 label: "Visualizations",
               })}
-              `}            </Typography>
+              `}{" "}
+            </Typography>
           </Stack>
         </Stack>
       }

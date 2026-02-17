@@ -101,7 +101,6 @@ Resources:
           ],
         ]
 
-  # Load Balancer
   # External load balancer
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -168,7 +167,7 @@ Resources:
             EvaluateTargetHealth: false
             HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
 
-  # # Load Balancer Listener
+  # Load Balancer Listener
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:

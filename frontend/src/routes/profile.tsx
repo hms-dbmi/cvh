@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useAuth0 } from "@auth0/auth0-react";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/profile")({
   component: Profile,

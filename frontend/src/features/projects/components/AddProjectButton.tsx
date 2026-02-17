@@ -1,8 +1,12 @@
-import { useCallback, useState } from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import { useForm, useController, UseControllerProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Stack from "@mui/material/Stack";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import { useCallback, useState } from "react";
+import {
+  type UseControllerProps,
+  useController,
+  useForm,
+} from "react-hook-form";
 import { z } from "zod";
 
 import DialogButton from "../../../components/DialogButton";
@@ -73,14 +77,14 @@ export default function AddProjectButton() {
   const handleReset = useCallback(() => {
     setOpen(false);
     reset();
-  }, [setOpen, reset]);
+  }, [reset]);
 
   const onSubmit = useCallback(
     ({ name, description }: FormValues) => {
       mutate({ body: { name, description, private: true } });
       handleReset();
     },
-    [mutate, handleReset]
+    [mutate, handleReset],
   );
 
   return (

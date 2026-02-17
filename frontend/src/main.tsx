@@ -1,6 +1,7 @@
 // import { StrictMode } from "react";
+
+import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
-import { RouterProvider, createRouter } from "@tanstack/react-router";
 import Provider from "./Provider";
 import { routeTree } from "./routeTree.gen";
 
@@ -12,6 +13,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
+// biome-ignore lint/style/noNonNullAssertion: root element guaranteed to exist
 const rootElement = document.getElementById("root")!;
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
@@ -19,6 +21,6 @@ if (!rootElement.innerHTML) {
     // Gosling is incompatible with StrictMode.
     <Provider>
       <RouterProvider router={router} />
-    </Provider>
+    </Provider>,
   );
 }
