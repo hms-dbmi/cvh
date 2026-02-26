@@ -408,9 +408,11 @@ function VitessceWarningBanner() {
 function DataAccordion({
   projectId,
   showVitessceWarning,
+  children: _children,
 }: {
   projectId: string;
   showVitessceWarning?: boolean;
+  children?: React.ReactNode;
 }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
 
@@ -487,6 +489,8 @@ export default function Wrapper({
     <DataAccordion
       projectId={projectId}
       showVitessceWarning={showVitessceWarning}
-    />
+    >
+      {children}
+    </DataAccordion>
   );
 }
