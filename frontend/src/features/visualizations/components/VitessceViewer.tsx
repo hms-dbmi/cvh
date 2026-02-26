@@ -252,6 +252,7 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
             setSelectedVizId={setSelectedVizId}
             selectedVizId={selectedVizId}
             permissions={permissions}
+            disabledTools={["gosling"]}
           />
           <DataList showVitessceWarning={!!selectedVizId} />
         </Box>

@@ -239,17 +239,19 @@ function VisualizationListItem({
   setSelectedVizId,
   isSelected,
   permissions,
+  disabled,
 }: {
   v: components["schemas"]["VisualizationNoConfOut"];
   setSelectedVizId: (id?: string) => void;
   isSelected: boolean;
   permissions: number;
+  disabled?: boolean;
 }) {
   const selectViz = useCallback(() => {
-    if (v?.uuid) {
+    if (v?.uuid && !disabled) {
       setSelectedVizId(v.uuid);
     }
-  }, [v.uuid, setSelectedVizId]);
+  }, [v.uuid, setSelectedVizId, disabled]);
 
   if (!v.uuid) {
     return null;
@@ -285,8 +287,9 @@ function VisualizationListItem({
     >
       <ListItemButton
         onClick={selectViz}
+        disabled={disabled}
         color="primary"
-        sx={{ width: "100%" }}
+        sx={{ width: "100%", opacity: disabled ? 0.5 : 1 }}
       >
         <Stack spacing={0.5} width="100%">
           <Stack direction="row" spacing={2}>
@@ -372,12 +375,14 @@ function VisualizationList({
   setSelectedVizId,
   selectedVizId,
   permissions,
+  disabledTools,
 }: {
   projectId: string;
   visualizations?: components["schemas"]["VisualizationNoConfOut"][];
   setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
   permissions: number;
+  disabledTools?: string[];
 }) {
   const selectedTags = useVisualizationFiltersStore(
     (state) => state.selectedTags,
@@ -466,6 +471,7 @@ function VisualizationList({
             setSelectedVizId={setSelectedVizId}
             key={v.name}
             permissions={permissions}
+            disabled={disabledTools?.includes(v.tool)}
           />
         ))}
       </List>
@@ -478,11 +484,13 @@ export default function VisualizationAccordion({
   setSelectedVizId,
   selectedVizId,
   permissions,
+  disabledTools,
 }: {
   projectId: string;
   setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
   permissions: number;
+  disabledTools?: string[];
 }) {
   const nameSubstring = useVisualizationFiltersStore(
     (state) => state.nameSubstring,
@@ -523,6 +531,7 @@ export default function VisualizationAccordion({
           setSelectedVizId={setSelectedVizId}
           selectedVizId={selectedVizId}
           permissions={permissions}
+          disabledTools={disabledTools}
         />
       </AccordionDetails>
     </Accordion>
