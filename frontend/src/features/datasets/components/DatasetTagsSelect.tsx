@@ -95,7 +95,18 @@ export default function DatasetTagsSelect({
               <Checkbox
                 checked={Boolean(v?.uuid && selectedValues.includes(v?.uuid))}
               />
-              <ListItemText primary={v?.key + v?.tag} />
+              <ListItemText
+                primary={
+                  <>
+                    <Typography component="span" variant="subtitle1" sx={{ fontSize: 14 }}>
+                      {v?.key}
+                    </Typography>{" "}
+                    <Typography component="span" variant="body2" sx={{ fontSize: 14 }}>
+                      {v?.tag}
+                    </Typography>
+                  </>
+                }
+              />
             </MenuItem>
           ))}
         </Select>
