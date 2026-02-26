@@ -237,7 +237,7 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
             selectedVizId={selectedVizId}
             permissions={permissions}
           />
-          <DataList />
+          <DataList showVitessceWarning={!!selectedVizId} />
         </Box>
         <Paper
           sx={{
