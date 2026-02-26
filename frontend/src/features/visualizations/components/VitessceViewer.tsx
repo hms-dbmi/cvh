@@ -11,6 +11,7 @@ import { Vitessce } from "vitessce";
 import "react-grid-layout/css/styles.css";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import {
+  useGetProjectVisualizations,
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
@@ -154,6 +155,21 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
   );
   const [mode, setMode] = useState<Mode>("exploring");
   const [editorValue, setEditorValue] = useState("");
+
+  const { data: visualizations } = useGetProjectVisualizations({
+    projectId,
+    tags: [],
+  });
+
+  // Auto-select first vitessce visualization on initial load
+  useEffect(() => {
+    if (!selectedVizId && visualizations?.length) {
+      const firstVitessce = visualizations.find((v) => v.tool === "vitessce");
+      if (firstVitessce?.uuid) {
+        setSelectedVizId(firstVitessce.uuid);
+      }
+    }
+  }, [selectedVizId, visualizations]);
 
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
