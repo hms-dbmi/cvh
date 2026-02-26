@@ -332,7 +332,7 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
               config={data.conf}
               height={900}
               theme="light"
-              onConfigChange={saveViz}
+              onConfigChange={hasWritePermissions ? saveViz : undefined}
             />
           )}
           {mode === "editing" && selectedVizId && (
