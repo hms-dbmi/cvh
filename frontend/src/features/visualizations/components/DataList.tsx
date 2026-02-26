@@ -2,10 +2,14 @@ import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
@@ -20,7 +24,7 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
-import { type PropsWithChildren, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
@@ -232,21 +236,94 @@ function DataSelects({ projectId }: { projectId: string }) {
   );
 }
 
-type Dataset = components["schemas"]["DatasetOut"];
+type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
-function DataList({
-  children,
-  projectId,
-}: PropsWithChildren<{ projectId: string }>) {
+function DatasetListItem({ dataset }: { dataset: Required<Dataset> }) {
+  return (
+    <ListItem disablePadding sx={{ marginBottom: "12px" }}>
+      <Stack spacing={0.5} width="100%" sx={{ p: 1 }}>
+        <ListItemText
+          slotProps={{
+            primary: { variant: "subtitle1", component: "p" },
+          }}
+          primary={dataset.name}
+          secondary={[
+            dataset.file_type,
+            dataset.assembly && ` \u00B7 ${dataset.assembly}`,
+          ]}
+        />
+        {dataset.tags?.length > 0 && (
+          <Stack
+            direction="row"
+            spacing={0.5}
+            gap={0.5}
+            alignItems="center"
+            flexWrap="wrap"
+          >
+            <Tag size={20} color="#4E5A63" />
+            {dataset.tags.map((t) => (
+              <Chip
+                key={t.key + t.tag}
+                label={
+                  <>
+                    <Typography
+                      variant="subtitle1"
+                      component="span"
+                      sx={{ fontSize: 12 }}
+                      marginRight={0.5}
+                    >
+                      {t.key}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      component="span"
+                      sx={{ fontSize: 12 }}
+                    >
+                      {t.tag}
+                    </Typography>
+                  </>
+                }
+              />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </ListItem>
+  );
+}
+
+function DataList({ projectId }: { projectId: string }) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
   const setNameSubstring = useDatasetFiltersStore(
     (state) => state.setNameSubstring,
   );
 
-  const { data } = useGetProject(projectId);
+  const selectedAssemblies = useDatasetFiltersStore(
+    (state) => state.selectedAssemblies,
+  );
+  const selectedFileTypes = useDatasetFiltersStore(
+    (state) => state.selectedFileTypes,
+  );
+  const selectedTags = useDatasetFiltersStore((state) => state.selectedTags);
 
-  const hasWritePermissions = data?.permissions && data?.permissions >= 2;
+  const { data: projectData } = useGetProject(projectId);
+
+  const hasWritePermissions =
+    projectData?.permissions && projectData?.permissions >= 2;
+
+  const { data: datasetsData } = useGetPaginatedProjectDatasets({
+    projectId,
+    tags: selectedTags,
+    fileTypes: selectedFileTypes,
+    assemblies: selectedAssemblies,
+    name: nameSubstring,
+  });
+
+  const datasets: Required<Dataset>[] =
+    datasetsData?.pages.flatMap(
+      (page) => page.items as Required<Dataset>[],
+    ) ?? [];
 
   return (
     <Stack spacing={1}>
@@ -284,15 +361,16 @@ function DataList({
         </Stack>
       )}
       <DataSelects projectId={projectId} />
-      {children}
+      <List>
+        {datasets.map((d) => (
+          <DatasetListItem key={d.uuid} dataset={d} />
+        ))}
+      </List>
     </Stack>
   );
 }
 
-function DataAccordion({
-  projectId,
-  children,
-}: PropsWithChildren<{ projectId: string }>) {
+function DataAccordion({ projectId }: { projectId: string }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
 
   const datasets: Required<Dataset>[] =
@@ -322,7 +400,7 @@ function DataAccordion({
       </AccordionSummary>
       <AccordionDetails>
         {datasets?.length ? (
-          <DataList projectId={projectId}>{children}</DataList>
+          <DataList projectId={projectId} />
         ) : (
           <Stack>
             <NoDataSVG />
@@ -348,12 +426,12 @@ function DataAccordion({
   );
 }
 
-export default function Wrapper({ children }: PropsWithChildren) {
+export default function Wrapper() {
   const { projectId } = useParams({ strict: false });
 
   if (!projectId) {
     return null;
   }
 
-  return <DataAccordion projectId={projectId}>{children}</DataAccordion>;
+  return <DataAccordion projectId={projectId} />;
 }

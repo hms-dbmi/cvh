@@ -1,5 +1,6 @@
 import Editor from "@monaco-editor/react";
 import Button from "@mui/material/Button";
+import { upgradeAndParse } from "@vitessce/schemas";
 import { useCallback, useEffect, useState } from "react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
@@ -24,6 +25,7 @@ export default function EditConfDialog({
 
   useEffect(() => {
     if (data?.conf) {
+      console.log('zzz')
       setEditorValue(JSON.stringify(data.conf, null, 2));
     }
   }, [data?.conf]);
@@ -35,17 +37,31 @@ export default function EditConfDialog({
   }, [data?.conf]);
 
   const handleSubmit = useCallback(() => {
+    let parsed: object;
     try {
-      const parsed = JSON.parse(editorValue);
-      mutate({
-        params: { path: { visualization_uuid: visualizationId } },
-        body: { conf: parsed },
-      });
-      setOpen(false);
+      parsed = JSON.parse(editorValue);
     } catch {
       toastError("Invalid JSON. Please fix syntax errors before saving.");
+      return;
     }
-  }, [editorValue, mutate, visualizationId, setOpen, toastError]);
+
+    if (data?.tool === "vitessce") {
+      try {
+        upgradeAndParse(parsed);
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : "Unknown validation error";
+        toastError(`Invalid Vitessce config: ${message}`);
+        return;
+      }
+    }
+
+    mutate({
+      params: { path: { visualization_uuid: visualizationId } },
+      body: { conf: parsed as Record<string, never> },
+    });
+    setOpen(false);
+  }, [editorValue, mutate, visualizationId, setOpen, toastError, data?.tool]);
 
   return (
     <DialogButtonCopy

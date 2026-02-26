@@ -124,9 +124,19 @@ export default function AddVisualizationButton({
           control={control}
         />
         <FormTextField name="author" label="Author" control={control} />
-        <FormTextField name="tool" label="Tool" control={control} select sx={{ textTransform: "capitalize" }}>
+        <FormTextField
+          name="tool"
+          label="Tool"
+          control={control}
+          select
+          sx={{ textTransform: "capitalize" }}
+        >
           {TOOL_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option} sx={{ textTransform: "capitalize" }}>
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{ textTransform: "capitalize" }}
+            >
               {option}
             </MenuItem>
           ))}
