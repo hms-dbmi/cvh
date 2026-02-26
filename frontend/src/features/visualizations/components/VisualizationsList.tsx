@@ -20,7 +20,7 @@ import {
   CaretDown,
   DotsThree,
   Folder,
-  GlobeSimpleX,
+  GlobeSimple,
   MagnifyingGlass,
   PencilSimple,
   Tag,
@@ -351,7 +351,7 @@ function VisualizationListItem({
               <Chip
                 label="Public"
                 variant="outlined"
-                icon={<GlobeSimpleX width={20} height={20} color="#27AE60" />}
+                icon={<GlobeSimple width={20} height={20} color="#27AE60" />}
                 sx={{
                   backgroundColor: "#DEF8E9",
                   border: "1px solid #27AE60",

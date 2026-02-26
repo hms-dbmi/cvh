@@ -4,7 +4,13 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { CheckCircle, Code, PresentationChart } from "@phosphor-icons/react";
+import Divider from "@mui/material/Divider";
+import {
+  CheckCircle,
+  Code,
+  GlobeSimple,
+  PresentationChart,
+} from "@phosphor-icons/react";
 import { upgradeAndParse } from "@vitessce/schemas";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vitessce } from "vitessce";
@@ -28,10 +34,19 @@ interface VitessceViewerProps {
 export function BottomBar({
   mode,
   onModeChange,
+  published,
+  onTogglePublish,
+  hasWritePermissions,
 }: {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
+  published?: boolean;
+  onTogglePublish?: () => void;
+  hasWritePermissions?: boolean;
 }) {
+  const editorMode = hasWritePermissions ? "editing" : "configuration";
+  const isEditorActive = mode === "editing";
+
   return (
     <Paper
       elevation={0}
@@ -51,10 +66,10 @@ export function BottomBar({
           onClick={() => onModeChange("editing")}
           startIcon={<Code size={24} />}
           sx={{
-            bgcolor: mode === "editing" ? "black" : "white",
-            color: mode === "editing" ? "white" : "black",
+            bgcolor: isEditorActive ? "black" : "white",
+            color: isEditorActive ? "white" : "black",
             border:
-              mode === "editing" ? "1px solid black" : "1px solid #C8CCCE",
+              isEditorActive ? "1px solid black" : "1px solid #C8CCCE",
             borderRadius: 2,
             px: 1.5,
             py: 1,
@@ -63,11 +78,11 @@ export function BottomBar({
             fontSize: 14,
             letterSpacing: "0.28px",
             "&:hover": {
-              bgcolor: mode === "editing" ? "#333" : "#f5f5f5",
+              bgcolor: isEditorActive ? "#333" : "#f5f5f5",
             },
           }}
         >
-          Editing
+          {editorMode === "editing" ? "Editing" : "Configuration"}
         </Button>
         <Button
           onClick={() => onModeChange("exploring")}
@@ -92,6 +107,31 @@ export function BottomBar({
           Exploring
         </Button>
       </Stack>
+      {onTogglePublish && (
+        <>
+          <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+          <Button
+            onClick={onTogglePublish}
+            startIcon={<GlobeSimple size={24} />}
+            sx={{
+              bgcolor: published ? "#27AE60" : "transparent",
+              color: published ? "white" : "#4E5A63",
+              textTransform: "none",
+              fontWeight: 500,
+              fontSize: 14,
+              letterSpacing: "0.28px",
+              px: 1.5,
+              py: 1,
+              borderRadius: 2,
+              "&:hover": {
+                bgcolor: published ? "#27AE60" : "rgba(0,0,0,0.04)",
+              },
+            }}
+          >
+            {published ? "Published" : "Make Public"}
+          </Button>
+        </>
+      )}
     </Paper>
   );
 }
@@ -100,10 +140,12 @@ function CodeEditor({
   editorValue,
   setEditorValue,
   onApply,
+  readOnly,
 }: {
   editorValue: string;
   setEditorValue: (value: string) => void;
   onApply: () => void;
+  readOnly?: boolean;
 }) {
   return (
     <Stack sx={{ height: "100%", p: 2 }} spacing={1.5}>
@@ -113,15 +155,17 @@ function CodeEditor({
           variant="subtitle1"
           sx={{ fontWeight: 700, letterSpacing: "0.5px" }}
         >
-          CODE EDITOR
+          {readOnly ? "CONFIGURATION" : "CODE EDITOR"}
         </Typography>
-        <Button
-          startIcon={<CheckCircle size={20} weight="fill" color="#1976d2" />}
-          onClick={onApply}
-          sx={{ textTransform: "none", ml: 1 }}
-        >
-          Apply Changes
-        </Button>
+        {!readOnly && (
+          <Button
+            startIcon={<CheckCircle size={20} weight="fill" color="#1976d2" />}
+            onClick={onApply}
+            sx={{ textTransform: "none", ml: 1 }}
+          >
+            Apply Changes
+          </Button>
+        )}
       </Stack>
       <Box
         sx={{
@@ -142,6 +186,7 @@ function CodeEditor({
             scrollBeyondLastLine: false,
             fontSize: 13,
             padding: { top: 12, bottom: 12 },
+            readOnly,
           }}
         />
       </Box>
@@ -214,6 +259,23 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
     };
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
+  const togglePublishViz = useCallback(() => {
+    try {
+      if (!selectedVizId || !hasWritePermissions) {
+        return;
+      }
+      updateViz({
+        body: { published: !data?.published },
+        params: {
+          path: { visualization_uuid: selectedVizId },
+        },
+      });
+    } catch (e) {
+      toastError("Error updating visualization publish status");
+      console.error(e);
+    }
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions, data?.published]);
+
   // Manual save for editor mode
   const handleEditorSave = useCallback(() => {
     if (!selectedVizId) return;
@@ -278,11 +340,12 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
               editorValue={editorValue}
               setEditorValue={setEditorValue}
               onApply={handleEditorSave}
+              readOnly={!hasWritePermissions}
             />
           )}
         </Paper>
       </Stack>
-      {selectedVizId && hasWritePermissions && (
+      {selectedVizId && (
         <Box
           sx={{
             position: "absolute",
@@ -292,7 +355,13 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
             zIndex: 10,
           }}
         >
-          <BottomBar mode={mode} onModeChange={setMode} />
+          <BottomBar
+            mode={mode}
+            onModeChange={setMode}
+            published={data?.published}
+            onTogglePublish={hasWritePermissions ? togglePublishViz : undefined}
+            hasWritePermissions={hasWritePermissions}
+          />
         </Box>
       )}
     </Box>
