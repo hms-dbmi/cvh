@@ -254,7 +254,7 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
             permissions={permissions}
             disabledTools={["gosling"]}
           />
-          <DataList showVitessceWarning={!!selectedVizId} />
+          <DataList showVitessceWarning={!!selectedVizId} showActions />
         </Box>
         <Paper
           sx={{

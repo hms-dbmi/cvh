@@ -1,6 +1,7 @@
 import Accordion from "@mui/material/Accordion";
 import Box from "@mui/material/Box";
 import AccordionDetails from "@mui/material/AccordionDetails";
+import Divider from "@mui/material/Divider";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -19,6 +20,7 @@ import {
   CaretDown,
   DotsThree,
   FileText,
+  LinkSimple,
   MagnifyingGlass,
   Tag,
   // Cards,
@@ -43,9 +45,13 @@ import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
+import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
 import { useGetProject } from "../../projects/api/useProjects";
 
-export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
+export function DatasetActionsMenu({
+  datasetID,
+  readOnly,
+}: { datasetID: string; readOnly?: boolean }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const { projectId } = useParams({ strict: false });
@@ -56,6 +62,7 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
   const { data } = useGetDataset(datasetID);
 
   const { mutate: deleteDataset } = useDeleteDataset();
+  const handleCopyClick = useHandleCopyClick();
 
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -84,30 +91,34 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
 
   return (
     <div>
-      <AddTagButton
-        datasetId={datasetID}
-        projectId={projectId}
-        dataset={data}
-        closeMenu={handleClose}
-        open={openAddTags}
-        setOpen={setOpenAddTags}
-      />
-      <DialogButtonCopy
-        text={{
-          title: "Remove Data Source from Workspace?",
-          button: "",
-        }}
-        onSubmit={submitDelete}
-        isMenuItem
-        isButton={false}
-        open={openDelete}
-        setOpen={setOpenDelete}
-      >
-        <Typography>
-          Are you sure you want to remove this dataset from the workspace? This
-          action is immediate and irreversible.
-        </Typography>
-      </DialogButtonCopy>
+      {!readOnly && (
+        <>
+          <AddTagButton
+            datasetId={datasetID}
+            projectId={projectId}
+            dataset={data}
+            closeMenu={handleClose}
+            open={openAddTags}
+            setOpen={setOpenAddTags}
+          />
+          <DialogButtonCopy
+            text={{
+              title: "Remove Data Source from Workspace?",
+              button: "",
+            }}
+            onSubmit={submitDelete}
+            isMenuItem
+            isButton={false}
+            open={openDelete}
+            setOpen={setOpenDelete}
+          >
+            <Typography>
+              Are you sure you want to remove this dataset from the workspace?
+              This action is immediate and irreversible.
+            </Typography>
+          </DialogButtonCopy>
+        </>
+      )}
       <IconButton
         onClick={handleClick}
         size="small"
@@ -124,25 +135,27 @@ export function DatasetActionsMenu({ datasetID }: { datasetID: string }) {
         onClose={handleClose}
         onClick={handleClose}
       >
-        <MenuItem onClick={() => setOpenAddTags(true)}>
+        <MenuItem onClick={() => handleCopyClick(data.source_url)}>
           <ListItemIcon>
-            <Tag height={24} width={24} />
+            <LinkSimple height={24} width={24} />
           </ListItemIcon>
-          Edit Tags
+          Copy Data Link
         </MenuItem>
-        {/*
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon>
-            <Cards height={24} width={24} />
-          </ListItemIcon>
-          Create a Copy
-        </MenuItem> */}
-        <MenuItem onClick={() => setOpenDelete(true)}>
-          <ListItemIcon>
-            <Trash height={24} width={24} />
-          </ListItemIcon>
-          Delete
-        </MenuItem>
+        {!readOnly && [
+          <Divider key="divider" />,
+          <MenuItem key="tags" onClick={() => setOpenAddTags(true)}>
+            <ListItemIcon>
+              <Tag height={24} width={24} />
+            </ListItemIcon>
+            Edit Tags
+          </MenuItem>,
+          <MenuItem key="delete" onClick={() => setOpenDelete(true)}>
+            <ListItemIcon>
+              <Trash height={24} width={24} />
+            </ListItemIcon>
+            Delete
+          </MenuItem>,
+        ]}
       </Menu>
     </div>
   );
@@ -240,9 +253,24 @@ function DataSelects({ projectId }: { projectId: string }) {
 
 type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
-function DatasetListItem({ dataset }: { dataset: Required<Dataset> }) {
+function DatasetListItem({
+  dataset,
+  showActions,
+  readOnly,
+}: { dataset: Required<Dataset>; showActions?: boolean; readOnly?: boolean }) {
   return (
-    <ListItem disablePadding sx={{ marginBottom: "12px" }}>
+    <ListItem
+      disablePadding
+      sx={{
+        marginBottom: "12px",
+        ".MuiListItemSecondaryAction-root": { top: 16, right: 8, transform: "none" },
+      }}
+      secondaryAction={
+        showActions && dataset.uuid ? (
+          <DatasetActionsMenu datasetID={dataset.uuid} readOnly={readOnly} />
+        ) : null
+      }
+    >
       <Stack spacing={0.5} width="100%" sx={{ p: 1 }}>
         <ListItemText
           slotProps={{
@@ -294,7 +322,10 @@ function DatasetListItem({ dataset }: { dataset: Required<Dataset> }) {
   );
 }
 
-function DataList({ projectId }: { projectId: string }) {
+function DataList({
+  projectId,
+  showActions,
+}: { projectId: string; showActions?: boolean }) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
   const setNameSubstring = useDatasetFiltersStore(
@@ -364,7 +395,7 @@ function DataList({ projectId }: { projectId: string }) {
       <DataSelects projectId={projectId} />
       <List>
         {datasets.map((d) => (
-          <DatasetListItem key={d.uuid} dataset={d} />
+          <DatasetListItem key={d.uuid} dataset={d} showActions={showActions} readOnly={!hasWritePermissions} />
         ))}
       </List>
     </Stack>
@@ -408,10 +439,12 @@ function VitessceWarningBanner() {
 function DataAccordion({
   projectId,
   showVitessceWarning,
+  showActions,
   children: _children,
 }: {
   projectId: string;
   showVitessceWarning?: boolean;
+  showActions?: boolean;
   children?: React.ReactNode;
 }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
@@ -445,7 +478,7 @@ function DataAccordion({
         {showVitessceWarning && <VitessceWarningBanner />}
         <Box sx={{ p: 2 }}>
           {datasets?.length ? (
-            <DataList projectId={projectId} />
+            <DataList projectId={projectId} showActions={showActions} />
           ) : (
             <Stack>
               <NoDataSVG />
@@ -474,9 +507,11 @@ function DataAccordion({
 
 export default function Wrapper({
   showVitessceWarning,
+  showActions,
   children,
 }: {
   showVitessceWarning?: boolean;
+  showActions?: boolean;
   children?: React.ReactNode;
 }) {
   const { projectId } = useParams({ strict: false });
@@ -489,6 +524,7 @@ export default function Wrapper({
     <DataAccordion
       projectId={projectId}
       showVitessceWarning={showVitessceWarning}
+      showActions={showActions}
     >
       {children}
     </DataAccordion>
