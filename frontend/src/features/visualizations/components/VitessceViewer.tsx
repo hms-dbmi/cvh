@@ -28,13 +28,9 @@ interface VitessceViewerProps {
 function BottomBar({
   mode,
   onModeChange,
-  onSave,
-  onReset,
 }: {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
-  onSave: () => void;
-  onReset: () => void;
 }) {
   return (
     <Paper
@@ -96,33 +92,6 @@ function BottomBar({
           Exploring
         </Button>
       </Stack>
-      {mode === "editing" && (
-        <>
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ borderColor: "#CAD5DA" }}
-          />
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={onReset}
-              sx={{ textTransform: "none" }}
-            >
-              Reset
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onSave}
-              sx={{ textTransform: "none" }}
-            >
-              Save
-            </Button>
-          </Stack>
-        </>
-      )}
     </Paper>
   );
 }
@@ -313,12 +282,7 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
             zIndex: 10,
           }}
         >
-          <BottomBar
-            mode={mode}
-            onModeChange={setMode}
-            onSave={handleEditorSave}
-            onReset={handleEditorReset}
-          />
+          <BottomBar mode={mode} onModeChange={setMode} />
         </Box>
       )}
     </Box>
