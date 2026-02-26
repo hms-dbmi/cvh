@@ -1,7 +1,6 @@
 import Editor from "@monaco-editor/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -227,12 +226,6 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
       body: { conf: parsed as Record<string, never> },
     });
   }, [editorValue, updateViz, selectedVizId, toastError, data?.tool]);
-
-  const handleEditorReset = useCallback(() => {
-    if (data?.conf) {
-      setEditorValue(JSON.stringify(data.conf, null, 2));
-    }
-  }, [data?.conf]);
 
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
