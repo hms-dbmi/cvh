@@ -184,7 +184,7 @@ const TOOL_STYLES: Record<string, { bgcolor: string; borderColor: string; label:
   gosling: { bgcolor: "#E18240", borderColor: "#C8CCCE", label: "Gosling", logo: "/gosling.svg" },
 };
 
-function ToolBadge({ tool }: { tool: string }) {
+export function ToolBadge({ tool }: { tool: string }) {
   const style = TOOL_STYLES[tool] ?? TOOL_STYLES.gosling;
 
   return (

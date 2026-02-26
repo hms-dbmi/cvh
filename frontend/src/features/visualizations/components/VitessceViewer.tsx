@@ -25,7 +25,7 @@ interface VitessceViewerProps {
   permissions: number;
 }
 
-function BottomBar({
+export function BottomBar({
   mode,
   onModeChange,
 }: {

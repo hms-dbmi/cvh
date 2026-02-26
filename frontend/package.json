@@ -10,6 +10,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "preview": "vite preview",
+    "test": "vitest",
     "gen-api-types": "openapi-typescript http://127.0.0.1:8000/api/openapi.json -o ./src/types/schema.d.ts"
   },
   "dependencies": {
@@ -43,12 +44,17 @@
     "@biomejs/biome": "^2.3.14",
     "@tanstack/router-devtools": "^1.99.8",
     "@tanstack/router-plugin": "^1.99.8",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.5.0",
+    "jsdom": "^28.1.0",
     "openapi-typescript": "^7.6.1",
     "typescript": "~5.7.3",
     "vite": "^6.3.0",
-    "vite-plugin-svgr": "^4.3.0"
+    "vite-plugin-svgr": "^4.3.0",
+    "vitest": "^4.0.18"
   }
 }

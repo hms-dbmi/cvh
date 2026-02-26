@@ -402,7 +402,7 @@ function DataList({
   );
 }
 
-function VitessceWarningBanner() {
+export function VitessceWarningBanner() {
   return (
     <Box
       sx={{
