@@ -25,7 +25,6 @@ export default function EditConfDialog({
 
   useEffect(() => {
     if (data?.conf) {
-      console.log('zzz')
       setEditorValue(JSON.stringify(data.conf, null, 2));
     }
   }, [data?.conf]);
