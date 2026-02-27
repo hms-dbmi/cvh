@@ -116,11 +116,16 @@ class Dataset(UserCreated):
 
 
 class VisualizationConf(UserCreated):
+    class Tool(models.TextChoices):
+        gosling = "gosling"
+        vitessce = "vitessce"
+
     conf = models.JSONField(null=True)
     project_key = models.ForeignKey(
         Project, on_delete=models.CASCADE, blank=True, null=True
     )
     author = models.CharField(max_length=100, null=True)
+    tool = models.CharField(max_length=10, choices=Tool, default=Tool.gosling)
     tags = models.ManyToManyField(Tag)
     published = models.BooleanField(default=False)
     n_tracks = models.IntegerField(default=0, null=True)

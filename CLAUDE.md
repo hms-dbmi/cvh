@@ -47,6 +47,8 @@ uv run ruff format .           # Format
 npm install
 npm run dev                # Vite dev server
 npm run build              # tsc -b && vite build
+npm test                   # Vitest (watch mode)
+npx vitest run             # Vitest (single run)
 npm run lint               # Biome check (linting + formatting)
 npm run lint:fix           # Biome check --write (auto-fix)
 npm run format             # Biome format --write

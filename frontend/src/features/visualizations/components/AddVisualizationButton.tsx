@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import { Plus } from "@phosphor-icons/react";
@@ -17,10 +18,13 @@ const text = {
   title: "New Visualization",
 };
 
+const TOOL_OPTIONS = ["gosling", "vitessce"] as const;
+
 interface FormValues {
   name: string;
   description?: string;
   author?: string;
+  tool: (typeof TOOL_OPTIONS)[number];
 }
 
 function FormTextField({
@@ -61,6 +65,7 @@ const schema = z.object({
     .max(300, { message: "Description must be less than 300 characters" })
     .optional(),
   author: z.string().optional(),
+  tool: z.enum(TOOL_OPTIONS),
 });
 
 export default function AddVisualizationButton({
@@ -77,6 +82,7 @@ export default function AddVisualizationButton({
       name: "",
       description: undefined,
       author: undefined,
+      tool: "gosling",
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -118,6 +124,23 @@ export default function AddVisualizationButton({
           control={control}
         />
         <FormTextField name="author" label="Author" control={control} />
+        <FormTextField
+          name="tool"
+          label="Tool"
+          control={control}
+          select
+          sx={{ textTransform: "capitalize" }}
+        >
+          {TOOL_OPTIONS.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{ textTransform: "capitalize" }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </FormTextField>
       </Stack>
     </DialogButton>
   );
