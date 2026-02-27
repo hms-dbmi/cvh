@@ -86,6 +86,7 @@ export default function EditConfDialog({
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           fontSize: 13,
+          contextmenu: false,
         }}
       />
     </DialogButtonCopy>
