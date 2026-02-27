@@ -19,6 +19,7 @@ function Provider({ children }: PropsWithChildren) {
           audience: import.meta.env.VITE_API_AUDIENCE,
           scope: "read:current_user email",
         }}
+        cacheLocation="localstorage"
       >
         <QueryClientProvider client={queryClient}>
           {children}
