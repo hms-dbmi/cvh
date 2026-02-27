@@ -224,12 +224,14 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
 
   const hasWritePermissions = permissions >= 2;
 
-  // Sync editor value when visualization data changes
+  // Reset editor value when a different visualization is selected or its data changes
   useEffect(() => {
     if (data?.conf) {
       setEditorValue(JSON.stringify(data.conf, null, 2));
+    } else {
+      setEditorValue("");
     }
-  }, [data?.conf]);
+  }, [selectedVizId, data?.conf]);
 
   // Auto-save for Vitessce viewer (exploring mode)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
