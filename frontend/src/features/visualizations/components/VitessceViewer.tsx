@@ -187,6 +187,7 @@ function CodeEditor({
             fontSize: 13,
             padding: { top: 12, bottom: 12 },
             readOnly,
+            contextmenu: false,
           }}
         />
       </Box>
