@@ -11,7 +11,7 @@ function C() {
       <Box>
         <Header />
       </Box>
-      <Box flexGrow={1}>
+      <Box flexGrow={1} overflow="auto" minHeight={0}>
         <Outlet />
         <Snackbar />
       </Box>
