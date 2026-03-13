@@ -66,7 +66,7 @@ pydantic==2.10.6
     # via django-ninja
 pydantic-core==2.27.2
     # via pydantic
-pyjwt==2.10.1
+pyjwt==2.12.0
     # via backend (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via botocore
