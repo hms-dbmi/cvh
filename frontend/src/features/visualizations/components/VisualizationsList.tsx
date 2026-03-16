@@ -241,7 +241,7 @@ function VisualizationListItem({
   permissions,
   disabled,
 }: {
-  v: components["schemas"]["VisualizationNoConfOut"];
+  v: components["schemas"]["VisualizationSummaryOut"];
   setSelectedVizId: (id?: string) => void;
   isSelected: boolean;
   permissions: number;
@@ -378,7 +378,7 @@ function VisualizationList({
   disabledTools,
 }: {
   projectId: string;
-  visualizations?: components["schemas"]["VisualizationNoConfOut"][];
+  visualizations?: components["schemas"]["VisualizationSummaryOut"][];
   setSelectedVizId: (id?: string) => void;
   selectedVizId?: string;
   permissions: number;

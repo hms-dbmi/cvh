@@ -103,32 +103,28 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
 
 
 @router.put(
-    "/datasets",
+    "/datasets/{dataset_uuid}",
     auth=Authorized(),
     response=SuccessOut,
     summary="Update a dataset",
     description=(
         "Partially updates a dataset's metadata. Requires"
-        " write access to the parent workspace, or ownership"
-        " if no workspace."
+        " write access to the parent workspace."
     ),
 )
-def update_dataset(request, payload: DatasetUpdate):
-    payload_dict = payload.dict(exclude_unset=True)
-    if payload.workspace_uuid:
-        project = Project.objects.get_write_project(
-            project_uuid=payload.workspace_uuid, user=request.auth
+def update_dataset(
+    request, dataset_uuid: str, payload: DatasetUpdate
+):
+    dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=dataset.project_key.uuid,
+            user=request.auth,
         )
-        dataset = get_object_or_404(
-            Dataset, uuid=payload.uuid, project_key=project
-        )
-        del payload_dict["workspace_uuid"]
-    else:
-        dataset = get_object_or_404(
-            Dataset, uuid=payload.uuid, user_key=request.auth
-        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to update dataset.") from None
 
-    del payload_dict["uuid"]
+    payload_dict = payload.dict(exclude_unset=True)
     for attr, value in payload_dict.items():
         setattr(dataset, attr, value)
     dataset.save()

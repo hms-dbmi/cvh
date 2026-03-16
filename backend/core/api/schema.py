@@ -58,8 +58,10 @@ class WorkspaceIn(Schema):
     private: bool
 
 
-class PartialWorkspaceIn(WorkspaceIn, OptionalSchema):
-    pass
+class WorkspaceUpdate(ModelSchema, OptionalSchema):
+    class Meta:
+        model = Project
+        fields = ["name", "description", "private"]
 
 
 class WorkspaceOut(ModelSchema):
@@ -172,9 +174,6 @@ class ExampleDatasetIn(Schema):
 
 
 class DatasetUpdate(ModelSchema, OptionalSchema):
-    uuid: UUID4
-    workspace_uuid: UUID4 | None = None
-
     class Meta:
         model = Dataset
         fields = [
@@ -240,7 +239,7 @@ class VisualizationIn(ModelSchema):
         fields = ["name", "tool"]
 
 
-class VisualizationNoConfOut(ModelSchema):
+class VisualizationSummaryOut(ModelSchema):
     tags: list[TagOut]
 
     class Meta:
@@ -256,24 +255,15 @@ class VisualizationNoConfOut(ModelSchema):
         ]
 
 
-class VisualizationOut(ModelSchema):
-    tags: list[TagOut]
-
-    class Meta:
-        model = VisualizationConf
+class VisualizationOut(VisualizationSummaryOut):
+    class Meta(VisualizationSummaryOut.Meta):
         fields = [
             "conf",
-            "author",
-            "tool",
-            "published",
-            "n_tracks",
-            "n_datasets",
-            "published_timestamp",
-            *shared_output_fields,
+            *VisualizationSummaryOut.Meta.fields,
         ]
 
 
-class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
+class VisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
         fields = [
@@ -308,12 +298,6 @@ class WorkspaceMemberOut(ModelSchema):
     first_name: str | None = None
     last_name: str | None = None
 
-    class Meta:
-        model = ProjectMember
-        fields = ["permissions"]
-
-
-class WorkspacePermissionOut(ModelSchema):
     class Meta:
         model = ProjectMember
         fields = ["permissions"]

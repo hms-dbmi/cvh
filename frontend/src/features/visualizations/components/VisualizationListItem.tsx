@@ -15,7 +15,7 @@ import {
   useUpdateVisualization,
 } from "../api/useVisualizations.ts";
 
-type Visualization = components["schemas"]["VisualizationNoConfOut"];
+type Visualization = components["schemas"]["VisualizationSummaryOut"];
 
 export default function VisualizationListItem({
   visualization,

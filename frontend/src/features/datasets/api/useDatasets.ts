@@ -136,7 +136,7 @@ function useUpdateDataset() {
   const { toastSuccess, toastError } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", path, {
+  return client.useMutation("put", `${path}/{dataset_uuid}`, {
     onSuccess: () => {
       toastSuccess("Successfully updated dataset.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });

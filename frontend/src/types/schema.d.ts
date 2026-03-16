@@ -160,11 +160,7 @@ export interface paths {
          * @description Returns all datasets owned directly by the authenticated user (not via workspace). Paginated.
          */
         get: operations["api_routers_datasets_get_user_datasets"];
-        /**
-         * Update a dataset
-         * @description Partially updates a dataset's metadata. Requires write access to the parent workspace, or ownership if no workspace.
-         */
-        put: operations["api_routers_datasets_update_dataset"];
+        put?: never;
         /**
          * Create a dataset
          * @description Creates a new dataset. If workspace_uuid is provided, requires write access to that workspace. Otherwise associates with the user directly.
@@ -269,6 +265,26 @@ export interface paths {
          */
         get: operations["api_routers_datasets_get_workspace_datasets_tags"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/{dataset_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update a dataset
+         * @description Partially updates a dataset's metadata. Requires write access to the parent workspace.
+         */
+        put: operations["api_routers_datasets_update_dataset"];
         post?: never;
         delete?: never;
         options?: never;
@@ -639,8 +655,8 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** PartialWorkspaceIn */
-        PartialWorkspaceIn: {
+        /** WorkspaceUpdate */
+        WorkspaceUpdate: {
             /** Name */
             name?: string;
             /** Description */
@@ -1006,15 +1022,15 @@ export interface components {
             /** Uuids */
             uuids?: string[];
         };
-        /** PagedVisualizationNoConfOut */
-        PagedVisualizationNoConfOut: {
+        /** PagedVisualizationSummaryOut */
+        PagedVisualizationSummaryOut: {
             /** Items */
-            items: components["schemas"]["VisualizationNoConfOut"][];
+            items: components["schemas"]["VisualizationSummaryOut"][];
             /** Count */
             count: number;
         };
-        /** VisualizationNoConfOut */
-        VisualizationNoConfOut: {
+        /** VisualizationSummaryOut */
+        VisualizationSummaryOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
             /** Author */
@@ -1140,8 +1156,8 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** PartialVisualizationUpdate */
-        PartialVisualizationUpdate: {
+        /** VisualizationUpdate */
+        VisualizationUpdate: {
             /** Name */
             name?: string;
             /** Description */
@@ -1393,7 +1409,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PartialWorkspaceIn"];
+                "application/json": components["schemas"]["WorkspaceUpdate"];
             };
         };
         responses: {
@@ -1712,7 +1728,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedVisualizationNoConfOut"];
+                    "application/json": components["schemas"]["PagedVisualizationSummaryOut"];
                 };
             };
         };
@@ -1737,7 +1753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VisualizationNoConfOut"][];
+                    "application/json": components["schemas"]["VisualizationSummaryOut"][];
                 };
             };
         };
@@ -1761,7 +1777,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VisualizationNoConfOut"];
+                    "application/json": components["schemas"]["VisualizationSummaryOut"];
                 };
             };
         };
@@ -1821,7 +1837,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PartialVisualizationUpdate"];
+                "application/json": components["schemas"]["VisualizationUpdate"];
             };
         };
         responses: {

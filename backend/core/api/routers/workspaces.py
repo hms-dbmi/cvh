@@ -8,11 +8,11 @@ from ..auth import Authorized
 from ..helpers import _get_workspace
 from ..models import Project, ProjectMember, VisualizationConf
 from ..schema import (
-    PartialWorkspaceIn,
     SuccessOut,
     WorkspaceIn,
     WorkspaceOut,
     WorkspaceOutWithMembersCount,
+    WorkspaceUpdate,
 )
 
 router = Router(tags=["Workspaces"])
@@ -148,7 +148,7 @@ def get_workspace(request, workspace_uuid: str):
     ),
 )
 def update_workspace(
-    request, workspace_uuid: str, payload: PartialWorkspaceIn
+    request, workspace_uuid: str, payload: WorkspaceUpdate
 ):
     payload_dict = payload.dict(exclude_unset=True)
     project = Project.objects.get_admin_project(

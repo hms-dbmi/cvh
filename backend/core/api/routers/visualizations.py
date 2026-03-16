@@ -13,14 +13,14 @@ from ..helpers import (
 )
 from ..models import Project, Tag, VisualizationConf
 from ..schema import (
-    PartialVisualizationUpdate,
     SuccessOut,
     TagOut,
     TagsIn,
     VisualizationIn,
-    VisualizationNoConfOut,
     VisualizationOut,
     VisualizationQuerySchema,
+    VisualizationSummaryOut,
+    VisualizationUpdate,
 )
 
 router = Router(tags=["Visualizations"])
@@ -28,7 +28,7 @@ router = Router(tags=["Visualizations"])
 
 @router.get(
     "/public/visualizations",
-    response=list[VisualizationNoConfOut],
+    response=list[VisualizationSummaryOut],
     summary="List published visualizations",
     description=(
         "Returns all published visualizations, with optional"
@@ -58,7 +58,7 @@ def get_published_visualizations(
 @router.get(
     "/visualizations",
     auth=Authorized(),
-    response=list[VisualizationNoConfOut],
+    response=list[VisualizationSummaryOut],
     summary="List workspace visualizations",
     description=(
         "Returns visualizations in a workspace, with optional"
@@ -194,7 +194,7 @@ def delete_visualization(request, visualization_uuid: str):
 def update_visualization(
     request,
     visualization_uuid: str,
-    payload: PartialVisualizationUpdate,
+    payload: VisualizationUpdate,
 ):
     payload_dict = payload.dict(exclude_unset=True)
     visualization = get_object_or_404(
@@ -248,7 +248,7 @@ def tag_visualization(
 @router.post(
     "/visualizations",
     auth=Authorized(),
-    response={201: VisualizationNoConfOut},
+    response={201: VisualizationSummaryOut},
     summary="Create a visualization",
     description=(
         "Creates a new visualization in a workspace."

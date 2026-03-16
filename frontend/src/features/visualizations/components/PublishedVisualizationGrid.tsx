@@ -13,7 +13,7 @@ import { useGetPublishedVisualizations } from "../api/useVisualizations";
 function PublishedGridItem({
   visualization,
 }: {
-  visualization: components["schemas"]["VisualizationNoConfOut"];
+  visualization: components["schemas"]["VisualizationSummaryOut"];
 }) {
   return (
     <ListItem

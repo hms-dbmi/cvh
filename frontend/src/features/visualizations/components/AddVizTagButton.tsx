@@ -63,7 +63,7 @@ export default function AddTagButton({
 }: {
   visualizationId: string;
   projectId: string;
-  visualization: components["schemas"]["VisualizationNoConfOut"];
+  visualization: components["schemas"]["VisualizationSummaryOut"];
   closeMenu: () => void;
   setOpen: (o: boolean) => void;
   open: boolean;
