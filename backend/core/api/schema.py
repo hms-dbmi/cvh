@@ -272,3 +272,7 @@ class ProjectPermissionOut(ModelSchema):
     class Meta:
         model = ProjectMember
         fields = ["permissions"]
+
+
+class SuccessOut(Schema):
+    success: bool

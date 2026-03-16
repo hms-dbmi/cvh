@@ -33,6 +33,7 @@ from .schema import (
     ProjectMemberUpdate,
     ProjectOut,
     ProjectOutWithMembersCount,
+    SuccessOut,
     TagOut,
     TagsIn,
     UserIn,
@@ -42,7 +43,15 @@ from .schema import (
     VisualizationOut,
 )
 
-api = NinjaAPI()
+api = NinjaAPI(
+    title="Community Visualization Hub API",
+    description=(
+        "REST API for the Community Visualization Hub (CVH) — a platform for"
+        " creating and managing genomic visualizations using Gosling.js and Vitessce."
+        " Funded by the NIH Common Fund Data Ecosystem (CFDE)."
+    ),
+    version="1.0.0",
+)
 
 
 class UnauthorizedError(Exception):
@@ -62,7 +71,7 @@ class ForbiddenError(Exception):
     pass
 
 
-@api.exception_handler(UnauthorizedError)
+@api.exception_handler(ForbiddenError)
 def forbidden_exception(request, _):
     return api.create_response(
         request,
@@ -205,12 +214,16 @@ class RequestToken:
         return self._decoded if self._decoded is not None else {}
 
 
-@api.get("/user", auth=Authorized(), response=UserOut)
+@api.get("/user", auth=Authorized(), response=UserOut, tags=["Users"],
+         summary="Get current user",
+         description="Returns profile information for the authenticated user.")
 def get_user_info(request):
     return get_object_or_404(User, username=request.auth)
 
 
-@api.put("/user", auth=Authorized())
+@api.put("/user", auth=Authorized(), response=SuccessOut, tags=["Users"],
+         summary="Update current user",
+         description="Updates profile fields (first name, last name) for the authenticated user.")
 def update_user_info(request, user_in: UserIn):
     user = get_object_or_404(User, username=request.auth)
     user_dict = user_in.dict(exclude_unset=True)
@@ -234,7 +247,9 @@ def _get_project(project_uuid: str, user: User, error_message: str):
     return project
 
 
-@api.post("/projects/members", auth=Authorized())
+@api.post("/projects/members", auth=Authorized(), response=SuccessOut, tags=["Project Members"],
+          summary="Add a project member",
+          description="Adds a user to a project with read permissions. Requires admin access to the project.")
 def add_project_member(request, member: ProjectMemberIn):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=member.project_uuid
@@ -244,7 +259,9 @@ def add_project_member(request, member: ProjectMemberIn):
     return {"success": True}
 
 
-@api.put("/projects/members", auth=Authorized())
+@api.put("/projects/members", auth=Authorized(), response=SuccessOut, tags=["Project Members"],
+         summary="Update a project member",
+         description="Updates a member's permissions on a project. Requires admin access. Cannot modify your own permissions.")
 def update_project_member(request, member: ProjectMemberUpdate):
     member_dict = member.dict(exclude_unset=True)
 
@@ -265,7 +282,9 @@ def update_project_member(request, member: ProjectMemberUpdate):
     return {"success": True}
 
 
-@api.delete("/projects/members", auth=Authorized())
+@api.delete("/projects/members", auth=Authorized(), response=SuccessOut, tags=["Project Members"],
+            summary="Remove a project member",
+            description="Removes a user from a project. Requires admin access. Cannot remove yourself.")
 def delete_project_member(request, member: ProjectMemberIn):
     try:
         project = Project.objects.get_admin_project(
@@ -288,6 +307,9 @@ def delete_project_member(request, member: ProjectMemberIn):
     "/projects/{project_uuid}/members",
     auth=Authorized(),
     response=list[ProjectMemberOut],
+    tags=["Project Members"],
+    summary="List project members",
+    description="Returns all members of a project with their permissions and profile info. Requires read access.",
 )
 def get_project_members(request, project_uuid: str):
     try:
@@ -306,7 +328,9 @@ def get_project_members(request, project_uuid: str):
     return project_members
 
 
-@api.post("/projects", auth=Authorized(), response={201: ProjectIn})
+@api.post("/projects", auth=Authorized(), response={201: ProjectIn}, tags=["Projects"],
+          summary="Create a project",
+          description="Creates a new project (workspace). The authenticated user becomes the admin and an initial visualization is created.")
 def create_project(request, project: ProjectIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**project.dict(), **user_key)
@@ -315,7 +339,9 @@ def create_project(request, project: ProjectIn):
     return p
 
 
-@api.get("/projects", auth=Authorized(), response=list[ProjectOutWithMembersCount])
+@api.get("/projects", auth=Authorized(), response=list[ProjectOutWithMembersCount], tags=["Projects"],
+         summary="List user projects",
+         description="Returns all private projects the authenticated user has read access to, ordered by last modified. Paginated.")
 @paginate
 def get_projects(request):
     projects = (
@@ -328,7 +354,9 @@ def get_projects(request):
     return projects
 
 
-@api.delete("/projects/{project_uuid}", auth=Authorized())
+@api.delete("/projects/{project_uuid}", auth=Authorized(), response=SuccessOut, tags=["Projects"],
+            summary="Delete a project",
+            description="Permanently deletes a project and all associated data. Requires admin access.")
 def delete_project(request, project_uuid: str):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=project_uuid
@@ -337,7 +365,9 @@ def delete_project(request, project_uuid: str):
     return {"success": True}
 
 
-@api.get("/public/projects", auth=Authorized(), response=list[ProjectOut])
+@api.get("/public/projects", auth=Authorized(), response=list[ProjectOut], tags=["Projects"],
+         summary="List public projects",
+         description="Returns all public projects, ordered by last modified. Paginated.")
 @paginate
 def get_public_projects(request):
     projects = (
@@ -346,7 +376,9 @@ def get_public_projects(request):
     return projects
 
 
-@api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut)
+@api.get("/projects/{project_uuid}", auth=Authorized(), response=ProjectOut, tags=["Projects"],
+         summary="Get a project",
+         description="Returns a single project by UUID. Accessible if the project is public or the user has read access.")
 def get_project(request, project_uuid: str):
     project = _get_project(
         user=request.auth, project_uuid=project_uuid, error_message="Project not found."
@@ -359,7 +391,9 @@ def get_project(request, project_uuid: str):
     return {**project.__dict__, "permissions": permissions}
 
 
-@api.put("/projects/{project_uuid}", auth=Authorized())
+@api.put("/projects/{project_uuid}", auth=Authorized(), response=SuccessOut, tags=["Projects"],
+         summary="Update a project",
+         description="Partially updates a project's name, description, or visibility. Requires admin access.")
 def update_project(request, project_uuid: str, payload: PartialProjectIn):
     payload_dict = payload.dict(exclude_unset=True)
     project = Project.objects.get_admin_project(
@@ -371,7 +405,9 @@ def update_project(request, project_uuid: str, payload: PartialProjectIn):
     return {"success": True}
 
 
-@api.post("/datasets", auth=Authorized(), response={201: DatasetIn})
+@api.post("/datasets", auth=Authorized(), response={201: DatasetIn}, tags=["Datasets"],
+          summary="Create a dataset",
+          description="Creates a new dataset. If project_uuid is provided, requires write access to that project. Otherwise associates with the user directly.")
 def create_dataset(request, dataset: DatasetIn):
     dataset_dict = dataset.dict()
     project_uuid = dataset_dict.get("project_uuid")
@@ -632,7 +668,9 @@ hic_3d = {
 }
 
 
-@api.post("/examples", auth=Authorized())
+@api.post("/examples", auth=Authorized(), response=SuccessOut, tags=["Datasets"],
+          summary="Add example datasets",
+          description="Populates a project with pre-configured example datasets and optionally visualizations. Requires write access.")
 def create_example_datasets(request, payload: ExampleDatasetIn):
     example_datasets = {
         1: {
@@ -788,7 +826,9 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
     return {"success": True}
 
 
-@api.put("/datasets", auth=Authorized())
+@api.put("/datasets", auth=Authorized(), response=SuccessOut, tags=["Datasets"],
+         summary="Update a dataset",
+         description="Partially updates a dataset's metadata. Requires write access to the parent project, or ownership if no project.")
 def update_dataset(request, payload: DatasetUpdate):
     payload_dict = payload.dict(exclude_unset=True)
     if payload.project_uuid:
@@ -807,7 +847,9 @@ def update_dataset(request, payload: DatasetUpdate):
     return {"success": True}
 
 
-@api.put("/datasets/tags", auth=Authorized())
+@api.put("/datasets/tags", auth=Authorized(), response=SuccessOut, tags=["Datasets"],
+         summary="Tag a dataset",
+         description="Replaces all tags on a dataset. Creates any tags that don't already exist in the project. Requires write access.")
 def tag_dataset(request, payload: TagsIn):
     try:
         project = Project.objects.get_write_project(
@@ -830,7 +872,9 @@ def tag_dataset(request, payload: TagsIn):
     return {"success": True}
 
 
-@api.get("/datasets", auth=Authorized(), response=list[DatasetOut])
+@api.get("/datasets", auth=Authorized(), response=list[DatasetOut], tags=["Datasets"],
+         summary="List user datasets",
+         description="Returns all datasets owned directly by the authenticated user (not via project). Paginated.")
 @paginate
 def get_user_datasets(request):
     datasets = Dataset.objects.filter(user_key=request.auth)
@@ -845,7 +889,10 @@ class DatasetQuerySchema(Schema):
 
 
 @api.get(
-    "/datasets/{project_uuid}", auth=Authorized(), response=list[DatasetWithTagsOut]
+    "/datasets/{project_uuid}", auth=Authorized(), response=list[DatasetWithTagsOut],
+    tags=["Datasets"],
+    summary="List project datasets",
+    description="Returns datasets in a project, with optional filtering by tags, assembly, file type, or name. Paginated.",
 )
 @paginate(PageNumberPagination)
 def get_project_datasets(
@@ -875,7 +922,9 @@ def get_project_datasets(
     return datasets
 
 
-@api.get("/datasets/fields/{project_uuid}", auth=Authorized(), response=list[str])
+@api.get("/datasets/fields/{project_uuid}", auth=Authorized(), response=list[str], tags=["Datasets"],
+         summary="Get dataset field values",
+         description="Returns distinct values for a given field (assembly or file_type) across all datasets in a project. Useful for populating filter dropdowns.")
 def get_project_datasets_field_values(
     request, project_uuid: str, field: Literal["assembly", "file_type"]
 ):
@@ -890,7 +939,9 @@ def get_project_datasets_field_values(
     return field_values
 
 
-@api.get("/datasets/tags/{project_uuid}", auth=Authorized(), response=list[TagOut])
+@api.get("/datasets/tags/{project_uuid}", auth=Authorized(), response=list[TagOut], tags=["Datasets"],
+         summary="Get dataset tags",
+         description="Returns all distinct tags used by datasets in a project.")
 def get_project_datasets_tags(request, project_uuid: str):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=project_uuid
@@ -911,7 +962,10 @@ def get_project_datasets_tags(request, project_uuid: str):
 
 
 @api.get(
-    "/datasets/uuid/{dataset_uuid}", auth=Authorized(), response=DatasetWithTagsOut
+    "/datasets/uuid/{dataset_uuid}", auth=Authorized(), response=DatasetWithTagsOut,
+    tags=["Datasets"],
+    summary="Get a dataset",
+    description="Returns a single dataset by UUID, including its tags. Requires read access to the parent project.",
 )
 def get_dataset(request, dataset_uuid: str):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
@@ -925,7 +979,9 @@ def get_dataset(request, dataset_uuid: str):
     return dataset
 
 
-@api.delete("/datasets/uuid/{dataset_uuid}", auth=Authorized())
+@api.delete("/datasets/uuid/{dataset_uuid}", auth=Authorized(), response=SuccessOut, tags=["Datasets"],
+            summary="Delete a dataset",
+            description="Permanently deletes a dataset. Requires write access to the parent project.")
 def delete_dataset(request, dataset_uuid: str):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
@@ -939,7 +995,9 @@ def delete_dataset(request, dataset_uuid: str):
     return {"success": True}
 
 
-@api.get("/tags", response=list[TagOut])
+@api.get("/tags", response=list[TagOut], tags=["Tags"],
+         summary="Search tags",
+         description="Returns all tags, optionally filtered by a substring match on the combined 'key:tag' value. Paginated.")
 @paginate
 def get_tags(request, sub_str: str = None):
     q = Q()
@@ -962,7 +1020,9 @@ class VisualizationQuerySchema(Schema):
     uuids: list[UUID4] = Field(None, alias="uuids")
 
 
-@api.get("/public/visualizations", response=list[VisualizationNoConfOut])
+@api.get("/public/visualizations", response=list[VisualizationNoConfOut], tags=["Visualizations"],
+         summary="List published visualizations",
+         description="Returns all published visualizations, with optional filtering by tags or UUIDs. Paginated. No authentication required.")
 @paginate
 def get_published_visualizations(
     request,
@@ -982,7 +1042,9 @@ def get_published_visualizations(
     return visualizations
 
 
-@api.get("/visualizations", auth=Authorized(), response=list[VisualizationNoConfOut])
+@api.get("/visualizations", auth=Authorized(), response=list[VisualizationNoConfOut], tags=["Visualizations"],
+         summary="List project visualizations",
+         description="Returns visualizations in a project, with optional filtering by tags, name, or UUIDs. Requires read access.")
 def get_project_visualizations(
     request,
     project_uuid: str,
@@ -1009,8 +1071,10 @@ def get_project_visualizations(
     return visualizations
 
 
-@api.get("/visualizations/tags", auth=Authorized(), response=list[TagOut])
-def get_project_visualizations_Tags(request, project_uuid: str):
+@api.get("/visualizations/tags", auth=Authorized(), response=list[TagOut], tags=["Visualizations"],
+         summary="Get visualization tags",
+         description="Returns all distinct tags used by visualizations in a project.")
+def get_project_visualizations_tags(request, project_uuid: str):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=project_uuid
     )
@@ -1030,7 +1094,10 @@ def get_project_visualizations_Tags(request, project_uuid: str):
 
 
 @api.get(
-    "/visualizations/{visualization_uuid}", response=VisualizationOut, auth=Authorized()
+    "/visualizations/{visualization_uuid}", response=VisualizationOut, auth=Authorized(),
+    tags=["Visualizations"],
+    summary="Get a visualization",
+    description="Returns a single visualization by UUID, including its full configuration. Requires read access to the parent project.",
 )
 def get_visualization(request, visualization_uuid: str):
     try:
@@ -1045,7 +1112,9 @@ def get_visualization(request, visualization_uuid: str):
     return visualization
 
 
-@api.get("/public/visualizations/{visualization_uuid}", response=VisualizationOut)
+@api.get("/public/visualizations/{visualization_uuid}", response=VisualizationOut, tags=["Visualizations"],
+         summary="Get a public visualization",
+         description="Returns a single published visualization by UUID. No authentication required.")
 def get_public_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(
         VisualizationConf, uuid=visualization_uuid, published=True
@@ -1053,7 +1122,9 @@ def get_public_visualization(request, visualization_uuid: str):
     return visualization
 
 
-@api.delete("/visualizations/{visualization_uuid}", auth=Authorized())
+@api.delete("/visualizations/{visualization_uuid}", auth=Authorized(), response=SuccessOut, tags=["Visualizations"],
+            summary="Delete a visualization",
+            description="Permanently deletes a visualization. Requires write access to the parent project.")
 def delete_visualization(request, visualization_uuid: str):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
@@ -1067,7 +1138,9 @@ def delete_visualization(request, visualization_uuid: str):
     return {"success": True}
 
 
-@api.put("/visualizations/{visualization_uuid}", auth=Authorized())
+@api.put("/visualizations/{visualization_uuid}", auth=Authorized(), response=SuccessOut, tags=["Visualizations"],
+         summary="Update a visualization",
+         description="Partially updates a visualization's metadata or configuration. Sets published_timestamp when publishing. Requires write access.")
 def update_visualization(
     request, visualization_uuid: str, payload: PartialVisualizationUpdate
 ):
@@ -1088,7 +1161,9 @@ def update_visualization(
     return {"success": True}
 
 
-@api.put("/visualizations/{visualization_uuid}/tags", auth=Authorized())
+@api.put("/visualizations/{visualization_uuid}/tags", auth=Authorized(), response=SuccessOut, tags=["Visualizations"],
+         summary="Tag a visualization",
+         description="Replaces all tags on a visualization. Creates any tags that don't already exist in the project. Requires write access.")
 def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
     visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
@@ -1109,7 +1184,9 @@ def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
     return {"success": True}
 
 
-@api.post("/visualizations", auth=Authorized(), response={201: VisualizationNoConfOut})
+@api.post("/visualizations", auth=Authorized(), response={201: VisualizationNoConfOut}, tags=["Visualizations"],
+          summary="Create a visualization",
+          description="Creates a new visualization in a project. Requires write access to the project.")
 def create_visualization(request, visualization: VisualizationIn):
     visualization_dict = visualization.dict()
     project_uuid = visualization_dict.get("project_uuid")
