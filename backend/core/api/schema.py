@@ -6,6 +6,19 @@ from pydantic import UUID4, EmailStr, Field
 from .models import Dataset, Project, ProjectMember, Tag, VisualizationConf
 
 
+class DatasetQuerySchema(Schema):
+    tags: list[str] = Field(None, alias="tags")
+    assembly: list[str] = Field(None, alias="assembly")
+    file_type: list[str] = Field(None, alias="file_type")
+    name: str = Field(None, alias="name")
+
+
+class VisualizationQuerySchema(Schema):
+    tags: list[str] = Field(None, alias="tags")
+    name: str = Field(None, alias="name")
+    uuids: list[UUID4] = Field(None, alias="uuids")
+
+
 class OptionalSchema(Schema):
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
