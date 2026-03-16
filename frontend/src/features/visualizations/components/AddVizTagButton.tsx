@@ -116,7 +116,7 @@ export default function AddTagButton({
         body: {
           tags: tagsList,
           uuid: visualizationId,
-          project_uuid: projectId,
+          workspace_uuid: projectId,
         },
       });
       setOpen(false);

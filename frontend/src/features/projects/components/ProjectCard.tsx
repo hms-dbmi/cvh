@@ -8,7 +8,7 @@ import { Link } from "../../navigation/components/Links.tsx";
 export default function ProjectCard({
   project,
 }: {
-  project: components["schemas"]["ProjectOut"];
+  project: components["schemas"]["WorkspaceOut"];
 }) {
   if (!project?.uuid) {
     return null;

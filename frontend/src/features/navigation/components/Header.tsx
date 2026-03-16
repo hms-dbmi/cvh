@@ -32,14 +32,14 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
   return <ProjectSettings projectId={projectId} />;
 }
 
-type ProjectOut = components["schemas"]["ProjectOutWithMembersCount"];
+type WorkspaceOut = components["schemas"]["WorkspaceOutWithMembersCount"];
 
 function WorkspaceListItem({
   project,
   firstLetter,
   isSelected,
 }: {
-  project: ProjectOut;
+  project: WorkspaceOut;
   firstLetter: string | null;
   isSelected: boolean;
 }) {
@@ -84,7 +84,7 @@ function WorkspaceListItem({
             }}
             primary={project.name}
             secondary={[
-              `${project.project_members_count} collaborator${project?.project_members_count === 1 ? "" : "s"}`,
+              `${project.workspace_members_count} collaborator${project?.workspace_members_count === 1 ? "" : "s"}`,
               <> &middot; </>,
               `updated ${formatRelative(project.modified_timestamp, new Date())}`,
             ]}

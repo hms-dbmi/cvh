@@ -97,7 +97,7 @@ export default function AddVisualizationButton({
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
-      mutate({ body: { ...formData, project_uuid: projectId } });
+      mutate({ body: { ...formData, workspace_uuid: projectId } });
       handleReset();
       return;
     },

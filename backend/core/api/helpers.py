@@ -26,8 +26,8 @@ def apply_partial_update(instance, data, exclude_fields=None):
     instance.save()
 
 
-def get_model_tags_in_project(model_class, project):
-    """Return distinct tags used by a model in a project."""
+def get_model_tags_in_workspace(model_class, project):
+    """Return distinct tags used by a model in a workspace."""
     field_values = (
         model_class.objects.filter(Q(project_key=project))
         .values("tags__tag", "tags__uuid", "tags__key")
@@ -36,18 +36,22 @@ def get_model_tags_in_project(model_class, project):
     )
 
     return [
-        dict(tag=item["tags__tag"], key=item["tags__key"], uuid=item["tags__uuid"])
+        dict(
+            tag=item["tags__tag"],
+            key=item["tags__key"],
+            uuid=item["tags__uuid"],
+        )
         for item in field_values
     ]
 
 
-def _get_project(project_uuid: str, user: User, error_message: str):
+def _get_workspace(workspace_uuid: str, user: User, error_message: str):
     try:
-        project = Project.objects.get(uuid=project_uuid, private=False)
+        project = Project.objects.get(uuid=workspace_uuid, private=False)
     except Project.DoesNotExist:
         try:
             project = Project.objects.get_read_project(
-                user=user, project_uuid=project_uuid
+                user=user, project_uuid=workspace_uuid
             )
         except Project.DoesNotExist:
             raise Http404(error_message) from None

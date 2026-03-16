@@ -491,7 +491,7 @@ function DataAccordion({
                   }}
                 />
                 <AddExamplesDatasets
-                  project_uuid={projectId}
+                  workspace_uuid={projectId}
                   buttonProps={{
                     disabled: !hasWritePermissions,
                   }}

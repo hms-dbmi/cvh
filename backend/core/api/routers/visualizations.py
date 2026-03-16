@@ -6,7 +6,11 @@ from ninja import Query, Router
 from ninja.pagination import paginate
 
 from ..auth import Authorized
-from ..helpers import _get_project, get_model_tags_in_project, get_or_create_tags
+from ..helpers import (
+    _get_workspace,
+    get_model_tags_in_workspace,
+    get_or_create_tags,
+)
 from ..models import Project, Tag, VisualizationConf
 from ..schema import (
     PartialVisualizationUpdate,
@@ -55,20 +59,21 @@ def get_published_visualizations(
     "/visualizations",
     auth=Authorized(),
     response=list[VisualizationNoConfOut],
-    summary="List project visualizations",
+    summary="List workspace visualizations",
     description=(
-        "Returns visualizations in a project, with optional"
-        " filtering by tags, name, or UUIDs. Requires read access."
+        "Returns visualizations in a workspace, with optional"
+        " filtering by tags, name, or UUIDs."
+        " Requires read access."
     ),
 )
-def get_project_visualizations(
+def get_workspace_visualizations(
     request,
-    project_uuid: str,
+    workspace_uuid: str,
     query_filters: VisualizationQuerySchema = Query(...),  # noqa: B008
 ):
-    project = _get_project(
+    project = _get_workspace(
         user=request.auth,
-        project_uuid=project_uuid,
+        workspace_uuid=workspace_uuid,
         error_message="Visualization not found.",
     )
     q = Q()
@@ -92,13 +97,18 @@ def get_project_visualizations(
     auth=Authorized(),
     response=list[TagOut],
     summary="Get visualization tags",
-    description="Returns all distinct tags used by visualizations in a project.",
+    description=(
+        "Returns all distinct tags used by visualizations"
+        " in a workspace."
+    ),
 )
-def get_project_visualizations_tags(request, project_uuid: str):
+def get_workspace_visualizations_tags(
+    request, workspace_uuid: str
+):
     project = Project.objects.get_read_project(
-        user=request.auth, project_uuid=project_uuid
+        user=request.auth, project_uuid=workspace_uuid
     )
-    return get_model_tags_in_project(VisualizationConf, project)
+    return get_model_tags_in_workspace(VisualizationConf, project)
 
 
 @router.get(
@@ -109,14 +119,17 @@ def get_project_visualizations_tags(request, project_uuid: str):
     description=(
         "Returns a single visualization by UUID, including its"
         " full configuration. Requires read access to the"
-        " parent project."
+        " parent workspace."
     ),
 )
 def get_visualization(request, visualization_uuid: str):
     try:
-        visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+        visualization = get_object_or_404(
+            VisualizationConf, uuid=visualization_uuid
+        )
         Project.objects.get_read_project(
-            project_uuid=visualization.project_key.uuid, user=request.auth
+            project_uuid=visualization.project_key.uuid,
+            user=request.auth,
         )
     except VisualizationConf.DoesNotExist:
         raise Http404("Failed to find visualization.") from None
@@ -148,14 +161,17 @@ def get_public_visualization(request, visualization_uuid: str):
     summary="Delete a visualization",
     description=(
         "Permanently deletes a visualization."
-        " Requires write access to the parent project."
+        " Requires write access to the parent workspace."
     ),
 )
 def delete_visualization(request, visualization_uuid: str):
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid
+    )
     try:
         Project.objects.get_write_project(
-            project_uuid=visualization.project_key.uuid, user=request.auth
+            project_uuid=visualization.project_key.uuid,
+            user=request.auth,
         )
     except Project.DoesNotExist:
         raise Http404("Failed to delete visualization.") from None
@@ -176,13 +192,18 @@ def delete_visualization(request, visualization_uuid: str):
     ),
 )
 def update_visualization(
-    request, visualization_uuid: str, payload: PartialVisualizationUpdate
+    request,
+    visualization_uuid: str,
+    payload: PartialVisualizationUpdate,
 ):
     payload_dict = payload.dict(exclude_unset=True)
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid
+    )
     try:
         Project.objects.get_write_project(
-            project_uuid=visualization.project_key.uuid, user=request.auth
+            project_uuid=visualization.project_key.uuid,
+            user=request.auth,
         )
     except Project.DoesNotExist:
         raise Http404("Failed to update visualization.") from None
@@ -201,16 +222,21 @@ def update_visualization(
     response=SuccessOut,
     summary="Tag a visualization",
     description=(
-        "Replaces all tags on a visualization. Creates any tags"
-        " that don't already exist in the project."
+        "Replaces all tags on a visualization. Creates any"
+        " tags that don't already exist in the workspace."
         " Requires write access."
     ),
 )
-def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
-    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+def tag_visualization(
+    request, visualization_uuid: str, payload: TagsIn
+):
+    visualization = get_object_or_404(
+        VisualizationConf, uuid=visualization_uuid
+    )
     try:
         project = Project.objects.get_write_project(
-            project_uuid=visualization.project_key.uuid, user=request.auth
+            project_uuid=visualization.project_key.uuid,
+            user=request.auth,
         )
     except Project.DoesNotExist:
         raise Http404("Failed to tag visualization.") from None
@@ -225,20 +251,22 @@ def tag_visualization(request, visualization_uuid: str, payload: TagsIn):
     response={201: VisualizationNoConfOut},
     summary="Create a visualization",
     description=(
-        "Creates a new visualization in a project."
-        " Requires write access to the project."
+        "Creates a new visualization in a workspace."
+        " Requires write access to the workspace."
     ),
 )
 def create_visualization(request, visualization: VisualizationIn):
     visualization_dict = visualization.dict()
-    project_uuid = visualization_dict.get("project_uuid")
-    del visualization_dict["project_uuid"]
+    workspace_uuid = visualization_dict.get("workspace_uuid")
+    del visualization_dict["workspace_uuid"]
 
     try:
         project = Project.objects.get_write_project(
-            user=request.auth, project_uuid=project_uuid
+            user=request.auth, project_uuid=workspace_uuid
         )
     except Project.DoesNotExist:
         raise Http404("Failed to create visualization.") from None
-    viz = VisualizationConf.objects.create(**visualization_dict, project_key=project)
+    viz = VisualizationConf.objects.create(
+        **visualization_dict, project_key=project
+    )
     return viz

@@ -9,7 +9,7 @@ const path = "/api/datasets";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
-  "/api/projects",
+  "/api/workspaces",
   "/api/tags",
 ]);
 
@@ -33,9 +33,9 @@ function useGetProjectDatasets(projectId: string, tags: Tag[]) {
       }
     : {};
   const client = useClient();
-  return client.useQuery("get", `${path}/{project_uuid}`, {
+  return client.useQuery("get", `${path}/{workspace_uuid}`, {
     params: {
-      path: { project_uuid: projectId },
+      path: { workspace_uuid: projectId },
       ...queryOptions,
     },
   });
@@ -102,10 +102,10 @@ function useGetPaginatedProjectDatasets({
   const client = useClient();
   return client.useInfiniteQuery(
     "get",
-    `${path}/{project_uuid}`,
+    `${path}/{workspace_uuid}`,
     {
       params: {
-        path: { project_uuid: projectId },
+        path: { workspace_uuid: projectId },
         ...queryOptions,
       },
     },
@@ -182,25 +182,25 @@ function useTagDataset() {
 }
 
 function useGetProjectDatasetFieldValues(
-  project_uuid: string,
+  workspace_uuid: string,
   field: "assembly" | "file_type",
 ) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/fields/{project_uuid}`, {
+  return client.useQuery("get", `${path}/fields/{workspace_uuid}`, {
     params: {
-      path: { project_uuid },
+      path: { workspace_uuid },
       query: { field },
     },
   });
 }
 
-function useGetProjectDatasetTags(project_uuid: string) {
+function useGetProjectDatasetTags(workspace_uuid: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/tags/{project_uuid}`, {
+  return client.useQuery("get", `${path}/tags/{workspace_uuid}`, {
     params: {
-      path: { project_uuid },
+      path: { workspace_uuid },
     },
   });
 }

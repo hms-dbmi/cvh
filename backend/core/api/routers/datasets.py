@@ -9,7 +9,11 @@ from ninja.pagination import PageNumberPagination, paginate
 
 from ..auth import Authorized
 from ..examples import EXAMPLE_DATASETS
-from ..helpers import _get_project, get_model_tags_in_project, get_or_create_tags
+from ..helpers import (
+    _get_workspace,
+    get_model_tags_in_workspace,
+    get_or_create_tags,
+)
 from ..models import Dataset, Project, Tag, VisualizationConf
 from ..schema import (
     DatasetIn,
@@ -32,26 +36,30 @@ router = Router(tags=["Datasets"])
     response={201: DatasetIn},
     summary="Create a dataset",
     description=(
-        "Creates a new dataset. If project_uuid is provided,"
-        " requires write access to that project."
+        "Creates a new dataset. If workspace_uuid is provided,"
+        " requires write access to that workspace."
         " Otherwise associates with the user directly."
     ),
 )
 def create_dataset(request, dataset: DatasetIn):
     dataset_dict = dataset.dict()
-    project_uuid = dataset_dict.get("project_uuid")
-    del dataset_dict["project_uuid"]
+    workspace_uuid = dataset_dict.get("workspace_uuid")
+    del dataset_dict["workspace_uuid"]
 
-    if project_uuid:
+    if workspace_uuid:
         try:
             project = Project.objects.get_write_project(
-                user=request.auth, project_uuid=project_uuid
+                user=request.auth, project_uuid=workspace_uuid
             )
-            Dataset.objects.create(**dataset_dict["dataset"], project_key=project)
+            Dataset.objects.create(
+                **dataset_dict["dataset"], project_key=project
+            )
             return dataset
         except Project.DoesNotExist:
             raise Http404("Failed to create dataset.") from None
-    Dataset.objects.create(**dataset_dict["dataset"], user_key=request.auth)
+    Dataset.objects.create(
+        **dataset_dict["dataset"], user_key=request.auth
+    )
     return dataset
 
 
@@ -61,7 +69,7 @@ def create_dataset(request, dataset: DatasetIn):
     response=SuccessOut,
     summary="Add example datasets",
     description=(
-        "Populates a project with pre-configured example"
+        "Populates a workspace with pre-configured example"
         " datasets and optionally visualizations."
         " Requires write access."
     ),
@@ -69,7 +77,8 @@ def create_dataset(request, dataset: DatasetIn):
 def create_example_datasets(request, payload: ExampleDatasetIn):
     try:
         project = Project.objects.get_write_project(
-            user=request.auth, project_uuid=payload.project_uuid
+            user=request.auth,
+            project_uuid=payload.workspace_uuid,
         )
     except Project.DoesNotExist:
         raise Http404("Failed to add example data.") from None
@@ -99,20 +108,25 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
     response=SuccessOut,
     summary="Update a dataset",
     description=(
-        "Partially updates a dataset's metadata. Requires write"
-        " access to the parent project, or ownership if no project."
+        "Partially updates a dataset's metadata. Requires"
+        " write access to the parent workspace, or ownership"
+        " if no workspace."
     ),
 )
 def update_dataset(request, payload: DatasetUpdate):
     payload_dict = payload.dict(exclude_unset=True)
-    if payload.project_uuid:
+    if payload.workspace_uuid:
         project = Project.objects.get_write_project(
-            project_uuid=payload.project_uuid, user=request.auth
+            project_uuid=payload.workspace_uuid, user=request.auth
         )
-        dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
-        del payload_dict["project_uuid"]
+        dataset = get_object_or_404(
+            Dataset, uuid=payload.uuid, project_key=project
+        )
+        del payload_dict["workspace_uuid"]
     else:
-        dataset = get_object_or_404(Dataset, uuid=payload.uuid, user_key=request.auth)
+        dataset = get_object_or_404(
+            Dataset, uuid=payload.uuid, user_key=request.auth
+        )
 
     del payload_dict["uuid"]
     for attr, value in payload_dict.items():
@@ -128,18 +142,21 @@ def update_dataset(request, payload: DatasetUpdate):
     summary="Tag a dataset",
     description=(
         "Replaces all tags on a dataset. Creates any tags that"
-        " don't already exist in the project. Requires write access."
+        " don't already exist in the workspace."
+        " Requires write access."
     ),
 )
 def tag_dataset(request, payload: TagsIn):
     try:
         project = Project.objects.get_write_project(
-            project_uuid=payload.project_uuid, user=request.auth
+            project_uuid=payload.workspace_uuid, user=request.auth
         )
     except Project.DoesNotExist:
         raise Http404("Failed to tag dataset.") from None
 
-    dataset = get_object_or_404(Dataset, uuid=payload.uuid, project_key=project)
+    dataset = get_object_or_404(
+        Dataset, uuid=payload.uuid, project_key=project
+    )
     tags = get_or_create_tags(payload.tags, project=project)
     dataset.tags.set(tags)
     return {"success": True}
@@ -152,7 +169,7 @@ def tag_dataset(request, payload: TagsIn):
     summary="List user datasets",
     description=(
         "Returns all datasets owned directly by the"
-        " authenticated user (not via project). Paginated."
+        " authenticated user (not via workspace). Paginated."
     ),
 )
 @paginate
@@ -162,23 +179,26 @@ def get_user_datasets(request):
 
 
 @router.get(
-    "/datasets/{project_uuid}",
+    "/datasets/{workspace_uuid}",
     auth=Authorized(),
     response=list[DatasetWithTagsOut],
-    summary="List project datasets",
+    summary="List workspace datasets",
     description=(
-        "Returns datasets in a project, with optional filtering"
-        " by tags, assembly, file type, or name. Paginated."
+        "Returns datasets in a workspace, with optional"
+        " filtering by tags, assembly, file type, or name."
+        " Paginated."
     ),
 )
 @paginate(PageNumberPagination)
-def get_project_datasets(
+def get_workspace_datasets(
     request,
-    project_uuid: str,
+    workspace_uuid: str,
     query_filters: DatasetQuerySchema = Query(...),  # noqa: B008
 ):
-    project = _get_project(
-        user=request.auth, project_uuid=project_uuid, error_message="Dataset not found."
+    project = _get_workspace(
+        user=request.auth,
+        workspace_uuid=workspace_uuid,
+        error_message="Dataset not found.",
     )
     q = Q()
     if query_filters.tags:
@@ -200,21 +220,23 @@ def get_project_datasets(
 
 
 @router.get(
-    "/datasets/fields/{project_uuid}",
+    "/datasets/fields/{workspace_uuid}",
     auth=Authorized(),
     response=list[str],
     summary="Get dataset field values",
     description=(
         "Returns distinct values for a given field"
         " (assembly or file_type) across all datasets in a"
-        " project. Useful for populating filter dropdowns."
+        " workspace. Useful for populating filter dropdowns."
     ),
 )
-def get_project_datasets_field_values(
-    request, project_uuid: str, field: Literal["assembly", "file_type"]
+def get_workspace_datasets_field_values(
+    request,
+    workspace_uuid: str,
+    field: Literal["assembly", "file_type"],
 ):
     project = Project.objects.get_read_project(
-        user=request.auth, project_uuid=project_uuid
+        user=request.auth, project_uuid=workspace_uuid
     )
     field_values = (
         Dataset.objects.filter(Q(project_key=project))
@@ -225,17 +247,20 @@ def get_project_datasets_field_values(
 
 
 @router.get(
-    "/datasets/tags/{project_uuid}",
+    "/datasets/tags/{workspace_uuid}",
     auth=Authorized(),
     response=list[TagOut],
     summary="Get dataset tags",
-    description="Returns all distinct tags used by datasets in a project.",
+    description=(
+        "Returns all distinct tags used by datasets"
+        " in a workspace."
+    ),
 )
-def get_project_datasets_tags(request, project_uuid: str):
+def get_workspace_datasets_tags(request, workspace_uuid: str):
     project = Project.objects.get_read_project(
-        user=request.auth, project_uuid=project_uuid
+        user=request.auth, project_uuid=workspace_uuid
     )
-    return get_model_tags_in_project(Dataset, project)
+    return get_model_tags_in_workspace(Dataset, project)
 
 
 @router.get(
@@ -245,14 +270,15 @@ def get_project_datasets_tags(request, project_uuid: str):
     summary="Get a dataset",
     description=(
         "Returns a single dataset by UUID, including its tags."
-        " Requires read access to the parent project."
+        " Requires read access to the parent workspace."
     ),
 )
 def get_dataset(request, dataset_uuid: str):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
         Project.objects.get_read_project(
-            project_uuid=dataset.project_key.uuid, user=request.auth
+            project_uuid=dataset.project_key.uuid,
+            user=request.auth,
         )
     except Project.DoesNotExist:
         raise Http404("Dataset not found.") from None
@@ -267,14 +293,15 @@ def get_dataset(request, dataset_uuid: str):
     summary="Delete a dataset",
     description=(
         "Permanently deletes a dataset."
-        " Requires write access to the parent project."
+        " Requires write access to the parent workspace."
     ),
 )
 def delete_dataset(request, dataset_uuid: str):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
         Project.objects.get_write_project(
-            project_uuid=dataset.project_key.uuid, user=request.auth
+            project_uuid=dataset.project_key.uuid,
+            user=request.auth,
         )
     except Project.DoesNotExist:
         raise Http404("Failed to delete dataset.") from None

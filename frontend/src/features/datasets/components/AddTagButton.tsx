@@ -112,7 +112,7 @@ export default function AddTagButton({
         }))
         .filter(({ tag, key }) => tag.length && key.length);
       mutate({
-        body: { tags: tagsList, uuid: datasetId, project_uuid: projectId },
+        body: { tags: tagsList, uuid: datasetId, workspace_uuid: projectId },
       });
       setOpen(false);
     },
