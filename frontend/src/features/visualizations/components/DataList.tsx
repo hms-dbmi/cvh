@@ -1,10 +1,10 @@
 import Accordion from "@mui/material/Accordion";
-import Box from "@mui/material/Box";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import Divider from "@mui/material/Divider";
 import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
@@ -33,6 +33,7 @@ import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import type { components } from "../../../types/schema";
+import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
 import {
   useDeleteDataset,
   useGetDataset,
@@ -43,15 +44,18 @@ import {
 import AddDatasetButton from "../../datasets/components/AddDatasetButton";
 import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
+import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
 import { useGetProject } from "../../projects/api/useProjects";
 
 export function DatasetActionsMenu({
   datasetID,
   readOnly,
-}: { datasetID: string; readOnly?: boolean }) {
+}: {
+  datasetID: string;
+  readOnly?: boolean;
+}) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const { projectId } = useParams({ strict: false });
@@ -257,13 +261,21 @@ function DatasetListItem({
   dataset,
   showActions,
   readOnly,
-}: { dataset: Required<Dataset>; showActions?: boolean; readOnly?: boolean }) {
+}: {
+  dataset: Required<Dataset>;
+  showActions?: boolean;
+  readOnly?: boolean;
+}) {
   return (
     <ListItem
       disablePadding
       sx={{
         marginBottom: "12px",
-        ".MuiListItemSecondaryAction-root": { top: 16, right: 8, transform: "none" },
+        ".MuiListItemSecondaryAction-root": {
+          top: 16,
+          right: 8,
+          transform: "none",
+        },
       }}
       secondaryAction={
         showActions && dataset.uuid ? (
@@ -325,7 +337,10 @@ function DatasetListItem({
 function DataList({
   projectId,
   showActions,
-}: { projectId: string; showActions?: boolean }) {
+}: {
+  projectId: string;
+  showActions?: boolean;
+}) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
   const setNameSubstring = useDatasetFiltersStore(
@@ -387,15 +402,19 @@ function DataList({
           },
         })}
       />
-      {hasWritePermissions && (
-        <Stack direction="row" spacing={1}>
-          <AddDatasetButton projectId={projectId} />
-        </Stack>
-      )}
+      <Stack direction="row" spacing={1}>
+        {hasWritePermissions && <AddDatasetButton projectId={projectId} />}
+        <BrowseLibraryButton />
+      </Stack>
       <DataSelects projectId={projectId} />
       <List>
         {datasets.map((d) => (
-          <DatasetListItem key={d.uuid} dataset={d} showActions={showActions} readOnly={!hasWritePermissions} />
+          <DatasetListItem
+            key={d.uuid}
+            dataset={d}
+            showActions={showActions}
+            readOnly={!hasWritePermissions}
+          />
         ))}
       </List>
     </Stack>
