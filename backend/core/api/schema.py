@@ -171,13 +171,25 @@ class ExampleDatasetIn(Schema):
     example_id: Literal[1, 2]
 
 
-class PartialDatasetIn(Schema):
-    workspace_uuid: UUID4 | None = None
-    dataset: GoslingDesignerModel | None = None
-
-
-class DatasetUpdate(PartialDatasetIn):
+class DatasetUpdate(ModelSchema, OptionalSchema):
     uuid: UUID4
+    workspace_uuid: UUID4 | None = None
+
+    class Meta:
+        model = Dataset
+        fields = [
+            "name",
+            "description",
+            "source_url",
+            "file_type",
+            "data_type",
+            "assembly",
+            "data_column",
+            "row_names",
+            "headers",
+            "index_url",
+            "separator",
+        ]
 
 
 class DatasetOut(ModelSchema):
