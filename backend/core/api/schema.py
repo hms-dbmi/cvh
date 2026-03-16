@@ -255,11 +255,20 @@ class VisualizationSummaryOut(ModelSchema):
         ]
 
 
-class VisualizationOut(VisualizationSummaryOut):
-    class Meta(VisualizationSummaryOut.Meta):
+class VisualizationOut(ModelSchema):
+    tags: list[TagOut]
+
+    class Meta:
+        model = VisualizationConf
         fields = [
             "conf",
-            *VisualizationSummaryOut.Meta.fields,
+            "author",
+            "tool",
+            "published",
+            "n_tracks",
+            "n_datasets",
+            "published_timestamp",
+            *shared_output_fields,
         ]
 
 
