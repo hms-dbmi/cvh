@@ -11,7 +11,7 @@ const publicPath = "/api/public/visualizations";
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
   publicPath,
-  "/api/projects",
+  "/api/workspaces",
   "/api/tags",
 ]);
 
@@ -40,7 +40,7 @@ function useGetProjectVisualizations({
   return client.useQuery("get", path, {
     params: {
       query: {
-        project_uuid: projectId,
+        workspace_uuid: projectId,
         ...queryOptions,
       },
     },
@@ -146,12 +146,12 @@ function useTagVisualization() {
   });
 }
 
-function useGetProjectVisualizationTags(project_uuid: string) {
+function useGetProjectVisualizationTags(workspace_uuid: string) {
   const client = useClient();
 
   return client.useQuery("get", `${path}/tags`, {
     params: {
-      query: { project_uuid },
+      query: { workspace_uuid },
     },
   });
 }

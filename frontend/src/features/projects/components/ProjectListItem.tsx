@@ -16,7 +16,7 @@ function buildCountLabel({ count, label }: { count: number; label: string }) {
 export default function ProjectListItem({
   project,
 }: {
-  project: components["schemas"]["ProjectOut"];
+  project: components["schemas"]["WorkspaceOut"];
 }) {
   if (!project?.uuid) {
     return null;

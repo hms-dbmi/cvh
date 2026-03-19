@@ -96,7 +96,7 @@ function PermissionsSelect({
       mutate({
         body: {
           permissions: event.target.value as number,
-          project_uuid: projectId,
+          workspace_uuid: projectId,
           email,
         },
       });
@@ -136,13 +136,13 @@ function MemberSettings({
   projectId,
 }: {
   permissions?: number;
-  member: components["schemas"]["ProjectMemberOut"];
+  member: components["schemas"]["WorkspaceMemberOut"];
   projectId: string;
 }) {
   const { mutate } = useRemoveProjectMember();
 
   const handleRemoveProjectMember = useCallback(() => {
-    mutate({ body: { project_uuid: projectId, email: member.email } });
+    mutate({ body: { workspace_uuid: projectId, email: member.email } });
   }, [mutate, projectId, member.email]);
   const { data: userData } = useGetUser();
 
@@ -221,7 +221,7 @@ export function UpdateAccessSwitch({
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       mutate({
-        params: { path: { project_uuid: projectId } },
+        params: { path: { workspace_uuid: projectId } },
 
         body: {
           private: event.target.checked,
@@ -257,7 +257,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
   /*
   const { mutate } = useDeleteProject();
   const handleDeleteProject = useCallback(() => {
-    mutate({ params: { path: { project_uuid: projectId } } });
+    mutate({ params: { path: { workspace_uuid: projectId } } });
   }, [mutate, projectId]);
  */
 

@@ -16,10 +16,7 @@ def tag_datasets(datasets, table):
             v = table_record[field]
             if v and v != "None" and v != "None" and v != "null" and v != "Null":
                 trimmed_value = v[:50]
-                try:
-                    tag = Tag.objects.get(tag=trimmed_value, key=field)
-                except Tag.DoesNotExist:
-                    tag = Tag.objects.create(tag=trimmed_value, key=field)
+                tag, _ = Tag.objects.get_or_create(tag=trimmed_value, key=field)
                 dataset.tags.add(tag)
 
 

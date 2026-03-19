@@ -6,7 +6,7 @@ const path = "/api/datasets";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
-  "/api/projects",
+  "/api/workspaces",
   "/api/tags",
   "/api/visualizations",
 ]);
