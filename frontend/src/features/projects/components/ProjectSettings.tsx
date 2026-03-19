@@ -94,9 +94,9 @@ function PermissionsSelect({
   const handleChange = useCallback(
     (event: SelectChangeEvent<number>) => {
       mutate({
+        params: { path: { workspace_uuid: projectId } },
         body: {
           permissions: event.target.value as number,
-          workspace_uuid: projectId,
           email,
         },
       });
@@ -142,7 +142,10 @@ function MemberSettings({
   const { mutate } = useRemoveProjectMember();
 
   const handleRemoveProjectMember = useCallback(() => {
-    mutate({ body: { workspace_uuid: projectId, email: member.email } });
+    mutate({
+      params: { path: { workspace_uuid: projectId } },
+      body: { email: member.email },
+    });
   }, [mutate, projectId, member.email]);
   const { data: userData } = useGetUser();
 

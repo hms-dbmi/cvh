@@ -70,7 +70,7 @@ function useAddProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("post", "/api/workspaces/members", {
+  return client.useMutation("post", membersPath, {
     onSuccess: () => {
       toastSuccess("Successfully shared workspace.");
 
@@ -86,7 +86,7 @@ function useUpdateProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", "/api/workspaces/members", {
+  return client.useMutation("put", membersPath, {
     onSuccess: () => {
       toastSuccess("Updated permissions.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
@@ -101,7 +101,7 @@ function useRemoveProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("delete", "/api/workspaces/members", {
+  return client.useMutation("delete", membersPath, {
     onSuccess: () => {
       toastSuccess("Removed workspace member.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });

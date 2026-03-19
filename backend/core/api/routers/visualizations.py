@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -56,7 +58,7 @@ def get_published_visualizations(
 
 
 @router.get(
-    "/visualizations",
+    "/workspaces/{workspace_uuid}/visualizations",
     auth=Authorized(),
     response=list[VisualizationSummaryOut],
     summary="List workspace visualizations",
@@ -68,7 +70,7 @@ def get_published_visualizations(
 )
 def get_workspace_visualizations(
     request,
-    workspace_uuid: str,
+    workspace_uuid: UUID,
     query_filters: VisualizationQuerySchema = Query(...),  # noqa: B008
 ):
     project = _get_workspace(
@@ -93,7 +95,7 @@ def get_workspace_visualizations(
 
 
 @router.get(
-    "/visualizations/tags",
+    "/workspaces/{workspace_uuid}/visualizations/tags",
     auth=Authorized(),
     response=list[TagOut],
     summary="Get visualization tags",
@@ -103,7 +105,7 @@ def get_workspace_visualizations(
     ),
 )
 def get_workspace_visualizations_tags(
-    request, workspace_uuid: str
+    request, workspace_uuid: UUID
 ):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=workspace_uuid
@@ -122,7 +124,7 @@ def get_workspace_visualizations_tags(
         " parent workspace."
     ),
 )
-def get_visualization(request, visualization_uuid: str):
+def get_visualization(request, visualization_uuid: UUID):
     try:
         visualization = get_object_or_404(
             VisualizationConf, uuid=visualization_uuid
@@ -147,7 +149,7 @@ def get_visualization(request, visualization_uuid: str):
         " No authentication required."
     ),
 )
-def get_public_visualization(request, visualization_uuid: str):
+def get_public_visualization(request, visualization_uuid: UUID):
     visualization = get_object_or_404(
         VisualizationConf, uuid=visualization_uuid, published=True
     )
@@ -164,7 +166,7 @@ def get_public_visualization(request, visualization_uuid: str):
         " Requires write access to the parent workspace."
     ),
 )
-def delete_visualization(request, visualization_uuid: str):
+def delete_visualization(request, visualization_uuid: UUID):
     visualization = get_object_or_404(
         VisualizationConf, uuid=visualization_uuid
     )
@@ -193,7 +195,7 @@ def delete_visualization(request, visualization_uuid: str):
 )
 def update_visualization(
     request,
-    visualization_uuid: str,
+    visualization_uuid: UUID,
     payload: VisualizationUpdate,
 ):
     payload_dict = payload.dict(exclude_unset=True)
@@ -228,7 +230,7 @@ def update_visualization(
     ),
 )
 def tag_visualization(
-    request, visualization_uuid: str, payload: TagsIn
+    request, visualization_uuid: UUID, payload: TagsIn
 ):
     visualization = get_object_or_404(
         VisualizationConf, uuid=visualization_uuid

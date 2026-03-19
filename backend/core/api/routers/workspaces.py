@@ -1,4 +1,5 @@
 import contextlib
+from uuid import UUID
 
 from django.db.models import Count
 from ninja import Router
@@ -74,7 +75,7 @@ def get_workspaces(request):
         " data. Requires admin access."
     ),
 )
-def delete_workspace(request, workspace_uuid: str):
+def delete_workspace(request, workspace_uuid: UUID):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=workspace_uuid
     )
@@ -112,7 +113,7 @@ def get_public_workspaces(request):
         " workspace is public or the user has read access."
     ),
 )
-def get_workspace(request, workspace_uuid: str):
+def get_workspace(request, workspace_uuid: UUID):
     project = _get_workspace(
         user=request.auth,
         workspace_uuid=workspace_uuid,
@@ -148,7 +149,7 @@ def get_workspace(request, workspace_uuid: str):
     ),
 )
 def update_workspace(
-    request, workspace_uuid: str, payload: WorkspaceUpdate
+    request, workspace_uuid: UUID, payload: WorkspaceUpdate
 ):
     payload_dict = payload.dict(exclude_unset=True)
     project = Project.objects.get_admin_project(

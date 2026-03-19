@@ -6,6 +6,7 @@ import useClient, {
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const path = "/api/datasets";
+const workspacePath = "/api/workspaces/{workspace_uuid}/datasets";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
@@ -33,7 +34,7 @@ function useGetProjectDatasets(projectId: string, tags: Tag[]) {
       }
     : {};
   const client = useClient();
-  return client.useQuery("get", `${path}/{workspace_uuid}`, {
+  return client.useQuery("get", workspacePath, {
     params: {
       path: { workspace_uuid: projectId },
       ...queryOptions,
@@ -102,7 +103,7 @@ function useGetPaginatedProjectDatasets({
   const client = useClient();
   return client.useInfiniteQuery(
     "get",
-    `${path}/{workspace_uuid}`,
+    workspacePath,
     {
       params: {
         path: { workspace_uuid: projectId },
@@ -150,7 +151,7 @@ function useUpdateDataset() {
 function useGetDataset(datasetId: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/uuid/{dataset_uuid}`, {
+  return client.useQuery("get", `${path}/{dataset_uuid}`, {
     params: {
       path: { dataset_uuid: datasetId },
     },
@@ -161,7 +162,7 @@ function useDeleteDataset() {
   const { toastSuccess, toastError } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("delete", `${path}/uuid/{dataset_uuid}`, {
+  return client.useMutation("delete", `${path}/{dataset_uuid}`, {
     onSuccess: () => {
       toastSuccess("Successfully removed data source.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
@@ -175,7 +176,7 @@ function useDeleteDataset() {
 function useTagDataset() {
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", `${path}/tags`, {
+  return client.useMutation("put", `${path}/{dataset_uuid}/tags`, {
     onSuccess: () =>
       queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
   });
@@ -187,7 +188,7 @@ function useGetProjectDatasetFieldValues(
 ) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/fields/{workspace_uuid}`, {
+  return client.useQuery("get", `${workspacePath}/fields`, {
     params: {
       path: { workspace_uuid },
       query: { field },
@@ -198,7 +199,7 @@ function useGetProjectDatasetFieldValues(
 function useGetProjectDatasetTags(workspace_uuid: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/tags/{workspace_uuid}`, {
+  return client.useQuery("get", `${workspacePath}/tags`, {
     params: {
       path: { workspace_uuid },
     },

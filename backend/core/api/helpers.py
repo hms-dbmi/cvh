@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import Http404
@@ -45,7 +47,7 @@ def get_model_tags_in_workspace(model_class, project):
     ]
 
 
-def _get_workspace(workspace_uuid: str, user: User, error_message: str):
+def _get_workspace(workspace_uuid: UUID, user: User, error_message: str):
     try:
         project = Project.objects.get(uuid=workspace_uuid, private=False)
     except Project.DoesNotExist:
