@@ -103,7 +103,6 @@ function ActionsMenu({
     <div>
       <AddTagButton
         visualizationId={visualizationId}
-        projectId={projectId}
         visualization={data}
         closeMenu={handleClose}
         open={openAddTags}

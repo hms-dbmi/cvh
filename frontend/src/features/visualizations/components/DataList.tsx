@@ -95,7 +95,6 @@ export function DatasetActionsMenu({
         <>
           <AddTagButton
             datasetId={datasetID}
-            projectId={projectId}
             dataset={data}
             closeMenu={handleClose}
             open={openAddTags}

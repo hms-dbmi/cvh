@@ -7,6 +7,7 @@ import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStor
 
 const path = "/api/visualizations";
 const publicPath = "/api/public/visualizations";
+const workspacePath = "/api/workspaces/{workspace_uuid}/visualizations";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
@@ -37,10 +38,10 @@ function useGetProjectVisualizations({
       : {};
 
   const client = useClient();
-  return client.useQuery("get", path, {
+  return client.useQuery("get", workspacePath, {
     params: {
+      path: { workspace_uuid: projectId },
       query: {
-        workspace_uuid: projectId,
         ...queryOptions,
       },
     },
@@ -149,9 +150,9 @@ function useTagVisualization() {
 function useGetProjectVisualizationTags(workspace_uuid: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/tags`, {
+  return client.useQuery("get", `${workspacePath}/tags`, {
     params: {
-      query: { workspace_uuid },
+      path: { workspace_uuid },
     },
   });
 }
