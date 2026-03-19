@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import F
@@ -18,7 +20,7 @@ router = Router(tags=["Workspace Members"])
 
 
 @router.post(
-    "/workspaces/members",
+    "/workspaces/{workspace_uuid}/members",
     auth=Authorized(),
     response=SuccessOut,
     summary="Add a workspace member",
@@ -27,9 +29,11 @@ router = Router(tags=["Workspace Members"])
         " Requires admin access to the workspace."
     ),
 )
-def add_workspace_member(request, member: WorkspaceMemberIn):
+def add_workspace_member(
+    request, workspace_uuid: UUID, member: WorkspaceMemberIn
+):
     project = Project.objects.get_admin_project(
-        user=request.auth, project_uuid=member.workspace_uuid
+        user=request.auth, project_uuid=workspace_uuid
     )
     user = get_object_or_404(User, email=member.email)
     ProjectMember.objects.create(
@@ -39,7 +43,7 @@ def add_workspace_member(request, member: WorkspaceMemberIn):
 
 
 @router.put(
-    "/workspaces/members",
+    "/workspaces/{workspace_uuid}/members",
     auth=Authorized(),
     response=SuccessOut,
     summary="Update a workspace member",
@@ -49,11 +53,13 @@ def add_workspace_member(request, member: WorkspaceMemberIn):
         " Cannot modify your own permissions."
     ),
 )
-def update_workspace_member(request, member: WorkspaceMemberUpdate):
+def update_workspace_member(
+    request, workspace_uuid: UUID, member: WorkspaceMemberUpdate
+):
     member_dict = member.dict(exclude_unset=True)
 
     project = Project.objects.get_admin_project(
-        user=request.auth, project_uuid=member.workspace_uuid
+        user=request.auth, project_uuid=workspace_uuid
     )
     project_member = get_object_or_404(
         ProjectMember,
@@ -64,7 +70,6 @@ def update_workspace_member(request, member: WorkspaceMemberUpdate):
     if project_member.user_key == request.auth:
         raise PermissionDenied()
 
-    del member_dict["workspace_uuid"]
     for attr, value in member_dict.items():
         setattr(project_member, attr, value)
     project_member.save()
@@ -72,7 +77,7 @@ def update_workspace_member(request, member: WorkspaceMemberUpdate):
 
 
 @router.delete(
-    "/workspaces/members",
+    "/workspaces/{workspace_uuid}/members",
     auth=Authorized(),
     response=SuccessOut,
     summary="Remove a workspace member",
@@ -81,11 +86,13 @@ def update_workspace_member(request, member: WorkspaceMemberUpdate):
         " Requires admin access. Cannot remove yourself."
     ),
 )
-def delete_workspace_member(request, member: WorkspaceMemberIn):
+def delete_workspace_member(
+    request, workspace_uuid: UUID, member: WorkspaceMemberIn
+):
     try:
         project = Project.objects.get_admin_project(
             user=request.auth,
-            project_uuid=member.workspace_uuid,
+            project_uuid=workspace_uuid,
         )
 
     except Project.DoesNotExist:
@@ -112,7 +119,7 @@ def delete_workspace_member(request, member: WorkspaceMemberIn):
         " permissions and profile info. Requires read access."
     ),
 )
-def get_workspace_members(request, workspace_uuid: str):
+def get_workspace_members(request, workspace_uuid: UUID):
     try:
         project = Project.objects.get_read_project(
             user=request.auth, project_uuid=workspace_uuid

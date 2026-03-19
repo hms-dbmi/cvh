@@ -1,5 +1,6 @@
 import contextlib
 from typing import Literal
+from uuid import UUID
 
 from django.db.models import Q
 from django.http import Http404
@@ -113,7 +114,7 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
     ),
 )
 def update_dataset(
-    request, dataset_uuid: str, payload: DatasetUpdate
+    request, dataset_uuid: UUID, payload: DatasetUpdate
 ):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
@@ -132,7 +133,7 @@ def update_dataset(
 
 
 @router.put(
-    "/datasets/tags",
+    "/datasets/{dataset_uuid}/tags",
     auth=Authorized(),
     response=SuccessOut,
     summary="Tag a dataset",
@@ -142,17 +143,16 @@ def update_dataset(
         " Requires write access."
     ),
 )
-def tag_dataset(request, payload: TagsIn):
+def tag_dataset(request, dataset_uuid: UUID, payload: TagsIn):
+    dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
         project = Project.objects.get_write_project(
-            project_uuid=payload.workspace_uuid, user=request.auth
+            project_uuid=dataset.project_key.uuid,
+            user=request.auth,
         )
     except Project.DoesNotExist:
         raise Http404("Failed to tag dataset.") from None
 
-    dataset = get_object_or_404(
-        Dataset, uuid=payload.uuid, project_key=project
-    )
     tags = get_or_create_tags(payload.tags, project=project)
     dataset.tags.set(tags)
     return {"success": True}
@@ -175,7 +175,7 @@ def get_user_datasets(request):
 
 
 @router.get(
-    "/datasets/{workspace_uuid}",
+    "/workspaces/{workspace_uuid}/datasets",
     auth=Authorized(),
     response=list[DatasetWithTagsOut],
     summary="List workspace datasets",
@@ -188,7 +188,7 @@ def get_user_datasets(request):
 @paginate(PageNumberPagination)
 def get_workspace_datasets(
     request,
-    workspace_uuid: str,
+    workspace_uuid: UUID,
     query_filters: DatasetQuerySchema = Query(...),  # noqa: B008
 ):
     project = _get_workspace(
@@ -216,7 +216,7 @@ def get_workspace_datasets(
 
 
 @router.get(
-    "/datasets/fields/{workspace_uuid}",
+    "/workspaces/{workspace_uuid}/datasets/fields",
     auth=Authorized(),
     response=list[str],
     summary="Get dataset field values",
@@ -228,7 +228,7 @@ def get_workspace_datasets(
 )
 def get_workspace_datasets_field_values(
     request,
-    workspace_uuid: str,
+    workspace_uuid: UUID,
     field: Literal["assembly", "file_type"],
 ):
     project = Project.objects.get_read_project(
@@ -243,7 +243,7 @@ def get_workspace_datasets_field_values(
 
 
 @router.get(
-    "/datasets/tags/{workspace_uuid}",
+    "/workspaces/{workspace_uuid}/datasets/tags",
     auth=Authorized(),
     response=list[TagOut],
     summary="Get dataset tags",
@@ -252,7 +252,7 @@ def get_workspace_datasets_field_values(
         " in a workspace."
     ),
 )
-def get_workspace_datasets_tags(request, workspace_uuid: str):
+def get_workspace_datasets_tags(request, workspace_uuid: UUID):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=workspace_uuid
     )
@@ -260,7 +260,7 @@ def get_workspace_datasets_tags(request, workspace_uuid: str):
 
 
 @router.get(
-    "/datasets/uuid/{dataset_uuid}",
+    "/datasets/{dataset_uuid}",
     auth=Authorized(),
     response=DatasetWithTagsOut,
     summary="Get a dataset",
@@ -269,7 +269,7 @@ def get_workspace_datasets_tags(request, workspace_uuid: str):
         " Requires read access to the parent workspace."
     ),
 )
-def get_dataset(request, dataset_uuid: str):
+def get_dataset(request, dataset_uuid: UUID):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
         Project.objects.get_read_project(
@@ -283,7 +283,7 @@ def get_dataset(request, dataset_uuid: str):
 
 
 @router.delete(
-    "/datasets/uuid/{dataset_uuid}",
+    "/datasets/{dataset_uuid}",
     auth=Authorized(),
     response=SuccessOut,
     summary="Delete a dataset",
@@ -292,7 +292,7 @@ def get_dataset(request, dataset_uuid: str):
         " Requires write access to the parent workspace."
     ),
 )
-def delete_dataset(request, dataset_uuid: str):
+def delete_dataset(request, dataset_uuid: UUID):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
         Project.objects.get_write_project(

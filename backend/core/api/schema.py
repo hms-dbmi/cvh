@@ -215,8 +215,6 @@ class TagIn(TypedDict):
 
 class TagsIn(Schema):
     tags: list[TagIn]
-    uuid: UUID4
-    workspace_uuid: UUID4
 
 
 class TagOut(ModelSchema):
@@ -288,12 +286,10 @@ class VisualizationUpdate(ModelSchema, OptionalSchema):
 
 
 class WorkspaceMemberIn(Schema):
-    workspace_uuid: UUID4
     email: EmailStr
 
 
 class WorkspaceMemberUpdate(ModelSchema):
-    workspace_uuid: UUID4
     email: EmailStr
 
     class Meta:
