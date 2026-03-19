@@ -304,26 +304,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/visualizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create a visualization
-         * @description Creates a new visualization in a workspace. Requires write access to the workspace.
-         */
-        post: operations["api_routers_visualizations_create_visualization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/workspaces/{workspace_uuid}/visualizations": {
         parameters: {
             query?: never;
@@ -426,6 +406,26 @@ export interface paths {
          */
         put: operations["api_routers_visualizations_tag_visualization"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/visualizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a visualization
+         * @description Creates a new visualization in a workspace. Requires write access to the workspace.
+         */
+        post: operations["api_routers_visualizations_create_visualization"];
         delete?: never;
         options?: never;
         head?: never;
@@ -634,7 +634,7 @@ export interface components {
             /** Name */
             name?: string;
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Private */
             private?: boolean;
         };
@@ -803,18 +803,6 @@ export interface components {
             /** Row Names */
             row_names: string[];
         };
-        /** DatasetUpdate */
-        DatasetUpdate: {
-            /** Workspace Uuid */
-            workspace_uuid?: string | null;
-            /** Dataset */
-            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
-            /**
-             * Uuid
-             * Format: uuid4
-             */
-            uuid: string;
-        };
         /** DatasetOut */
         DatasetOut: {
             /** Source Url */
@@ -885,28 +873,30 @@ export interface components {
              */
             example_id: 1 | 2;
         };
-        /** TagIn */
-        TagIn: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key: string;
-        };
-        /** TagsIn */
-        TagsIn: {
-            /** Tags */
-            tags: components["schemas"]["TagIn"][];
-        };
-        /** DatasetQuerySchema */
-        DatasetQuerySchema: {
-            /** Tags */
-            tags?: string[];
-            /** Assembly */
-            assembly?: string[];
-            /** File Type */
-            file_type?: string[];
+        /** DatasetUpdate */
+        DatasetUpdate: {
             /** Name */
             name?: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url?: string;
+            /** File Type */
+            file_type?: string;
+            /** Data Type */
+            data_type?: string;
+            /** Assembly */
+            assembly?: string | null;
+            /** Data Column */
+            data_column?: Record<string, never> | null;
+            /** Row Names */
+            row_names?: unknown[] | null;
+            /** Headers */
+            headers?: boolean;
+            /** Index Url */
+            index_url?: string | null;
+            /** Separator */
+            separator?: string | null;
         };
         /** DatasetWithTagsOut */
         DatasetWithTagsOut: {
@@ -958,13 +948,6 @@ export interface components {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
         };
-        /** PagedDatasetWithTagsOut */
-        PagedDatasetWithTagsOut: {
-            /** Items */
-            items: components["schemas"]["DatasetWithTagsOut"][];
-            /** Count */
-            count: number;
-        };
         /** TagOut */
         TagOut: {
             /** Tag */
@@ -976,6 +959,36 @@ export interface components {
              * Format: uuid
              */
             uuid?: string;
+        };
+        /** TagIn */
+        TagIn: {
+            /** Tag */
+            tag: string;
+            /** Key */
+            key: string;
+        };
+        /** TagsIn */
+        TagsIn: {
+            /** Tags */
+            tags: components["schemas"]["TagIn"][];
+        };
+        /** DatasetQuerySchema */
+        DatasetQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Assembly */
+            assembly?: string[];
+            /** File Type */
+            file_type?: string[];
+            /** Name */
+            name?: string;
+        };
+        /** PagedDatasetWithTagsOut */
+        PagedDatasetWithTagsOut: {
+            /** Items */
+            items: components["schemas"]["DatasetWithTagsOut"][];
+            /** Count */
+            count: number;
         };
         /** VisualizationQuerySchema */
         VisualizationQuerySchema: {
@@ -1045,25 +1058,6 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
-        };
-        /** VisualizationIn */
-        VisualizationIn: {
-            /**
-             * Workspace Uuid
-             * Format: uuid4
-             */
-            workspace_uuid: string;
-            /** Description */
-            description?: string | null;
-            /** Author */
-            author?: string | null;
-            /** Name */
-            name: string;
-            /**
-             * Tool
-             * @default gosling
-             */
-            tool: string;
         };
         /** VisualizationOut */
         VisualizationOut: {
@@ -1139,6 +1133,25 @@ export interface components {
             /** N Datasets */
             n_datasets?: number | null;
         };
+        /** VisualizationIn */
+        VisualizationIn: {
+            /**
+             * Workspace Uuid
+             * Format: uuid4
+             */
+            workspace_uuid: string;
+            /** Description */
+            description?: string | null;
+            /** Author */
+            author?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
+        };
         /** PagedTagOut */
         PagedTagOut: {
             /** Items */
@@ -1195,6 +1208,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_members_get_workspace_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberOut"][];
                 };
             };
         };
@@ -1273,28 +1308,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuccessOut"];
-                };
-            };
-        };
-    };
-    api_routers_members_get_workspace_members: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceMemberOut"][];
                 };
             };
         };
@@ -1462,32 +1475,6 @@ export interface operations {
             };
         };
     };
-    api_routers_datasets_update_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                dataset_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DatasetUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessOut"];
-                };
-            };
-        };
-    };
     api_routers_datasets_create_dataset: {
         parameters: {
             query?: never;
@@ -1524,6 +1511,76 @@ export interface operations {
                 "application/json": components["schemas"]["ExampleDatasetIn"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_get_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetWithTagsOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_update_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_delete_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -1637,50 +1694,6 @@ export interface operations {
             };
         };
     };
-    api_routers_datasets_get_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                dataset_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DatasetWithTagsOut"];
-                };
-            };
-        };
-    };
-    api_routers_datasets_delete_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                dataset_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessOut"];
-                };
-            };
-        };
-    };
     api_routers_visualizations_get_published_visualizations: {
         parameters: {
             query?: {
@@ -1729,30 +1742,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VisualizationSummaryOut"][];
-                };
-            };
-        };
-    };
-    api_routers_visualizations_create_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VisualizationIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationSummaryOut"];
                 };
             };
         };
@@ -1893,6 +1882,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_create_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualizationIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationSummaryOut"];
                 };
             };
         };
