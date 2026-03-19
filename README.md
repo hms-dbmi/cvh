@@ -132,6 +132,15 @@ npm run lint:fix             # Lint and format with auto-fix
 npm run format               # Format
 ```
 
+## API Documentation
+
+The backend serves interactive API documentation via [Django Ninja](https://django-ninja.dev/):
+
+- **Swagger UI:** [http://127.0.0.1:8000/api/docs](http://127.0.0.1:8000/api/docs)
+- **OpenAPI schema (JSON):** [http://127.0.0.1:8000/api/openapi.json](http://127.0.0.1:8000/api/openapi.json)
+
+In production these are available at `https://api.designer.gosling-lang.org/api/docs` and `https://api.designer.gosling-lang.org/api/openapi.json`.
+
 ## Acknowledgements
 
 The Community Visualization Hub is funded by the National Institutes of Health (NIH) [Common Fund Data Ecosystem (CFDE)](https://commonfund.nih.gov/dataecosystem) program under award [U24OD038421](https://reporter.nih.gov/project-details/10993963). The project was inspired by the Reservoir Genomics Platform (resgen) created by Peter Kerpedjiev & Nezar Abdennur.
