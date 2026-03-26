@@ -16,7 +16,7 @@ dependencies = [
     "psycopg[binary]~=3.2",
     "pyarrow~=19.0",
     "pyjwt[crypto]~=2.10",
-    "requests~=2.32",
+    "requests~=2.33",
 ]
 
 [dependency-groups]
