@@ -51,7 +51,10 @@ import { useGetProject } from "../../projects/api/useProjects";
 export function DatasetActionsMenu({
   datasetID,
   readOnly,
-}: { datasetID: string; readOnly?: boolean }) {
+}: {
+  datasetID: string;
+  readOnly?: boolean;
+}) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const { projectId } = useParams({ strict: false });
@@ -256,13 +259,21 @@ function DatasetListItem({
   dataset,
   showActions,
   readOnly,
-}: { dataset: Required<Dataset>; showActions?: boolean; readOnly?: boolean }) {
+}: {
+  dataset: Required<Dataset>;
+  showActions?: boolean;
+  readOnly?: boolean;
+}) {
   return (
     <ListItem
       disablePadding
       sx={{
         marginBottom: "12px",
-        ".MuiListItemSecondaryAction-root": { top: 16, right: 8, transform: "none" },
+        ".MuiListItemSecondaryAction-root": {
+          top: 16,
+          right: 8,
+          transform: "none",
+        },
       }}
       secondaryAction={
         showActions && dataset.uuid ? (
@@ -324,7 +335,10 @@ function DatasetListItem({
 function DataList({
   projectId,
   showActions,
-}: { projectId: string; showActions?: boolean }) {
+}: {
+  projectId: string;
+  showActions?: boolean;
+}) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
   const setNameSubstring = useDatasetFiltersStore(
@@ -394,7 +408,12 @@ function DataList({
       <DataSelects projectId={projectId} />
       <List>
         {datasets.map((d) => (
-          <DatasetListItem key={d.uuid} dataset={d} showActions={showActions} readOnly={!hasWritePermissions} />
+          <DatasetListItem
+            key={d.uuid}
+            dataset={d}
+            showActions={showActions}
+            readOnly={!hasWritePermissions}
+          />
         ))}
       </List>
     </Stack>
@@ -474,31 +493,37 @@ function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 0 }}>
-        {showVitessceWarning && <VitessceWarningBanner />}
-        <Box sx={{ p: 2 }}>
-          {datasets?.length ? (
-            <DataList projectId={projectId} showActions={showActions} />
-          ) : (
-            <Stack>
-              <NoDataSVG />
-              <Stack direction="row" spacing={1}>
-                <AddDatasetButton
-                  projectId={projectId}
-                  buttonProps={{
-                    variant: "contained",
-                    disabled: !hasWritePermissions,
-                  }}
-                />
-                <AddExamplesDatasets
-                  workspace_uuid={projectId}
-                  buttonProps={{
-                    disabled: !hasWritePermissions,
-                  }}
-                />
+        <>
+          {showVitessceWarning && <VitessceWarningBanner />}
+          <Box sx={{ p: 2 }}>
+            {datasets?.length ? (
+              _children ? (
+                _children
+              ) : (
+                <DataList projectId={projectId} showActions={showActions} />
+              )
+            ) : (
+              <Stack>
+                <NoDataSVG />
+                <Stack direction="row" spacing={1}>
+                  <AddDatasetButton
+                    projectId={projectId}
+                    buttonProps={{
+                      variant: "contained",
+                      disabled: !hasWritePermissions,
+                    }}
+                  />
+                  <AddExamplesDatasets
+                    workspace_uuid={projectId}
+                    buttonProps={{
+                      disabled: !hasWritePermissions,
+                    }}
+                  />
+                </Stack>
               </Stack>
-            </Stack>
-          )}
-        </Box>
+            )}
+          </Box>
+        </>
       </AccordionDetails>
     </Accordion>
   );
