@@ -17,7 +17,7 @@ import { CaretDown, CaretUp, SignOut, User } from "@phosphor-icons/react";
 import { useParams, useRouterState } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { useCallback, useState } from "react";
-import GoslingIcon from "../../../assets/gosling.svg?react";
+import CVHLogo from "../../../assets/cvh_logo.svg?react";
 import type { components } from "../../../types/schema";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
 import useGetProjects from "../../projects/api/useProjects";
@@ -45,7 +45,7 @@ function WorkspaceListItem({
 }) {
   const selectedProps = isSelected
     ? { onClick: undefined }
-    : { component: "a", href: `/project/vitessce/${project.uuid}` };
+    : { component: "a", href: `/project/${project.uuid}` };
 
   return (
     <MenuItem
@@ -183,7 +183,7 @@ function ProjectsBar() {
   if (router.location.pathname === "/" && isAuthenticated) {
     return (
       <Box flexGrow={1} ml={2}>
-        <Link to="/project/vitessce/{-$projectId}">Return to Workspaces</Link>
+        <Link to="/project/{-$projectId}">Return to Workspaces</Link>
       </Box>
     );
   }
@@ -353,7 +353,7 @@ export default function Header() {
         <Toolbar>
           <Stack spacing={2} direction="row" alignItems="center">
             <Link to="/">
-              <GoslingIcon height={30} />
+              <CVHLogo height={40} />
             </Link>
             <Link to="/" sx={{ textDecoration: "none" }}>
               <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
