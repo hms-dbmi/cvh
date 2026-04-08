@@ -165,6 +165,9 @@ function GoslingViewer({
         userMode={PERMISSIONS?.[permissions] ?? "guest"}
         onPublish={publishViz}
         PublishMenu={PublishedVizMenu}
+        isLeftPanelOpen={false}
+        isChatMode={false}
+        hideDataPanel={true}
       />
     </Box>
   );
