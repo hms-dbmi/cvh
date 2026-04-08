@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import { GoslingDesignerVEC, type VisSchema } from "gosling-designer-vec";
-import { type ComponentProps, useCallback, useMemo, useState } from "react";
+import { type ComponentProps, useCallback, useMemo } from "react";
 import "gosling-designer-vec/build/style.css";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
@@ -9,17 +9,15 @@ import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
 import { useUpdateVisualization } from "../api/useVisualizations";
 import { useGetVisualization } from "../api/useVisualizations.ts";
 import formatVisualization from "../utils/formatVisualization.ts";
-import DataList, { DatasetActionsMenu } from "./DataList.tsx";
+import { DatasetActionsMenu } from "./DataList.tsx";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
-import VisualizationsList from "./VisualizationsList.tsx";
 
 type Dataset = components["schemas"]["DatasetWithTagsOut"];
 
 interface GoslingViewerProps {
   projectId: string;
-  datasets?: Dataset[];
-  readonly?: boolean;
   permissions: number;
+  selectedVizId?: string;
 }
 
 const PERMISSIONS: Record<number, string> = {
@@ -60,22 +58,17 @@ const useFormattedDatasets = (datasets: Dataset[]) => {
   }, [datasets]);
 };
 
-function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
-  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
-    undefined,
-  );
+const EmptyPanel = () => <></>;
 
+function GoslingViewer({
+  projectId,
+  permissions,
+  selectedVizId,
+}: GoslingViewerProps) {
   /* eslint-disable */
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
   /* eslint-enable */
-
-  /* const saveVisualization = useCallback(() => {
-    if (changedCode) {
-      onSave?.(changedCode);
-    }
-    close();
-  }, [onSave, close, changedCode]); */
 
   const selectedAssemblies = useDatasetFiltersStore(
     (state) => state.selectedAssemblies,
@@ -165,15 +158,8 @@ function GoslingViewer({ projectId, permissions }: GoslingViewerProps) {
         visualization={formattedVisualization} // or `undefined`
         data={formattedDatasets} // or `undefined`
         onChange={saveViz}
-        visualizationPanel={
-          <VisualizationsList
-            projectId={projectId}
-            setSelectedVizId={setSelectedVizId}
-            selectedVizId={selectedVizId}
-            permissions={permissions}
-          />
-        }
-        DatasetsPanel={DataList}
+        visualizationPanel={null}
+        DatasetsPanel={EmptyPanel}
         DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
         // @ts-expect-error TODO: Remove ignore.
         userMode={PERMISSIONS?.[permissions] ?? "guest"}
