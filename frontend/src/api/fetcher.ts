@@ -60,6 +60,6 @@ function useFetcherWithToken() {
   );
 }
 
-export { useFetcherWithToken };
 export type { FetchOptions };
+export { useFetcherWithToken };
 export default fetcher;

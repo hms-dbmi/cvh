@@ -158,13 +158,13 @@ function useGetProjectVisualizationTags(workspace_uuid: string) {
 }
 
 export {
-  useGetProjectVisualizations,
-  useGetVisualization,
   useCreateVisualization,
-  useUpdateVisualization,
   useDeleteVisualization,
-  useGetPublishedVisualizations,
-  useTagVisualization,
+  useGetProjectVisualizations,
   useGetProjectVisualizationTags,
   useGetPublishedVisualization,
+  useGetPublishedVisualizations,
+  useGetVisualization,
+  useTagVisualization,
+  useUpdateVisualization,
 };

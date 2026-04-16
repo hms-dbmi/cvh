@@ -10,9 +10,7 @@ describe("VitessceWarningBanner", () => {
   it("renders the warning description", () => {
     render(<VitessceWarningBanner />);
     expect(
-      screen.getByText(
-        /Only the copy and paste of public data possible/,
-      ),
+      screen.getByText(/Only the copy and paste of public data possible/),
     ).toBeInTheDocument();
   });
 });

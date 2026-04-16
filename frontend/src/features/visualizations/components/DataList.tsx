@@ -540,41 +540,39 @@ function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 0 }}>
-        <>
-          {showVitessceWarning && <VitessceWarningBanner />}
-          <Box sx={{ p: 2 }}>
-            {datasets?.length ? (
-              _children ? (
-                _children
-              ) : (
-                <DataList
-                  projectId={projectId}
-                  showActions={showActions}
-                  disableDrag={disableDrag}
-                />
-              )
+        {showVitessceWarning && <VitessceWarningBanner />}
+        <Box sx={{ p: 2 }}>
+          {datasets?.length ? (
+            _children ? (
+              _children
             ) : (
-              <Stack>
-                <NoDataSVG />
-                <Stack direction="row" spacing={1}>
-                  <AddDatasetButton
-                    projectId={projectId}
-                    buttonProps={{
-                      variant: "contained",
-                      disabled: !hasWritePermissions,
-                    }}
-                  />
-                  <AddExamplesDatasets
-                    workspace_uuid={projectId}
-                    buttonProps={{
-                      disabled: !hasWritePermissions,
-                    }}
-                  />
-                </Stack>
+              <DataList
+                projectId={projectId}
+                showActions={showActions}
+                disableDrag={disableDrag}
+              />
+            )
+          ) : (
+            <Stack>
+              <NoDataSVG />
+              <Stack direction="row" spacing={1}>
+                <AddDatasetButton
+                  projectId={projectId}
+                  buttonProps={{
+                    variant: "contained",
+                    disabled: !hasWritePermissions,
+                  }}
+                />
+                <AddExamplesDatasets
+                  workspace_uuid={projectId}
+                  buttonProps={{
+                    disabled: !hasWritePermissions,
+                  }}
+                />
               </Stack>
-            )}
-          </Box>
-        </>
+            </Stack>
+          )}
+        </Box>
       </AccordionDetails>
     </Accordion>
   );

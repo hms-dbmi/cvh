@@ -152,14 +152,14 @@ function useGetProjectMembers(projectId: string) {
 }
 
 export {
-  useCreateProject,
-  useGetProject,
-  useGetPublicProjects,
   useAddProjectMember,
-  useGetProjectMembers,
-  useUpdateProjectMember,
-  useRemoveProjectMember,
+  useCreateProject,
   useDeleteProject,
+  useGetProject,
+  useGetProjectMembers,
+  useGetPublicProjects,
+  useRemoveProjectMember,
   useUpdateProject,
+  useUpdateProjectMember,
 };
 export default useGetProjects;

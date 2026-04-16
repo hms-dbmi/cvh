@@ -145,8 +145,8 @@ function GoslingVizShell({
             1: "viewer",
             2: "editor",
             3: "admin",
-          } as Record<number, string>
-        )[permissions] ?? "guest"
+          } as const
+        )[permissions as 0 | 1 | 2 | 3] ?? "guest"
       }
       isChatMode={false}
       hideDataPanel

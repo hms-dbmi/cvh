@@ -72,4 +72,4 @@ const useSnackbarActions = () => {
   return useStore(useShallow(getSnackActions));
 };
 
-export { useStore as useSnackbarStore, useSnackbarActions };
+export { useSnackbarActions, useStore as useSnackbarStore };
