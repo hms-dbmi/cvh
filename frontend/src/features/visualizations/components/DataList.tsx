@@ -1,10 +1,11 @@
+import { useDraggable } from "@dnd-kit/core";
 import Accordion from "@mui/material/Accordion";
-import Box from "@mui/material/Box";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import Divider from "@mui/material/Divider";
 import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
@@ -18,6 +19,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
   CaretDown,
+  DotsSixVertical,
   DotsThree,
   FileText,
   LinkSimple,
@@ -33,6 +35,7 @@ import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
 import type { components } from "../../../types/schema";
+import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
 import {
   useDeleteDataset,
   useGetDataset,
@@ -45,7 +48,6 @@ import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
 import AddTagButton from "../../datasets/components/AddTagButton";
 import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
 import { useGetProject } from "../../projects/api/useProjects";
 
 export function DatasetActionsMenu({
@@ -264,8 +266,23 @@ function DatasetListItem({
   showActions?: boolean;
   readOnly?: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
+    useDraggable({
+      id: dataset.uuid,
+      data: {
+        type: dataset.file_type,
+        name: dataset.name,
+        id: dataset.uuid,
+        url: dataset.source_url,
+        assembly: dataset.assembly ?? undefined,
+        indexURL: dataset.index_url ?? undefined,
+        tags: dataset.tags.map((t) => [t.key, t.tag]),
+      },
+    });
+
   return (
     <ListItem
+      ref={setNodeRef}
       disablePadding
       sx={{
         marginBottom: "12px",
@@ -281,52 +298,72 @@ function DatasetListItem({
         ) : null
       }
     >
-      <Stack spacing={0.5} width="100%" sx={{ p: 1 }}>
-        <ListItemText
-          slotProps={{
-            primary: { variant: "subtitle1", component: "p" },
+      <Stack direction="row" alignItems="flex-start" width="100%" sx={{ p: 1 }}>
+        <Box
+          ref={setActivatorNodeRef}
+          {...listeners}
+          {...attributes}
+          sx={{
+            cursor: "grab",
+            "&:active": { cursor: "grabbing" },
+            display: "flex",
+            alignItems: "center",
+            pt: 0.25,
+            mr: 0.5,
+            color: "#8A9EA8",
+            "&:hover": { color: "#4E5A63" },
+            touchAction: "none",
           }}
-          primary={dataset.name}
-          secondary={[
-            dataset.file_type,
-            dataset.assembly && ` \u00B7 ${dataset.assembly}`,
-          ]}
-        />
-        {dataset.tags?.length > 0 && (
-          <Stack
-            direction="row"
-            spacing={0.5}
-            gap={0.5}
-            alignItems="center"
-            flexWrap="wrap"
-          >
-            <Tag size={20} color="#4E5A63" />
-            {dataset.tags.map((t) => (
-              <Chip
-                key={t.key + t.tag}
-                label={
-                  <>
-                    <Typography
-                      variant="subtitle1"
-                      component="span"
-                      sx={{ fontSize: 12 }}
-                      marginRight={0.5}
-                    >
-                      {t.key}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      component="span"
-                      sx={{ fontSize: 12 }}
-                    >
-                      {t.tag}
-                    </Typography>
-                  </>
-                }
-              />
-            ))}
-          </Stack>
-        )}
+        >
+          <DotsSixVertical size={20} weight="bold" />
+        </Box>
+        <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+          <ListItemText
+            slotProps={{
+              primary: { variant: "subtitle1", component: "p" },
+            }}
+            primary={dataset.name}
+            secondary={[
+              dataset.file_type,
+              dataset.assembly && ` \u00B7 ${dataset.assembly}`,
+            ]}
+          />
+          {dataset.tags?.length > 0 && (
+            <Stack
+              direction="row"
+              spacing={0.5}
+              gap={0.5}
+              alignItems="center"
+              flexWrap="wrap"
+            >
+              <Tag size={20} color="#4E5A63" />
+              {dataset.tags.map((t) => (
+                <Chip
+                  key={t.key + t.tag}
+                  label={
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                        marginRight={0.5}
+                      >
+                        {t.key}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                      >
+                        {t.tag}
+                      </Typography>
+                    </>
+                  }
+                />
+              ))}
+            </Stack>
+          )}
+        </Stack>
       </Stack>
     </ListItem>
   );
