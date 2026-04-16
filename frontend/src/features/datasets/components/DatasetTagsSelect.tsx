@@ -98,10 +98,18 @@ export default function DatasetTagsSelect({
               <ListItemText
                 primary={
                   <>
-                    <Typography component="span" variant="subtitle1" sx={{ fontSize: 14 }}>
+                    <Typography
+                      component="span"
+                      variant="subtitle1"
+                      sx={{ fontSize: 14 }}
+                    >
                       {v?.key}
                     </Typography>{" "}
-                    <Typography component="span" variant="body2" sx={{ fontSize: 14 }}>
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ fontSize: 14 }}
+                    >
                       {v?.tag}
                     </Typography>
                   </>

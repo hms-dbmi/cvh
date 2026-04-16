@@ -1,10 +1,10 @@
 import Editor from "@monaco-editor/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
 import {
   CheckCircle,
   Code,
@@ -12,23 +12,20 @@ import {
   PresentationChart,
 } from "@phosphor-icons/react";
 import { upgradeAndParse } from "@vitessce/schemas";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vitessce } from "vitessce";
 import "react-grid-layout/css/styles.css";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import {
-  useGetProjectVisualizations,
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
-import DataList from "./DataList.tsx";
-import VisualizationsList from "./VisualizationsList.tsx";
 
 type Mode = "editing" | "exploring";
 
 interface VitessceViewerProps {
-  projectId: string;
   permissions: number;
+  selectedVizId?: string;
 }
 
 export function BottomBar({
@@ -68,8 +65,7 @@ export function BottomBar({
           sx={{
             bgcolor: isEditorActive ? "black" : "white",
             color: isEditorActive ? "white" : "black",
-            border:
-              isEditorActive ? "1px solid black" : "1px solid #C8CCCE",
+            border: isEditorActive ? "1px solid black" : "1px solid #C8CCCE",
             borderRadius: 2,
             px: 1.5,
             py: 1,
@@ -195,27 +191,9 @@ function CodeEditor({
   );
 }
 
-function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
-  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
-    undefined,
-  );
+function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const [mode, setMode] = useState<Mode>("exploring");
   const [editorValue, setEditorValue] = useState("");
-
-  const { data: visualizations } = useGetProjectVisualizations({
-    projectId,
-    tags: [],
-  });
-
-  // Auto-select first vitessce visualization on initial load
-  useEffect(() => {
-    if (!selectedVizId && visualizations?.length) {
-      const firstVitessce = visualizations.find((v) => v.tool === "vitessce");
-      if (firstVitessce?.uuid) {
-        setSelectedVizId(firstVitessce.uuid);
-      }
-    }
-  }, [selectedVizId, visualizations]);
 
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
@@ -225,14 +203,13 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
 
   const hasWritePermissions = permissions >= 2;
 
-  // Reset editor value when a different visualization is selected or its data changes
   useEffect(() => {
     if (data?.conf) {
       setEditorValue(JSON.stringify(data.conf, null, 2));
     } else {
       setEditorValue("");
     }
-  }, [selectedVizId, data?.conf]);
+  }, [data?.conf]);
 
   // Auto-save for Vitessce viewer (exploring mode)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -277,7 +254,13 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
       toastError("Error updating visualization publish status");
       console.error(e);
     }
-  }, [updateViz, toastError, selectedVizId, hasWritePermissions, data?.published]);
+  }, [
+    updateViz,
+    toastError,
+    selectedVizId,
+    hasWritePermissions,
+    data?.published,
+  ]);
 
   // Manual save for editor mode
   const handleEditorSave = useCallback(() => {
@@ -310,44 +293,32 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
 
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
-      <Stack direction="row" sx={{ height: "100%" }}>
-        <Box sx={{ width: 400, flexShrink: 0, overflowY: "auto", p: 2 }}>
-          <VisualizationsList
-            projectId={projectId}
-            setSelectedVizId={setSelectedVizId}
-            selectedVizId={selectedVizId}
-            permissions={permissions}
-            disabledTools={["gosling"]}
+      <Paper
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          m: 2,
+          height: "calc(100% - 125px)",
+          overflow: "hidden",
+        }}
+      >
+        {mode === "exploring" && data?.conf && (
+          <Vitessce
+            config={data.conf}
+            height={900}
+            theme="light"
+            onConfigChange={hasWritePermissions ? saveViz : undefined}
           />
-          <DataList showVitessceWarning={!!selectedVizId} showActions />
-        </Box>
-        <Paper
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            m: 2,
-            height: "calc(100% - 125px)",
-            overflow: "hidden",
-          }}
-        >
-          {mode === "exploring" && data?.conf && (
-            <Vitessce
-              config={data.conf}
-              height={900}
-              theme="light"
-              onConfigChange={hasWritePermissions ? saveViz : undefined}
-            />
-          )}
-          {mode === "editing" && selectedVizId && (
-            <CodeEditor
-              editorValue={editorValue}
-              setEditorValue={setEditorValue}
-              onApply={handleEditorSave}
-              readOnly={!hasWritePermissions}
-            />
-          )}
-        </Paper>
-      </Stack>
+        )}
+        {mode === "editing" && selectedVizId && (
+          <CodeEditor
+            editorValue={editorValue}
+            setEditorValue={setEditorValue}
+            onApply={handleEditorSave}
+            readOnly={!hasWritePermissions}
+          />
+        )}
+      </Paper>
       {selectedVizId && (
         <Box
           sx={{
@@ -371,4 +342,4 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
   );
 }
 
-export default VitessceViewer;
+export default memo(VitessceViewer);

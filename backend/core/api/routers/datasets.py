@@ -1,4 +1,3 @@
-import contextlib
 from typing import Literal
 from uuid import UUID
 
@@ -89,8 +88,8 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
 
     for d in data:
         dataset_tags = d.get("tags", [])
-        with contextlib.suppress(KeyError):
-            del d["tags"]
+        # Copy and remove tags to avoid passing to ORM, without mutating the original
+        d = {k: v for k, v in d.items() if k != "tags"}
 
         dataset = Dataset.objects.create(**d, project_key=project)
         tags = get_or_create_tags(dataset_tags, project=project)

@@ -178,9 +178,22 @@ function ActionsMenu({
   );
 }
 
-const TOOL_STYLES: Record<string, { bgcolor: string; borderColor: string; label: string; logo: string }> = {
-  vitessce: { bgcolor: "#40849C", borderColor: "#E2E9EC", label: "Vitessce", logo: "/vitessce_logo.svg" },
-  gosling: { bgcolor: "#E18240", borderColor: "#C8CCCE", label: "Gosling", logo: "/gosling.svg" },
+const TOOL_STYLES: Record<
+  string,
+  { bgcolor: string; borderColor: string; label: string; logo: string }
+> = {
+  vitessce: {
+    bgcolor: "#40849C",
+    borderColor: "#E2E9EC",
+    label: "Vitessce",
+    logo: "/vitessce_logo.svg",
+  },
+  gosling: {
+    bgcolor: "#E18240",
+    borderColor: "#C8CCCE",
+    label: "Gosling",
+    logo: "/gosling.svg",
+  },
 };
 
 export function ToolBadge({ tool }: { tool: string }) {

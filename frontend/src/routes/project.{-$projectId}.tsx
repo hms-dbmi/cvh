@@ -47,7 +47,6 @@ function ProjectsPage({ projectId }: { projectId: string }) {
   return (
     <VisualizationViewer
       projectId={projectId}
-      visualizationType="gosling"
       permissions={project?.permissions ?? 0}
     />
   );
