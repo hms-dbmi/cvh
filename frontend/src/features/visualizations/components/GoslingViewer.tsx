@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { GoslingDesignerVEC } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import { useUpdateVisualization } from "../api/useVisualizations";
 import { DatasetActionsMenu } from "./DataList.tsx";
@@ -45,4 +45,4 @@ function GoslingViewer({ permissions, selectedVizId }: GoslingViewerProps) {
   );
 }
 
-export default GoslingViewer;
+export default memo(GoslingViewer);
