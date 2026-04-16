@@ -56,7 +56,11 @@ function VisualizationViewer({
           selectedVizId={selectedVizId}
           permissions={permissions}
         />
-        <DataList showVitessceWarning={isVitessce} showActions />
+        <DataList
+          showVitessceWarning={isVitessce}
+          showActions
+          disableDrag={isVitessce}
+        />
       </>
     ),
     [projectId, selectedVizId, permissions, isVitessce],

@@ -261,14 +261,17 @@ function DatasetListItem({
   dataset,
   showActions,
   readOnly,
+  disableDrag,
 }: {
   dataset: Required<Dataset>;
   showActions?: boolean;
   readOnly?: boolean;
+  disableDrag?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({
       id: dataset.uuid,
+      disabled: disableDrag,
       data: {
         type: dataset.file_type,
         name: dataset.name,
@@ -299,24 +302,26 @@ function DatasetListItem({
       }
     >
       <Stack direction="row" alignItems="flex-start" width="100%" sx={{ p: 1 }}>
-        <Box
-          ref={setActivatorNodeRef}
-          {...listeners}
-          {...attributes}
-          sx={{
-            cursor: "grab",
-            "&:active": { cursor: "grabbing" },
-            display: "flex",
-            alignItems: "center",
-            pt: 0.25,
-            mr: 0.5,
-            color: "#8A9EA8",
-            "&:hover": { color: "#4E5A63" },
-            touchAction: "none",
-          }}
-        >
-          <DotsSixVertical size={20} weight="bold" />
-        </Box>
+        {!disableDrag && (
+          <Box
+            ref={setActivatorNodeRef}
+            {...listeners}
+            {...attributes}
+            sx={{
+              cursor: "grab",
+              "&:active": { cursor: "grabbing" },
+              display: "flex",
+              alignItems: "center",
+              pt: 0.25,
+              mr: 0.5,
+              color: "#8A9EA8",
+              "&:hover": { color: "#4E5A63" },
+              touchAction: "none",
+            }}
+          >
+            <DotsSixVertical size={20} weight="bold" />
+          </Box>
+        )}
         <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
           <ListItemText
             slotProps={{
@@ -372,9 +377,11 @@ function DatasetListItem({
 function DataList({
   projectId,
   showActions,
+  disableDrag,
 }: {
   projectId: string;
   showActions?: boolean;
+  disableDrag?: boolean;
 }) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
@@ -450,6 +457,7 @@ function DataList({
             dataset={d}
             showActions={showActions}
             readOnly={!hasWritePermissions}
+            disableDrag={disableDrag}
           />
         ))}
       </List>
@@ -495,11 +503,13 @@ function DataAccordion({
   projectId,
   showVitessceWarning,
   showActions,
+  disableDrag,
   children: _children,
 }: {
   projectId: string;
   showVitessceWarning?: boolean;
   showActions?: boolean;
+  disableDrag?: boolean;
   children?: React.ReactNode;
 }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
@@ -537,7 +547,11 @@ function DataAccordion({
               _children ? (
                 _children
               ) : (
-                <DataList projectId={projectId} showActions={showActions} />
+                <DataList
+                  projectId={projectId}
+                  showActions={showActions}
+                  disableDrag={disableDrag}
+                />
               )
             ) : (
               <Stack>
@@ -569,10 +583,12 @@ function DataAccordion({
 export default function Wrapper({
   showVitessceWarning,
   showActions,
+  disableDrag,
   children,
 }: {
   showVitessceWarning?: boolean;
   showActions?: boolean;
+  disableDrag?: boolean;
   children?: React.ReactNode;
 }) {
   const { projectId } = useParams({ strict: false });
@@ -586,6 +602,7 @@ export default function Wrapper({
       projectId={projectId}
       showVitessceWarning={showVitessceWarning}
       showActions={showActions}
+      disableDrag={disableDrag}
     >
       {children}
     </DataAccordion>
