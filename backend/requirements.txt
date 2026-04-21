@@ -70,7 +70,7 @@ pyjwt==2.10.1
     # via backend (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via botocore
-python-dotenv==1.0.1
+python-dotenv==1.2.2
     # via environs
 requests==2.32.3
     # via backend (pyproject.toml)
