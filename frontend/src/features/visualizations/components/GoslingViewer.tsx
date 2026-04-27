@@ -1,12 +1,32 @@
 import Box from "@mui/material/Box";
-import { GoslingDesignerVEC } from "gosling-designer-vec";
+import { GoslingDesignerVEC, useToggleSetting } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { DatasetActionsMenu } from "./DataList.tsx";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
 
 interface GoslingViewerProps {
   permissions: number;
+}
+
+function GoslingPublishedVizMenu({
+  visualizationID,
+  closeMenu,
+}: {
+  visualizationID: string;
+  closeMenu: () => void;
+}) {
+  const toggleSetting = useToggleSetting();
+  const handleUnpublish = useCallback(() => {
+    toggleSetting("_isPublished", false);
+  }, [toggleSetting]);
+  return (
+    <PublishedVizMenu
+      visualizationID={visualizationID}
+      closeMenu={closeMenu}
+      onUnpublish={handleUnpublish}
+    />
+  );
 }
 
 function GoslingViewer({ permissions }: GoslingViewerProps) {
@@ -17,7 +37,7 @@ function GoslingViewer({ permissions }: GoslingViewerProps) {
       <GoslingDesignerVEC
         visualizationPanel={null}
         DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
-        PublishMenu={PublishedVizMenu}
+        PublishMenu={GoslingPublishedVizMenu}
         isLeftPanelOpen={false}
         externalDndContext
       />

@@ -7,7 +7,6 @@ import {
   PresentationChart,
   Trash,
 } from "@phosphor-icons/react";
-import { useToggleSetting } from "gosling-designer-vec";
 import { useCallback } from "react";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
@@ -17,9 +16,10 @@ import { useUpdateVisualization } from "../api/useVisualizations";
 type Props = {
   visualizationID: string;
   closeMenu: () => void;
+  onUnpublish?: () => void;
 };
 
-function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
+function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
   const handleCopyClick = useHandleCopyClick();
   const path = `/visualizations/${visualizationID}`;
   const { toastError } = useSnackbarActions();
@@ -30,7 +30,6 @@ function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
   }, [handleCopyClick, path, closeMenu]);
 
   const { mutate: updateViz } = useUpdateVisualization();
-  const toggleSetting = useToggleSetting();
 
   const unPublishViz = useCallback(() => {
     try {
@@ -43,13 +42,13 @@ function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
           path: { visualization_uuid: visualizationID },
         },
       });
-      toggleSetting("_isPublished", false);
+      onUnpublish?.();
       closeMenu();
     } catch (e) {
       toastError("Error publishing visualization");
       console.error(e);
     }
-  }, [updateViz, toastError, visualizationID, closeMenu, toggleSetting]);
+  }, [updateViz, toastError, visualizationID, closeMenu, onUnpublish]);
 
   return (
     <>
