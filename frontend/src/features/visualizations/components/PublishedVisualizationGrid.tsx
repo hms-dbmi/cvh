@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { Tag } from "@phosphor-icons/react";
 import type { components } from "../../../types/schema";
 import { useGetPublishedVisualizations } from "../api/useVisualizations";
+import { ToolBadge } from "./VisualizationsList";
 
 function PublishedGridItem({
   visualization,
@@ -42,45 +43,46 @@ function PublishedGridItem({
             }`,
           ]}
         />
-        {Boolean(visualization?.tags?.length) && (
-          <Box>
-            <Divider />
-            <Stack
-              p={1.5}
-              spacing={0.5}
-              direction="row"
-              flexWrap="wrap"
-              alignItems="center"
-              gap={0.5}
-            >
+        <Box>
+          <Divider />
+          <Stack
+            p={1.5}
+            spacing={0.5}
+            direction="row"
+            flexWrap="wrap"
+            alignItems="center"
+            gap={0.5}
+          >
+            <ToolBadge tool={visualization.tool} />
+            {Boolean(visualization?.tags?.length) && (
               <Tag size={20} color="#4E5A63" />
-              {visualization?.tags.map((t) => (
-                <Chip
-                  key={t.key + t.tag}
-                  label={
-                    <>
-                      <Typography
-                        variant="subtitle1"
-                        component="span"
-                        sx={{ fontSize: 12 }}
-                        marginRight={0.5}
-                      >
-                        {t.key}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        component="span"
-                        sx={{ fontSize: 12 }}
-                      >
-                        {t.tag}
-                      </Typography>
-                    </>
-                  }
-                />
-              ))}
-            </Stack>
-          </Box>
-        )}
+            )}
+            {visualization?.tags.map((t) => (
+              <Chip
+                key={t.key + t.tag}
+                label={
+                  <>
+                    <Typography
+                      variant="subtitle1"
+                      component="span"
+                      sx={{ fontSize: 12 }}
+                      marginRight={0.5}
+                    >
+                      {t.key}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      component="span"
+                      sx={{ fontSize: 12 }}
+                    >
+                      {t.tag}
+                    </Typography>
+                  </>
+                }
+              />
+            ))}
+          </Stack>
+        </Box>
       </Stack>
     </ListItem>
   );
@@ -110,7 +112,7 @@ function PublishedVisualizationGrid() {
     return null;
   }
   return (
-    <Stack width="100%" spacing={3}>
+    <Stack width="100%" spacing={3} pb={4}>
       <Typography component="p" variant="h4">
         Public Visualizations
       </Typography>
