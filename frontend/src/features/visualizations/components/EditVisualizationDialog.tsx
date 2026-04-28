@@ -8,7 +8,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
 import { useUpdateVisualization } from "../api/useVisualizations.ts";
 
 interface FormValues {

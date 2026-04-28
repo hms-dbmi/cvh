@@ -10,7 +10,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButton from "../../../components/DialogButton";
+import DialogButton from "@/components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
 
 const text = {

@@ -9,7 +9,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 
-import DialogButton from "../../../components/DialogButton";
+import DialogButton from "@/components/DialogButton";
 import { useCreateProject } from "../api/useProjects";
 
 const text = {

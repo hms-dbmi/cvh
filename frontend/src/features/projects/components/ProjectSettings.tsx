@@ -14,10 +14,10 @@ import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { Check, Trash, Users } from "@phosphor-icons/react";
 import { type ChangeEvent, useCallback, useState } from "react";
-import DialogButton from "../../../components/DialogButton";
-import type { components } from "../../../types/schema";
-import generateAvatarColor from "../../../utils/generateAvatarColor";
-import { useGetUser } from "../../navigation/api/useUser";
+import DialogButton from "@/components/DialogButton";
+import { useGetUser } from "@/features/navigation/api/useUser";
+import type { components } from "@/types/schema";
+import generateAvatarColor from "@/utils/generateAvatarColor";
 import {
   useGetProject,
   useGetProjectMembers,

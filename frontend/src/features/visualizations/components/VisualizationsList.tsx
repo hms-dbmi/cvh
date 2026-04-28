@@ -30,10 +30,10 @@ import {
 import { useParams } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { useCallback, useState } from "react";
-import DialogButtonCopy from "../../../components/DialogButtonCopy";
-import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
-import type { components } from "../../../types/schema";
-import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
+import DialogButtonCopy from "@/components/DialogButtonCopy";
+import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
+import { useVisualizationFiltersStore } from "@/hooks/useVisualizationFiltersStore";
+import type { components } from "@/types/schema";
 import {
   useDeleteVisualization,
   useGetProjectVisualizations,

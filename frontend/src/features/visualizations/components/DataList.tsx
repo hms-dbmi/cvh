@@ -31,24 +31,24 @@ import {
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import NoDataSVG from "../../../assets/nodata.svg?react";
-import DialogButtonCopy from "../../../components/DialogButtonCopy";
-import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
-import type { components } from "../../../types/schema";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
+import NoDataSVG from "@/assets/nodata.svg?react";
+import DialogButtonCopy from "@/components/DialogButtonCopy";
 import {
   useDeleteDataset,
   useGetDataset,
   useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
-} from "../../datasets/api/useDatasets";
-import AddDatasetButton from "../../datasets/components/AddDatasetButton";
-import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
-import AddTagButton from "../../datasets/components/AddTagButton";
-import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
-import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
-import { useGetProject } from "../../projects/api/useProjects";
+} from "@/features/datasets/api/useDatasets";
+import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
+import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
+import AddTagButton from "@/features/datasets/components/AddTagButton";
+import DatasetAttributeSelect from "@/features/datasets/components/DatasetAttributeSelect";
+import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
+import { useGetProject } from "@/features/projects/api/useProjects";
+import { useDatasetFiltersStore } from "@/hooks/useDatasetFiltersStore";
+import type { components } from "@/types/schema";
+import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 
 export function DatasetActionsMenu({
   datasetID,

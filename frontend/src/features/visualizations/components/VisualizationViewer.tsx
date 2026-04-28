@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useVisualizationFiltersStore } from "../../../hooks/useVisualizationFiltersStore";
+import { useVisualizationFiltersStore } from "@/hooks/useVisualizationFiltersStore";
 import {
   useGetProjectVisualizations,
   useGetVisualization,

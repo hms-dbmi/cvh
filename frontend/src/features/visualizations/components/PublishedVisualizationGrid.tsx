@@ -7,7 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Tag } from "@phosphor-icons/react";
-import type { components } from "../../../types/schema";
+import type { components } from "@/types/schema";
 import { useGetPublishedVisualizations } from "../api/useVisualizations";
 import { ToolBadge } from "./VisualizationsList";
 

@@ -16,7 +16,7 @@ import { upgradeAndParse } from "@vitessce/schemas";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vitessce } from "vitessce";
 import "react-grid-layout/css/styles.css";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import {
   useGetVisualization,
   useUpdateVisualization,
