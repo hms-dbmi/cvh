@@ -6,6 +6,13 @@ const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 test("adding example datasets fires POST /api/examples with the workspace uuid", async ({
   page,
 }) => {
+  // The "Example Data Sources" button only renders in the empty-state UI
+  // for the dataset panel, so force the datasets fixture empty for this
+  // spec.
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2eEmptyDatasets = true;
+  });
   await page.goto(`/project/${PROJECT_ID}`);
 
   await page.getByRole("button", { name: "Example Data Sources" }).click();

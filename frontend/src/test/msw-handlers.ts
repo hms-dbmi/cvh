@@ -84,7 +84,31 @@ const workspaceViz: components["schemas"]["VisualizationOut"] = {
   published_timestamp: null,
 };
 
-const emptyPaged = { items: [], count: 0 };
+const member: components["schemas"]["WorkspaceMemberOut"] = {
+  email: "member@example.com",
+  username: "member",
+  first_name: "Member",
+  last_name: "User",
+  permissions: 2,
+};
+
+const dataset = {
+  uuid: "00000000-0000-0000-0000-000000000400",
+  name: "E2E Dataset",
+  description: "Used by the dataset-tag spec.",
+  source_url: "https://example.com/example.bigwig",
+  index_url: null,
+  data_type: "",
+  data_column: null,
+  file_type: "bigwig",
+  assembly: "hg38",
+  separator: null,
+  headers: null,
+  row_names: null,
+  tags: [],
+  created_timestamp: "2026-01-01T00:00:00Z",
+  modified_timestamp: "2026-01-01T00:00:00Z",
+};
 
 // Record an outbound API call on window so Playwright specs can assert
 // what the app sent. Playwright's `page.route` can't observe these calls
@@ -101,6 +125,15 @@ async function recordRequest(method: string, path: string, request: Request) {
   const w = window as any;
   w.__e2eRequests ??= [];
   w.__e2eRequests.push({ method, path, body });
+}
+
+// Per-spec data shaping. Tests set these on window via `addInitScript`
+// before navigating to flip the mock between, e.g., "no datasets" and the
+// default fixture. Read at request time so toggling takes effect on
+// subsequent fetches.
+function flag(name: string): boolean {
+  // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+  return Boolean((window as any)[name]);
 }
 
 export const handlers = [
@@ -125,8 +158,11 @@ export const handlers = [
     HttpResponse.json([]),
   ),
   http.get(`${apiUrl}/api/workspaces/:uuid/datasets`, () =>
-    HttpResponse.json(emptyPaged),
+    flag("__e2eEmptyDatasets")
+      ? HttpResponse.json({ items: [], count: 0 })
+      : HttpResponse.json({ items: [dataset], count: 1 }),
   ),
+  http.get(`${apiUrl}/api/datasets/:uuid`, () => HttpResponse.json(dataset)),
   http.get(`${apiUrl}/api/workspaces/:uuid/datasets/fields`, () =>
     HttpResponse.json([]),
   ),
@@ -134,7 +170,9 @@ export const handlers = [
     HttpResponse.json([]),
   ),
   http.get(`${apiUrl}/api/workspaces/:uuid/members`, () =>
-    HttpResponse.json([]),
+    flag("__e2eEmptyMembers")
+      ? HttpResponse.json([])
+      : HttpResponse.json([member]),
   ),
 
   // Visualizations
@@ -150,6 +188,43 @@ export const handlers = [
       await recordRequest(
         "PUT",
         `/api/visualizations/${params.uuid}`,
+        request,
+      );
+      return HttpResponse.json({ success: true });
+    },
+  ),
+  http.put(
+    `${apiUrl}/api/visualizations/:uuid/tags`,
+    async ({ request, params }) => {
+      await recordRequest(
+        "PUT",
+        `/api/visualizations/${params.uuid}/tags`,
+        request,
+      );
+      return HttpResponse.json({ success: true });
+    },
+  ),
+  http.put(
+    `${apiUrl}/api/datasets/:uuid/tags`,
+    async ({ request, params }) => {
+      await recordRequest(
+        "PUT",
+        `/api/datasets/${params.uuid}/tags`,
+        request,
+      );
+      return HttpResponse.json({ success: true });
+    },
+  ),
+  http.put(`${apiUrl}/api/user`, async ({ request }) => {
+    await recordRequest("PUT", "/api/user", request);
+    return HttpResponse.json({ success: true });
+  }),
+  http.put(
+    `${apiUrl}/api/workspaces/:uuid/members`,
+    async ({ request, params }) => {
+      await recordRequest(
+        "PUT",
+        `/api/workspaces/${params.uuid}/members`,
         request,
       );
       return HttpResponse.json({ success: true });
