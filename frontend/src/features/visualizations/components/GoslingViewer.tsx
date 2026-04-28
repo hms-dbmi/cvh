@@ -40,6 +40,11 @@ function GoslingViewer({ permissions, selectedVizId }: GoslingViewerProps) {
         PublishMenu={PublishedVizMenu}
         isLeftPanelOpen={false}
         externalDndContext
+        classNames={{
+          modeWidget: hasWritePermissions
+            ? "w-auto left-0 right-[400px]"
+            : undefined,
+        }}
       />
     </Box>
   );
