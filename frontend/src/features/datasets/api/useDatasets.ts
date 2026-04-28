@@ -1,8 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import useClient, {
-  buildInvalidateGetQuery,
-  type QueryOptions,
-} from "../../../api/client";
+import useClient, { buildInvalidateGetQuery } from "../../../api/client";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 
 const path = "/api/datasets";
@@ -13,34 +10,6 @@ const invalidateGetQuery = buildInvalidateGetQuery([
   "/api/workspaces",
   "/api/tags",
 ]);
-
-function useGetUserDatasets(options?: QueryOptions) {
-  const client = useClient();
-  return client.useQuery("get", path, options);
-}
-
-interface Tag {
-  tag: string;
-}
-
-function formatTagsForQuery(tags: Tag[]) {
-  return tags.map((tag) => tag.tag);
-}
-
-function useGetProjectDatasets(projectId: string, tags: Tag[]) {
-  const queryOptions = tags.length
-    ? {
-        query: { tags: formatTagsForQuery(tags) },
-      }
-    : {};
-  const client = useClient();
-  return client.useQuery("get", workspacePath, {
-    params: {
-      path: { workspace_uuid: projectId },
-      ...queryOptions,
-    },
-  });
-}
 
 interface Page {
   count: number;
@@ -212,9 +181,7 @@ export {
   useGetDataset,
   useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
-  useGetProjectDatasets,
   useGetProjectDatasetTags,
-  useGetUserDatasets,
   useTagDataset,
   useUpdateDataset,
 };

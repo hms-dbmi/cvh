@@ -11,8 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as DatasetsRouteImport } from './routes/datasets'
-import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VisualizationsVisualizationIdRouteImport } from './routes/visualizations.$visualizationId'
 import { Route as ProjectChar123ProjectIdChar125RouteImport } from './routes/project.{-$projectId}'
@@ -26,16 +24,6 @@ const ProjectsRoute = ProjectsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DatasetsRoute = DatasetsRouteImport.update({
-  id: '/datasets',
-  path: '/datasets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DataSourcesRoute = DataSourcesRouteImport.update({
-  id: '/data-sources',
-  path: '/data-sources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -64,8 +52,6 @@ const ProjectVitessceChar123ProjectIdChar125Route =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/data-sources': typeof DataSourcesRoute
-  '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
@@ -74,8 +60,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/data-sources': typeof DataSourcesRoute
-  '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
@@ -85,8 +69,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/data-sources': typeof DataSourcesRoute
-  '/datasets': typeof DatasetsRoute
   '/profile': typeof ProfileRoute
   '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
@@ -97,8 +79,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/data-sources'
-    | '/datasets'
     | '/profile'
     | '/projects'
     | '/project/{-$projectId}'
@@ -107,8 +87,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/data-sources'
-    | '/datasets'
     | '/profile'
     | '/projects'
     | '/project/{-$projectId}'
@@ -117,8 +95,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/data-sources'
-    | '/datasets'
     | '/profile'
     | '/projects'
     | '/project/{-$projectId}'
@@ -128,8 +104,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DataSourcesRoute: typeof DataSourcesRoute
-  DatasetsRoute: typeof DatasetsRoute
   ProfileRoute: typeof ProfileRoute
   ProjectsRoute: typeof ProjectsRoute
   ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
@@ -151,20 +125,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/datasets': {
-      id: '/datasets'
-      path: '/datasets'
-      fullPath: '/datasets'
-      preLoaderRoute: typeof DatasetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/data-sources': {
-      id: '/data-sources'
-      path: '/data-sources'
-      fullPath: '/data-sources'
-      preLoaderRoute: typeof DataSourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -200,8 +160,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DataSourcesRoute: DataSourcesRoute,
-  DatasetsRoute: DatasetsRoute,
   ProfileRoute: ProfileRoute,
   ProjectsRoute: ProjectsRoute,
   ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
