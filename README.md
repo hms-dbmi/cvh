@@ -132,6 +132,39 @@ npm run lint:fix             # Lint and format with auto-fix
 npm run format               # Format
 ```
 
+## Testing
+
+### Frontend unit tests ([Vitest](https://vitest.dev/))
+
+```bash
+cd frontend
+npm test            # watch mode
+npx vitest run      # single run
+```
+
+### Frontend end-to-end tests ([Playwright](https://playwright.dev/) + [MSW](https://mswjs.io/))
+
+The e2e suite runs against a fully-mocked app — no backend or Auth0 tenant needed. When `VITE_E2E=true`, `Auth0Provider` is replaced with a stub that exposes a fake authenticated user, and an MSW service worker intercepts every API call using fixtures defined in `frontend/src/test/msw-handlers.ts`. Specs assert the outgoing request body via a `window.__e2eRequests` log — see the comment in `msw-handlers.ts` for why we record on `window` instead of using Playwright's `page.route`.
+
+First-time setup (downloads the Chromium binary):
+
+```bash
+cd frontend
+npx playwright install chromium
+```
+
+Run the suite:
+
+```bash
+cd frontend
+npm run e2e                          # all specs
+npx playwright test e2e/publish.spec.ts   # one spec
+npx playwright test --ui             # interactive runner
+npx playwright show-report           # open the HTML report from the last run
+```
+
+The Playwright config (`frontend/playwright.config.ts`) starts its own Vite dev server on port 5174 with `VITE_E2E=true`, so you can keep your normal `npm run dev` running on 5173 in parallel. Reports go to `frontend/playwright-report/` (gitignored). Tests also run in CI via `.github/workflows/e2e.yml` on every push and PR to `main`.
+
 ## API Documentation
 
 The backend serves interactive API documentation via [Django Ninja](https://django-ninja.dev/):
