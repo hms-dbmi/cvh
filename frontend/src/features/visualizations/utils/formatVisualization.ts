@@ -1,6 +1,6 @@
 import type { GoslingDesignerVEC } from "gosling-designer-vec";
 import type { ComponentProps } from "react";
-import type { components } from "../../../types/schema";
+import type { components } from "@/types/schema";
 
 export default function formatVisualization(
   viz?: components["schemas"]["VisualizationOut"],

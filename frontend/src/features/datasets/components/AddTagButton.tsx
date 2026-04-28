@@ -13,8 +13,8 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
-import type { components } from "../../../types/schema.d.ts";
+import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
+import type { components } from "@/types/schema.d.ts";
 import { useTagDataset } from "../api/useDatasets";
 
 interface FormValues {

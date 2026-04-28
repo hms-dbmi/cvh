@@ -8,7 +8,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
+import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
 import { useUpdateUser } from "../api/useUser.ts";
 
 interface FormValues {

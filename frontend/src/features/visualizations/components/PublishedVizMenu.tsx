@@ -8,9 +8,9 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import { useCallback } from "react";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
-import { LinkMenuItem } from "../../navigation/components/Links";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
+import { LinkMenuItem } from "@/features/navigation/components/Links";
+import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { useUpdateVisualization } from "../api/useVisualizations";
 
 type Props = {

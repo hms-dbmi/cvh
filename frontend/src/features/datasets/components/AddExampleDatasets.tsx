@@ -4,7 +4,7 @@ import Button, { type ButtonProps } from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { FileText } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
-import DialogButton from "../../../components/DialogButton";
+import DialogButton from "@/components/DialogButton";
 import { useAddExample } from "../api/useExamples";
 
 const text = {

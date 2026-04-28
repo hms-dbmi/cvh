@@ -2,8 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import useClient, {
   buildInvalidateGetQuery,
   type QueryOptions,
-} from "../../../api/client";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+} from "@/api/client";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 
 const path = "/api/visualizations";
 const publicPath = "/api/public/visualizations";

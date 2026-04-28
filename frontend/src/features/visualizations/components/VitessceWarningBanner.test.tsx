@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { VitessceWarningBanner } from "./DataList";
+import { VitessceWarningBanner } from "./VitessceWarningBanner";
 
 describe("VitessceWarningBanner", () => {
   it("renders the Limited Functionality heading", () => {

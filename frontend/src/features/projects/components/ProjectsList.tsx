@@ -1,8 +1,8 @@
 import List from "@mui/material/List";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import type { QueryOptions } from "../../../api/client";
-import { LinkButton } from "../../navigation/components/Links";
+import type { QueryOptions } from "@/api/client";
+import { LinkButton } from "@/features/navigation/components/Links";
 import useGetProjects, { useGetPublicProjects } from "../api/useProjects";
 import AddProjectButton from "./AddProjectButton";
 import ProjectListItem from "./ProjectListItem";
