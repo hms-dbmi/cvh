@@ -1,12 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-vi.mock("vitessce", () => ({ Vitessce: () => null }));
-vi.mock("react-grid-layout/css/styles.css", () => ({}));
-vi.mock("@monaco-editor/react", () => ({ default: () => null }));
-vi.mock("@vitessce/schemas", () => ({ upgradeAndParse: vi.fn() }));
-
-const { BottomBar } = await import("./VitessceViewer");
+import { BottomBar } from "./BottomBar";
 
 describe("BottomBar", () => {
   it("renders Editing and Exploring buttons for write users", () => {

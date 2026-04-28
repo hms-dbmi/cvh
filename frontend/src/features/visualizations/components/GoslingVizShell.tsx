@@ -17,7 +17,7 @@ import {
 import { type ComponentProps, memo, useCallback, useMemo } from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { useGetPaginatedProjectDatasets } from "@/features/datasets/api/useDatasets";
-import { useDatasetFiltersStore } from "@/hooks/useDatasetFiltersStore.ts";
+import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore.ts";
 import type { components } from "@/types/schema";
 import { useUpdateVisualization } from "../api/useVisualizations";
 import formatVisualization from "../utils/formatVisualization.ts";

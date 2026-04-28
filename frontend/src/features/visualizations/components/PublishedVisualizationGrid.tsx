@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import { Tag } from "@phosphor-icons/react";
 import type { components } from "@/types/schema";
 import { useGetPublishedVisualizations } from "../api/useVisualizations";
-import { ToolBadge } from "./VisualizationsList";
+import { ToolBadge } from "./ToolBadge";
 
 function PublishedGridItem({
   visualization,
