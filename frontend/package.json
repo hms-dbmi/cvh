@@ -11,6 +11,7 @@
     "format": "biome format --write .",
     "preview": "vite preview",
     "test": "vitest",
+    "e2e": "playwright test",
     "gen-api-types": "openapi-typescript http://127.0.0.1:8000/api/openapi.json -o ./src/types/schema.d.ts"
   },
   "dependencies": {
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.4",
     "@tanstack/router-devtools": "^1.99.8",
     "@tanstack/router-plugin": "^1.99.8",
@@ -53,11 +55,17 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "jsdom": "^28.1.0",
+    "msw": "^2.13.6",
     "openapi-typescript": "^7.6.1",
     "tailwindcss": "^4.2.4",
     "typescript": "~5.7.3",
     "vite": "^6.3.0",
     "vite-plugin-svgr": "^4.3.0",
     "vitest": "^4.0.18"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

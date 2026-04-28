@@ -11,7 +11,10 @@
       "**",
       "!dist",
       "!src/routeTree.gen.ts",
-      "!src/types/schema.d.ts"
+      "!src/types/schema.d.ts",
+      "!public/mockServiceWorker.js",
+      "!playwright-report",
+      "!test-results"
     ]
   },
   "formatter": {
