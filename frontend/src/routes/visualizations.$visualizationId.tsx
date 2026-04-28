@@ -1,19 +1,26 @@
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { createFileRoute } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { GoslingDesignerVEC } from "gosling-designer-vec";
+import { lazy, Suspense } from "react";
 import { useGetPublishedVisualization } from "../features/visualizations/api/useVisualizations";
 import formatVisualization from "../features/visualizations/utils/formatVisualization";
 import type { components } from "../types/schema";
 import "gosling-designer-vec/build/style.css";
+import "react-grid-layout/css/styles.css";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import { CaretDown, Folder, Tag } from "@phosphor-icons/react";
 import formatISO from "../utils/formatISO";
+
+const Vitessce = lazy(() =>
+  import("vitessce").then((m) => ({ default: m.Vitessce })),
+);
 
 export const Route = createFileRoute("/visualizations/$visualizationId")({
   component: RouteComponent,
@@ -109,6 +116,21 @@ function PublishedVisualizationPanel({
   );
 }
 
+function ViewerFallback() {
+  return (
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
+
 function RouteComponent() {
   const { visualizationId } = Route.useParams();
 
@@ -116,6 +138,23 @@ function RouteComponent() {
 
   if (!data) {
     return null;
+  }
+
+  if (data.tool === "vitessce") {
+    return (
+      <Stack direction="row" sx={{ height: "100%" }}>
+        <Box sx={{ width: 400, flexShrink: 0, overflowY: "auto", p: 2 }}>
+          <PublishedVisualizationPanel viz={data} />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0, height: "100%" }}>
+          {data.conf && (
+            <Suspense fallback={<ViewerFallback />}>
+              <Vitessce config={data.conf} height={900} theme="light" />
+            </Suspense>
+          )}
+        </Box>
+      </Stack>
+    );
   }
 
   const formattedVisualization = formatVisualization(data);

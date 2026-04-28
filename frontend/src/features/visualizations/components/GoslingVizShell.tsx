@@ -14,7 +14,8 @@ import {
   type GDData,
   useGoslingDndHandlers,
 } from "gosling-designer-vec";
-import { type ComponentProps, memo, useMemo } from "react";
+import { type ComponentProps, memo, useCallback, useMemo } from "react";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore.ts";
 import type { components } from "../../../types/schema";
 import { useGetPaginatedProjectDatasets } from "../../datasets/api/useDatasets";
@@ -116,6 +117,7 @@ function GoslingVizShell({
   const formattedVisualization = formatVisualization(selectedViz);
 
   const { mutate: updateViz } = useUpdateVisualization();
+  const { toastError } = useSnackbarActions();
 
   const hasWritePermissions = permissions >= 2;
 
@@ -132,12 +134,26 @@ function GoslingVizShell({
     [updateViz, selectedVizId, hasWritePermissions],
   );
 
+  const onPublish = useCallback(() => {
+    try {
+      if (!selectedVizId || !hasWritePermissions) return;
+      updateViz({
+        body: { published: true },
+        params: { path: { visualization_uuid: selectedVizId } },
+      });
+    } catch (e) {
+      toastError("Error publishing visualization");
+      console.error(e);
+    }
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
+
   return (
     <AppStateProvider
       populateFromParams
       data={formattedDatasets}
       visualization={formattedVisualization}
       onChange={onChange}
+      onPublish={onPublish}
       userMode={
         (
           {
@@ -158,11 +174,7 @@ function GoslingVizShell({
               {sidebar}
             </Box>
             <Box sx={{ flex: 1, minWidth: 0, height: "100%" }}>
-              <GoslingViewer
-                projectId={projectId}
-                permissions={permissions}
-                selectedVizId={selectedVizId}
-              />
+              <GoslingViewer permissions={permissions} />
             </Box>
           </Stack>
         </Box>

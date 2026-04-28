@@ -2,6 +2,7 @@ import Editor from "@monaco-editor/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
+import Menu from "@mui/material/Menu";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -20,6 +21,7 @@ import {
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
+import PublishedVizMenu from "./PublishedVizMenu.tsx";
 
 type Mode = "editing" | "exploring";
 
@@ -32,17 +34,31 @@ export function BottomBar({
   mode,
   onModeChange,
   published,
-  onTogglePublish,
+  visualizationID,
+  onPublish,
   hasWritePermissions,
 }: {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
   published?: boolean;
-  onTogglePublish?: () => void;
+  visualizationID?: string;
+  onPublish?: () => void;
   hasWritePermissions?: boolean;
 }) {
   const editorMode = hasWritePermissions ? "editing" : "configuration";
   const isEditorActive = mode === "editing";
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const closeMenu = useCallback(() => setMenuAnchor(null), []);
+  const handlePublishClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (published) {
+        setMenuAnchor(e.currentTarget);
+      } else {
+        onPublish?.();
+      }
+    },
+    [published, onPublish],
+  );
 
   return (
     <Paper
@@ -103,11 +119,11 @@ export function BottomBar({
           Exploring
         </Button>
       </Stack>
-      {onTogglePublish && (
+      {onPublish && (
         <>
           <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
           <Button
-            onClick={onTogglePublish}
+            onClick={handlePublishClick}
             startIcon={<GlobeSimple size={24} />}
             sx={{
               bgcolor: published ? "#27AE60" : "transparent",
@@ -126,6 +142,18 @@ export function BottomBar({
           >
             {published ? "Published" : "Make Public"}
           </Button>
+          {visualizationID && (
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={closeMenu}
+            >
+              <PublishedVizMenu
+                visualizationID={visualizationID}
+                closeMenu={closeMenu}
+              />
+            </Menu>
+          )}
         </>
       )}
     </Paper>
@@ -239,13 +267,13 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     };
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
-  const togglePublishViz = useCallback(() => {
+  const publishViz = useCallback(() => {
     try {
       if (!selectedVizId || !hasWritePermissions) {
         return;
       }
       updateViz({
-        body: { published: !data?.published },
+        body: { published: true },
         params: {
           path: { visualization_uuid: selectedVizId },
         },
@@ -254,13 +282,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
       toastError("Error updating visualization publish status");
       console.error(e);
     }
-  }, [
-    updateViz,
-    toastError,
-    selectedVizId,
-    hasWritePermissions,
-    data?.published,
-  ]);
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
   // Manual save for editor mode
   const handleEditorSave = useCallback(() => {
@@ -333,7 +355,8 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             mode={mode}
             onModeChange={setMode}
             published={data?.published}
-            onTogglePublish={hasWritePermissions ? togglePublishViz : undefined}
+            visualizationID={selectedVizId}
+            onPublish={hasWritePermissions ? publishViz : undefined}
             hasWritePermissions={hasWritePermissions}
           />
         </Box>
