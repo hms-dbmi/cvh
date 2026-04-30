@@ -44,6 +44,11 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      - name: Build app for E2E
+        env:
+          VITE_E2E: "true"
+        run: npm run build
+
       - name: Run Playwright tests
         run: npm run e2e
 

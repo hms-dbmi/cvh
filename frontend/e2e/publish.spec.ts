@@ -10,11 +10,11 @@ test("publishing a Vitessce viz fires PUT with published: true", async ({
   await page.goto(`/project/${PROJECT_ID}`);
   await page.getByRole("button", { name: "Make Public" }).click();
 
-  await expect.poll(() => readRequests(page)).toEqual([
-    {
-      method: "PUT",
-      path: `/api/visualizations/${VIZ_ID}`,
-      body: { published: true },
-    },
-  ]);
+  // The Vitessce viewer also auto-saves its `conf` on mount, so other PUTs
+  // can land in the log too — we only care that the publish call fired.
+  await expect.poll(() => readRequests(page)).toContainEqual({
+    method: "PUT",
+    path: `/api/visualizations/${VIZ_ID}`,
+    body: { published: true },
+  });
 });
