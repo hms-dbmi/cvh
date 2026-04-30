@@ -47,6 +47,7 @@ jobs:
       - name: Build app for E2E
         env:
           VITE_E2E: "true"
+          NODE_OPTIONS: --max_old_space_size=4096
         run: npm run build
 
       - name: Run Playwright tests
