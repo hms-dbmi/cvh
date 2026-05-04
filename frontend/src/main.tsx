@@ -14,14 +14,23 @@ declare module "@tanstack/react-router" {
   }
 }
 
-// biome-ignore lint/style/noNonNullAssertion: root element guaranteed to exist
-const rootElement = document.getElementById("root")!;
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    // Gosling is incompatible with StrictMode.
-    <Provider>
-      <RouterProvider router={router} />
-    </Provider>,
-  );
+async function bootstrap() {
+  if (import.meta.env.VITE_E2E === "true") {
+    const { worker } = await import("./test/msw-browser");
+    await worker.start({ onUnhandledRequest: "bypass" });
+  }
+
+  // biome-ignore lint/style/noNonNullAssertion: root element guaranteed to exist
+  const rootElement = document.getElementById("root")!;
+  if (!rootElement.innerHTML) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      // Gosling is incompatible with StrictMode.
+      <Provider>
+        <RouterProvider router={router} />
+      </Provider>,
+    );
+  }
 }
+
+bootstrap();
