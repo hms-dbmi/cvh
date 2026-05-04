@@ -47,6 +47,9 @@ jobs:
       - name: Build app for E2E
         env:
           VITE_E2E: "true"
+          # Must match the MSW handler fallback in src/test/msw-handlers.ts so
+          # the app and the mock register requests against the same origin.
+          VITE_API_URL: "http://127.0.0.1:8000"
           NODE_OPTIONS: --max_old_space_size=4096
         run: npm run build
 
