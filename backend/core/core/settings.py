@@ -102,6 +102,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "mozilla_django_oidc",
     "api",
     "health_check",
 ]
@@ -240,3 +241,55 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(",")
+
+
+# Auth0-backed OIDC for the Django admin SERVICE_VARIANT.
+# Only the client_secret is sensitive — in production it's pulled from
+# Secrets Manager (see get_admin_oidc_secret below); locally it lives in
+# .env. Domain / client_id / claim names are operational config, not
+# secrets. The api SERVICE_VARIANT also imports these (no harm — the URLs
+# aren't mounted there) so both processes share the same settings module.
+
+AUTH0_DOMAIN = env.str("AUTH0_DOMAIN", default="")
+AUTH0_ADMIN_CLIENT_ID = env.str("AUTH0_ADMIN_CLIENT_ID", default="")
+AUTH0_ADMIN_CLIENT_SECRET = env.str("AUTH0_ADMIN_CLIENT_SECRET", default="")
+
+
+def get_admin_oidc_secret() -> dict[str, str]:
+    secret_name = env.str("AUTH0_ADMIN_SECRET_NAME")
+    region_name = "us-east-2"
+    session = boto3.session.Session()
+    client = session.client(service_name="secretsmanager", region_name=region_name)
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+    except ClientError as e:
+        raise e
+    return json.loads(response["SecretString"])
+
+
+if METADATA_URI and SERVICE_VARIANT == "admin":
+    admin_oidc_secrets = get_admin_oidc_secret()
+    AUTH0_ADMIN_CLIENT_ID = admin_oidc_secrets["client_id"]
+    AUTH0_ADMIN_CLIENT_SECRET = admin_oidc_secrets["client_secret"]
+
+# mozilla-django-oidc settings — Auth0 endpoints follow a fixed pattern.
+OIDC_RP_CLIENT_ID = AUTH0_ADMIN_CLIENT_ID
+OIDC_RP_CLIENT_SECRET = AUTH0_ADMIN_CLIENT_SECRET
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = "openid email profile"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"https://{AUTH0_DOMAIN}/authorize"
+OIDC_OP_TOKEN_ENDPOINT = f"https://{AUTH0_DOMAIN}/oauth/token"
+OIDC_OP_USER_ENDPOINT = f"https://{AUTH0_DOMAIN}/userinfo"
+OIDC_OP_JWKS_ENDPOINT = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+
+# Read by core.oidc_backend.Auth0AdminOIDCBackend.
+OIDC_ADMIN_ROLE_CLAIM = env.str(
+    "OIDC_ADMIN_ROLE_CLAIM", default="https://cvh/roles"
+)
+OIDC_ADMIN_ROLE_NAME = env.str("OIDC_ADMIN_ROLE_NAME", default="cvh_admin")
+
+if SERVICE_VARIANT == "admin":
+    AUTHENTICATION_BACKENDS = ("core.oidc_backend.Auth0AdminOIDCBackend",)
+    LOGIN_URL = "/oidc/authenticate/"
+    LOGIN_REDIRECT_URL = "/admin/"
+    LOGOUT_REDIRECT_URL = "/admin/"
