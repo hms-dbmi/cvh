@@ -95,6 +95,7 @@ if ENV_ALLOWED_HOSTS:
 # Application definition
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -117,7 +118,19 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
-ROOT_URLCONF = "core.urls"
+# The same image runs in two ECS services. SERVICE_VARIANT picks which URL
+# surface this process exposes — "api" mounts the public REST API, "admin"
+# mounts only the Django admin. Defaulting to "api" preserves existing
+# local + production behavior.
+SERVICE_VARIANT = env.str("SERVICE_VARIANT", default="api")
+if SERVICE_VARIANT not in {"api", "admin"}:
+    raise ValueError(
+        f"SERVICE_VARIANT must be 'api' or 'admin', got {SERVICE_VARIANT!r}"
+    )
+
+ROOT_URLCONF = (
+    "core.urls_admin" if SERVICE_VARIANT == "admin" else "core.urls"
+)
 
 TEMPLATES = [
     {
