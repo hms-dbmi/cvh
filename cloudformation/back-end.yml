@@ -21,9 +21,20 @@ Parameters:
     Type: String
     Description: The URI of the image to deploy
     Default: "765139173785.dkr.ecr.us-east-2.amazonaws.com/gosling/dmc:latest"
-  DbInfo:
+  RdsSecretArn:
     Type: String
-    Description: The ARN of the database secret in Secrets Manager
+    Description: >
+      ARN of the RDS-managed Secrets Manager entry (auto-generated when
+      the DB instance was created). RDS owns its schema and may rotate
+      the `password` field — do not add app-level keys here. Expected
+      JSON keys: `username`, `password`.
+    NoEcho: true
+  AppSecretsArn:
+    Type: String
+    Description: >
+      ARN of a Secrets Manager entry holding app-level secrets that don't
+      belong with the RDS-managed secret. Expected JSON keys:
+      `secret_key`. Add new app-level secrets here as needed.
     NoEcho: true
   DbSG:
     Type: String
@@ -32,14 +43,14 @@ Parameters:
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
-    Default: gosling-lang.org
+    Default: vis-api.link
   HostedZoneId:
     Description: Hosted Zone ID
     Type: String
-    Default: Z085595833A98LWBFS157
+    Default: Z09477406JQAR0KB7G87
   RootDomainName:
-    Description: Domain name for the website (api.designer.gosling-lang.org)
-    Default: api.designer.gosling-lang.org
+    Description: Domain name for the website (api.vis-api.link)
+    Default: api.vis-api.link
     Type: String
 
 
@@ -255,9 +266,20 @@ Resources:
               Protocol: tcp
             - ContainerPort: 80
               Protocol: tcp
-          EnvironmentFiles: 
+          EnvironmentFiles:
             - Type: s3
               Value: !Ref TaskEnvFile
+          # Sensitive values are pulled from Secrets Manager and injected
+          # as env vars by ECS before the container starts. Keep these
+          # OUT of the S3 EnvironmentFile (Secrets here override the file
+          # but the file is still readable by anyone with s3:GetObject).
+          Secrets:
+            - Name: SECRET_KEY
+              ValueFrom: !Sub "${AppSecretsArn}:secret_key::"
+            - Name: DB_USER
+              ValueFrom: !Sub "${RdsSecretArn}:username::"
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${RdsSecretArn}:password::"
           Essential: true
           LogConfiguration:
             LogDriver: awslogs
@@ -330,11 +352,6 @@ Resources:
                 Action:
                   - ecs:DescribeTasks
                 Resource: "*"
-              - Sid: RdsAccess
-                Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Ref DbInfo
               - Sid: ECR
                 Effect: Allow
                 Action:
@@ -394,11 +411,13 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
-              - Sid: RdsAccess
+              - Sid: BackendSecretsAccess
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref DbInfo
+                Resource:
+                  - !Ref RdsSecretArn
+                  - !Ref AppSecretsArn
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
             Version: 2012-10-17
