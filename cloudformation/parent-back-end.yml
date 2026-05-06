@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Top-level stack template that deploys a nested stack
+
+Parameters:
+  DBUserName:
+    Type: String
+    Description: The database main username
+    NoEcho: true
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
+  NetworkTemplateURL:
+    Type: String
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/network.yml
+  DatabaseTemplateURL:
+    Type: String
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/database.yml
+
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref NetworkTemplateURL
+  Database:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref DatabaseTemplateURL
+      Parameters:
+        DBUserName: !Ref DBUserName
+        DBSecurityGroupId: !GetAtt Network.Outputs.SecurityGroup
+        Environment: !Ref Environment
+        DBSubnetGroup: !GetAtt Network.Outputs.DBSubnetGroup
+    DependsOn: Network
