@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Top-level stack template that deploys a nested stack
+
+Parameters:
+  DBUserName:
+    Type: String
+    Description: The database main username
+    NoEcho: true
+  AppSecretsArn:
+    Type: String
+    Description: >
+      ARN of a Secrets Manager entry holding app-level secrets (e.g.,
+      `secret_key`). Created out-of-band — see README "Environment
+      Configuration" for the expected JSON shape. Passed through to the
+      back-end stack so ECS can inject the values as env vars.
+    NoEcho: true
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
+  NetworkTemplateURL:
+    Type: String
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/network.yml
+  DatabaseTemplateURL:
+    Type: String
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/database.yml
+  BackEndTemplateURL:
+    Type: String
+    Default: https://cvh-templates.s3.us-east-2.amazonaws.com/back-end.yml
+
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref NetworkTemplateURL
+  Database:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref DatabaseTemplateURL
+      Parameters:
+        DBUserName: !Ref DBUserName
+        DBSecurityGroupId: !GetAtt Network.Outputs.SecurityGroup
+        Environment: !Ref Environment
+        DBSubnetGroup: !GetAtt Network.Outputs.DBSubnetGroup
+    DependsOn: Network
+  BackEnd:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref BackEndTemplateURL
+      Parameters:
+        Environment: !Ref Environment
+        VpcId: !GetAtt Network.Outputs.VPC
+        PublicSubnetIds: !GetAtt Network.Outputs.PublicSubnets
+        ECSSecurityGroupId: !GetAtt Network.Outputs.ECSSecurityGroupId
+        LBSecurityGroupId: !GetAtt Network.Outputs.LBSecurityGroupId
+        RdsSecretArn: !GetAtt Database.Outputs.RdsSecretArn
+        RdsSecretKmsKeyArn: !GetAtt Database.Outputs.DBKeyARN
+        AppSecretsArn: !Ref AppSecretsArn
+    DependsOn:
+      - Network
+      - Database
