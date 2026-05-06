@@ -54,6 +54,7 @@ Resources:
         ECSSecurityGroupId: !GetAtt Network.Outputs.ECSSecurityGroupId
         LBSecurityGroupId: !GetAtt Network.Outputs.LBSecurityGroupId
         RdsSecretArn: !GetAtt Database.Outputs.RdsSecretArn
+        RdsSecretKmsKeyArn: !GetAtt Database.Outputs.DBKeyARN
         AppSecretsArn: !Ref AppSecretsArn
     DependsOn:
       - Network

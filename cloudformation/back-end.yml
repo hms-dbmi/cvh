@@ -46,6 +46,12 @@ Parameters:
       belong with the RDS-managed secret. Expected JSON keys:
       `secret_key`. Add new app-level secrets here as needed.
     NoEcho: true
+  RdsSecretKmsKeyArn:
+    Type: String
+    Description: >
+      ARN of the KMS key that encrypts the RDS-managed secret. Granted
+      `kms:Decrypt` on `ECSExecutionRole` so ECS can inject the secret
+      values as env vars before the container starts.
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
@@ -404,6 +410,13 @@ Resources:
                 Resource:
                   - !Ref RdsSecretArn
                   - !Ref AppSecretsArn
+              - Sid: RdsSecretKmsDecrypt
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: !Ref RdsSecretKmsKeyArn
+                Condition:
+                  StringEquals:
+                    kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
             Version: 2012-10-17
