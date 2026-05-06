@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-import json
 from pathlib import Path
 
 import boto3
@@ -140,33 +139,15 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-
-def get_db_secret():
-    secret_name = env.str("DB_SECRET_NAME")
-    region_name = "us-east-2"
-
-    # Create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(service_name="secretsmanager", region_name=region_name)
-
-    try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-    except ClientError as e:
-        # For a list of exceptions thrown, see
-        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        raise e
-
-    return json.loads(get_secret_value_response["SecretString"])
-
+#
+# Credentials (DB_USER, DB_PASSWORD) and SECRET_KEY are pulled from a
+# consolidated AWS Secrets Manager entry in production. Injection is
+# handled by ECS itself via the task definition's `Secrets:` field
+# (see cloudformation/back-end.yml), so the app reads them from env
+# uniformly in dev (.env) and prod.
 
 DB_USER = env.str("DB_USER")
 DB_PASSWORD = env.str("DB_PASSWORD")
-
-if METADATA_URI:
-    db_secrets = get_db_secret()
-    DB_USER = db_secrets["username"]
-    DB_PASSWORD = db_secrets["password"]
 
 DB_OPTIONS = {}
 

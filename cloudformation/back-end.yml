@@ -31,10 +31,27 @@ Parameters:
     Type: String
     Description: The URI of the image to deploy
     Default: "605134458779.dkr.ecr.us-east-2.amazonaws.com/cvh-api:latest"
-  DBKeyARN:
+  RdsSecretArn:
     Type: String
-    Description: The ARN of the database secret in Secrets Manager
+    Description: >
+      ARN of the RDS-managed Secrets Manager entry (auto-generated when
+      the DB instance was created). RDS owns its schema and may rotate
+      the `password` field — do not add app-level keys here. Expected
+      JSON keys: `username`, `password`.
     NoEcho: true
+  AppSecretsArn:
+    Type: String
+    Description: >
+      ARN of a Secrets Manager entry holding app-level secrets that don't
+      belong with the RDS-managed secret. Expected JSON keys:
+      `secret_key`. Add new app-level secrets here as needed.
+    NoEcho: true
+  RdsSecretKmsKeyArn:
+    Type: String
+    Description: >
+      ARN of the KMS key that encrypts the RDS-managed secret. Granted
+      `kms:Decrypt` on `ECSExecutionRole` so ECS can inject the secret
+      values as env vars before the container starts.
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
@@ -246,6 +263,17 @@ Resources:
           EnvironmentFiles:
             - Type: s3
               Value: !Ref TaskEnvFile
+          # Sensitive values are pulled from Secrets Manager and injected
+          # as env vars by ECS before the container starts. Keep these
+          # OUT of the S3 EnvironmentFile (Secrets here override the file
+          # but the file is still readable by anyone with s3:GetObject).
+          Secrets:
+            - Name: SECRET_KEY
+              ValueFrom: !Sub "${AppSecretsArn}:secret_key::"
+            - Name: DB_USER
+              ValueFrom: !Sub "${RdsSecretArn}:username::"
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${RdsSecretArn}:password::"
           Essential: true
           LogConfiguration:
             LogDriver: awslogs
@@ -316,11 +344,6 @@ Resources:
                 Action:
                   - ecs:DescribeTasks
                 Resource: "*"
-              - Sid: RdsAccess
-                Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Ref DBKeyARN
               - Sid: ECR
                 Effect: Allow
                 Action:
@@ -380,11 +403,20 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
-              - Sid: RdsAccess
+              - Sid: BackendSecretsAccess
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref DBKeyARN
+                Resource:
+                  - !Ref RdsSecretArn
+                  - !Ref AppSecretsArn
+              - Sid: RdsSecretKmsDecrypt
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: !Ref RdsSecretKmsKeyArn
+                Condition:
+                  StringEquals:
+                    kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
             Version: 2012-10-17

@@ -68,3 +68,10 @@ Outputs:
   DBKeyARN:
     Description: The ARN of the KMS DB Key
     Value: !GetAtt KMSKey.Arn
+  RdsSecretArn:
+    Description: >
+      The ARN of the RDS-managed Secrets Manager entry created via
+      ManageMasterUserPassword. Consumed by the back-end stack to inject
+      DB_USER and DB_PASSWORD into ECS containers via the task
+      definition's `Secrets:` block.
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
