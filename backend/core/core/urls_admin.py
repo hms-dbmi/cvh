@@ -9,13 +9,21 @@ username/password form is never reachable: the only path to authenticate
 is through Auth0.
 """
 
+from urllib.parse import urlencode
+
 from django.contrib import admin
-from django.shortcuts import redirect
-from django.urls import include, path
+from django.http import HttpResponseRedirect
+from django.urls import include, path, reverse
 
 
 def _redirect_to_oidc(request):
-    return redirect("oidc_authentication_init")
+    # Forward the `next` query param so mozilla-django-oidc can redirect
+    # the user back to where they originally tried to go after login.
+    target = reverse("oidc_authentication_init")
+    next_url = request.GET.get("next")
+    if next_url:
+        target = f"{target}?{urlencode({'next': next_url})}"
+    return HttpResponseRedirect(target)
 
 
 urlpatterns = [
