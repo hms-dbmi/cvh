@@ -227,8 +227,14 @@ Resources:
     Properties:
       Cluster: !Ref AdminECSCluster
       DeploymentConfiguration:
-        MaximumPercent: 100
-        MinimumHealthyPercent: 50
+        # With DesiredCount=1, MinimumHealthyPercent must be 0 so ECS can
+        # stop the old task, and MaximumPercent must be 200 so it can run
+        # the new + old briefly in parallel during rolling deploys. The
+        # alternative (Min=0, Max=100) introduces a small downtime
+        # window; for the admin service that's fine but unnecessary
+        # since 200% on one task is cheap.
+        MaximumPercent: 200
+        MinimumHealthyPercent: 0
       DesiredCount: 1
       EnableECSManagedTags: true
       HealthCheckGracePeriodSeconds: 60
