@@ -142,7 +142,7 @@ Resources:
       FromPort: 8000
       ToPort: 8000
       SourceSecurityGroupId: !GetAtt AdminLoadBalancerSG.GroupId
-      Description: Admin ALB → ECS tasks
+      Description: Admin ALB to ECS tasks
 
   AdminLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
