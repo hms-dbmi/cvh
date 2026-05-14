@@ -75,3 +75,14 @@ Outputs:
       DB_USER and DB_PASSWORD into ECS containers via the task
       definition's `Secrets:` block.
     Value: !GetAtt Database.MasterUserSecret.SecretArn
+  DBEndpointAddress:
+    Description: DB hostname. Passed to back-end stacks as DB_HOST.
+    Value: !GetAtt Database.Endpoint.Address
+  DBEndpointPort:
+    Description: DB port. Passed to back-end stacks as DB_PORT.
+    Value: !GetAtt Database.Endpoint.Port
+  DBName:
+    Description: >
+      Actual database name (matches the env-prefixed value created here),
+      passed to back-end stacks as DB_NAME.
+    Value: !If [IsProd, !Ref DBName, !Sub "${Environment}_${DBName}"]

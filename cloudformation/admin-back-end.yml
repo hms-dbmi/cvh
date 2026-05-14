@@ -1,57 +1,53 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  ECS Fargate Cluster and Task Definition
+  Admin Django service — same image as the API, runs with
+  SERVICE_VARIANT=admin, served from a separate ALB whose ingress is
+  restricted to CIDRs from an EC2 managed prefix list. Auth is via Auth0
+  OIDC with a role-claim gate (see backend/core/core/oidc_backend.py).
+
 Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
-    Description: The VPC
-    Default: "vpc-085e18e944c89a1e7"
+    Description: The VPC the admin service runs in (shared with the API).
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Default: "subnet-0f87b522b2920749c,subnet-080cf4dde85922f57,subnet-05b0e6758b969dcfc"
-  # PrivateSubnetIds:
-  #   Type: List<AWS::EC2::Subnet::Id>
-  #   Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
+    Description: Public subnets for the admin ALB and Fargate tasks.
   ECSSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
-    Description: The ID of the ECS Security Group
-  LBSecurityGroupId:
-    Type: AWS::EC2::SecurityGroup::Id
-    Description: The ID of the LB Security Group
+    Description: >
+      The shared ECS task security group from the network stack. This
+      template adds an additional ingress rule allowing the admin ALB SG
+      to reach the task on port 8000.
   TaskName:
     Type: String
-    Description: The name of the service task
-    Default: "cvh-api-task"
+    Default: cvh-admin-task
   TaskEnvFile:
     Type: String
-    Description: The ARN for the environment file in S3
-    Default: "arn:aws:s3:::cvh-env-dev/cvh-env-dev.env"
+    Description: >
+      ARN for the admin task's env file in S3. Separate from the API's
+      env file so admin-specific values (e.g., ALLOWED_HOSTS,
+      ALLOWED_ORIGINS for the admin subdomain) can differ.
+    Default: "arn:aws:s3:::cvh-env-dev/cvh-env-dev-admin.env"
     NoEcho: true
   ImageURI:
     Type: String
-    Description: The URI of the image to deploy
+    Description: Same image as the API — SERVICE_VARIANT env var picks the URL surface.
     Default: "605134458779.dkr.ecr.us-east-2.amazonaws.com/cvh-api:latest"
   RdsSecretArn:
     Type: String
-    Description: >
-      ARN of the RDS-managed Secrets Manager entry (auto-generated when
-      the DB instance was created). RDS owns its schema and may rotate
-      the `password` field — do not add app-level keys here. Expected
-      JSON keys: `username`, `password`.
+    Description: RDS-managed Secrets Manager entry (provides DB_USER, DB_PASSWORD).
     NoEcho: true
   AppSecretsArn:
     Type: String
     Description: >
-      ARN of a Secrets Manager entry holding app-level secrets that don't
-      belong with the RDS-managed secret. Expected JSON keys:
-      `secret_key`. Add new app-level secrets here as needed.
+      App-level secrets entry. For the admin service must include keys
+      `admin_secret_key`, `auth0_admin_client_id`,
+      `auth0_admin_client_secret`. (The API task uses a separate
+      `secret_key` field in the same secret — see back-end.yml.)
     NoEcho: true
   RdsSecretKmsKeyArn:
     Type: String
-    Description: >
-      ARN of the KMS key that encrypts the RDS-managed secret. Granted
-      `kms:Decrypt` on `ECSExecutionRole` so ECS can inject the secret
-      values as env vars before the container starts.
+    Description: KMS key encrypting the RDS-managed secret.
   DBHost:
     Type: String
     Description: RDS endpoint address. Injected as DB_HOST.
@@ -61,17 +57,26 @@ Parameters:
   DBName:
     Type: String
     Description: Database name. Injected as DB_NAME.
+  AdminAllowedPrefixListId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: >
+      SSM Parameter Store path holding the ID of the EC2 managed prefix
+      list that lists allowed admin source CIDRs. The list is the source
+      of truth — update its entries with
+      `aws ec2 modify-managed-prefix-list ...` and the SG rule picks up
+      the change *without* a CloudFormation deploy.
+    Default: /cvh/admin/dev/allowed-prefix-list-id
   HostedZoneName:
-    Description: Hosted Zone Name
     Type: String
     Default: vis-api.link
   HostedZoneId:
-    Description: Hosted Zone ID
     Type: String
     Default: Z09477406JQAR0KB7G87
   RootDomainName:
-    Description: Domain name for the website
-    Default: api.vis-api.link
+    Description: >
+      Prod admin domain (e.g. admin.vis-api.link). Non-prod environments
+      get prefixed with the environment name (e.g. dev.admin.vis-api.link).
+    Default: admin.vis-api.link
     Type: String
   Environment:
     Type: String
@@ -85,50 +90,61 @@ Resources:
   CertificateManagerCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
-      # naked domain
       DomainName:
         !If [
           IsProd,
           !Ref RootDomainName,
           !Sub "${Environment}.${RootDomainName}",
         ]
-      # add www to certificate
-      SubjectAlternativeNames:
-        - !If [
-            IsProd,
-            !Sub "www.${RootDomainName}",
-            !Sub "www.${Environment}.${RootDomainName}",
-          ]
-
       ValidationMethod: DNS
       DomainValidationOptions: !If [
           IsProd,
-          [
-            # DNS record for the naked domain
-            {
-              DomainName: !Ref RootDomainName,
-              HostedZoneId: !Ref HostedZoneId,
-            },
-            # DNS record for the www domain
-            {
-              DomainName: !Sub "www.${RootDomainName}",
-              HostedZoneId: !Ref HostedZoneId,
-            },
-          ],
+          [{ DomainName: !Ref RootDomainName, HostedZoneId: !Ref HostedZoneId }],
           [
             {
               DomainName: !Sub "${Environment}.${RootDomainName}",
               HostedZoneId: !Ref HostedZoneId,
             },
-            {
-              DomainName: !Sub "www.${Environment}.${RootDomainName}",
-              HostedZoneId: !Ref HostedZoneId,
-            },
           ],
         ]
 
-  # External load balancer
-  LoadBalancer:
+  # Admin ALB security group — only allows ingress from the IPs listed in
+  # the managed prefix list referenced by AdminAllowedPrefixListId.
+  AdminLoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} Admin LB SG (prefix-list restricted)"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourcePrefixListId: !Ref AdminAllowedPrefixListId
+          Description: HTTPS from allowed admin source CIDRs
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}:AdminLBSG"
+        - Key: project
+          Value: "cvh"
+        - Key: component
+          Value: "cvh-admin"
+        - Key: environment
+          Value: !Ref Environment
+      VpcId: !Ref VpcId
+
+  # Allow the admin ALB to reach the shared ECS tasks SG on port 8000.
+  # Defined here (not in network.yml) so adding/removing the admin stack
+  # doesn't require editing the network stack.
+  AdminECSIngressFromAdminLB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ECSSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 8000
+      ToPort: 8000
+      SourceSecurityGroupId: !GetAtt AdminLoadBalancerSG.GroupId
+      Description: Admin ALB → ECS tasks
+
+  AdminLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       LoadBalancerAttributes:
@@ -136,39 +152,36 @@ Resources:
           Value: "30"
       Scheme: internet-facing
       SecurityGroups:
-        - !Ref LBSecurityGroupId
+        - !Ref AdminLoadBalancerSG
       Subnets: !Ref PublicSubnetIds
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
+        - Key: component
+          Value: "cvh-admin"
       Type: application
 
-  # Target Group for ECS Service
-  LoadBalancerListenerTargetGroupECS:
+  AdminTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub "gosling-dmc-tg-${Environment}"
+      Name: !Sub "cvh-admin-tg-${Environment}"
       HealthCheckPath: /health
       Port: 8000
       Protocol: HTTP
-      # ProtocolVersion: HTTP2
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-admin"
         - Key: environment
           Value: !Ref Environment
       TargetType: ip
       VpcId: !Ref VpcId
 
-  Route53RecordSetGroup:
+  AdminRoute53RecordSet:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-      # keep the . suffix
       HostedZoneName: !Sub "${HostedZoneName}."
-      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html#cfn-route53-aliastarget-hostedzoneid
-      Comment: Zone apex alias.
       RecordSets:
         - Name:
             !If [
@@ -178,66 +191,52 @@ Resources:
             ]
           Type: A
           AliasTarget:
-            DNSName: !GetAtt LoadBalancer.DNSName
+            DNSName: !GetAtt AdminLoadBalancer.DNSName
             EvaluateTargetHealth: false
-            HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
-        - Name:
-            !If [
-              IsProd,
-              !Sub "www.${RootDomainName}",
-              !Sub "www.${Environment}.${RootDomainName}",
-            ]
-          Type: A
-          AliasTarget:
-            DNSName: !GetAtt LoadBalancer.DNSName
-            EvaluateTargetHealth: false
-            HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+            HostedZoneId: !GetAtt AdminLoadBalancer.CanonicalHostedZoneID
 
-  # Load Balancer Listener
-  LoadBalancerListener:
+  AdminLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
-        - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-          Type: "forward"
-      LoadBalancerArn: !Ref LoadBalancer
+        - TargetGroupArn: !Ref AdminTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref AdminLoadBalancer
       Port: 443
       Protocol: HTTPS
       SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
       Certificates:
         - CertificateArn: !Ref CertificateManagerCertificate
     DependsOn:
-      - LoadBalancer
+      - AdminLoadBalancer
 
-  # ECS Cluster
-  ECSFargateCluster:
+  AdminECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub "gosling-dmc-api-${AWS::StackName}"
+      ClusterName: !Sub "cvh-admin-${AWS::StackName}"
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-admin"
         - Key: environment
           Value: !Ref Environment
 
-  # ECS Service
-  ECSService:
+  AdminECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !Ref ECSFargateCluster
+      Cluster: !Ref AdminECSCluster
       DeploymentConfiguration:
         MaximumPercent: 100
         MinimumHealthyPercent: 50
-      DesiredCount: 2
+      DesiredCount: 1
       EnableECSManagedTags: true
       HealthCheckGracePeriodSeconds: 60
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: !Ref TaskName
           ContainerPort: 8000
-          TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
+          TargetGroupArn: !Ref AdminTargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -246,19 +245,19 @@ Resources:
           Subnets: !Ref PublicSubnetIds
       Tags:
         - Key: Name
-          Value: !Sub
-            - "${StackName}:ECSService"
-            - StackName: !Ref AWS::StackName
+          Value: !Sub "${AWS::StackName}:AdminECSService"
         - Key: project
-          Value: "gosling-dmc"
-      TaskDefinition: !Ref ECSServiceTaskDefinition
+          Value: "cvh"
+        - Key: component
+          Value: "cvh-admin"
+      TaskDefinition: !Ref AdminECSTaskDefinition
     DependsOn:
-      - LoadBalancerListenerTargetGroupECS
-      - LoadBalancer
-      - LoadBalancerListener
+      - AdminTargetGroup
+      - AdminLoadBalancer
+      - AdminLoadBalancerListener
+      - AdminECSIngressFromAdminLB
 
-  # ECS Task Definition
-  ECSServiceTaskDefinition:
+  AdminECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
@@ -267,32 +266,36 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
               Protocol: tcp
-            - ContainerPort: 80
-              Protocol: tcp
           EnvironmentFiles:
             - Type: s3
               Value: !Ref TaskEnvFile
-          # DB connection coordinates come from the database stack via
-          # CFN — keep them out of the S3 env file so they auto-update if
-          # RDS is ever recreated.
+          # SERVICE_VARIANT pinned here (not in the env file) so it's
+          # impossible to misconfigure by editing S3 — the admin task is
+          # ALWAYS in admin mode. DB coordinates come from the database
+          # stack via CFN so they auto-update if RDS is ever recreated.
           Environment:
+            - Name: SERVICE_VARIANT
+              Value: admin
             - Name: DB_HOST
               Value: !Ref DBHost
             - Name: DB_PORT
               Value: !Ref DBPort
             - Name: DB_NAME
               Value: !Ref DBName
-          # Sensitive values are pulled from Secrets Manager and injected
-          # as env vars by ECS before the container starts. Keep these
-          # OUT of the S3 EnvironmentFile (Secrets here override the file
-          # but the file is still readable by anyone with s3:GetObject).
           Secrets:
+            # SECRET_KEY for the admin task is intentionally separate from
+            # the API's (`secret_key`) so a leak of one doesn't compromise
+            # admin session cookies / CSRF tokens of the other.
             - Name: SECRET_KEY
-              ValueFrom: !Sub "${AppSecretsArn}:secret_key::"
+              ValueFrom: !Sub "${AppSecretsArn}:admin_secret_key::"
             - Name: DB_USER
               ValueFrom: !Sub "${RdsSecretArn}:username::"
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${RdsSecretArn}:password::"
+            - Name: AUTH0_ADMIN_CLIENT_ID
+              ValueFrom: !Sub "${AppSecretsArn}:auth0_admin_client_id::"
+            - Name: AUTH0_ADMIN_CLIENT_SECRET
+              ValueFrom: !Sub "${AppSecretsArn}:auth0_admin_client_secret::"
           Essential: true
           LogConfiguration:
             LogDriver: awslogs
@@ -305,39 +308,36 @@ Resources:
               awslogs-stream-prefix: ecs
           HealthCheck:
             Command:
-              - "CMD-SHELL"
+              - CMD-SHELL
               - "curl -f http://127.0.0.1:8000/health || exit 1"
-
             Interval: 30
             Timeout: 5
             Retries: 3
-      Cpu: "1024"
-      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      Cpu: "512"
+      ExecutionRoleArn: !GetAtt AdminECSExecutionRole.Arn
       Family: !Sub
         - "${Task}-task-definition"
         - Task: !Ref TaskName
-      Memory: "2048"
+      Memory: "1024"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       Tags:
         - Key: Name
-          Value: !Sub
-            - "${StackName}:ECSTaskDef"
-            - StackName: !Ref AWS::StackName
+          Value: !Sub "${AWS::StackName}:AdminECSTaskDef"
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
-      TaskRoleArn: !Ref TaskContainerRole
+          Value: "cvh-admin"
+      TaskRoleArn: !Ref AdminTaskContainerRole
     DependsOn:
-      - TaskContainerRole
+      - AdminTaskContainerRole
 
-  TaskContainerRole:
+  AdminTaskContainerRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -347,7 +347,7 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: gosling-dmc-api-container
+        - PolicyName: cvh-admin-container
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -387,19 +387,17 @@ Resources:
                 Resource: ["arn:aws:logs:*:*:*"]
       Tags:
         - Key: Name
-          Value: !Sub
-            - "${StackName}:TaskContainerRole"
-            - StackName: !Ref AWS::StackName
+          Value: !Sub "${AWS::StackName}:AdminTaskContainerRole"
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-admin"
 
-  ECSExecutionRole:
+  AdminECSExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -411,7 +409,7 @@ Resources:
       Policies:
         - PolicyName: ecs-service-policy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -422,7 +420,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
-              - Sid: BackendSecretsAccess
+              - Sid: AdminSecretsAccess
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
@@ -438,7 +436,7 @@ Resources:
                     kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -449,7 +447,7 @@ Resources:
                 Resource: "*"
         - PolicyName: s3
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -460,37 +458,23 @@ Resources:
                 Resource: [!Ref TaskEnvFile]
       Tags:
         - Key: Name
-          Value: !Sub
-            - "${StackName}:ECSExecutionRole"
-            - StackName: !Ref AWS::StackName
+          Value: !Sub "${AWS::StackName}:AdminECSExecutionRole"
 
 Outputs:
-  ECSCluster:
-    Description: A reference to the ECS cluster
-    Value: !Ref ECSFargateCluster
-
-  ECSClusterTaskDef:
-    Description: The ECS cluster task definition
-    Value: !Ref ECSServiceTaskDefinition
-
-  ECSClusterService:
-    Description: The name of the ECS Service
-    Value: !GetAtt ECSService.Name
-    Export:
-      Name: ECSClusterService
-
-  ECSClusterServiceArn:
-    Description: The ECS cluster service definition
-    Value: !Ref ECSService
-
-  ECSExecutionRole:
-    Description: The ECS execution role
-    Value: !Ref ECSExecutionRole
-
-  LoadBalancerDNSName:
-    Description: "DNS name of the load balancer"
-    Value: !GetAtt LoadBalancer.DNSName
-
-  LoadBalancerURL:
-    Description: The url of the external load balancer
-    Value: !Sub http://${LoadBalancer.DNSName}
+  AdminECSCluster:
+    Description: The admin ECS cluster
+    Value: !Ref AdminECSCluster
+  AdminECSService:
+    Description: The admin ECS service name
+    Value: !GetAtt AdminECSService.Name
+  AdminLoadBalancerDNSName:
+    Description: DNS name of the admin ALB
+    Value: !GetAtt AdminLoadBalancer.DNSName
+  AdminDomainName:
+    Description: Public DNS name for the admin service
+    Value:
+      !If [
+        IsProd,
+        !Ref RootDomainName,
+        !Sub "${Environment}.${RootDomainName}",
+      ]
