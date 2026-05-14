@@ -223,6 +223,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(",")
 
+# We sit behind an ALB that terminates TLS and forwards plain HTTP to
+# the container. Without this, Django thinks every request is HTTP, so
+# `request.is_secure()` is False and `request.build_absolute_uri(...)`
+# produces `http://...` — which breaks OIDC (Auth0 rejects the
+# `redirect_uri` because it's registered as `https://`) and any other
+# scheme-aware URL building. Trusting `X-Forwarded-Proto` is safe here
+# because the only thing that can reach the Fargate task is the ALB
+# (enforced by the ECS security group).
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # Auth0-backed OIDC for the Django admin SERVICE_VARIANT. The client_id
 # and client_secret are sensitive; in production they come from the
