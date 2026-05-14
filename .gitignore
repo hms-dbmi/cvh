@@ -151,6 +151,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Django collectstatic output (generated at Docker build time + by
+# `manage.py collectstatic` locally).
+backend/core/staticfiles/
+
 # Pyre type checker
 .pyre/
 
