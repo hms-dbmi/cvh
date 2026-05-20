@@ -4,7 +4,7 @@ import Button, { type ButtonProps } from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { FileText } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
-import DialogButton from "../../../components/DialogButton";
+import DialogButton from "@/components/DialogButton";
 import { useAddExample } from "../api/useExamples";
 
 const text = {
@@ -149,10 +149,10 @@ const examples: {
 ];
 
 export default function AddExamplesDatasets({
-  project_uuid,
+  workspace_uuid,
   buttonProps,
 }: {
-  project_uuid: string;
+  workspace_uuid: string;
   buttonProps?: Partial<ButtonProps>;
 }) {
   const [open, setOpen] = useState(false);
@@ -165,24 +165,24 @@ export default function AddExamplesDatasets({
       mutate({
         body: {
           example_id: selectedExample,
-          project_uuid,
+          workspace_uuid,
           include_visualizations: false,
         },
       });
     }
-  }, [selectedExample, project_uuid, mutate]);
+  }, [selectedExample, workspace_uuid, mutate]);
 
   const addExampleWithViz = useCallback(() => {
     if (selectedExample) {
       mutate({
         body: {
           example_id: selectedExample,
-          project_uuid,
+          workspace_uuid,
           include_visualizations: true,
         },
       });
     }
-  }, [selectedExample, project_uuid, mutate]);
+  }, [selectedExample, workspace_uuid, mutate]);
 
   const resetSelectedExample = useCallback(
     () => setSelectedExample(undefined),

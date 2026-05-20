@@ -68,7 +68,10 @@ export default function ShareProjectButton({
 
   const onSubmit = useCallback(
     ({ email }: FormValues) => {
-      mutate({ body: { project_uuid: projectId, email } });
+      mutate({
+        params: { path: { workspace_uuid: projectId } },
+        body: { email },
+      });
     },
     [mutate, projectId],
   );

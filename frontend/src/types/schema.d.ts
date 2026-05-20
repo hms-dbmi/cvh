@@ -11,10 +11,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get User Info */
-        get: operations["api_api_get_user_info"];
-        /** Update User Info */
-        put: operations["api_api_update_user_info"];
+        /**
+         * Get current user
+         * @description Returns profile information for the authenticated user.
+         */
+        get: operations["api_routers_users_get_user_info"];
+        /**
+         * Update current user
+         * @description Updates profile fields (first name, last name) for the authenticated user.
+         */
+        put: operations["api_routers_users_update_user_info"];
         post?: never;
         delete?: never;
         options?: never;
@@ -22,88 +28,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects/members": {
+    "/api/workspaces/{workspace_uuid}/members": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        /** Update Project Member */
-        put: operations["api_api_update_project_member"];
-        /** Add Project Member */
-        post: operations["api_api_add_project_member"];
-        /** Delete Project Member */
-        delete: operations["api_api_delete_project_member"];
+        /**
+         * List workspace members
+         * @description Returns all members of a workspace with their permissions and profile info. Requires read access.
+         */
+        get: operations["api_routers_members_get_workspace_members"];
+        /**
+         * Update a workspace member
+         * @description Updates a member's permissions on a workspace. Requires admin access. Cannot modify your own permissions.
+         */
+        put: operations["api_routers_members_update_workspace_member"];
+        /**
+         * Add a workspace member
+         * @description Adds a user to a workspace with read permissions. Requires admin access to the workspace.
+         */
+        post: operations["api_routers_members_add_workspace_member"];
+        /**
+         * Remove a workspace member
+         * @description Removes a user from a workspace. Requires admin access. Cannot remove yourself.
+         */
+        delete: operations["api_routers_members_delete_workspace_member"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{project_uuid}/members": {
+    "/api/workspaces": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Members */
-        get: operations["api_api_get_project_members"];
+        /**
+         * List user workspaces
+         * @description Returns all private workspaces the authenticated user has read access to, ordered by last modified. Paginated.
+         */
+        get: operations["api_routers_workspaces_get_workspaces"];
         put?: never;
-        post?: never;
+        /**
+         * Create a workspace
+         * @description Creates a new workspace. The authenticated user becomes the admin and an initial visualization is created.
+         */
+        post: operations["api_routers_workspaces_create_workspace"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/projects": {
+    "/api/workspaces/{workspace_uuid}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Projects */
-        get: operations["api_api_get_projects"];
-        put?: never;
-        /** Create Project */
-        post: operations["api_api_create_project"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{project_uuid}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Project */
-        get: operations["api_api_get_project"];
-        /** Update Project */
-        put: operations["api_api_update_project"];
+        /**
+         * Get a workspace
+         * @description Returns a single workspace by UUID. Accessible if the workspace is public or the user has read access.
+         */
+        get: operations["api_routers_workspaces_get_workspace"];
+        /**
+         * Update a workspace
+         * @description Partially updates a workspace's name, description, or visibility. Requires admin access.
+         */
+        put: operations["api_routers_workspaces_update_workspace"];
         post?: never;
-        /** Delete Project */
-        delete: operations["api_api_delete_project"];
+        /**
+         * Delete a workspace
+         * @description Permanently deletes a workspace and all associated data. Requires admin access.
+         */
+        delete: operations["api_routers_workspaces_delete_workspace"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/public/projects": {
+    "/api/public/workspaces": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Public Projects */
-        get: operations["api_api_get_public_projects"];
+        /**
+         * List public workspaces
+         * @description Returns all public workspaces, ordered by last modified. Paginated.
+         */
+        get: operations["api_routers_workspaces_get_public_workspaces"];
         put?: never;
         post?: never;
         delete?: never;
@@ -119,12 +139,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get User Datasets */
-        get: operations["api_api_get_user_datasets"];
-        /** Update Dataset */
-        put: operations["api_api_update_dataset"];
-        /** Create Dataset */
-        post: operations["api_api_create_dataset"];
+        /**
+         * List user datasets
+         * @description Returns all datasets owned directly by the authenticated user (not via workspace). Paginated.
+         */
+        get: operations["api_routers_datasets_get_user_datasets"];
+        put?: never;
+        /**
+         * Create a dataset
+         * @description Creates a new dataset. If workspace_uuid is provided, requires write access to that workspace. Otherwise associates with the user directly.
+         */
+        post: operations["api_routers_datasets_create_dataset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -140,15 +165,46 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create Example Datasets */
-        post: operations["api_api_create_example_datasets"];
+        /**
+         * Add example datasets
+         * @description Populates a workspace with pre-configured example datasets and optionally visualizations. Requires write access.
+         */
+        post: operations["api_routers_datasets_create_example_datasets"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/datasets/tags": {
+    "/api/datasets/{dataset_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a dataset
+         * @description Returns a single dataset by UUID, including its tags. Requires read access to the parent workspace.
+         */
+        get: operations["api_routers_datasets_get_dataset"];
+        /**
+         * Update a dataset
+         * @description Partially updates a dataset's metadata. Requires write access to the parent workspace.
+         */
+        put: operations["api_routers_datasets_update_dataset"];
+        post?: never;
+        /**
+         * Delete a dataset
+         * @description Permanently deletes a dataset. Requires write access to the parent workspace.
+         */
+        delete: operations["api_routers_datasets_delete_dataset"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/{dataset_uuid}/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -156,8 +212,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Tag Dataset */
-        put: operations["api_api_tag_dataset"];
+        /**
+         * Tag a dataset
+         * @description Replaces all tags on a dataset. Creates any tags that don't already exist in the workspace. Requires write access.
+         */
+        put: operations["api_routers_datasets_tag_dataset"];
         post?: never;
         delete?: never;
         options?: never;
@@ -165,15 +224,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/datasets/{project_uuid}": {
+    "/api/workspaces/{workspace_uuid}/datasets": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Datasets */
-        get: operations["api_api_get_project_datasets"];
+        /**
+         * List workspace datasets
+         * @description Returns datasets in a workspace, with optional filtering by tags, assembly, file type, or name. Paginated.
+         */
+        get: operations["api_routers_datasets_get_workspace_datasets"];
         put?: never;
         post?: never;
         delete?: never;
@@ -182,15 +244,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/datasets/fields/{project_uuid}": {
+    "/api/workspaces/{workspace_uuid}/datasets/fields": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Datasets Field Values */
-        get: operations["api_api_get_project_datasets_field_values"];
+        /**
+         * Get dataset field values
+         * @description Returns distinct values for a given field (assembly or file_type) across all datasets in a workspace. Useful for populating filter dropdowns.
+         */
+        get: operations["api_routers_datasets_get_workspace_datasets_field_values"];
         put?: never;
         post?: never;
         delete?: never;
@@ -199,50 +264,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/datasets/tags/{project_uuid}": {
+    "/api/workspaces/{workspace_uuid}/datasets/tags": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Datasets Tags */
-        get: operations["api_api_get_project_datasets_tags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/datasets/uuid/{dataset_uuid}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dataset */
-        get: operations["api_api_get_dataset"];
-        put?: never;
-        post?: never;
-        /** Delete Dataset */
-        delete: operations["api_api_delete_dataset"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Tags */
-        get: operations["api_api_get_tags"];
+        /**
+         * Get dataset tags
+         * @description Returns all distinct tags used by datasets in a workspace.
+         */
+        get: operations["api_routers_datasets_get_workspace_datasets_tags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -258,8 +291,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Published Visualizations */
-        get: operations["api_api_get_published_visualizations"];
+        /**
+         * List published visualizations
+         * @description Returns all published visualizations, with optional filtering by tags or UUIDs. Paginated. No authentication required.
+         */
+        get: operations["api_routers_visualizations_get_published_visualizations"];
         put?: never;
         post?: never;
         delete?: never;
@@ -268,33 +304,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/visualizations": {
+    "/api/workspaces/{workspace_uuid}/visualizations": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Visualizations */
-        get: operations["api_api_get_project_visualizations"];
+        /**
+         * List workspace visualizations
+         * @description Returns visualizations in a workspace, with optional filtering by tags, name, or UUIDs. Requires read access.
+         */
+        get: operations["api_routers_visualizations_get_workspace_visualizations"];
         put?: never;
-        /** Create Visualization */
-        post: operations["api_api_create_visualization"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/visualizations/tags": {
+    "/api/workspaces/{workspace_uuid}/visualizations/tags": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Visualizations Tags */
-        get: operations["api_api_get_project_visualizations_Tags"];
+        /**
+         * Get visualization tags
+         * @description Returns all distinct tags used by visualizations in a workspace.
+         */
+        get: operations["api_routers_visualizations_get_workspace_visualizations_tags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -310,13 +351,22 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Visualization */
-        get: operations["api_api_get_visualization"];
-        /** Update Visualization */
-        put: operations["api_api_update_visualization"];
+        /**
+         * Get a visualization
+         * @description Returns a single visualization by UUID, including its full configuration. Requires read access to the parent workspace.
+         */
+        get: operations["api_routers_visualizations_get_visualization"];
+        /**
+         * Update a visualization
+         * @description Partially updates a visualization's metadata or configuration. Sets published_timestamp when publishing. Requires write access.
+         */
+        put: operations["api_routers_visualizations_update_visualization"];
         post?: never;
-        /** Delete Visualization */
-        delete: operations["api_api_delete_visualization"];
+        /**
+         * Delete a visualization
+         * @description Permanently deletes a visualization. Requires write access to the parent workspace.
+         */
+        delete: operations["api_routers_visualizations_delete_visualization"];
         options?: never;
         head?: never;
         patch?: never;
@@ -329,8 +379,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Public Visualization */
-        get: operations["api_api_get_public_visualization"];
+        /**
+         * Get a public visualization
+         * @description Returns a single published visualization by UUID. No authentication required.
+         */
+        get: operations["api_routers_visualizations_get_public_visualization"];
         put?: never;
         post?: never;
         delete?: never;
@@ -347,8 +400,51 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Tag Visualization */
-        put: operations["api_api_tag_visualization"];
+        /**
+         * Tag a visualization
+         * @description Replaces all tags on a visualization. Creates any tags that don't already exist in the workspace. Requires write access.
+         */
+        put: operations["api_routers_visualizations_tag_visualization"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/visualizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a visualization
+         * @description Creates a new visualization in a workspace. Requires write access to the workspace.
+         */
+        post: operations["api_routers_visualizations_create_visualization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search tags
+         * @description Returns all tags, optionally filtered by a substring match on the combined 'key:tag' value. Paginated.
+         */
+        get: operations["api_routers_tags_get_tags"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -374,6 +470,11 @@ export interface components {
              */
             email: string;
         };
+        /** SuccessOut */
+        SuccessOut: {
+            /** Success */
+            success: boolean;
+        };
         /** UserIn */
         UserIn: {
             /** First Name */
@@ -381,26 +482,16 @@ export interface components {
             /** Last Name */
             last_name?: string;
         };
-        /** ProjectMemberIn */
-        ProjectMemberIn: {
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
+        /** WorkspaceMemberIn */
+        WorkspaceMemberIn: {
             /**
              * Email
              * Format: email
              */
             email: string;
         };
-        /** ProjectMemberUpdate */
-        ProjectMemberUpdate: {
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
+        /** WorkspaceMemberUpdate */
+        WorkspaceMemberUpdate: {
             /**
              * Email
              * Format: email
@@ -412,8 +503,8 @@ export interface components {
              */
             permissions: number;
         };
-        /** ProjectMemberOut */
-        ProjectMemberOut: {
+        /** WorkspaceMemberOut */
+        WorkspaceMemberOut: {
             /**
              * Email
              * Format: email
@@ -431,8 +522,8 @@ export interface components {
              */
             permissions: number;
         };
-        /** ProjectIn */
-        ProjectIn: {
+        /** WorkspaceIn */
+        WorkspaceIn: {
             /** Name */
             name: string;
             /** Description */
@@ -453,15 +544,15 @@ export interface components {
              */
             offset: number;
         };
-        /** PagedProjectOutWithMembersCount */
-        PagedProjectOutWithMembersCount: {
+        /** PagedWorkspaceOutWithMembersCount */
+        PagedWorkspaceOutWithMembersCount: {
             /** Items */
-            items: components["schemas"]["ProjectOutWithMembersCount"][];
+            items: components["schemas"]["WorkspaceOutWithMembersCount"][];
             /** Count */
             count: number;
         };
-        /** ProjectOutWithMembersCount */
-        ProjectOutWithMembersCount: {
+        /** WorkspaceOutWithMembersCount */
+        WorkspaceOutWithMembersCount: {
             /** Datasets Count */
             datasets_count: number;
             /** Visualizations Count */
@@ -497,11 +588,11 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
-            /** Project Members Count */
-            project_members_count: number;
+            /** Workspace Members Count */
+            workspace_members_count: number;
         };
-        /** ProjectOut */
-        ProjectOut: {
+        /** WorkspaceOut */
+        WorkspaceOut: {
             /** Datasets Count */
             datasets_count: number;
             /** Visualizations Count */
@@ -538,26 +629,26 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** PartialProjectIn */
-        PartialProjectIn: {
+        /** WorkspaceUpdate */
+        WorkspaceUpdate: {
             /** Name */
             name?: string;
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Private */
             private?: boolean;
         };
-        /** PagedProjectOut */
-        PagedProjectOut: {
+        /** PagedWorkspaceOut */
+        PagedWorkspaceOut: {
             /** Items */
-            items: components["schemas"]["ProjectOut"][];
+            items: components["schemas"]["WorkspaceOut"][];
             /** Count */
             count: number;
         };
         /** DatasetIn */
         DatasetIn: {
-            /** Project Uuid */
-            project_uuid?: string | null;
+            /** Workspace Uuid */
+            workspace_uuid?: string | null;
             /** Dataset */
             dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
         };
@@ -712,18 +803,6 @@ export interface components {
             /** Row Names */
             row_names: string[];
         };
-        /** DatasetUpdate */
-        DatasetUpdate: {
-            /** Project Uuid */
-            project_uuid?: string | null;
-            /** Dataset */
-            dataset?: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"]) | null;
-            /**
-             * Uuid
-             * Format: uuid4
-             */
-            uuid: string;
-        };
         /** DatasetOut */
         DatasetOut: {
             /** Source Url */
@@ -782,10 +861,10 @@ export interface components {
         /** ExampleDatasetIn */
         ExampleDatasetIn: {
             /**
-             * Project Uuid
+             * Workspace Uuid
              * Format: uuid4
              */
-            project_uuid: string;
+            workspace_uuid: string;
             /** Include Visualizations */
             include_visualizations: boolean;
             /**
@@ -794,38 +873,30 @@ export interface components {
              */
             example_id: 1 | 2;
         };
-        /** TagIn */
-        TagIn: {
-            /** Tag */
-            tag: string;
-            /** Key */
-            key: string;
-        };
-        /** TagsIn */
-        TagsIn: {
-            /** Tags */
-            tags: components["schemas"]["TagIn"][];
-            /**
-             * Uuid
-             * Format: uuid4
-             */
-            uuid: string;
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
-        };
-        /** DatasetQuerySchema */
-        DatasetQuerySchema: {
-            /** Tags */
-            tags?: string[];
-            /** Assembly */
-            assembly?: string[];
-            /** File Type */
-            file_type?: string[];
+        /** DatasetUpdate */
+        DatasetUpdate: {
             /** Name */
             name?: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url?: string;
+            /** File Type */
+            file_type?: string;
+            /** Data Type */
+            data_type?: string;
+            /** Assembly */
+            assembly?: string | null;
+            /** Data Column */
+            data_column?: Record<string, never> | null;
+            /** Row Names */
+            row_names?: unknown[] | null;
+            /** Headers */
+            headers?: boolean;
+            /** Index Url */
+            index_url?: string | null;
+            /** Separator */
+            separator?: string | null;
         };
         /** DatasetWithTagsOut */
         DatasetWithTagsOut: {
@@ -877,13 +948,6 @@ export interface components {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
         };
-        /** PagedDatasetWithTagsOut */
-        PagedDatasetWithTagsOut: {
-            /** Items */
-            items: components["schemas"]["DatasetWithTagsOut"][];
-            /** Count */
-            count: number;
-        };
         /** TagOut */
         TagOut: {
             /** Tag */
@@ -896,10 +960,33 @@ export interface components {
              */
             uuid?: string;
         };
-        /** PagedTagOut */
-        PagedTagOut: {
+        /** TagIn */
+        TagIn: {
+            /** Tag */
+            tag: string;
+            /** Key */
+            key: string;
+        };
+        /** TagsIn */
+        TagsIn: {
+            /** Tags */
+            tags: components["schemas"]["TagIn"][];
+        };
+        /** DatasetQuerySchema */
+        DatasetQuerySchema: {
+            /** Tags */
+            tags?: string[];
+            /** Assembly */
+            assembly?: string[];
+            /** File Type */
+            file_type?: string[];
+            /** Name */
+            name?: string;
+        };
+        /** PagedDatasetWithTagsOut */
+        PagedDatasetWithTagsOut: {
             /** Items */
-            items: components["schemas"]["TagOut"][];
+            items: components["schemas"]["DatasetWithTagsOut"][];
             /** Count */
             count: number;
         };
@@ -912,15 +999,15 @@ export interface components {
             /** Uuids */
             uuids?: string[];
         };
-        /** PagedVisualizationNoConfOut */
-        PagedVisualizationNoConfOut: {
+        /** PagedVisualizationSummaryOut */
+        PagedVisualizationSummaryOut: {
             /** Items */
-            items: components["schemas"]["VisualizationNoConfOut"][];
+            items: components["schemas"]["VisualizationSummaryOut"][];
             /** Count */
             count: number;
         };
-        /** VisualizationNoConfOut */
-        VisualizationNoConfOut: {
+        /** VisualizationSummaryOut */
+        VisualizationSummaryOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
             /** Author */
@@ -971,25 +1058,6 @@ export interface components {
              * Format: date-time
              */
             last_viewed_timestamp: string;
-        };
-        /** VisualizationIn */
-        VisualizationIn: {
-            /**
-             * Project Uuid
-             * Format: uuid4
-             */
-            project_uuid: string;
-            /** Description */
-            description?: string | null;
-            /** Author */
-            author?: string | null;
-            /** Name */
-            name: string;
-            /**
-             * Tool
-             * @default gosling
-             */
-            tool: string;
         };
         /** VisualizationOut */
         VisualizationOut: {
@@ -1046,8 +1114,8 @@ export interface components {
              */
             last_viewed_timestamp: string;
         };
-        /** PartialVisualizationUpdate */
-        PartialVisualizationUpdate: {
+        /** VisualizationUpdate */
+        VisualizationUpdate: {
             /** Name */
             name?: string;
             /** Description */
@@ -1065,6 +1133,32 @@ export interface components {
             /** N Datasets */
             n_datasets?: number | null;
         };
+        /** VisualizationIn */
+        VisualizationIn: {
+            /**
+             * Workspace Uuid
+             * Format: uuid4
+             */
+            workspace_uuid: string;
+            /** Description */
+            description?: string | null;
+            /** Author */
+            author?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
+        };
+        /** PagedTagOut */
+        PagedTagOut: {
+            /** Items */
+            items: components["schemas"]["TagOut"][];
+            /** Count */
+            count: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1074,7 +1168,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    api_api_get_user_info: {
+    api_routers_users_get_user_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -1094,7 +1188,7 @@ export interface operations {
             };
         };
     };
-    api_api_update_user_info: {
+    api_routers_users_update_user_info: {
         parameters: {
             query?: never;
             header?: never;
@@ -1112,82 +1206,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    api_api_update_project_member: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectMemberUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
                 };
-                content?: never;
             };
         };
     };
-    api_api_add_project_member: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectMemberIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_delete_project_member: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProjectMemberIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_get_project_members: {
+    api_routers_members_get_workspace_members: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                project_uuid: string;
+                workspace_uuid: string;
             };
             cookie?: never;
         };
@@ -1199,12 +1229,90 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectMemberOut"][];
+                    "application/json": components["schemas"]["WorkspaceMemberOut"][];
                 };
             };
         };
     };
-    api_api_get_projects: {
+    api_routers_members_update_workspace_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceMemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_members_add_workspace_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceMemberIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_members_delete_workspace_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceMemberIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_workspaces_get_workspaces: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1222,12 +1330,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedProjectOutWithMembersCount"];
+                    "application/json": components["schemas"]["PagedWorkspaceOutWithMembersCount"];
                 };
             };
         };
     };
-    api_api_create_project: {
+    api_routers_workspaces_create_workspace: {
         parameters: {
             query?: never;
             header?: never;
@@ -1236,7 +1344,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectIn"];
+                "application/json": components["schemas"]["WorkspaceIn"];
             };
         };
         responses: {
@@ -1246,17 +1354,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectIn"];
+                    "application/json": components["schemas"]["WorkspaceIn"];
                 };
             };
         };
     };
-    api_api_get_project: {
+    api_routers_workspaces_get_workspace: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                project_uuid: string;
+                workspace_uuid: string;
             };
             cookie?: never;
         };
@@ -1268,23 +1376,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectOut"];
+                    "application/json": components["schemas"]["WorkspaceOut"];
                 };
             };
         };
     };
-    api_api_update_project: {
+    api_routers_workspaces_update_workspace: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                project_uuid: string;
+                workspace_uuid: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PartialProjectIn"];
+                "application/json": components["schemas"]["WorkspaceUpdate"];
             };
         };
         responses: {
@@ -1293,16 +1401,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
             };
         };
     };
-    api_api_delete_project: {
+    api_routers_workspaces_delete_workspace: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                project_uuid: string;
+                workspace_uuid: string;
             };
             cookie?: never;
         };
@@ -1313,11 +1423,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
             };
         };
     };
-    api_api_get_public_projects: {
+    api_routers_workspaces_get_public_workspaces: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1335,12 +1447,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PagedProjectOut"];
+                    "application/json": components["schemas"]["PagedWorkspaceOut"];
                 };
             };
         };
     };
-    api_api_get_user_datasets: {
+    api_routers_datasets_get_user_datasets: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1363,29 +1475,7 @@ export interface operations {
             };
         };
     };
-    api_api_update_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DatasetUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_create_dataset: {
+    api_routers_datasets_create_dataset: {
         parameters: {
             query?: never;
             header?: never;
@@ -1409,7 +1499,7 @@ export interface operations {
             };
         };
     };
-    api_api_create_example_datasets: {
+    api_routers_datasets_create_example_datasets: {
         parameters: {
             query?: never;
             header?: never;
@@ -1427,108 +1517,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    api_api_tag_dataset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagsIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_get_project_datasets: {
-        parameters: {
-            query?: {
-                tags?: string[];
-                assembly?: string[];
-                file_type?: string[];
-                name?: string;
-                page?: number;
-                page_size?: number | null;
-            };
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
                 content: {
-                    "application/json": components["schemas"]["PagedDatasetWithTagsOut"];
+                    "application/json": components["schemas"]["SuccessOut"];
                 };
             };
         };
     };
-    api_api_get_project_datasets_field_values: {
-        parameters: {
-            query: {
-                field: "assembly" | "file_type";
-            };
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    api_api_get_project_datasets_tags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagOut"][];
-                };
-            };
-        };
-    };
-    api_api_get_dataset: {
+    api_routers_datasets_get_dataset: {
         parameters: {
             query?: never;
             header?: never;
@@ -1550,7 +1545,33 @@ export interface operations {
             };
         };
     };
-    api_api_delete_dataset: {
+    api_routers_datasets_update_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_delete_dataset: {
         parameters: {
             query?: never;
             header?: never;
@@ -1566,11 +1587,330 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
             };
         };
     };
-    api_api_get_tags: {
+    api_routers_datasets_tag_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_get_workspace_datasets: {
+        parameters: {
+            query?: {
+                tags?: string[];
+                assembly?: string[];
+                file_type?: string[];
+                name?: string;
+                page?: number;
+                page_size?: number | null;
+            };
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedDatasetWithTagsOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_get_workspace_datasets_field_values: {
+        parameters: {
+            query: {
+                field: "assembly" | "file_type";
+            };
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    api_routers_datasets_get_workspace_datasets_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_get_published_visualizations: {
+        parameters: {
+            query?: {
+                tags?: string[];
+                name?: string;
+                uuids?: string[];
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedVisualizationSummaryOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_get_workspace_visualizations: {
+        parameters: {
+            query?: {
+                tags?: string[];
+                name?: string;
+                uuids?: string[];
+            };
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationSummaryOut"][];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_get_workspace_visualizations_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_get_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_update_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualizationUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_delete_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_get_public_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_tag_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+        };
+    };
+    api_routers_visualizations_create_visualization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualizationIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisualizationSummaryOut"];
+                };
+            };
+        };
+    };
+    api_routers_tags_get_tags: {
         parameters: {
             query?: {
                 sub_str?: string | null;
@@ -1591,215 +1931,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedTagOut"];
                 };
-            };
-        };
-    };
-    api_api_get_published_visualizations: {
-        parameters: {
-            query?: {
-                tags?: string[];
-                name?: string;
-                uuids?: string[];
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedVisualizationNoConfOut"];
-                };
-            };
-        };
-    };
-    api_api_get_project_visualizations: {
-        parameters: {
-            query: {
-                project_uuid: string;
-                tags?: string[];
-                name?: string;
-                uuids?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationNoConfOut"][];
-                };
-            };
-        };
-    };
-    api_api_create_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VisualizationIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationNoConfOut"];
-                };
-            };
-        };
-    };
-    api_api_get_project_visualizations_Tags: {
-        parameters: {
-            query: {
-                project_uuid: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagOut"][];
-                };
-            };
-        };
-    };
-    api_api_get_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationOut"];
-                };
-            };
-        };
-    };
-    api_api_update_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PartialVisualizationUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_delete_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_api_get_public_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisualizationOut"];
-                };
-            };
-        };
-    };
-    api_api_tag_visualization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                visualization_uuid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagsIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

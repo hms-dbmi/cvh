@@ -13,8 +13,8 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButtonCopy from "../../../components/DialogButtonCopy.tsx";
-import type { components } from "../../../types/schema.d.ts";
+import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
+import type { components } from "@/types/schema.d.ts";
 import { useTagVisualization } from "../api/useVisualizations.ts";
 
 interface FormValues {
@@ -54,7 +54,6 @@ const TagSchema = z.object({
 const schema = z.object({ tags: z.array(TagSchema) });
 
 export default function AddTagButton({
-  projectId,
   visualizationId,
   visualization,
   closeMenu,
@@ -62,8 +61,7 @@ export default function AddTagButton({
   setOpen,
 }: {
   visualizationId: string;
-  projectId: string;
-  visualization: components["schemas"]["VisualizationNoConfOut"];
+  visualization: components["schemas"]["VisualizationSummaryOut"];
   closeMenu: () => void;
   setOpen: (o: boolean) => void;
   open: boolean;
@@ -113,15 +111,11 @@ export default function AddTagButton({
         .filter(({ tag, key }) => tag.length && key.length);
       mutate({
         params: { path: { visualization_uuid: visualizationId } },
-        body: {
-          tags: tagsList,
-          uuid: visualizationId,
-          project_uuid: projectId,
-        },
+        body: { tags: tagsList },
       });
       setOpen(false);
     },
-    [mutate, visualizationId, projectId, setOpen],
+    [mutate, visualizationId, setOpen],
   );
 
   return (

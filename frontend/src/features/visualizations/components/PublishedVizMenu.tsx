@@ -8,17 +8,18 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import { useCallback } from "react";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
-import { LinkMenuItem } from "../../navigation/components/Links";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
+import { LinkMenuItem } from "@/features/navigation/components/Links";
+import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { useUpdateVisualization } from "../api/useVisualizations";
 
 type Props = {
   visualizationID: string;
   closeMenu: () => void;
+  onUnpublish?: () => void;
 };
 
-function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
+function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
   const handleCopyClick = useHandleCopyClick();
   const path = `/visualizations/${visualizationID}`;
   const { toastError } = useSnackbarActions();
@@ -41,12 +42,13 @@ function PublishedVizMenu({ visualizationID, closeMenu }: Props) {
           path: { visualization_uuid: visualizationID },
         },
       });
+      onUnpublish?.();
       closeMenu();
     } catch (e) {
       toastError("Error publishing visualization");
       console.error(e);
     }
-  }, [updateViz, toastError, visualizationID, closeMenu]);
+  }, [updateViz, toastError, visualizationID, closeMenu, onUnpublish]);
 
   return (
     <>

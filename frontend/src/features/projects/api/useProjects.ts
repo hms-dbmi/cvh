@@ -2,12 +2,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import useClient, {
   buildInvalidateGetQuery,
   type QueryOptions,
-} from "../../../api/client";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+} from "@/api/client";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 
 /*
 function useProjects() {
-    const url: string = `${import.meta.env.VITE_API_URL}/api/projects`
+    const url: string = `${import.meta.env.VITE_API_URL}/api/workspaces`
 
     const fetcher = useFetcherWithToken();
 
@@ -21,16 +21,14 @@ function useProjects() {
   }
 */
 
-const path = "/api/projects";
-const publicPath = "/api/public/projects";
-const membersPath = "/api/projects/{project_uuid}/members";
-const permissionsPath = "/api/projects/{project_uuid}/permissions";
+const path = "/api/workspaces";
+const publicPath = "/api/public/workspaces";
+const membersPath = "/api/workspaces/{workspace_uuid}/members";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
   publicPath,
   membersPath,
-  permissionsPath,
 ]);
 
 function useGetProjects(options?: QueryOptions) {
@@ -50,20 +48,20 @@ function useCreateProject() {
   const client = useClient();
   return client.useMutation("post", path, {
     onSuccess: () => {
-      toastSuccess("Successfully created project.");
+      toastSuccess("Successfully created workspace.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to create project.");
+      toastError("Failed to create workspace.");
     },
   });
 }
 
 function useGetProject(projectId: string) {
   const client = useClient();
-  return client.useQuery("get", "/api/projects/{project_uuid}", {
+  return client.useQuery("get", "/api/workspaces/{workspace_uuid}", {
     params: {
-      path: { project_uuid: projectId },
+      path: { workspace_uuid: projectId },
     },
   });
 }
@@ -72,14 +70,14 @@ function useAddProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("post", "/api/projects/members", {
+  return client.useMutation("post", membersPath, {
     onSuccess: () => {
-      toastSuccess("Successfully shared project.");
+      toastSuccess("Successfully shared workspace.");
 
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to share project.");
+      toastError("Failed to share workspace.");
     },
   });
 }
@@ -88,7 +86,7 @@ function useUpdateProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", "/api/projects/members", {
+  return client.useMutation("put", membersPath, {
     onSuccess: () => {
       toastSuccess("Updated permissions.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
@@ -103,13 +101,13 @@ function useRemoveProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("delete", "/api/projects/members", {
+  return client.useMutation("delete", membersPath, {
     onSuccess: () => {
-      toastSuccess("Removed project member.");
+      toastSuccess("Removed workspace member.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to remove project member.");
+      toastError("Failed to remove workspace member.");
     },
   });
 }
@@ -118,13 +116,13 @@ function useDeleteProject() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("delete", "/api/projects/{project_uuid}", {
+  return client.useMutation("delete", "/api/workspaces/{workspace_uuid}", {
     onSuccess: () => {
-      toastSuccess("Deleted project.");
+      toastSuccess("Deleted workspace.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to delete project.");
+      toastError("Failed to delete workspace.");
     },
   });
 }
@@ -133,13 +131,13 @@ function useUpdateProject() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", "/api/projects/{project_uuid}", {
+  return client.useMutation("put", "/api/workspaces/{workspace_uuid}", {
     onSuccess: () => {
-      toastSuccess("Updated project.");
+      toastSuccess("Updated workspace.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to update project.");
+      toastError("Failed to update workspace.");
     },
   });
 }
@@ -148,20 +146,20 @@ function useGetProjectMembers(projectId: string) {
   const client = useClient();
   return client.useQuery("get", membersPath, {
     params: {
-      path: { project_uuid: projectId },
+      path: { workspace_uuid: projectId },
     },
   });
 }
 
 export {
-  useCreateProject,
-  useGetProject,
-  useGetPublicProjects,
   useAddProjectMember,
-  useGetProjectMembers,
-  useUpdateProjectMember,
-  useRemoveProjectMember,
+  useCreateProject,
   useDeleteProject,
+  useGetProject,
+  useGetProjectMembers,
+  useGetPublicProjects,
+  useRemoveProjectMember,
   useUpdateProject,
+  useUpdateProjectMember,
 };
 export default useGetProjects;

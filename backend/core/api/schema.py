@@ -6,6 +6,19 @@ from pydantic import UUID4, EmailStr, Field
 from .models import Dataset, Project, ProjectMember, Tag, VisualizationConf
 
 
+class DatasetQuerySchema(Schema):
+    tags: list[str] = Field(None, alias="tags")
+    assembly: list[str] = Field(None, alias="assembly")
+    file_type: list[str] = Field(None, alias="file_type")
+    name: str = Field(None, alias="name")
+
+
+class VisualizationQuerySchema(Schema):
+    tags: list[str] = Field(None, alias="tags")
+    name: str = Field(None, alias="name")
+    uuids: list[UUID4] = Field(None, alias="uuids")
+
+
 class OptionalSchema(Schema):
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -39,18 +52,19 @@ class UserIn(OptionalSchema):
     last_name: str
 
 
-class ProjectIn(Schema):
+class WorkspaceIn(Schema):
     name: str
     description: str
     private: bool
-    # group_uuid: Optional[UUID4]
 
 
-class PartialProjectIn(ProjectIn, OptionalSchema):
-    pass
+class WorkspaceUpdate(ModelSchema, OptionalSchema):
+    class Meta:
+        model = Project
+        fields = ["name", "description", "private"]
 
 
-class ProjectOut(ModelSchema):
+class WorkspaceOut(ModelSchema):
     datasets_count: int
     visualizations_count: int
     permissions: int | None = None
@@ -60,12 +74,14 @@ class ProjectOut(ModelSchema):
         fields = ["private", *shared_output_fields]
 
 
-class ProjectOutWithMembersCount(ProjectOut):
-    project_members_count: int
+class WorkspaceOutWithMembersCount(WorkspaceOut):
+    workspace_members_count: int
 
 
 class GoslingDataCommon(ModelSchema):
-    assembly: Literal["hg38", "hg19", "hg18", "hg17", "hg16", "mm10", "mm9", "unknown"]
+    assembly: Literal[
+        "hg38", "hg19", "hg18", "hg17", "hg16", "mm10", "mm9", "unknown"
+    ]
 
     class Meta:
         model = Dataset
@@ -91,19 +107,29 @@ class GoslingDesignerDataColumn(Schema):
         list[
             tuple[
                 str,
-                Literal["nominal", "quantitative", "chromosome", "genomic", "key"],
+                Literal[
+                    "nominal",
+                    "quantitative",
+                    "chromosome",
+                    "genomic",
+                    "key",
+                ],
             ]
         ]
         | None
     ) = None
 
 
-class GoslingDesignerIndex(GoslingDataCommon, GoslingDesignerDataColumn):
+class GoslingDesignerIndex(
+    GoslingDataCommon, GoslingDesignerDataColumn
+):
     file_type: Literal["vcf", "bed", "gff"]
     index_url: str
 
 
-class GoslingDesignerBEDB(GoslingDataCommon, GoslingDesignerDataColumn):
+class GoslingDesignerBEDB(
+    GoslingDataCommon, GoslingDesignerDataColumn
+):
     file_type: Literal["beddb"]
 
 
@@ -112,7 +138,16 @@ class GoslingDesignerCSV(GoslingDataCommon):
     separator: str
     headers: bool
     data_column: list[
-        tuple[str, Literal["nominal", "quantitative", "chromosome", "genomic", "key"]]
+        tuple[
+            str,
+            Literal[
+                "nominal",
+                "quantitative",
+                "chromosome",
+                "genomic",
+                "key",
+            ],
+        ]
     ]
 
 
@@ -128,23 +163,32 @@ GoslingDesignerModel = Annotated[
 
 
 class DatasetIn(Schema):
-    project_uuid: UUID4 | None = None
+    workspace_uuid: UUID4 | None = None
     dataset: GoslingDesignerModel
 
 
 class ExampleDatasetIn(Schema):
-    project_uuid: UUID4
+    workspace_uuid: UUID4
     include_visualizations: bool
     example_id: Literal[1, 2]
 
 
-class PartialDatasetIn(Schema):
-    project_uuid: UUID4 | None = None
-    dataset: GoslingDesignerModel | None = None
-
-
-class DatasetUpdate(PartialDatasetIn):
-    uuid: UUID4
+class DatasetUpdate(ModelSchema, OptionalSchema):
+    class Meta:
+        model = Dataset
+        fields = [
+            "name",
+            "description",
+            "source_url",
+            "file_type",
+            "data_type",
+            "assembly",
+            "data_column",
+            "row_names",
+            "headers",
+            "index_url",
+            "separator",
+        ]
 
 
 class DatasetOut(ModelSchema):
@@ -171,8 +215,6 @@ class TagIn(TypedDict):
 
 class TagsIn(Schema):
     tags: list[TagIn]
-    uuid: UUID4
-    project_uuid: UUID4
 
 
 class TagOut(ModelSchema):
@@ -186,7 +228,7 @@ class DatasetWithTagsOut(DatasetOut):
 
 
 class VisualizationIn(ModelSchema):
-    project_uuid: UUID4
+    workspace_uuid: UUID4
     description: str | None = None
     author: str | None = None
 
@@ -195,7 +237,7 @@ class VisualizationIn(ModelSchema):
         fields = ["name", "tool"]
 
 
-class VisualizationNoConfOut(ModelSchema):
+class VisualizationSummaryOut(ModelSchema):
     tags: list[TagOut]
 
     class Meta:
@@ -228,7 +270,7 @@ class VisualizationOut(ModelSchema):
         ]
 
 
-class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
+class VisualizationUpdate(ModelSchema, OptionalSchema):
     class Meta:
         model = VisualizationConf
         fields = [
@@ -243,13 +285,11 @@ class PartialVisualizationUpdate(ModelSchema, OptionalSchema):
         ]
 
 
-class ProjectMemberIn(Schema):
-    project_uuid: UUID4
+class WorkspaceMemberIn(Schema):
     email: EmailStr
 
 
-class ProjectMemberUpdate(ModelSchema):
-    project_uuid: UUID4
+class WorkspaceMemberUpdate(ModelSchema):
     email: EmailStr
 
     class Meta:
@@ -257,7 +297,7 @@ class ProjectMemberUpdate(ModelSchema):
         fields = ["permissions"]
 
 
-class ProjectMemberOut(ModelSchema):
+class WorkspaceMemberOut(ModelSchema):
     email: EmailStr
     username: str
     first_name: str | None = None
@@ -268,7 +308,5 @@ class ProjectMemberOut(ModelSchema):
         fields = ["permissions"]
 
 
-class ProjectPermissionOut(ModelSchema):
-    class Meta:
-        model = ProjectMember
-        fields = ["permissions"]
+class SuccessOut(Schema):
+    success: bool

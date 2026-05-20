@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { VitessceWarningBanner } from "./DataList";
+import { VitessceWarningBanner } from "./VitessceWarningBanner";
 
 describe("VitessceWarningBanner", () => {
   it("renders the Limited Functionality heading", () => {
@@ -10,9 +10,7 @@ describe("VitessceWarningBanner", () => {
   it("renders the warning description", () => {
     render(<VitessceWarningBanner />);
     expect(
-      screen.getByText(
-        /Only the copy and paste of public data possible/,
-      ),
+      screen.getByText(/Only the copy and paste of public data possible/),
     ).toBeInTheDocument();
   });
 });

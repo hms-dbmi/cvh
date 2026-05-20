@@ -1,12 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
-import useClient, { buildInvalidateGetQuery } from "../../../api/client";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import useClient, { buildInvalidateGetQuery } from "@/api/client";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 
 const path = "/api/datasets";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
-  "/api/projects",
+  "/api/workspaces",
   "/api/tags",
   "/api/visualizations",
 ]);

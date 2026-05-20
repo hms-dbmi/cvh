@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Database
+
+Parameters:
+  DBUserName:
+    Type: String
+    Description: The database main username
+    NoEcho: true
+  DBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The database's security group ID
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
+  DBName:
+    Type: String
+    Default: cvh_db
+  DBSubnetGroup:
+    Type: String
+    Description: The subnet group for the database
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
+
+Resources:
+  KMSKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: !If [IsProd, !Ref DBName, !Sub "${Environment}_${DBName}"]
+      EnableKeyRotation: false
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: !Ref "AWS::StackName"
+        Statement:
+          - Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                Fn::Sub: "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !If [IsProd, !Ref DBName, !Sub "${Environment}_${DBName}"]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroupId
+      AllocatedStorage: "20"
+      BackupRetentionPeriod: 7
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      MasterUsername: !Ref DBUserName
+      ManageMasterUserPassword: true
+      MasterUserSecret:
+        KmsKeyId: !Ref KMSKey
+      Tags:
+        - Key: project
+          Value: "cvh"
+        - Key: component
+          Value: "cvh-db"
+        - Key: environment
+          Value: !Ref Environment
+
+Outputs:
+  DBKeyARN:
+    Description: The ARN of the KMS DB Key
+    Value: !GetAtt KMSKey.Arn
+  RdsSecretArn:
+    Description: >
+      The ARN of the RDS-managed Secrets Manager entry created via
+      ManageMasterUserPassword. Consumed by the back-end stack to inject
+      DB_USER and DB_PASSWORD into ECS containers via the task
+      definition's `Secrets:` block.
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
+  DBEndpointAddress:
+    Description: DB hostname. Passed to back-end stacks as DB_HOST.
+    Value: !GetAtt Database.Endpoint.Address
+  DBEndpointPort:
+    Description: DB port. Passed to back-end stacks as DB_PORT.
+    Value: !GetAtt Database.Endpoint.Port
+  DBName:
+    Description: >
+      Actual database name (matches the env-prefixed value created here),
+      passed to back-end stacks as DB_NAME.
+    Value: !If [IsProd, !Ref DBName, !Sub "${Environment}_${DBName}"]

@@ -1,90 +1,131 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   ECS Fargate Cluster and Task Definition
-Parameters:   
+Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: The VPC
-    Default: "vpc-0032aab40699a6b32"
+    Default: "vpc-085e18e944c89a1e7"
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Default: "subnet-0b17025a76b1d74a3,subnet-0d2e5b8795e4569c0,subnet-059c833c815115bb5"
+    Default: "subnet-0f87b522b2920749c,subnet-080cf4dde85922f57,subnet-05b0e6758b969dcfc"
+  # PrivateSubnetIds:
+  #   Type: List<AWS::EC2::Subnet::Id>
+  #   Default: "subnet-09fc8618a1ff7aa7d,subnet-01644fa89f0d7ec1a"
+  ECSSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The ID of the ECS Security Group
+  LBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The ID of the LB Security Group
   TaskName:
     Type: String
     Description: The name of the service task
-    Default: "gosling-dmc-api-lb"
+    Default: "cvh-api-task"
   TaskEnvFile:
     Type: String
-    Description: The ARN for the environment file in S3 
-    Default: "arn:aws:s3:::gosling-dmc-env/gosling-dmc-env.env"
+    Description: The ARN for the environment file in S3
+    Default: "arn:aws:s3:::cvh-env-dev/cvh-env-dev.env"
+    NoEcho: true
   ImageURI:
     Type: String
     Description: The URI of the image to deploy
-    Default: "765139173785.dkr.ecr.us-east-2.amazonaws.com/gosling/dmc:latest"
-  DbInfo:
+    Default: "605134458779.dkr.ecr.us-east-2.amazonaws.com/cvh-api:latest"
+  RdsSecretArn:
     Type: String
-    Description: The ARN of the database secret in Secrets Manager
+    Description: >
+      ARN of the RDS-managed Secrets Manager entry (auto-generated when
+      the DB instance was created). RDS owns its schema and may rotate
+      the `password` field — do not add app-level keys here. Expected
+      JSON keys: `username`, `password`.
     NoEcho: true
-  DbSG:
+  AppSecretsArn:
     Type: String
-    Description: The security group ID attached to the database
-    Default: "sg-064851831f18d03a0"
+    Description: >
+      ARN of a Secrets Manager entry holding app-level secrets that don't
+      belong with the RDS-managed secret. Expected JSON keys:
+      `secret_key`. Add new app-level secrets here as needed.
+    NoEcho: true
+  RdsSecretKmsKeyArn:
+    Type: String
+    Description: >
+      ARN of the KMS key that encrypts the RDS-managed secret. Granted
+      `kms:Decrypt` on `ECSExecutionRole` so ECS can inject the secret
+      values as env vars before the container starts.
+  DBHost:
+    Type: String
+    Description: RDS endpoint address. Injected as DB_HOST.
+  DBPort:
+    Type: String
+    Description: RDS endpoint port. Injected as DB_PORT.
+  DBName:
+    Type: String
+    Description: Database name. Injected as DB_NAME.
   HostedZoneName:
     Description: Hosted Zone Name
     Type: String
-    Default: gosling-lang.org
+    Default: vis-api.link
   HostedZoneId:
     Description: Hosted Zone ID
     Type: String
-    Default: Z085595833A98LWBFS157
+    Default: Z09477406JQAR0KB7G87
   RootDomainName:
-    Description: Domain name for the website (api.designer.gosling-lang.org)
-    Default: api.designer.gosling-lang.org
+    Description: Domain name for the website
+    Default: api.vis-api.link
     Type: String
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev]
 
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
 
 Resources:
-  # Security Group for the Load Balancer
-  LoadBalancerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Sub "${AWS::StackName} LoadBalancer SG"
-      SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 80
-          FromPort: 80
-          IpProtocol: tcp
-          ToPort: 80
-        - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 443
-          FromPort: 443
-          IpProtocol: tcp
-          ToPort: 443
-      Tags: 
-        - Key: Name
-          Value: !Sub
-            - '${StackName}:ECSService'
-            - StackName: !Ref AWS::StackName
-        - Key: project
-          Value: 'gosling-dmc'
-      VpcId: !Ref VpcId
-
   CertificateManagerCertificate:
-      Type: AWS::CertificateManager::Certificate
-      Properties:
-          # naked domain
-          DomainName: !Ref RootDomainName
-          # add www to certificate
-          SubjectAlternativeNames:
-              - !Sub 'www.${RootDomainName}'
-          ValidationMethod: DNS
-          DomainValidationOptions:
-              # DNS record for the naked domain
-              - DomainName: !Ref RootDomainName
-                HostedZoneId: !Ref HostedZoneId
-              # DNS record for the www domain
-              - DomainName: !Sub 'www.${RootDomainName}'
-                HostedZoneId: !Ref HostedZoneId
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      # naked domain
+      DomainName:
+        !If [
+          IsProd,
+          !Ref RootDomainName,
+          !Sub "${Environment}.${RootDomainName}",
+        ]
+      # add www to certificate
+      SubjectAlternativeNames:
+        - !If [
+            IsProd,
+            !Sub "www.${RootDomainName}",
+            !Sub "www.${Environment}.${RootDomainName}",
+          ]
+
+      ValidationMethod: DNS
+      DomainValidationOptions: !If [
+          IsProd,
+          [
+            # DNS record for the naked domain
+            {
+              DomainName: !Ref RootDomainName,
+              HostedZoneId: !Ref HostedZoneId,
+            },
+            # DNS record for the www domain
+            {
+              DomainName: !Sub "www.${RootDomainName}",
+              HostedZoneId: !Ref HostedZoneId,
+            },
+          ],
+          [
+            {
+              DomainName: !Sub "${Environment}.${RootDomainName}",
+              HostedZoneId: !Ref HostedZoneId,
+            },
+            {
+              DomainName: !Sub "www.${Environment}.${RootDomainName}",
+              HostedZoneId: !Ref HostedZoneId,
+            },
+          ],
+        ]
 
   # External load balancer
   LoadBalancer:
@@ -92,96 +133,65 @@ Resources:
     Properties:
       LoadBalancerAttributes:
         - Key: idle_timeout.timeout_seconds
-          Value: '30'
+          Value: "30"
       Scheme: internet-facing
       SecurityGroups:
-        - !GetAtt LoadBalancerSG.GroupId
+        - !Ref LBSecurityGroupId
       Subnets: !Ref PublicSubnetIds
-      Tags: 
+      Tags:
         - Key: project
-          Value: 'gosling-dmc'
+          Value: "gosling-dmc"
       Type: application
-
-
-  # ECS Security Group
-  ECSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Sub "${AWS::StackName} ECS SG"
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 8000
-          ToPort: 8000
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: !Ref 'LoadBalancerSG'
-      SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
-          Description: Allow all outbound traffic by default
-          IpProtocol: "-1"
-      Tags: 
-        - Key: project
-          Value: 'gosling-dmc'
-      VpcId: !Ref VpcId
-
-  # Access to RDS from ECS Security Group
-  RDSOutboundRule:
-    Type: AWS::EC2::SecurityGroupEgress
-    Properties:
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-      DestinationSecurityGroupId: !Ref DbSG
-      GroupId: !GetAtt ECSSecurityGroup.GroupId
-  InboundRule:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
-      GroupId: !Ref DbSG
 
   # Target Group for ECS Service
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub "${AWS::StackName}-tg"
-      HealthCheckPath: /health     
+      Name: !Sub "gosling-dmc-tg-${Environment}"
+      HealthCheckPath: /health
       Port: 8000
       Protocol: HTTP
       # ProtocolVersion: HTTP2
       Tags:
         - Key: project
-          Value: 'gosling-dmc'
+          Value: "gosling-dmc"
         - Key: component
-          Value: 'gosling-dmc-api'
+          Value: "gosling-dmc-api"
+        - Key: environment
+          Value: !Ref Environment
       TargetType: ip
       VpcId: !Ref VpcId
- 
 
   Route53RecordSetGroup:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-        # keep the . suffix
-        HostedZoneName: !Sub '${HostedZoneName}.'
-        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html#cfn-route53-aliastarget-hostedzoneid
-        Comment: Zone apex alias.
-        RecordSets:
-            - Name: !Ref RootDomainName
-              Type: A
-              AliasTarget:
-                  DNSName: !GetAtt LoadBalancer.DNSName
-                  EvaluateTargetHealth: false
-                  HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
-            - Name: !Sub 'www.${RootDomainName}'
-              Type: A
-              AliasTarget:
-                  DNSName: !GetAtt LoadBalancer.DNSName
-                  EvaluateTargetHealth: false
-                  HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+      # keep the . suffix
+      HostedZoneName: !Sub "${HostedZoneName}."
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html#cfn-route53-aliastarget-hostedzoneid
+      Comment: Zone apex alias.
+      RecordSets:
+        - Name:
+            !If [
+              IsProd,
+              !Ref RootDomainName,
+              !Sub "${Environment}.${RootDomainName}",
+            ]
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt LoadBalancer.DNSName
+            EvaluateTargetHealth: false
+            HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+        - Name:
+            !If [
+              IsProd,
+              !Sub "www.${RootDomainName}",
+              !Sub "www.${Environment}.${RootDomainName}",
+            ]
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt LoadBalancer.DNSName
+            EvaluateTargetHealth: false
+            HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
 
   # Load Balancer Listener
   LoadBalancerListener:
@@ -189,12 +199,12 @@ Resources:
     Properties:
       DefaultActions:
         - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
-          Type: 'forward'
+          Type: "forward"
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
       SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
-      Certificates: 
+      Certificates:
         - CertificateArn: !Ref CertificateManagerCertificate
     DependsOn:
       - LoadBalancer
@@ -204,9 +214,13 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Sub "gosling-dmc-api-${AWS::StackName}"
-      Tags: 
+      Tags:
         - Key: project
-          Value: 'gosling-dmc'
+          Value: "gosling-dmc"
+        - Key: component
+          Value: "gosling-dmc-api"
+        - Key: environment
+          Value: !Ref Environment
 
   # ECS Service
   ECSService:
@@ -228,15 +242,15 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !GetAtt ECSSecurityGroup.GroupId
+            - !Ref ECSSecurityGroupId
           Subnets: !Ref PublicSubnetIds
-      Tags: 
+      Tags:
         - Key: Name
           Value: !Sub
-            - '${StackName}:ECSService'
+            - "${StackName}:ECSService"
             - StackName: !Ref AWS::StackName
         - Key: project
-          Value: 'gosling-dmc'
+          Value: "gosling-dmc"
       TaskDefinition: !Ref ECSServiceTaskDefinition
     DependsOn:
       - LoadBalancerListenerTargetGroupECS
@@ -249,15 +263,36 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Name: !Ref TaskName
-          Image: !Ref ImageURI 
+          Image: !Ref ImageURI
           PortMappings:
             - ContainerPort: 8000
               Protocol: tcp
             - ContainerPort: 80
               Protocol: tcp
-          EnvironmentFiles: 
+          EnvironmentFiles:
             - Type: s3
               Value: !Ref TaskEnvFile
+          # DB connection coordinates come from the database stack via
+          # CFN — keep them out of the S3 env file so they auto-update if
+          # RDS is ever recreated.
+          Environment:
+            - Name: DB_HOST
+              Value: !Ref DBHost
+            - Name: DB_PORT
+              Value: !Ref DBPort
+            - Name: DB_NAME
+              Value: !Ref DBName
+          # Sensitive values are pulled from Secrets Manager and injected
+          # as env vars by ECS before the container starts. Keep these
+          # OUT of the S3 EnvironmentFile (Secrets here override the file
+          # but the file is still readable by anyone with s3:GetObject).
+          Secrets:
+            - Name: SECRET_KEY
+              ValueFrom: !Sub "${AppSecretsArn}:secret_key::"
+            - Name: DB_USER
+              ValueFrom: !Sub "${RdsSecretArn}:username::"
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${RdsSecretArn}:password::"
           Essential: true
           LogConfiguration:
             LogDriver: awslogs
@@ -269,31 +304,31 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
           HealthCheck:
-            Command: 
+            Command:
               - "CMD-SHELL"
               - "curl -f http://127.0.0.1:8000/health || exit 1"
 
             Interval: 30
             Timeout: 5
             Retries: 3
-      Cpu: '1024'
+      Cpu: "1024"
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       Family: !Sub
         - "${Task}-task-definition"
         - Task: !Ref TaskName
-      Memory: '2048'
+      Memory: "2048"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       Tags:
         - Key: Name
           Value: !Sub
-            - '${StackName}:ECSTaskDef'
+            - "${StackName}:ECSTaskDef"
             - StackName: !Ref AWS::StackName
         - Key: project
-          Value: 'gosling-dmc'
+          Value: "gosling-dmc"
         - Key: component
-          Value: 'gosling-dmc-api'
+          Value: "gosling-dmc-api"
       TaskRoleArn: !Ref TaskContainerRole
     DependsOn:
       - TaskContainerRole
@@ -314,27 +349,20 @@ Resources:
       Policies:
         - PolicyName: gosling-dmc-api-container
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:GetBucketLocation
                   - s3:GetObject
                   - s3:GetObjectVersion
-                  - s3:ListBucket                  
-                Resource: [
-                  !Ref TaskEnvFile,
-                ]
+                  - s3:ListBucket
+                Resource: [!Ref TaskEnvFile]
               - Sid: ECS
                 Effect: Allow
                 Action:
                   - ecs:DescribeTasks
                 Resource: "*"
-              - Sid: RdsAccess
-                Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Ref DbInfo
               - Sid: ECR
                 Effect: Allow
                 Action:
@@ -348,7 +376,7 @@ Resources:
                 Action:
                   - ec2:DescribeNetworkInterfaces
                   - ecs:DescribeTaskDefinition
-                Resource: '*'
+                Resource: "*"
               - Sid: Logging
                 Effect: Allow
                 Action:
@@ -360,12 +388,12 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub
-            - '${StackName}:TaskContainerRole'
+            - "${StackName}:TaskContainerRole"
             - StackName: !Ref AWS::StackName
         - Key: project
-          Value: 'gosling-dmc'
+          Value: "gosling-dmc"
         - Key: component
-          Value: 'gosling-dmc-api'
+          Value: "gosling-dmc-api"
 
   ECSExecutionRole:
     Type: AWS::IAM::Role
@@ -394,11 +422,20 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
-              - Sid: RdsAccess
+              - Sid: BackendSecretsAccess
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref DbInfo
+                Resource:
+                  - !Ref RdsSecretArn
+                  - !Ref AppSecretsArn
+              - Sid: RdsSecretKmsDecrypt
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: !Ref RdsSecretKmsKeyArn
+                Condition:
+                  StringEquals:
+                    kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
         - PolicyName: cloudwatch-logs-policy
           PolicyDocument:
             Version: 2012-10-17
@@ -419,37 +456,34 @@ Resources:
                   - s3:GetBucketLocation
                   - s3:GetObject
                   - s3:GetObjectVersion
-                  - s3:ListBucket                  
-                Resource: [
-                  !Ref TaskEnvFile,
-                ]
+                  - s3:ListBucket
+                Resource: [!Ref TaskEnvFile]
       Tags:
         - Key: Name
           Value: !Sub
-            - '${StackName}:ECSExecutionRole'
+            - "${StackName}:ECSExecutionRole"
             - StackName: !Ref AWS::StackName
 
-
 Outputs:
-  ECSCluster: 
+  ECSCluster:
     Description: A reference to the ECS cluster
     Value: !Ref ECSFargateCluster
 
-  ECSClusterTaskDef: 
+  ECSClusterTaskDef:
     Description: The ECS cluster task definition
     Value: !Ref ECSServiceTaskDefinition
 
-  ECSClusterService: 
+  ECSClusterService:
     Description: The name of the ECS Service
     Value: !GetAtt ECSService.Name
     Export:
       Name: ECSClusterService
 
-  ECSClusterServiceArn: 
+  ECSClusterServiceArn:
     Description: The ECS cluster service definition
     Value: !Ref ECSService
 
-  ECSExecutionRole: 
+  ECSExecutionRole:
     Description: The ECS execution role
     Value: !Ref ECSExecutionRole
 

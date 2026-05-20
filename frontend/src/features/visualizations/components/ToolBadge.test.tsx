@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { ToolBadge } from "./VisualizationsList";
+import { ToolBadge } from "./ToolBadge";
 
 describe("ToolBadge", () => {
   it('renders "Vitessce" label for vitessce tool', () => {

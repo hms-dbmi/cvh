@@ -4,136 +4,21 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import {
-  CheckCircle,
-  Code,
-  GlobeSimple,
-  PresentationChart,
-} from "@phosphor-icons/react";
+import { CheckCircle, Code } from "@phosphor-icons/react";
 import { upgradeAndParse } from "@vitessce/schemas";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vitessce } from "vitessce";
 import "react-grid-layout/css/styles.css";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import {
-  useGetProjectVisualizations,
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
-import DataList from "./DataList.tsx";
-import VisualizationsList from "./VisualizationsList.tsx";
-
-type Mode = "editing" | "exploring";
+import { BottomBar, type Mode } from "./BottomBar.tsx";
 
 interface VitessceViewerProps {
-  projectId: string;
   permissions: number;
-}
-
-export function BottomBar({
-  mode,
-  onModeChange,
-  published,
-  onTogglePublish,
-  hasWritePermissions,
-}: {
-  mode: Mode;
-  onModeChange: (mode: Mode) => void;
-  published?: boolean;
-  onTogglePublish?: () => void;
-  hasWritePermissions?: boolean;
-}) {
-  const editorMode = hasWritePermissions ? "editing" : "configuration";
-  const isEditorActive = mode === "editing";
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        px: 1.5,
-        borderRadius: 2,
-        border: "1px solid #CAD5DA",
-        boxShadow: "0px 0px 4px 0px rgba(0,0,0,0.15)",
-        height: 64,
-      }}
-    >
-      <Stack direction="row" spacing={1}>
-        <Button
-          onClick={() => onModeChange("editing")}
-          startIcon={<Code size={24} />}
-          sx={{
-            bgcolor: isEditorActive ? "black" : "white",
-            color: isEditorActive ? "white" : "black",
-            border:
-              isEditorActive ? "1px solid black" : "1px solid #C8CCCE",
-            borderRadius: 2,
-            px: 1.5,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 500,
-            fontSize: 14,
-            letterSpacing: "0.28px",
-            "&:hover": {
-              bgcolor: isEditorActive ? "#333" : "#f5f5f5",
-            },
-          }}
-        >
-          {editorMode === "editing" ? "Editing" : "Configuration"}
-        </Button>
-        <Button
-          onClick={() => onModeChange("exploring")}
-          startIcon={<PresentationChart size={24} />}
-          sx={{
-            bgcolor: mode === "exploring" ? "black" : "white",
-            color: mode === "exploring" ? "white" : "black",
-            border:
-              mode === "exploring" ? "1px solid black" : "1px solid #C8CCCE",
-            borderRadius: 2,
-            px: 1.5,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 500,
-            fontSize: 14,
-            letterSpacing: "0.28px",
-            "&:hover": {
-              bgcolor: mode === "exploring" ? "#333" : "#f5f5f5",
-            },
-          }}
-        >
-          Exploring
-        </Button>
-      </Stack>
-      {onTogglePublish && (
-        <>
-          <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
-          <Button
-            onClick={onTogglePublish}
-            startIcon={<GlobeSimple size={24} />}
-            sx={{
-              bgcolor: published ? "#27AE60" : "transparent",
-              color: published ? "white" : "#4E5A63",
-              textTransform: "none",
-              fontWeight: 500,
-              fontSize: 14,
-              letterSpacing: "0.28px",
-              px: 1.5,
-              py: 1,
-              borderRadius: 2,
-              "&:hover": {
-                bgcolor: published ? "#27AE60" : "rgba(0,0,0,0.04)",
-              },
-            }}
-          >
-            {published ? "Published" : "Make Public"}
-          </Button>
-        </>
-      )}
-    </Paper>
-  );
+  selectedVizId?: string;
 }
 
 function CodeEditor({
@@ -195,27 +80,9 @@ function CodeEditor({
   );
 }
 
-function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
-  const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
-    undefined,
-  );
+function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const [mode, setMode] = useState<Mode>("exploring");
   const [editorValue, setEditorValue] = useState("");
-
-  const { data: visualizations } = useGetProjectVisualizations({
-    projectId,
-    tags: [],
-  });
-
-  // Auto-select first vitessce visualization on initial load
-  useEffect(() => {
-    if (!selectedVizId && visualizations?.length) {
-      const firstVitessce = visualizations.find((v) => v.tool === "vitessce");
-      if (firstVitessce?.uuid) {
-        setSelectedVizId(firstVitessce.uuid);
-      }
-    }
-  }, [selectedVizId, visualizations]);
 
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
@@ -225,14 +92,13 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
 
   const hasWritePermissions = permissions >= 2;
 
-  // Reset editor value when a different visualization is selected or its data changes
   useEffect(() => {
     if (data?.conf) {
       setEditorValue(JSON.stringify(data.conf, null, 2));
     } else {
       setEditorValue("");
     }
-  }, [selectedVizId, data?.conf]);
+  }, [data?.conf]);
 
   // Auto-save for Vitessce viewer (exploring mode)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -262,13 +128,13 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
     };
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
-  const togglePublishViz = useCallback(() => {
+  const publishViz = useCallback(() => {
     try {
       if (!selectedVizId || !hasWritePermissions) {
         return;
       }
       updateViz({
-        body: { published: !data?.published },
+        body: { published: true },
         params: {
           path: { visualization_uuid: selectedVizId },
         },
@@ -277,7 +143,7 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
       toastError("Error updating visualization publish status");
       console.error(e);
     }
-  }, [updateViz, toastError, selectedVizId, hasWritePermissions, data?.published]);
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
   // Manual save for editor mode
   const handleEditorSave = useCallback(() => {
@@ -310,44 +176,32 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
 
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
-      <Stack direction="row" sx={{ height: "100%" }}>
-        <Box sx={{ width: 400, flexShrink: 0, overflowY: "auto", p: 2 }}>
-          <VisualizationsList
-            projectId={projectId}
-            setSelectedVizId={setSelectedVizId}
-            selectedVizId={selectedVizId}
-            permissions={permissions}
-            disabledTools={["gosling"]}
+      <Paper
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          m: 2,
+          height: "calc(100% - 125px)",
+          overflow: "hidden",
+        }}
+      >
+        {mode === "exploring" && data?.conf && (
+          <Vitessce
+            config={data.conf}
+            height={900}
+            theme="light"
+            onConfigChange={hasWritePermissions ? saveViz : undefined}
           />
-          <DataList showVitessceWarning={!!selectedVizId} showActions />
-        </Box>
-        <Paper
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            m: 2,
-            height: "calc(100% - 125px)",
-            overflow: "hidden",
-          }}
-        >
-          {mode === "exploring" && data?.conf && (
-            <Vitessce
-              config={data.conf}
-              height={900}
-              theme="light"
-              onConfigChange={hasWritePermissions ? saveViz : undefined}
-            />
-          )}
-          {mode === "editing" && selectedVizId && (
-            <CodeEditor
-              editorValue={editorValue}
-              setEditorValue={setEditorValue}
-              onApply={handleEditorSave}
-              readOnly={!hasWritePermissions}
-            />
-          )}
-        </Paper>
-      </Stack>
+        )}
+        {mode === "editing" && selectedVizId && (
+          <CodeEditor
+            editorValue={editorValue}
+            setEditorValue={setEditorValue}
+            onApply={handleEditorSave}
+            readOnly={!hasWritePermissions}
+          />
+        )}
+      </Paper>
       {selectedVizId && (
         <Box
           sx={{
@@ -362,7 +216,8 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
             mode={mode}
             onModeChange={setMode}
             published={data?.published}
-            onTogglePublish={hasWritePermissions ? togglePublishViz : undefined}
+            visualizationID={selectedVizId}
+            onPublish={hasWritePermissions ? publishViz : undefined}
             hasWritePermissions={hasWritePermissions}
           />
         </Box>
@@ -371,4 +226,4 @@ function VitessceViewer({ projectId, permissions }: VitessceViewerProps) {
   );
 }
 
-export default VitessceViewer;
+export default memo(VitessceViewer);

@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-import json
 from pathlib import Path
 
 import boto3
@@ -95,12 +94,14 @@ if ENV_ALLOWED_HOSTS:
 # Application definition
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "mozilla_django_oidc",
     "api",
     "health_check",
 ]
@@ -108,6 +109,10 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "core.middleware.HealthCheckMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise must sit directly after SecurityMiddleware so it can
+    # serve collected static files (admin CSS/JS) from the container,
+    # without needing a CDN or a sidecar nginx.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -117,7 +122,19 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
-ROOT_URLCONF = "core.urls"
+# The same image runs in two ECS services. SERVICE_VARIANT picks which URL
+# surface this process exposes — "api" mounts the public REST API, "admin"
+# mounts only the Django admin. Defaulting to "api" preserves existing
+# local + production behavior.
+SERVICE_VARIANT = env.str("SERVICE_VARIANT", default="api")
+if SERVICE_VARIANT not in {"api", "admin"}:
+    raise ValueError(
+        f"SERVICE_VARIANT must be 'api' or 'admin', got {SERVICE_VARIANT!r}"
+    )
+
+ROOT_URLCONF = (
+    "core.urls_admin" if SERVICE_VARIANT == "admin" else "core.urls"
+)
 
 TEMPLATES = [
     {
@@ -140,33 +157,15 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-
-def get_db_secret():
-    secret_name = env.str("DB_SECRET_NAME")
-    region_name = "us-east-2"
-
-    # Create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(service_name="secretsmanager", region_name=region_name)
-
-    try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-    except ClientError as e:
-        # For a list of exceptions thrown, see
-        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        raise e
-
-    return json.loads(get_secret_value_response["SecretString"])
-
+#
+# Credentials (DB_USER, DB_PASSWORD) and SECRET_KEY are pulled from a
+# consolidated AWS Secrets Manager entry in production. Injection is
+# handled by ECS itself via the task definition's `Secrets:` field
+# (see cloudformation/back-end.yml), so the app reads them from env
+# uniformly in dev (.env) and prod.
 
 DB_USER = env.str("DB_USER")
 DB_PASSWORD = env.str("DB_PASSWORD")
-
-if METADATA_URI:
-    db_secrets = get_db_secret()
-    DB_USER = db_secrets["username"]
-    DB_PASSWORD = db_secrets["password"]
 
 DB_OPTIONS = {}
 
@@ -220,6 +219,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+# `collectstatic` runs during the Docker build; the resulting files are
+# served by WhiteNoise at runtime. Locally this dir may not exist until
+# you've run `manage.py collectstatic` once.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        # Hashed filenames + gzip/brotli so WhiteNoise can serve with
+        # long-lived cache headers safely.
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -227,3 +238,54 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(",")
+
+# We sit behind an ALB that terminates TLS and forwards plain HTTP to
+# the container. Without this, Django thinks every request is HTTP, so
+# `request.is_secure()` is False and `request.build_absolute_uri(...)`
+# produces `http://...` — which breaks OIDC (Auth0 rejects the
+# `redirect_uri` because it's registered as `https://`) and any other
+# scheme-aware URL building. Trusting `X-Forwarded-Proto` is safe here
+# because the only thing that can reach the Fargate task is the ALB
+# (enforced by the ECS security group).
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+
+# Auth0-backed OIDC for the Django admin SERVICE_VARIANT. The client_id
+# and client_secret are sensitive; in production they come from the
+# AppSecretsArn entry via ECS `Secrets:` injection (see
+# cloudformation/back-end.yml). Domain / claim names are operational
+# config, not secrets. The api SERVICE_VARIANT also imports these (no
+# harm — the URLs aren't mounted there) so both processes share the
+# same settings module.
+
+AUTH0_DOMAIN = env.str("AUTH0_DOMAIN", default="")
+AUTH0_ADMIN_CLIENT_ID = env.str("AUTH0_ADMIN_CLIENT_ID", default="")
+AUTH0_ADMIN_CLIENT_SECRET = env.str("AUTH0_ADMIN_CLIENT_SECRET", default="")
+
+# mozilla-django-oidc settings — Auth0 endpoints follow a fixed pattern.
+# `AUTH0_DOMAIN` is shared with `api/auth.py`, which expects the full URL
+# form `https://<tenant>/` (used as a JWT issuer). Strip protocol and
+# trailing slash here so the OIDC endpoint URLs come out clean.
+_auth0_host = (
+    AUTH0_DOMAIN.removeprefix("https://").removeprefix("http://").rstrip("/")
+)
+OIDC_RP_CLIENT_ID = AUTH0_ADMIN_CLIENT_ID
+OIDC_RP_CLIENT_SECRET = AUTH0_ADMIN_CLIENT_SECRET
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = "openid email profile"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"https://{_auth0_host}/authorize"
+OIDC_OP_TOKEN_ENDPOINT = f"https://{_auth0_host}/oauth/token"
+OIDC_OP_USER_ENDPOINT = f"https://{_auth0_host}/userinfo"
+OIDC_OP_JWKS_ENDPOINT = f"https://{_auth0_host}/.well-known/jwks.json"
+
+# Read by core.oidc_backend.Auth0AdminOIDCBackend.
+OIDC_ADMIN_ROLE_CLAIM = env.str(
+    "OIDC_ADMIN_ROLE_CLAIM", default="https://cvh/roles"
+)
+OIDC_ADMIN_ROLE_NAME = env.str("OIDC_ADMIN_ROLE_NAME", default="cvh_admin")
+
+if SERVICE_VARIANT == "admin":
+    AUTHENTICATION_BACKENDS = ("core.oidc_backend.Auth0AdminOIDCBackend",)
+    LOGIN_URL = "/oidc/authenticate/"
+    LOGIN_REDIRECT_URL = "/admin/"
+    LOGOUT_REDIRECT_URL = "/admin/"

@@ -17,12 +17,12 @@ import { CaretDown, CaretUp, SignOut, User } from "@phosphor-icons/react";
 import { useParams, useRouterState } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { useCallback, useState } from "react";
-import GoslingIcon from "../../../assets/gosling.svg?react";
-import type { components } from "../../../types/schema";
-import generateAvatarColor from "../../../utils/generateAvatarColor";
-import useGetProjects from "../../projects/api/useProjects";
-import AddProjectButton from "../../projects/components/AddProjectButton";
-import ProjectSettings from "../../projects/components/ProjectSettings";
+import CVHLogo from "@/assets/cvh_logo.svg?react";
+import useGetProjects from "@/features/projects/api/useProjects";
+import AddProjectButton from "@/features/projects/components/AddProjectButton";
+import ProjectSettings from "@/features/projects/components/ProjectSettings";
+import type { components } from "@/types/schema";
+import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
 import { LoginButton } from "./AuthButtons";
 import EditProfileDialog from "./EditProfileDialog";
@@ -32,20 +32,20 @@ function CollaboratorsMenu({ projectId }: { projectId: string }) {
   return <ProjectSettings projectId={projectId} />;
 }
 
-type ProjectOut = components["schemas"]["ProjectOutWithMembersCount"];
+type WorkspaceOut = components["schemas"]["WorkspaceOutWithMembersCount"];
 
 function WorkspaceListItem({
   project,
   firstLetter,
   isSelected,
 }: {
-  project: ProjectOut;
+  project: WorkspaceOut;
   firstLetter: string | null;
   isSelected: boolean;
 }) {
   const selectedProps = isSelected
     ? { onClick: undefined }
-    : { component: "a", href: `/project/vitessce/${project.uuid}` };
+    : { component: "a", href: `/project/${project.uuid}` };
 
   return (
     <MenuItem
@@ -84,7 +84,7 @@ function WorkspaceListItem({
             }}
             primary={project.name}
             secondary={[
-              `${project.project_members_count} collaborator${project?.project_members_count === 1 ? "" : "s"}`,
+              `${project.workspace_members_count} collaborator${project?.workspace_members_count === 1 ? "" : "s"}`,
               <> &middot; </>,
               `updated ${formatRelative(project.modified_timestamp, new Date())}`,
             ]}
@@ -183,7 +183,7 @@ function ProjectsBar() {
   if (router.location.pathname === "/" && isAuthenticated) {
     return (
       <Box flexGrow={1} ml={2}>
-        <Link to="/project/vitessce/{-$projectId}">Return to Workspaces</Link>
+        <Link to="/project/{-$projectId}">Return to Workspaces</Link>
       </Box>
     );
   }
@@ -353,7 +353,7 @@ export default function Header() {
         <Toolbar>
           <Stack spacing={2} direction="row" alignItems="center">
             <Link to="/">
-              <GoslingIcon height={30} />
+              <CVHLogo height={40} />
             </Link>
             <Link to="/" sx={{ textDecoration: "none" }}>
               <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>

@@ -19,7 +19,9 @@ class UserCreated(models.Model):
 
 
 class Group(UserCreated):
-    pass
+    class Meta:
+        verbose_name = "Project Group"
+        verbose_name_plural = "Project Groups"
 
 
 def get_user_projects_query(user, permission):
@@ -119,6 +121,10 @@ class VisualizationConf(UserCreated):
     class Tool(models.TextChoices):
         gosling = "gosling"
         vitessce = "vitessce"
+
+    class Meta:
+        verbose_name = "Visualization"
+        verbose_name_plural = "Visualizations"
 
     conf = models.JSONField(null=True)
     project_key = models.ForeignKey(

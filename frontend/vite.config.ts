@@ -1,20 +1,29 @@
 import path from "node:path";
+import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
-import { defineConfig } from "vitest/config";
 import svgr from "vite-plugin-svgr";
+import { defineConfig } from "vitest/config";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [TanStackRouterVite({ autoCodeSplitting: true }), react(), svgr()],
+  plugins: [
+    TanStackRouterVite({ autoCodeSplitting: true }),
+    react(),
+    svgr(),
+    tailwindcss(),
+  ],
   test: {
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
+    // e2e/ holds Playwright specs — Vitest must not pick them up.
+    exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
   },
   resolve: {
     dedupe: ["react", "react-dom"],
     alias: {
+      "@": path.resolve(__dirname, "src"),
       react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },

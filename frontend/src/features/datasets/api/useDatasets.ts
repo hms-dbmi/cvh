@@ -1,45 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
-import useClient, {
-  buildInvalidateGetQuery,
-  type QueryOptions,
-} from "../../../api/client";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import useClient, { buildInvalidateGetQuery } from "@/api/client";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 
 const path = "/api/datasets";
+const workspacePath = "/api/workspaces/{workspace_uuid}/datasets";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
-  "/api/projects",
+  "/api/workspaces",
   "/api/tags",
 ]);
-
-function useGetUserDatasets(options?: QueryOptions) {
-  const client = useClient();
-  return client.useQuery("get", path, options);
-}
-
-interface Tag {
-  tag: string;
-}
-
-function formatTagsForQuery(tags: Tag[]) {
-  return tags.map((tag) => tag.tag);
-}
-
-function useGetProjectDatasets(projectId: string, tags: Tag[]) {
-  const queryOptions = tags.length
-    ? {
-        query: { tags: formatTagsForQuery(tags) },
-      }
-    : {};
-  const client = useClient();
-  return client.useQuery("get", `${path}/{project_uuid}`, {
-    params: {
-      path: { project_uuid: projectId },
-      ...queryOptions,
-    },
-  });
-}
 
 interface Page {
   count: number;
@@ -102,10 +72,10 @@ function useGetPaginatedProjectDatasets({
   const client = useClient();
   return client.useInfiniteQuery(
     "get",
-    `${path}/{project_uuid}`,
+    workspacePath,
     {
       params: {
-        path: { project_uuid: projectId },
+        path: { workspace_uuid: projectId },
         ...queryOptions,
       },
     },
@@ -136,7 +106,7 @@ function useUpdateDataset() {
   const { toastSuccess, toastError } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", path, {
+  return client.useMutation("put", `${path}/{dataset_uuid}`, {
     onSuccess: () => {
       toastSuccess("Successfully updated dataset.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
@@ -150,7 +120,7 @@ function useUpdateDataset() {
 function useGetDataset(datasetId: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/uuid/{dataset_uuid}`, {
+  return client.useQuery("get", `${path}/{dataset_uuid}`, {
     params: {
       path: { dataset_uuid: datasetId },
     },
@@ -161,7 +131,7 @@ function useDeleteDataset() {
   const { toastSuccess, toastError } = useSnackbarActions();
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("delete", `${path}/uuid/{dataset_uuid}`, {
+  return client.useMutation("delete", `${path}/{dataset_uuid}`, {
     onSuccess: () => {
       toastSuccess("Successfully removed data source.");
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
@@ -175,45 +145,43 @@ function useDeleteDataset() {
 function useTagDataset() {
   const queryClient = useQueryClient();
   const client = useClient();
-  return client.useMutation("put", `${path}/tags`, {
+  return client.useMutation("put", `${path}/{dataset_uuid}/tags`, {
     onSuccess: () =>
       queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
   });
 }
 
 function useGetProjectDatasetFieldValues(
-  project_uuid: string,
+  workspace_uuid: string,
   field: "assembly" | "file_type",
 ) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/fields/{project_uuid}`, {
+  return client.useQuery("get", `${workspacePath}/fields`, {
     params: {
-      path: { project_uuid },
+      path: { workspace_uuid },
       query: { field },
     },
   });
 }
 
-function useGetProjectDatasetTags(project_uuid: string) {
+function useGetProjectDatasetTags(workspace_uuid: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/tags/{project_uuid}`, {
+  return client.useQuery("get", `${workspacePath}/tags`, {
     params: {
-      path: { project_uuid },
+      path: { workspace_uuid },
     },
   });
 }
 
 export {
-  useGetUserDatasets,
-  useGetProjectDatasets,
-  useGetPaginatedProjectDatasets,
   useCreateDataset,
-  useUpdateDataset,
-  useTagDataset,
-  useGetDataset,
   useDeleteDataset,
+  useGetDataset,
+  useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
+  useTagDataset,
+  useUpdateDataset,
 };

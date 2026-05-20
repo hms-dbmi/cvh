@@ -10,7 +10,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButton from "../../../components/DialogButton";
+import DialogButton from "@/components/DialogButton";
 import { useCreateVisualization } from "../api/useVisualizations";
 
 const text = {
@@ -97,7 +97,7 @@ export default function AddVisualizationButton({
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
-      mutate({ body: { ...formData, project_uuid: projectId } });
+      mutate({ body: { ...formData, workspace_uuid: projectId } });
       handleReset();
       return;
     },

@@ -14,10 +14,10 @@ import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { Check, Trash, Users } from "@phosphor-icons/react";
 import { type ChangeEvent, useCallback, useState } from "react";
-import DialogButton from "../../../components/DialogButton";
-import type { components } from "../../../types/schema";
-import generateAvatarColor from "../../../utils/generateAvatarColor";
-import { useGetUser } from "../../navigation/api/useUser";
+import DialogButton from "@/components/DialogButton";
+import { useGetUser } from "@/features/navigation/api/useUser";
+import type { components } from "@/types/schema";
+import generateAvatarColor from "@/utils/generateAvatarColor";
 import {
   useGetProject,
   useGetProjectMembers,
@@ -94,9 +94,9 @@ function PermissionsSelect({
   const handleChange = useCallback(
     (event: SelectChangeEvent<number>) => {
       mutate({
+        params: { path: { workspace_uuid: projectId } },
         body: {
           permissions: event.target.value as number,
-          project_uuid: projectId,
           email,
         },
       });
@@ -136,13 +136,16 @@ function MemberSettings({
   projectId,
 }: {
   permissions?: number;
-  member: components["schemas"]["ProjectMemberOut"];
+  member: components["schemas"]["WorkspaceMemberOut"];
   projectId: string;
 }) {
   const { mutate } = useRemoveProjectMember();
 
   const handleRemoveProjectMember = useCallback(() => {
-    mutate({ body: { project_uuid: projectId, email: member.email } });
+    mutate({
+      params: { path: { workspace_uuid: projectId } },
+      body: { email: member.email },
+    });
   }, [mutate, projectId, member.email]);
   const { data: userData } = useGetUser();
 
@@ -221,7 +224,7 @@ export function UpdateAccessSwitch({
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       mutate({
-        params: { path: { project_uuid: projectId } },
+        params: { path: { workspace_uuid: projectId } },
 
         body: {
           private: event.target.checked,
@@ -257,7 +260,7 @@ function ProjectSettings({ projectId }: { projectId: string }) {
   /*
   const { mutate } = useDeleteProject();
   const handleDeleteProject = useCallback(() => {
-    mutate({ params: { path: { project_uuid: projectId } } });
+    mutate({ params: { path: { workspace_uuid: projectId } } });
   }, [mutate, projectId]);
  */
 

@@ -1,3 +1,4 @@
+import { useDraggable } from "@dnd-kit/core";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -18,6 +19,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
   CaretDown,
+  DotsSixVertical,
   DotsThree,
   FileText,
   LinkSimple,
@@ -25,15 +27,11 @@ import {
   Tag,
   // Cards,
   Trash,
-  Warning,
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
-import { useDatasetFiltersStore } from "../../../hooks/useDatasetFiltersStore";
-import type { components } from "../../../types/schema";
-import { useHandleCopyClick } from "../../../utils/useHandleCopyText";
 import {
   useDeleteDataset,
   useGetDataset,
@@ -41,13 +39,17 @@ import {
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
-import AddDatasetButton from "../../datasets/components/AddDatasetButton";
-import AddExamplesDatasets from "../../datasets/components/AddExampleDatasets";
-import AddTagButton from "../../datasets/components/AddTagButton";
 import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
-import DatasetAttributeSelect from "../../datasets/components/DatasetAttributeSelect";
-import DatasetTagsSelect from "../../datasets/components/DatasetTagsSelect";
-import { useGetProject } from "../../projects/api/useProjects";
+import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
+import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
+import AddTagButton from "@/features/datasets/components/AddTagButton";
+import DatasetAttributeSelect from "@/features/datasets/components/DatasetAttributeSelect";
+import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
+import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore";
+import { useGetProject } from "@/features/projects/api/useProjects";
+import type { components } from "@/types/schema";
+import { useHandleCopyClick } from "@/utils/useHandleCopyText";
+import { VitessceWarningBanner } from "./VitessceWarningBanner";
 
 export function DatasetActionsMenu({
   datasetID,
@@ -99,7 +101,6 @@ export function DatasetActionsMenu({
         <>
           <AddTagButton
             datasetId={datasetID}
-            projectId={projectId}
             dataset={data}
             closeMenu={handleClose}
             open={openAddTags}
@@ -261,13 +262,31 @@ function DatasetListItem({
   dataset,
   showActions,
   readOnly,
+  disableDrag,
 }: {
   dataset: Required<Dataset>;
   showActions?: boolean;
   readOnly?: boolean;
+  disableDrag?: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
+    useDraggable({
+      id: dataset.uuid,
+      disabled: disableDrag,
+      data: {
+        type: dataset.file_type,
+        name: dataset.name,
+        id: dataset.uuid,
+        url: dataset.source_url,
+        assembly: dataset.assembly ?? undefined,
+        indexURL: dataset.index_url ?? undefined,
+        tags: dataset.tags.map((t) => [t.key, t.tag]),
+      },
+    });
+
   return (
     <ListItem
+      ref={setNodeRef}
       disablePadding
       sx={{
         marginBottom: "12px",
@@ -283,52 +302,74 @@ function DatasetListItem({
         ) : null
       }
     >
-      <Stack spacing={0.5} width="100%" sx={{ p: 1 }}>
-        <ListItemText
-          slotProps={{
-            primary: { variant: "subtitle1", component: "p" },
-          }}
-          primary={dataset.name}
-          secondary={[
-            dataset.file_type,
-            dataset.assembly && ` \u00B7 ${dataset.assembly}`,
-          ]}
-        />
-        {dataset.tags?.length > 0 && (
-          <Stack
-            direction="row"
-            spacing={0.5}
-            gap={0.5}
-            alignItems="center"
-            flexWrap="wrap"
+      <Stack direction="row" alignItems="flex-start" width="100%" sx={{ p: 1 }}>
+        {!disableDrag && (
+          <Box
+            ref={setActivatorNodeRef}
+            {...listeners}
+            {...attributes}
+            sx={{
+              cursor: "grab",
+              "&:active": { cursor: "grabbing" },
+              display: "flex",
+              alignItems: "center",
+              pt: 0.25,
+              mr: 0.5,
+              color: "#8A9EA8",
+              "&:hover": { color: "#4E5A63" },
+              touchAction: "none",
+            }}
           >
-            <Tag size={20} color="#4E5A63" />
-            {dataset.tags.map((t) => (
-              <Chip
-                key={t.key + t.tag}
-                label={
-                  <>
-                    <Typography
-                      variant="subtitle1"
-                      component="span"
-                      sx={{ fontSize: 12 }}
-                      marginRight={0.5}
-                    >
-                      {t.key}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      component="span"
-                      sx={{ fontSize: 12 }}
-                    >
-                      {t.tag}
-                    </Typography>
-                  </>
-                }
-              />
-            ))}
-          </Stack>
+            <DotsSixVertical size={20} weight="bold" />
+          </Box>
         )}
+        <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+          <ListItemText
+            slotProps={{
+              primary: { variant: "subtitle1", component: "p" },
+            }}
+            primary={dataset.name}
+            secondary={[
+              dataset.file_type,
+              dataset.assembly && ` \u00B7 ${dataset.assembly}`,
+            ]}
+          />
+          {dataset.tags?.length > 0 && (
+            <Stack
+              direction="row"
+              spacing={0.5}
+              gap={0.5}
+              alignItems="center"
+              flexWrap="wrap"
+            >
+              <Tag size={20} color="#4E5A63" />
+              {dataset.tags.map((t) => (
+                <Chip
+                  key={t.key + t.tag}
+                  label={
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                        marginRight={0.5}
+                      >
+                        {t.key}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ fontSize: 12 }}
+                      >
+                        {t.tag}
+                      </Typography>
+                    </>
+                  }
+                />
+              ))}
+            </Stack>
+          )}
+        </Stack>
       </Stack>
     </ListItem>
   );
@@ -337,9 +378,11 @@ function DatasetListItem({
 function DataList({
   projectId,
   showActions,
+  disableDrag,
 }: {
   projectId: string;
   showActions?: boolean;
+  disableDrag?: boolean;
 }) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
@@ -414,6 +457,7 @@ function DataList({
             dataset={d}
             showActions={showActions}
             readOnly={!hasWritePermissions}
+            disableDrag={disableDrag}
           />
         ))}
       </List>
@@ -421,49 +465,17 @@ function DataList({
   );
 }
 
-export function VitessceWarningBanner() {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        gap: 1.5,
-        px: 1,
-        py: 1.5,
-        borderTop: "1px solid #F2C94C",
-        borderBottom: "1px solid #F2C94C",
-        background:
-          "linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)), linear-gradient(90deg, #F2C94C, #F2C94C)",
-        mb: 1,
-      }}
-    >
-      <Box sx={{ flexShrink: 0 }}>
-        <Warning size={32} color="#F2C94C" weight="fill" />
-      </Box>
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          Limited Functionality
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ fontSize: 12, lineHeight: "16px", letterSpacing: "0.4px" }}
-        >
-          Only the copy and paste of public data possible. Upload of local data
-          into Vitessce visualizations is not currently supported.
-        </Typography>
-      </Stack>
-    </Box>
-  );
-}
-
 function DataAccordion({
   projectId,
   showVitessceWarning,
   showActions,
+  disableDrag,
   children: _children,
 }: {
   projectId: string;
   showVitessceWarning?: boolean;
   showActions?: boolean;
+  disableDrag?: boolean;
   children?: React.ReactNode;
 }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
@@ -497,7 +509,15 @@ function DataAccordion({
         {showVitessceWarning && <VitessceWarningBanner />}
         <Box sx={{ p: 2 }}>
           {datasets?.length ? (
-            <DataList projectId={projectId} showActions={showActions} />
+            _children ? (
+              _children
+            ) : (
+              <DataList
+                projectId={projectId}
+                showActions={showActions}
+                disableDrag={disableDrag}
+              />
+            )
           ) : (
             <Stack>
               <NoDataSVG />
@@ -510,7 +530,7 @@ function DataAccordion({
                   }}
                 />
                 <AddExamplesDatasets
-                  project_uuid={projectId}
+                  workspace_uuid={projectId}
                   buttonProps={{
                     disabled: !hasWritePermissions,
                   }}
@@ -527,10 +547,12 @@ function DataAccordion({
 export default function Wrapper({
   showVitessceWarning,
   showActions,
+  disableDrag,
   children,
 }: {
   showVitessceWarning?: boolean;
   showActions?: boolean;
+  disableDrag?: boolean;
   children?: React.ReactNode;
 }) {
   const { projectId } = useParams({ strict: false });
@@ -544,6 +566,7 @@ export default function Wrapper({
       projectId={projectId}
       showVitessceWarning={showVitessceWarning}
       showActions={showActions}
+      disableDrag={disableDrag}
     >
       {children}
     </DataAccordion>

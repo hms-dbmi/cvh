@@ -1,16 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-vi.mock("vitessce", () => ({ Vitessce: () => null }));
-vi.mock("react-grid-layout/css/styles.css", () => ({}));
-vi.mock("@monaco-editor/react", () => ({ default: () => null }));
-vi.mock("@vitessce/schemas", () => ({ upgradeAndParse: vi.fn() }));
-
-const { BottomBar } = await import("./VitessceViewer");
+import { BottomBar } from "./BottomBar";
 
 describe("BottomBar", () => {
   it("renders Editing and Exploring buttons for write users", () => {
-    render(<BottomBar mode="exploring" onModeChange={() => {}} hasWritePermissions />);
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        hasWritePermissions
+      />,
+    );
     expect(screen.getByText("Editing")).toBeInTheDocument();
     expect(screen.getByText("Exploring")).toBeInTheDocument();
   });
@@ -23,7 +23,13 @@ describe("BottomBar", () => {
 
   it("calls onModeChange with 'editing' when Editing is clicked", async () => {
     const onModeChange = vi.fn();
-    render(<BottomBar mode="exploring" onModeChange={onModeChange} hasWritePermissions />);
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={onModeChange}
+        hasWritePermissions
+      />,
+    );
 
     await userEvent.click(screen.getByText("Editing"));
     expect(onModeChange).toHaveBeenCalledWith("editing");

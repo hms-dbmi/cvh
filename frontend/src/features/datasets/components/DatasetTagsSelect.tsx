@@ -8,7 +8,7 @@ import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { CaretDown } from "@phosphor-icons/react";
-import type { components } from "../../../types/schema";
+import type { components } from "@/types/schema";
 
 type Tag = components["schemas"]["TagOut"];
 
@@ -98,10 +98,18 @@ export default function DatasetTagsSelect({
               <ListItemText
                 primary={
                   <>
-                    <Typography component="span" variant="subtitle1" sx={{ fontSize: 14 }}>
+                    <Typography
+                      component="span"
+                      variant="subtitle1"
+                      sx={{ fontSize: 14 }}
+                    >
                       {v?.key}
                     </Typography>{" "}
-                    <Typography component="span" variant="body2" sx={{ fontSize: 14 }}>
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ fontSize: 14 }}
+                    >
                       {v?.tag}
                     </Typography>
                   </>

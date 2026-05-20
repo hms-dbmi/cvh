@@ -2,16 +2,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import useClient, {
   buildInvalidateGetQuery,
   type QueryOptions,
-} from "../../../api/client";
-import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+} from "@/api/client";
+import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 
 const path = "/api/visualizations";
 const publicPath = "/api/public/visualizations";
+const workspacePath = "/api/workspaces/{workspace_uuid}/visualizations";
 
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
   publicPath,
-  "/api/projects",
+  "/api/workspaces",
   "/api/tags",
 ]);
 
@@ -37,10 +38,10 @@ function useGetProjectVisualizations({
       : {};
 
   const client = useClient();
-  return client.useQuery("get", path, {
+  return client.useQuery("get", workspacePath, {
     params: {
+      path: { workspace_uuid: projectId },
       query: {
-        project_uuid: projectId,
         ...queryOptions,
       },
     },
@@ -146,24 +147,24 @@ function useTagVisualization() {
   });
 }
 
-function useGetProjectVisualizationTags(project_uuid: string) {
+function useGetProjectVisualizationTags(workspace_uuid: string) {
   const client = useClient();
 
-  return client.useQuery("get", `${path}/tags`, {
+  return client.useQuery("get", `${workspacePath}/tags`, {
     params: {
-      query: { project_uuid },
+      path: { workspace_uuid },
     },
   });
 }
 
 export {
-  useGetProjectVisualizations,
-  useGetVisualization,
   useCreateVisualization,
-  useUpdateVisualization,
   useDeleteVisualization,
-  useGetPublishedVisualizations,
-  useTagVisualization,
+  useGetProjectVisualizations,
   useGetProjectVisualizationTags,
   useGetPublishedVisualization,
+  useGetPublishedVisualizations,
+  useGetVisualization,
+  useTagVisualization,
+  useUpdateVisualization,
 };

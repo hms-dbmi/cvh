@@ -1,4 +1,4 @@
-import useClient from "../../../api/client";
+import useClient from "@/api/client";
 
 const path = "/api/tags";
 

@@ -1,9 +1,9 @@
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import EntityDates from "../../../components/EntityDates.tsx";
-import EntityListItem from "../../../components/EntityListItem.tsx";
-import type { components } from "../../../types/schema.d.ts";
-import { Link } from "../../navigation/components/Links.tsx";
+import EntityDates from "@/components/EntityDates.tsx";
+import EntityListItem from "@/components/EntityListItem.tsx";
+import { Link } from "@/features/navigation/components/Links.tsx";
+import type { components } from "@/types/schema.d.ts";
 
 function buildCountLabel({ count, label }: { count: number; label: string }) {
   if (count === 1) {
@@ -16,7 +16,7 @@ function buildCountLabel({ count, label }: { count: number; label: string }) {
 export default function ProjectListItem({
   project,
 }: {
-  project: components["schemas"]["ProjectOut"];
+  project: components["schemas"]["WorkspaceOut"];
 }) {
   if (!project?.uuid) {
     return null;

@@ -34,7 +34,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
-import DialogButton from "../../../components/DialogButton";
+import DialogButton from "@/components/DialogButton";
 import { useCreateDataset } from "../api/useDatasets";
 
 const text = {
@@ -732,7 +732,7 @@ export default function AddDatasetButton({
           mutate({
             body: {
               dataset: { ...formData, ...{ data_column } },
-              project_uuid: projectId,
+              workspace_uuid: projectId,
             },
           });
         } else if (
@@ -744,7 +744,7 @@ export default function AddDatasetButton({
           mutate({
             body: {
               dataset: { ...formData, data_column: undefined },
-              project_uuid: projectId,
+              workspace_uuid: projectId,
             },
           });
         } else if (
@@ -757,7 +757,7 @@ export default function AddDatasetButton({
           mutate({
             body: {
               dataset: { ...formData, ...{ row_names } },
-              project_uuid: projectId,
+              workspace_uuid: projectId,
             },
           });
         } else if (
@@ -769,7 +769,7 @@ export default function AddDatasetButton({
           mutate({
             body: {
               dataset: formData,
-              project_uuid: projectId,
+              workspace_uuid: projectId,
             },
           });
         }
