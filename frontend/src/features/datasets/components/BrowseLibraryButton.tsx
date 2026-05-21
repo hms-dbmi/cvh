@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
+import Button, { type ButtonProps } from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
@@ -903,7 +903,11 @@ function AddToWorkspaceButton({
   );
 }
 
-export default function BrowseLibraryButton() {
+export default function BrowseLibraryButton({
+  buttonProps,
+}: {
+  buttonProps?: Partial<ButtonProps>;
+} = {}) {
   const [open, setOpen] = useState(false);
   const [selectedDcc, setSelectedDcc] = useState<DccType | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -957,6 +961,7 @@ export default function BrowseLibraryButton() {
       buttonProps={{
         startIcon: <Database size={20} />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
+        ...buttonProps,
       }}
     >
       {selectedDcc ? (
