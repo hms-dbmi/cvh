@@ -30,15 +30,16 @@ import {
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import NoDataSVG from "@/assets/nodata.svg?react";
-import DialogButtonCopy from "@/components/DialogButtonCopy";
+import NoDataSVG from "../../../assets/nodata.svg?react";
+import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
   useDeleteDataset,
   useGetDataset,
   useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
-} from "@/features/datasets/api/useDatasets";
+} from "../../datasets/api/useDatasets";
+import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
 import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
 import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
 import AddTagButton from "@/features/datasets/components/AddTagButton";
@@ -444,11 +445,10 @@ function DataList({
           },
         })}
       />
-      {hasWritePermissions && (
-        <Stack direction="row" spacing={1}>
-          <AddDatasetButton projectId={projectId} />
-        </Stack>
-      )}
+      <Stack direction="row" spacing={1}>
+        {hasWritePermissions && <AddDatasetButton projectId={projectId} />}
+        <BrowseLibraryButton />
+      </Stack>
       <DataSelects projectId={projectId} />
       <List>
         {datasets.map((d) => (

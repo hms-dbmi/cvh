@@ -23,6 +23,12 @@ function AuthProvider({ children }: PropsWithChildren) {
         audience: import.meta.env.VITE_API_AUDIENCE,
         scope: "read:current_user email",
       }}
+      // Only persist tokens to localStorage during local dev — the Vite
+      // dev server's full reloads (and any manual refresh) otherwise
+      // wipe Auth0's in-memory cache and the user appears logged out on
+      // every navigation. In prod we keep the SDK's default in-memory
+      // cache for the stronger XSS posture.
+      cacheLocation={import.meta.env.DEV ? "localstorage" : "memory"}
     >
       {children}
     </Auth0Provider>
