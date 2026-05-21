@@ -30,7 +30,15 @@ export default defineConfig({
       ? `npx vite preview --port ${PORT} --strictPort`
       : `npm run dev -- --port ${PORT}`,
     url: baseURL,
-    env: process.env.CI ? undefined : { VITE_E2E: "true" },
+    env: process.env.CI
+      ? undefined
+      : {
+          VITE_E2E: "true",
+          // Fixed value so the bundled app and the MSW handlers agree on
+          // the CFDB GraphQL origin. Matches the fallback in
+          // src/test/msw-handlers.ts; mirrored in the CI build step.
+          VITE_CFDB_API_URL: "http://127.0.0.1:9100",
+        },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: "pipe",

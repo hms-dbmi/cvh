@@ -50,6 +50,9 @@ jobs:
           # Must match the MSW handler fallback in src/test/msw-handlers.ts so
           # the app and the mock register requests against the same origin.
           VITE_API_URL: "http://127.0.0.1:8000"
+          # Same idea for the CFDB GraphQL origin. Matches the fallback in
+          # src/test/msw-handlers.ts and the dev-mode env in playwright.config.ts.
+          VITE_CFDB_API_URL: "http://127.0.0.1:9100"
           NODE_OPTIONS: --max_old_space_size=4096
         run: npm run build
 

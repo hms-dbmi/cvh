@@ -2,6 +2,8 @@ import { HttpResponse, http } from "msw";
 import type { components } from "@/types/schema";
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+const cfdbApiUrl =
+  import.meta.env.VITE_CFDB_API_URL ?? "http://127.0.0.1:9100";
 
 const user: components["schemas"]["UserOut"] = {
   username: "e2e-user",
@@ -276,4 +278,79 @@ export const handlers = [
     }
     return HttpResponse.json(publishedGoslingViz);
   }),
+
+  // CFDB GraphQL — Browse Library fixtures. The endpoint is a single POST
+  // that fans out into multiple queries, so we discriminate on the
+  // `query` string to pick the right canned response.
+  http.post(`${cfdbApiUrl}/metadata`, async ({ request }) => {
+    const body = (await request.clone().json()) as {
+      query: string;
+      variables?: Record<string, unknown>;
+    };
+    return HttpResponse.json({ data: cfdbResolve(body.query, body.variables) });
+  }),
 ];
+
+const cfdbDcc = {
+  id: "dcc:4dn",
+  dccName: "4D NUCLEOME DATA COORDINATION AND INTEGRATION CENTER",
+  dccDescription: "E2E 4DN fixture",
+  dccAbbreviation: "4DN_DCIC",
+};
+
+const cfdbBigwigFile = {
+  localId: "e2e-bigwig-1",
+  filename: "e2e-track.bigwig",
+  accessUrl: "https://upstream.example.com/track.bw",
+  genomeAssembly: "hg38",
+  fileFormat: { id: "format:3006", name: "BigWig" },
+  dcc: cfdbDcc,
+};
+
+const cfdbBamFile = {
+  ...cfdbBigwigFile,
+  localId: "e2e-bam-1",
+  filename: "e2e-alignments.bam",
+  fileFormat: { id: "format:2572", name: "BAM" },
+};
+
+function cfdbResolve(
+  query: string,
+  variables?: Record<string, unknown>,
+): Record<string, unknown> {
+  // distinctValues(...) — used for the DCC list and per-DCC filter values.
+  if (query.includes("distinctValues")) {
+    const fields = (variables?.fields as string[] | undefined) ?? [];
+
+    // The DCC list query is the only `distinctValues` call with no
+    // `$fields` variable (it inlines `fields: ["dcc.dcc_name"]`).
+    if (fields.length === 0) {
+      return {
+        distinctValues: [
+          { field: "dcc.dcc_name", values: [cfdbDcc.dccName] },
+        ],
+      };
+    }
+
+    return {
+      distinctValues: fields.map((field) => {
+        if (field === "genome_assembly") {
+          return { field, values: ["hg38"] };
+        }
+        if (field === "file_format.name") {
+          return { field, values: ["BigWig", "BAM"] };
+        }
+        return { field, values: [] };
+      }),
+    };
+  }
+
+  // files(...) — used to fetch the DCC details, the file list, and the
+  // by-id lookup the add-to-workspace flow performs. The fixture returns
+  // both files regardless of filters; the spec doesn't exercise filtering.
+  if (query.includes("files(")) {
+    return { files: [cfdbBigwigFile, cfdbBamFile] };
+  }
+
+  return {};
+}
