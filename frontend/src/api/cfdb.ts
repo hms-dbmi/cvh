@@ -138,6 +138,25 @@ export const CFDB_TO_GOSLING_FILE_TYPE: Record<string, string> = {
   "format:3475": "csv",
 };
 
+/**
+ * Gosling file_types that map cleanly to a "simple" GoslingDesigner
+ * dataset (no extra row_names / data_column / separator fields needed).
+ * Browse Library only lets the user select rows whose format maps to
+ * one of these.
+ */
+const BROWSE_LIBRARY_SUPPORTED_TYPES = new Set(["bigwig", "vector", "cooler"]);
+
+/**
+ * Whether a CFDB file's format maps to a Browse-Library-supported
+ * Gosling file_type. Used to disable selection on rows that would
+ * otherwise be skipped during dataset creation.
+ */
+export function isCfdbFileSupported(file: CfdbFile): boolean {
+  const goslingType =
+    file.fileFormat?.id && CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
+  return Boolean(goslingType && BROWSE_LIBRARY_SUPPORTED_TYPES.has(goslingType));
+}
+
 export type CfdbFileFilters = {
   assemblies?: string[];
   fileFormatNames?: string[];

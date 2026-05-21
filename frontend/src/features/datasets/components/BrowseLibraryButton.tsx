@@ -37,6 +37,7 @@ import {
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
   fetchCfdbSelectedFiles,
+  isCfdbFileSupported,
   useCfdbDccAssemblies,
   useCfdbDccFileFormats,
   useCfdbDccFiles,
@@ -359,8 +360,22 @@ function DccDetailView({
     [fileFormats],
   );
 
+  // Only rows whose format maps to a Browse-Library-supported Gosling
+  // file_type are selectable; everything else is shown but disabled.
+  const selectableFiles = useMemo(
+    () => files.filter(isCfdbFileSupported),
+    [files],
+  );
+  const selectableIds = useMemo(
+    () => new Set(selectableFiles.map((f) => f.localId)),
+    [selectableFiles],
+  );
+
   const handleToggle = useCallback(
     (id: string) => {
+      // Defensive: ignore toggles on unsupported rows even if a future
+      // call site forgets to gate the click.
+      if (!selectableIds.has(id)) return;
       setSelectedIds((prev) => {
         const next = new Set(prev);
         if (next.has(id)) {
@@ -371,16 +386,16 @@ function DccDetailView({
         return next;
       });
     },
-    [setSelectedIds],
+    [selectableIds, setSelectedIds],
   );
 
   const handleToggleAll = useCallback(() => {
-    if (selectedIds.size === files.length) {
+    if (selectedIds.size === selectableFiles.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(files.map((f) => f.localId)));
+      setSelectedIds(new Set(selectableFiles.map((f) => f.localId)));
     }
-  }, [files, selectedIds.size, setSelectedIds]);
+  }, [selectableFiles, selectedIds.size, setSelectedIds]);
 
   const handleReset = useCallback(() => {
     setAssemblyFilters(new Set());
@@ -533,11 +548,14 @@ function DccDetailView({
                   <TableCell padding="checkbox">
                     <Checkbox
                       size="small"
+                      disabled={selectableFiles.length === 0}
                       checked={
-                        files.length > 0 && selectedIds.size === files.length
+                        selectableFiles.length > 0 &&
+                        selectedIds.size === selectableFiles.length
                       }
                       indeterminate={
-                        selectedIds.size > 0 && selectedIds.size < files.length
+                        selectedIds.size > 0 &&
+                        selectedIds.size < selectableFiles.length
                       }
                       onChange={handleToggleAll}
                     />
@@ -582,6 +600,7 @@ function DccDetailView({
                     key={file.localId}
                     file={file}
                     selected={selectedIds.has(file.localId)}
+                    disabled={!selectableIds.has(file.localId)}
                     onToggle={handleToggle}
                   />
                 ))}
@@ -597,10 +616,12 @@ function DccDetailView({
 function DatasetRow({
   file,
   selected,
+  disabled,
   onToggle,
 }: {
   file: CfdbFile;
   selected: boolean;
+  disabled: boolean;
   onToggle: (id: string) => void;
 }) {
   return (
@@ -609,6 +630,7 @@ function DatasetRow({
         <Checkbox
           size="small"
           checked={selected}
+          disabled={disabled}
           onChange={() => onToggle(file.localId)}
         />
       </TableCell>
