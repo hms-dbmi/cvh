@@ -37,6 +37,7 @@ import {
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
   fetchCfdbSelectedFiles,
+  isBrowseLibrarySimpleType,
   isCfdbFileSupported,
   useCfdbDccAssemblies,
   useCfdbDccFileFormats,
@@ -688,12 +689,12 @@ function AddToWorkspaceButton({
   const [selectedProject, setSelectedProject] = useState<{
     uuid: string;
     name: string;
-  } | null>(projects[0] ?? null);
+  } | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
-  // Auto-select first project when data loads
-  if (!selectedProject && projects.length > 0) {
-    setSelectedProject({ uuid: projects[0].uuid!, name: projects[0].name });
+  // Auto-select first project when data loads.
+  if (!selectedProject && projects.length > 0 && projects[0].uuid) {
+    setSelectedProject({ uuid: projects[0].uuid, name: projects[0].name });
   }
 
   const handleAdd = useCallback(async () => {
@@ -706,15 +707,6 @@ function AddToWorkspaceButton({
     );
 
     const buildDataset = (file: CfdbFile) => {
-      const goslingType =
-        file.fileFormat?.id &&
-        CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
-      // The API's dataset payload uses `file_type` as a discriminator
-      // (see schemas.d.ts) accepting bigwig/cooler/vector/beddb/bam/csv/
-      // bed/gff/vcf/multivec. Skip anything we can't map cleanly rather
-      // than POST a value the API will reject.
-      if (!goslingType) return null;
-
       const assembly =
         (file.genomeAssembly as
           | "hg38"
@@ -725,12 +717,6 @@ function AddToWorkspaceButton({
           | "mm10"
           | "mm9"
           | "unknown") ?? "unknown";
-      const base = {
-        name: file.filename,
-        source_url: buildCfdbFileSourceUrl(file),
-        data_type: goslingType,
-        assembly,
-      };
 
       // TSV format ID
       const isTsv = file.fileFormat?.id === "format:3475";
@@ -739,15 +725,39 @@ function AddToWorkspaceButton({
 
       if (isTsv || isCsv) {
         return {
-          ...base,
+          name: file.filename,
+          source_url: buildCfdbFileSourceUrl(file),
+          data_type: "csv",
+          assembly,
           file_type: "csv" as const,
           separator: isTsv ? "\t" : ",",
           headers: true,
-          data_column: ["", ""] as [string, string],
+          // CFDB doesn't expose column metadata; the user fills this in
+          // later from the dataset edit screen.
+          data_column: [] as [
+            string,
+            "nominal" | "quantitative" | "chromosome" | "genomic" | "key",
+          ][],
         };
       }
 
-      return { ...base, file_type: goslingType };
+      // Only Browse-Library-supported file_types reach the API. Selection
+      // is gated in the UI by `isCfdbFileSupported`, so this `return null`
+      // is just a type-safe backstop — at runtime it shouldn't fire.
+      const goslingType =
+        file.fileFormat?.id &&
+        CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
+      if (!goslingType || !isBrowseLibrarySimpleType(goslingType)) {
+        return null;
+      }
+
+      return {
+        name: file.filename,
+        source_url: buildCfdbFileSourceUrl(file),
+        data_type: goslingType,
+        assembly,
+        file_type: goslingType,
+      };
     };
 
     await Promise.all(

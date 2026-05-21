@@ -68,7 +68,7 @@ async function fetchDccs(): Promise<DccType[]> {
     }),
   );
 
-  return dccs.filter(Boolean);
+  return dccs.filter((d): d is DccType => d !== null);
 }
 
 export function useCfdbDccs() {
@@ -140,11 +140,24 @@ export const CFDB_TO_GOSLING_FILE_TYPE: Record<string, string> = {
 
 /**
  * Gosling file_types that map cleanly to a "simple" GoslingDesigner
- * dataset (no extra row_names / data_column / separator fields needed).
- * Browse Library only lets the user select rows whose format maps to
- * one of these.
+ * dataset (no extra row_names / data_column / separator / index_url
+ * fields needed). Browse Library only lets the user select rows whose
+ * format maps to one of these.
  */
-const BROWSE_LIBRARY_SUPPORTED_TYPES = new Set(["bigwig", "vector", "cooler"]);
+export const BROWSE_LIBRARY_SIMPLE_TYPES = [
+  "bigwig",
+  "vector",
+  "cooler",
+] as const;
+
+export type BrowseLibrarySimpleType =
+  (typeof BROWSE_LIBRARY_SIMPLE_TYPES)[number];
+
+export function isBrowseLibrarySimpleType(
+  value: string,
+): value is BrowseLibrarySimpleType {
+  return (BROWSE_LIBRARY_SIMPLE_TYPES as readonly string[]).includes(value);
+}
 
 /**
  * Whether a CFDB file's format maps to a Browse-Library-supported
@@ -154,7 +167,7 @@ const BROWSE_LIBRARY_SUPPORTED_TYPES = new Set(["bigwig", "vector", "cooler"]);
 export function isCfdbFileSupported(file: CfdbFile): boolean {
   const goslingType =
     file.fileFormat?.id && CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
-  return Boolean(goslingType && BROWSE_LIBRARY_SUPPORTED_TYPES.has(goslingType));
+  return Boolean(goslingType && isBrowseLibrarySimpleType(goslingType));
 }
 
 export type CfdbFileFilters = {
