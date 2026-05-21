@@ -92,6 +92,7 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
     dcc {
       id
       dccName
+      dccAbbreviation
     }
   }
 }`;
@@ -102,8 +103,31 @@ export type CfdbFile = {
   accessUrl?: string | null;
   genomeAssembly?: string | null;
   fileFormat?: { id: string; name: string } | null;
-  dcc: { id: string; dccName: string };
+  dcc: { id: string; dccName: string; dccAbbreviation: string };
 };
+
+/**
+ * CFDB GraphQL returns DCC abbreviations in a different form than what
+ * the `/data/{dcc}/...` REST endpoint accepts (e.g. GraphQL `4DN_DCIC`
+ * → URL `4dn`). Maintain an explicit mapping rather than guessing —
+ * add new DCCs here as the UI exposes them.
+ */
+const CFDB_DCC_URL_SLUG: Record<string, string> = {
+  "4DN_DCIC": "4dn",
+  ENCODE: "encode",
+};
+
+/**
+ * URL for fetching a CFDB file's bytes. Points at CFDB's
+ * `/data/{dcc}/{local_id}` REST endpoint, with the DCC segment mapped
+ * via `CFDB_DCC_URL_SLUG`.
+ */
+export function buildCfdbFileSourceUrl(file: CfdbFile): string {
+  const dccSlug =
+    CFDB_DCC_URL_SLUG[file.dcc.dccAbbreviation] ??
+    file.dcc.dccAbbreviation.toLowerCase();
+  return `${CFDB_API_URL}/data/${encodeURIComponent(dccSlug)}/${encodeURIComponent(file.localId)}`;
+}
 
 /** Maps CFDB file format IDs to Gosling file_type values */
 export const CFDB_TO_GOSLING_FILE_TYPE: Record<string, string> = {
@@ -116,7 +140,7 @@ export const CFDB_TO_GOSLING_FILE_TYPE: Record<string, string> = {
 
 export type CfdbFileFilters = {
   assemblies?: string[];
-  fileFormatIds?: string[];
+  fileFormatNames?: string[];
   search?: string;
 };
 
@@ -130,8 +154,8 @@ function buildFileInput(
   if (filters?.assemblies?.length) {
     input.genomeAssembly = filters.assemblies;
   }
-  if (filters?.fileFormatIds?.length) {
-    input.fileFormat = filters.fileFormatIds.map((id) => ({ id: [id] }));
+  if (filters?.fileFormatNames?.length) {
+    input.fileFormat = filters.fileFormatNames.map((name) => ({ name: [name] }));
   }
   if (filters?.search) {
     input.filename = [filters.search];
@@ -153,6 +177,31 @@ async function fetchDccFiles(
     // Some DCCs have malformed data that causes server-side validation errors
     return [];
   }
+}
+
+async function fetchCfdbFilesByLocalIds(
+  localIds: string[],
+): Promise<CfdbFile[]> {
+  if (localIds.length === 0) return [];
+  try {
+    const data = await fetchGraphQL(DCC_FILES_QUERY, {
+      input: [{ localId: localIds }],
+      pageSize: localIds.length,
+    });
+    return data?.files ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch CFDB files for a known set of `localId`s. Used by the "add to
+ * project" flow because the user's selection can include files that
+ * aren't in the currently-rendered page of `useCfdbDccFiles`, so we
+ * can't rely on the cached list.
+ */
+export function fetchCfdbSelectedFiles(localIds: string[]) {
+  return fetchCfdbFilesByLocalIds(localIds);
 }
 
 export function useCfdbDccFiles(
@@ -202,18 +251,12 @@ export function useCfdbDccAssemblies(dccName: string | undefined) {
   });
 }
 
-export type CfdbFileFormat = {
-  id: string;
-  name: string;
-  description?: string | null;
-};
-
 export function useCfdbDccFileFormats(dccName: string | undefined) {
   return useQuery({
     queryKey: ["cfdb", "dcc-file-formats", dccName],
     queryFn: async () => {
-      const result = await fetchDistinctValues(dccName!, "file_format");
-      return (result?.values as CfdbFileFormat[]) ?? [];
+      const result = await fetchDistinctValues(dccName!, "file_format.name");
+      return (result?.values as string[]) ?? [];
     },
     enabled: !!dccName,
     staleTime: 1000 * 60 * 10,

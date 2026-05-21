@@ -33,8 +33,10 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import type { DccType } from "../../../../cfdb-types";
 import {
+  buildCfdbFileSourceUrl,
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
+  fetchCfdbSelectedFiles,
   useCfdbDccAssemblies,
   useCfdbDccFileFormats,
   useCfdbDccFiles,
@@ -339,7 +341,7 @@ function DccDetailView({
   const apiFilters = useMemo(
     () => ({
       assemblies: Array.from(assemblyFilters),
-      fileFormatIds: Array.from(fileFormatFilters),
+      fileFormatNames: Array.from(fileFormatFilters),
       search: searchQuery || undefined,
     }),
     [assemblyFilters, fileFormatFilters, searchQuery],
@@ -353,7 +355,7 @@ function DccDetailView({
   const { data: fileFormats = [] } = useCfdbDccFileFormats(dcc.dccName);
 
   const fileFormatOptions = useMemo(
-    () => fileFormats.map((ff) => ({ value: ff.id, label: ff.name })),
+    () => fileFormats.map((name) => ({ value: name, label: name })),
     [fileFormats],
   );
 
@@ -652,11 +654,9 @@ function getWorkspaceColor(name: string) {
 
 function AddToWorkspaceButton({
   selectedIds,
-  files,
   onDone,
 }: {
   selectedIds: Set<string>;
-  files: CfdbFile[];
   onDone: () => void;
 }) {
   const { data: projectsData } = useGetProjects();
@@ -677,14 +677,22 @@ function AddToWorkspaceButton({
   const handleAdd = useCallback(async () => {
     if (!selectedProject || selectedIds.size === 0) return;
 
-    const selectedFiles = files.filter((f) => selectedIds.has(f.localId));
+    // Selection can include files that aren't in the currently-rendered
+    // page of `useCfdbDccFiles`, so ask CFDB for the full set by id.
+    const selectedFiles = await fetchCfdbSelectedFiles(
+      Array.from(selectedIds),
+    );
 
     const buildDataset = (file: CfdbFile) => {
       const goslingType =
-        (file.fileFormat?.id &&
-          CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id]) ||
-        file.fileFormat?.name?.toLowerCase() ||
-        "unknown";
+        file.fileFormat?.id &&
+        CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
+      // The API's dataset payload uses `file_type` as a discriminator
+      // (see schemas.d.ts) accepting bigwig/cooler/vector/beddb/bam/csv/
+      // bed/gff/vcf/multivec. Skip anything we can't map cleanly rather
+      // than POST a value the API will reject.
+      if (!goslingType) return null;
+
       const assembly =
         (file.genomeAssembly as
           | "hg38"
@@ -697,7 +705,7 @@ function AddToWorkspaceButton({
           | "unknown") ?? "unknown";
       const base = {
         name: file.filename,
-        source_url: file.accessUrl ?? "",
+        source_url: buildCfdbFileSourceUrl(file),
         data_type: goslingType,
         assembly,
       };
@@ -710,7 +718,6 @@ function AddToWorkspaceButton({
       if (isTsv || isCsv) {
         return {
           ...base,
-          type: "csv" as const,
           file_type: "csv" as const,
           separator: isTsv ? "\t" : ",",
           headers: true,
@@ -718,22 +725,28 @@ function AddToWorkspaceButton({
         };
       }
 
-      return { ...base, type: "simple" as const };
+      return { ...base, file_type: goslingType };
     };
 
     await Promise.all(
-      selectedFiles.map((file) =>
-        createDataset({
-          body: {
-            project_uuid: selectedProject.uuid,
-            dataset: buildDataset(file),
-          },
-        }),
-      ),
+      selectedFiles
+        .map((file) => ({ file, dataset: buildDataset(file) }))
+        .filter(
+          (entry): entry is { file: CfdbFile; dataset: NonNullable<ReturnType<typeof buildDataset>> } =>
+            entry.dataset !== null,
+        )
+        .map(({ dataset }) =>
+          createDataset({
+            body: {
+              workspace_uuid: selectedProject.uuid,
+              dataset,
+            },
+          }),
+        ),
     );
 
     onDone();
-  }, [selectedProject, selectedIds, files, createDataset, onDone]);
+  }, [selectedProject, selectedIds, createDataset, onDone]);
 
   const disabled = selectedIds.size === 0 || !selectedProject;
   const projectColor = selectedProject
@@ -863,9 +876,6 @@ export default function BrowseLibraryButton() {
   const [selectedDcc, setSelectedDcc] = useState<DccType | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { data: dccs, isLoading } = useCfdbDccs();
-  const { data: dccFiles = [] } = useCfdbDccFiles(
-    selectedDcc?.dccName ?? undefined,
-  );
 
   const handleClose = useCallback(() => {
     setSelectedDcc(null);
@@ -907,7 +917,6 @@ export default function BrowseLibraryButton() {
             </Typography>
             <AddToWorkspaceButton
               selectedIds={selectedIds}
-              files={dccFiles}
               onDone={handleAddDone}
             />
           </>
