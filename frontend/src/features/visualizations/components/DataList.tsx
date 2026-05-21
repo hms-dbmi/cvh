@@ -519,8 +519,14 @@ function DataAccordion({
               />
             )
           ) : (
-            <Stack>
+            <Stack spacing={1}>
               <NoDataSVG />
+              <AddExamplesDatasets
+                workspace_uuid={projectId}
+                buttonProps={{
+                  disabled: !hasWritePermissions,
+                }}
+              />
               <Stack direction="row" spacing={1}>
                 <AddDatasetButton
                   projectId={projectId}
@@ -529,11 +535,8 @@ function DataAccordion({
                     disabled: !hasWritePermissions,
                   }}
                 />
-                <AddExamplesDatasets
-                  workspace_uuid={projectId}
-                  buttonProps={{
-                    disabled: !hasWritePermissions,
-                  }}
+                <BrowseLibraryButton
+                  buttonProps={{ variant: "contained" }}
                 />
               </Stack>
             </Stack>
