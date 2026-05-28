@@ -1,92 +1,9 @@
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
-import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid2";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { Tag } from "@phosphor-icons/react";
-import type { components } from "@/types/schema";
 import { useGetPublishedVisualizations } from "../api/useVisualizations";
-import { ToolBadge } from "./ToolBadge";
-
-function PublishedGridItem({
-  visualization,
-}: {
-  visualization: components["schemas"]["VisualizationSummaryOut"];
-}) {
-  return (
-    <ListItem
-      sx={{
-        border: "1px solid #D6D4D8",
-        borderRadius: "8px",
-        minHeight: "150px",
-        alignItems: "flex-start",
-        padding: 0,
-      }}
-      component="a"
-      href={`/visualizations/${visualization.uuid}`}
-    >
-      <Stack direction="column" width="100%">
-        <ListItemText
-          slotProps={{
-            primary: { variant: "subtitle1", component: "p", mb: 1 },
-            root: { sx: { padding: "12px" } },
-          }}
-          primary={visualization.name}
-          secondary={[
-            `${visualization.n_tracks} track${visualization.n_tracks === 1 ? "" : "s"}`,
-            <> &middot; </>,
-            `${visualization.n_datasets} active data source${
-              visualization.n_datasets === 1 ? "" : "s"
-            }`,
-          ]}
-        />
-        <Box>
-          <Divider />
-          <Stack
-            p={1.5}
-            spacing={0.5}
-            direction="row"
-            flexWrap="wrap"
-            alignItems="center"
-            gap={0.5}
-          >
-            <ToolBadge tool={visualization.tool} />
-            {Boolean(visualization?.tags?.length) && (
-              <Tag size={20} color="#4E5A63" />
-            )}
-            {visualization?.tags.map((t) => (
-              <Chip
-                key={t.key + t.tag}
-                label={
-                  <>
-                    <Typography
-                      variant="subtitle1"
-                      component="span"
-                      sx={{ fontSize: 12 }}
-                      marginRight={0.5}
-                    >
-                      {t.key}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      component="span"
-                      sx={{ fontSize: 12 }}
-                    >
-                      {t.tag}
-                    </Typography>
-                  </>
-                }
-              />
-            ))}
-          </Stack>
-        </Box>
-      </Stack>
-    </ListItem>
-  );
-}
+import { FEATURED_VISUALIZATION_UUIDS } from "../featured";
+import PublishedVizCard from "./PublishedVizCard";
 
 function PublishedVisualizationGrid() {
   const { data } = useGetPublishedVisualizations({
@@ -97,12 +14,7 @@ function PublishedVisualizationGrid() {
       params: {
         query: {
           limit: 20,
-          uuids: [
-            "fe47c693-0407-4b40-aa00-9b058fa9a09f",
-            "8f49e547-6c05-417c-a18f-89b0dab97679",
-            "e01fca12-14bc-4825-b83b-662fa67750a1",
-            "ed8bd474-b29f-4754-9592-c1c0e5e1c847",
-          ],
+          uuids: FEATURED_VISUALIZATION_UUIDS,
         },
       },
     },
@@ -124,7 +36,7 @@ function PublishedVisualizationGrid() {
           <Grid container spacing={2} width="100%">
             {topPicks?.items?.map((v) => (
               <Grid key={v.uuid} size={3}>
-                <PublishedGridItem visualization={v} />
+                <PublishedVizCard visualization={v} />
               </Grid>
             ))}
           </Grid>
@@ -136,7 +48,7 @@ function PublishedVisualizationGrid() {
       <Grid container spacing={2} width="100%">
         {data?.items?.map((v) => (
           <Grid key={v.uuid} size={3}>
-            <PublishedGridItem visualization={v} />
+            <PublishedVizCard visualization={v} />
           </Grid>
         ))}
       </Grid>

@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -13,7 +14,13 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { CaretDown, CaretUp, SignOut, User } from "@phosphor-icons/react";
+import {
+  CaretDown,
+  CaretUp,
+  GlobeSimple,
+  SignOut,
+  User,
+} from "@phosphor-icons/react";
 import { useParams, useRouterState } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { useCallback, useState } from "react";
@@ -21,6 +28,7 @@ import CVHLogo from "@/assets/cvh_logo.svg?react";
 import useGetProjects from "@/features/projects/api/useProjects";
 import AddProjectButton from "@/features/projects/components/AddProjectButton";
 import ProjectSettings from "@/features/projects/components/ProjectSettings";
+import PublishedVizModal from "@/features/visualizations/components/PublishedVizModal";
 import type { components } from "@/types/schema";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
@@ -30,6 +38,23 @@ import { Link } from "./Links";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   return <ProjectSettings projectId={projectId} />;
+}
+
+function PublishedVisualizationsButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Tooltip title="Browse your published visualizations">
+        <IconButton
+          aria-label="Browse your published visualizations"
+          onClick={() => setOpen(true)}
+        >
+          <GlobeSimple size={24} color="#27AE60" weight="regular" />
+        </IconButton>
+      </Tooltip>
+      <PublishedVizModal open={open} onClose={() => setOpen(false)} />
+    </>
+  );
 }
 
 type WorkspaceOut = components["schemas"]["WorkspaceOutWithMembersCount"];
@@ -198,7 +223,10 @@ function ProjectsBar() {
         mr={2}
       >
         <WorkspaceMenu projectId={projectId} />
-        <CollaboratorsMenu projectId={projectId} />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CollaboratorsMenu projectId={projectId} />
+          <PublishedVisualizationsButton />
+        </Stack>
       </Stack>
     );
   }
