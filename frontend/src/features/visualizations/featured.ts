@@ -1,0 +1,6 @@
+export const FEATURED_VISUALIZATION_UUIDS = [
+  "fe47c693-0407-4b40-aa00-9b058fa9a09f",
+  "8f49e547-6c05-417c-a18f-89b0dab97679",
+  "e01fca12-14bc-4825-b83b-662fa67750a1",
+  "ed8bd474-b29f-4754-9592-c1c0e5e1c847",
+];
