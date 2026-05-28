@@ -206,6 +206,10 @@ export const handlers = [
       return HttpResponse.json({ success: true });
     },
   ),
+  http.put(`${apiUrl}/api/datasets/:uuid`, async ({ request, params }) => {
+    await recordRequest("PUT", `/api/datasets/${params.uuid}`, request);
+    return HttpResponse.json({ success: true });
+  }),
   http.put(
     `${apiUrl}/api/datasets/:uuid/tags`,
     async ({ request, params }) => {
