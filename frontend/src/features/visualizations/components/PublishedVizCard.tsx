@@ -59,8 +59,10 @@ function PublishedVizCard({ visualization, maxTags }: PublishedVizCardProps) {
             alignItems="center"
             gap={0.5}
           >
+            {(Boolean(allTags.length) || Boolean(visualization.tool)) && (
+              <Tag size={20} color="#4E5A63" />
+            )}
             <ToolBadge tool={visualization.tool} />
-            {Boolean(allTags.length) && <Tag size={20} color="#4E5A63" />}
             {visibleTags.map((t) => (
               <Chip
                 key={t.key + t.tag}
