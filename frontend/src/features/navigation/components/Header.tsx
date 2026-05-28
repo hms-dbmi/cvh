@@ -36,13 +36,14 @@ type WorkspaceOut = components["schemas"]["WorkspaceOutWithMembersCount"];
 
 function WorkspaceListItem({
   project,
-  firstLetter,
   isSelected,
 }: {
   project: WorkspaceOut;
-  firstLetter: string | null;
   isSelected: boolean;
 }) {
+  const firstLetter = project.name?.length
+    ? project.name[0].toUpperCase()
+    : null;
   const selectedProps = isSelected
     ? { onClick: undefined }
     : { component: "a", href: `/project/${project.uuid}` };
@@ -115,7 +116,7 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
   }
 
   const name = currentProject?.name;
-  const firstLetter = name?.length ? name[0] : null;
+  const firstLetter = name?.length ? name[0].toUpperCase() : null;
 
   return (
     <>
@@ -166,7 +167,6 @@ function WorkspaceMenu({ projectId }: { projectId: string }) {
           <WorkspaceListItem
             key={p.uuid}
             project={p}
-            firstLetter={firstLetter}
             isSelected={p.uuid === projectId}
           />
         ))}

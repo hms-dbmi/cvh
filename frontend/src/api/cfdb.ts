@@ -97,6 +97,10 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
   }
 }`;
 
+// Large enough to cover any DCC's full file set in one request — until we
+// add real pagination to the Browse Library UI.
+const DCC_FILES_PAGE_SIZE = 10000;
+
 export type CfdbFile = {
   localId: string;
   filename: string;
@@ -202,7 +206,7 @@ async function fetchDccFiles(
   try {
     const data = await fetchGraphQL(DCC_FILES_QUERY, {
       input: buildFileInput(dccName, filters),
-      pageSize: 500,
+      pageSize: DCC_FILES_PAGE_SIZE,
     });
     return data?.files ?? [];
   } catch {
@@ -218,7 +222,7 @@ async function fetchCfdbFilesByLocalIds(
   try {
     const data = await fetchGraphQL(DCC_FILES_QUERY, {
       input: [{ localId: localIds }],
-      pageSize: localIds.length,
+      pageSize: DCC_FILES_PAGE_SIZE,
     });
     return data?.files ?? [];
   } catch {

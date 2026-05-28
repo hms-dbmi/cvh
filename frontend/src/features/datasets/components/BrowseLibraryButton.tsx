@@ -45,6 +45,7 @@ import {
   useCfdbDccs,
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
+import generateAvatarColor from "../../../utils/generateAvatarColor";
 import useGetProjects from "../../projects/api/useProjects";
 import { useCreateDataset } from "../api/useDatasets";
 
@@ -657,23 +658,6 @@ function DatasetRow({
   );
 }
 
-const WORKSPACE_COLORS = [
-  "#752EFF",
-  "#E18240",
-  "#40849C",
-  "#27AE60",
-  "#E74C3C",
-  "#3498DB",
-  "#9B59B6",
-];
-
-function getWorkspaceColor(name: string) {
-  let hash = 0;
-  for (const ch of name) {
-    hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-  }
-  return WORKSPACE_COLORS[Math.abs(hash) % WORKSPACE_COLORS.length];
-}
 
 function AddToWorkspaceButton({
   selectedIds,
@@ -782,8 +766,8 @@ function AddToWorkspaceButton({
 
   const disabled = selectedIds.size === 0 || !selectedProject;
   const projectColor = selectedProject
-    ? getWorkspaceColor(selectedProject.name)
-    : "#752EFF";
+    ? generateAvatarColor(selectedProject.name)
+    : generateAvatarColor("");
 
   return (
     <>
@@ -878,7 +862,7 @@ function AddToWorkspaceButton({
           >
             <Box
               sx={{
-                bgcolor: getWorkspaceColor(p.name),
+                bgcolor: generateAvatarColor(p.name),
                 borderRadius: "4px",
                 width: 20,
                 height: 20,
