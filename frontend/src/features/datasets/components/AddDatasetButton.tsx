@@ -94,7 +94,14 @@ interface CSV extends BaseValues {
   data_column: DataColumn;
 }
 
-type FormValues = Simple | Bam | MultiVec | IndexAndColumn | ColumnOnly | CSV;
+export type FormValues =
+  | Simple
+  | Bam
+  | MultiVec
+  | IndexAndColumn
+  | ColumnOnly
+  | CSV;
+export type { DataColumn };
 
 function FormTextField({
   name,
@@ -241,7 +248,7 @@ const multiVec = base.extend({
   }),
 });
 
-const columnOptions = [
+export const columnOptions = [
   "nominal",
   "quantitative",
   "chromosome",
@@ -327,7 +334,7 @@ const csv = base.extend({
     .min(1, { message: "Data column headers cannot be empty" }),
 });
 
-const schema = z.discriminatedUnion("file_type", [
+export const datasetFormSchema = z.discriminatedUnion("file_type", [
   simple,
   multiVec,
   bam,
@@ -335,6 +342,8 @@ const schema = z.discriminatedUnion("file_type", [
   columnOnly,
   csv,
 ]);
+
+const schema = datasetFormSchema;
 
 const tooltips: Record<string, string> = {
   bam: "Binary Alignment Map (BAM) is the comprehensive raw data of genome sequencing; it consists of the lossless, compressed binary representation of the Sequence Alignment Map-files.",
@@ -542,7 +551,7 @@ function CSVFields({
   );
 }
 
-function BasicFields({
+export function BasicFields({
   control,
 }: Pick<UseControllerProps<FormValues>, "control">) {
   const { field } = useController({
@@ -586,7 +595,7 @@ function BasicFields({
   );
 }
 
-function RowNames({
+export function RowNames({
   control,
   errorMessage,
 }: { errorMessage?: string | false } & Pick<
@@ -629,7 +638,7 @@ function RowNames({
   );
 }
 
-function DataColumns({
+export function DataColumns({
   control,
   errorMessage,
 }: { errorMessage?: string | false } & Pick<

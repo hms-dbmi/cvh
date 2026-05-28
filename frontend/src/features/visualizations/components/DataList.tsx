@@ -24,6 +24,7 @@ import {
   FileText,
   LinkSimple,
   MagnifyingGlass,
+  PencilSimple,
   Tag,
   // Cards,
   Trash,
@@ -43,6 +44,7 @@ import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
 import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
 import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
 import AddTagButton from "@/features/datasets/components/AddTagButton";
+import EditDatasetButton from "@/features/datasets/components/EditDatasetButton";
 import DatasetAttributeSelect from "@/features/datasets/components/DatasetAttributeSelect";
 import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
 import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore";
@@ -63,6 +65,7 @@ export function DatasetActionsMenu({
   const { projectId } = useParams({ strict: false });
 
   const [openAddTags, setOpenAddTags] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
   const { data } = useGetDataset(datasetID);
@@ -106,6 +109,12 @@ export function DatasetActionsMenu({
             open={openAddTags}
             setOpen={setOpenAddTags}
           />
+          <EditDatasetButton
+            dataset={data}
+            closeMenu={handleClose}
+            open={openEdit}
+            setOpen={setOpenEdit}
+          />
           <DialogButtonCopy
             text={{
               title: "Remove Data Source from Workspace?",
@@ -148,6 +157,12 @@ export function DatasetActionsMenu({
         </MenuItem>
         {!readOnly && [
           <Divider key="divider" />,
+          <MenuItem key="edit" onClick={() => setOpenEdit(true)}>
+            <ListItemIcon>
+              <PencilSimple height={24} width={24} />
+            </ListItemIcon>
+            Edit Details
+          </MenuItem>,
           <MenuItem key="tags" onClick={() => setOpenAddTags(true)}>
             <ListItemIcon>
               <Tag height={24} width={24} />
