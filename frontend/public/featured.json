@@ -1,0 +1,27 @@
+[
+  {
+    "uuid": "d5deea4d-5842-42e2-a7d4-87a69de9efb5",
+    "image": "featured/habib-nature.webp",
+    "label": "Habib et al. (Nature)"
+  },
+  {
+    "uuid": "c265e508-7fe1-4e3a-96e5-7e0f1f8ed644",
+    "image": "featured/kuppe-nature.webp",
+    "label": "Kuppe et al. (Nature)"
+  },
+  {
+    "uuid": "94aa6012-68a5-4617-9568-7731e3f6cfb7",
+    "image": "featured/lymph-10x.webp",
+    "label": "Lymph Node (10x Genomics)"
+  },
+  {
+    "uuid": "5880d7c7-65a1-497f-aced-0ee34c2a6046",
+    "image": "featured/maynard-nature.webp",
+    "label": "Maynard et al. (Nature)"
+  },
+  {
+    "uuid": "f156736f-4766-4cbb-bb3c-1ed5704625c6",
+    "image": "featured/schapiro-nature.webp",
+    "label": "Schapiro et al. (Nature)"
+  }
+]
