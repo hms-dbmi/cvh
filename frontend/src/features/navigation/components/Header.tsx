@@ -380,8 +380,8 @@ export default function Header() {
       >
         <Toolbar>
           <Stack spacing={2} direction="row" alignItems="center">
-            <Link to="/">
-              <CVHLogo height={40} />
+            <Link to="/" aria-label="Community Visualization Hub home">
+              <CVHLogo height={40} role="img" aria-hidden="true" />
             </Link>
             <Link to="/" sx={{ textDecoration: "none" }}>
               <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
