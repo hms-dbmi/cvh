@@ -247,12 +247,16 @@ function VisualizationListItem({
               }}
               primary={v.name}
               secondary={[
-                `${v.n_tracks} track${v.n_tracks === 1 ? "" : "s"}`,
-                <> &middot; </>,
-                `${v.n_datasets} active data source${
-                  v.n_datasets === 1 ? "" : "s"
-                }`,
-                <> &middot; </>,
+                ...(v.tool !== "vitessce"
+                  ? [
+                      `${v.n_tracks} track${v.n_tracks === 1 ? "" : "s"}`,
+                      <> &middot; </>,
+                      `${v.n_datasets} active data source${
+                        v.n_datasets === 1 ? "" : "s"
+                      }`,
+                      <> &middot; </>,
+                    ]
+                  : []),
                 `updated ${formatRelative(v.modified_timestamp, new Date())}`,
               ]}
             />

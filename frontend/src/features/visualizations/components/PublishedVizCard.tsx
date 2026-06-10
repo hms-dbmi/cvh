@@ -83,13 +83,15 @@ function PublishedVizCard({ visualization, maxTags }: PublishedVizCardProps) {
             >
               {visualization.name}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {`${visualization.n_tracks} track${visualization.n_tracks === 1 ? "" : "s"}`}
-              {" · "}
-              {`${visualization.n_datasets} active data source${
-                visualization.n_datasets === 1 ? "" : "s"
-              }`}
-            </Typography>
+            {visualization.tool !== "vitessce" && (
+              <Typography variant="body2" color="text.secondary">
+                {`${visualization.n_tracks} track${visualization.n_tracks === 1 ? "" : "s"}`}
+                {" · "}
+                {`${visualization.n_datasets} active data source${
+                  visualization.n_datasets === 1 ? "" : "s"
+                }`}
+              </Typography>
+            )}
           </Stack>
           <Stack
             direction="row"
