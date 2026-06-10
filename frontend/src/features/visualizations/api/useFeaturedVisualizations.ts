@@ -10,15 +10,10 @@ export function useFeaturedVisualizations() {
   return useQuery({
     queryKey: ["featured-visualizations"],
     queryFn: async (): Promise<FeaturedVisualization[]> => {
-      // Default: in dev, serve the committed `public/featured.json` so new
-      // developers don't have to configure anything. In prod, default to a
-      // root-level `featured.json` under VITE_CLOUDFRONT_URL.
-      const path =
-        import.meta.env.VITE_FEATURED_PATH ??
-        (import.meta.env.DEV ? "/featured.json" : "featured.json");
+      const path = import.meta.env.VITE_FEATURED_PATH ?? "featured.json";
       // Absolute or root-relative paths bypass the CloudFront prefix so we
       // can point at a local file (e.g. `/featured.json` served from public/)
-      // or any arbitrary URL.
+      // or any arbitrary URL during development.
       const isAbsolute = /^https?:\/\//i.test(path) || path.startsWith("/");
       const url = isAbsolute
         ? path
