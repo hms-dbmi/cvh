@@ -9,11 +9,11 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { X } from "@phosphor-icons/react";
 import useGetProjects from "@/features/projects/api/useProjects";
+import { useFeaturedVisualizations } from "../api/useFeaturedVisualizations";
 import {
   useGetProjectVisualizations,
   useGetPublishedVisualizations,
 } from "../api/useVisualizations";
-import { FEATURED_VISUALIZATION_UUIDS } from "../featured";
 import PublishedVizCard from "./PublishedVizCard";
 
 const MAX_TAGS_PER_TILE = 2;
@@ -32,9 +32,17 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 }
 
 function FeaturedSection() {
+  const { data: featured } = useFeaturedVisualizations();
+  if (!featured?.length) {
+    return null;
+  }
+  return <FeaturedSectionContent uuids={featured.map((f) => f.uuid)} />;
+}
+
+function FeaturedSectionContent({ uuids }: { uuids: string[] }) {
   const { data } = useGetPublishedVisualizations({
     options: {
-      params: { query: { uuids: FEATURED_VISUALIZATION_UUIDS } },
+      params: { query: { uuids } },
     },
   });
   const items = data?.items ?? [];

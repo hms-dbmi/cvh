@@ -40,6 +40,7 @@ jobs:
         VITE_API_URL: ${{secrets.VITE_API_URL}}
         VITE_CLOUDFRONT_URL: ${{secrets.VITE_CLOUDFRONT_URL}}
         VITE_CFDB_API_URL: ${{secrets.VITE_CFDB_API_URL}}
+        VITE_FEATURED_PATH: featured/dev-featured.json
       run: npm run build
 
     - name: Configure AWS Credentials
