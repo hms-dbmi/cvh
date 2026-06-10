@@ -100,6 +100,15 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     }
   }, [data?.conf]);
 
+  // Vitessce uses `config.uid` to detect that a config has changed. Without
+  // it, switching between visualizations in the workspace keeps the prior
+  // viewer state. Stamp the visualization's UUID onto the config so each
+  // viz produces a distinct identity.
+  const vitessceConfig = useMemo(() => {
+    if (!data?.conf || !selectedVizId) return null;
+    return { ...(data.conf as object), uid: selectedVizId };
+  }, [data?.conf, selectedVizId]);
+
   // Auto-save for Vitessce viewer (exploring mode)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -185,9 +194,9 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           overflow: "hidden",
         }}
       >
-        {mode === "exploring" && data?.conf && (
+        {mode === "exploring" && vitessceConfig && (
           <Vitessce
-            config={data.conf}
+            config={vitessceConfig}
             height={900}
             theme="light"
             onConfigChange={hasWritePermissions ? saveViz : undefined}
