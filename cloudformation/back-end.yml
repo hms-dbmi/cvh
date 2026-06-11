@@ -464,6 +464,212 @@ Resources:
             - "${StackName}:ECSExecutionRole"
             - StackName: !Ref AWS::StackName
 
+  # API usage dashboard. Reads CloudWatch metrics that the Django
+  # ApiUsageMiddleware emits via Embedded Metric Format (CVH/API namespace,
+  # dimensioned by `client`), plus a couple of Logs Insights queries against
+  # the ECS task's log group. One dashboard per stack/environment.
+  ApiUsageDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${AWS::StackName}-api-usage"
+      DashboardBody: !Sub
+        - |
+          {
+            "widgets": [
+              {
+                "type": "metric",
+                "x": 0, "y": 0, "width": 6, "height": 3,
+                "properties": {
+                  "title": "Requests (last 24h)",
+                  "view": "singleValue",
+                  "region": "${AWS::Region}",
+                  "period": 86400,
+                  "stat": "Sum",
+                  "start": "-P1D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ { "expression": "SUM(METRICS())", "label": "Total", "id": "total" } ],
+                    [ "CVH/API", "RequestCount", "client", "web", { "visible": false } ],
+                    [ "...", "python", { "visible": false } ],
+                    [ "...", "unknown", { "visible": false } ]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 6, "y": 0, "width": 6, "height": 3,
+                "properties": {
+                  "title": "Requests (last 7d)",
+                  "view": "singleValue",
+                  "region": "${AWS::Region}",
+                  "period": 604800,
+                  "stat": "Sum",
+                  "start": "-P7D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ { "expression": "SUM(METRICS())", "label": "Total", "id": "total" } ],
+                    [ "CVH/API", "RequestCount", "client", "web", { "visible": false } ],
+                    [ "...", "python", { "visible": false } ],
+                    [ "...", "unknown", { "visible": false } ]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 12, "y": 0, "width": 6, "height": 3,
+                "properties": {
+                  "title": "Requests (last 30d)",
+                  "view": "singleValue",
+                  "region": "${AWS::Region}",
+                  "period": 2592000,
+                  "stat": "Sum",
+                  "start": "-P30D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ { "expression": "SUM(METRICS())", "label": "Total", "id": "total" } ],
+                    [ "CVH/API", "RequestCount", "client", "web", { "visible": false } ],
+                    [ "...", "python", { "visible": false } ],
+                    [ "...", "unknown", { "visible": false } ]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 18, "y": 0, "width": 6, "height": 3,
+                "properties": {
+                  "title": "5xx errors (last 24h)",
+                  "view": "singleValue",
+                  "region": "${AWS::Region}",
+                  "period": 86400,
+                  "stat": "Sum",
+                  "start": "-P1D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ { "expression": "SUM(METRICS())", "label": "Errors", "id": "errors" } ],
+                    [ "CVH/API", "ErrorCount", "client", "web", { "visible": false } ],
+                    [ "...", "python", { "visible": false } ],
+                    [ "...", "unknown", { "visible": false } ]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 0, "y": 3, "width": 24, "height": 3,
+                "properties": {
+                  "title": "Requests by client (last 7d)",
+                  "view": "singleValue",
+                  "region": "${AWS::Region}",
+                  "period": 604800,
+                  "stat": "Sum",
+                  "start": "-P7D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ "CVH/API", "RequestCount", "client", "web", { "label": "Web" } ],
+                    [ "...", "python", { "label": "Python" } ],
+                    [ "...", "unknown", { "label": "Unknown" } ]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 0, "y": 6, "width": 12, "height": 6,
+                "properties": {
+                  "title": "Daily requests by client (last 30d)",
+                  "view": "bar",
+                  "stacked": true,
+                  "region": "${AWS::Region}",
+                  "period": 86400,
+                  "stat": "Sum",
+                  "start": "-P30D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ "CVH/API", "RequestCount", "client", "web" ],
+                    [ "...", "python" ],
+                    [ "...", "unknown" ]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 12, "y": 6, "width": 12, "height": 6,
+                "properties": {
+                  "title": "Daily 5xx errors (last 30d)",
+                  "view": "bar",
+                  "stacked": true,
+                  "region": "${AWS::Region}",
+                  "period": 86400,
+                  "stat": "Sum",
+                  "start": "-P30D",
+                  "end": "P0D",
+                  "metrics": [
+                    [ "CVH/API", "ErrorCount", "client", "web" ],
+                    [ "...", "python" ],
+                    [ "...", "unknown" ]
+                  ]
+                }
+              },
+              {
+                "type": "log",
+                "x": 0, "y": 12, "width": 8, "height": 6,
+                "properties": {
+                  "title": "Status code breakdown (last 7d)",
+                  "view": "pie",
+                  "region": "${AWS::Region}",
+                  "start": "-P7D",
+                  "end": "P0D",
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp, status | filter event = 'api_request' | stats count() by status"
+                }
+              },
+              {
+                "type": "log",
+                "x": 8, "y": 12, "width": 8, "height": 6,
+                "properties": {
+                  "title": "Distinct users per day (last 30d)",
+                  "view": "bar",
+                  "region": "${AWS::Region}",
+                  "start": "-P30D",
+                  "end": "P0D",
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp, user_id | filter event = 'api_request' and ispresent(user_id) | stats count_distinct(user_id) as users by bin(1d)"
+                }
+              },
+              {
+                "type": "log",
+                "x": 16, "y": 12, "width": 8, "height": 6,
+                "properties": {
+                  "title": "Requests by hour-of-day (last 7d)",
+                  "view": "bar",
+                  "region": "${AWS::Region}",
+                  "start": "-P7D",
+                  "end": "P0D",
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp | filter event = 'api_request' | stats count() as requests by datefloor(@timestamp, 1h) as hour | sort hour asc"
+                }
+              },
+              {
+                "type": "log",
+                "x": 0, "y": 18, "width": 24, "height": 6,
+                "properties": {
+                  "title": "Top endpoints by call count (last 7d)",
+                  "view": "table",
+                  "region": "${AWS::Region}",
+                  "start": "-P7D",
+                  "end": "P0D",
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp, client, method, path, status | filter event = 'api_request' | stats count() as calls by path, client | sort calls desc | limit 20"
+                }
+              },
+              {
+                "type": "log",
+                "x": 0, "y": 24, "width": 24, "height": 6,
+                "properties": {
+                  "title": "Recent requests (last 50)",
+                  "view": "table",
+                  "region": "${AWS::Region}",
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp, client, method, path, status, duration_ms, user_id | filter event = 'api_request' | sort @timestamp desc | limit 50"
+                }
+              }
+            ]
+          }
+        - LogGroup: !Sub "/ecs/${TaskName}-task-definition"
+
 Outputs:
   ECSCluster:
     Description: A reference to the ECS cluster
@@ -494,3 +700,7 @@ Outputs:
   LoadBalancerURL:
     Description: The url of the external load balancer
     Value: !Sub http://${LoadBalancer.DNSName}
+
+  ApiUsageDashboardURL:
+    Description: CloudWatch dashboard showing API usage by client
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ApiUsageDashboard}"
