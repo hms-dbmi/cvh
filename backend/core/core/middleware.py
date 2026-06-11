@@ -53,6 +53,15 @@ class ApiUsageMiddleware:
 
         is_error = response.status_code >= 500
 
+        # Use the URL pattern (e.g. `api/visualizations/<uuid:uuid>`) rather
+        # than the resolved path so per-UUID requests aggregate into one row
+        # in dashboard tables. Falls back to the raw path for unresolved
+        # requests (404s, malformed URLs).
+        resolver_match = getattr(request, "resolver_match", None)
+        endpoint = (
+            resolver_match.route if resolver_match is not None else request.path
+        )
+
         payload = {
             "_aws": {
                 "Timestamp": int(time.time() * 1000),
@@ -74,7 +83,8 @@ class ApiUsageMiddleware:
             "Latency": duration_ms,
             "ErrorCount": 1 if is_error else 0,
             "method": request.method,
-            "path": request.path,
+            "endpoint": endpoint,
+            "raw_path": request.path,
             "status": response.status_code,
             "user_id": str(user_id) if user_id is not None else None,
             "user_agent": request.META.get("HTTP_USER_AGENT"),
