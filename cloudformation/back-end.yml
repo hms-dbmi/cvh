@@ -486,7 +486,7 @@ Resources:
                   "period": 86400,
                   "stat": "Sum",
                   "start": "-P1D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ { "expression": "SUM(METRICS())", "label": "Total", "id": "total" } ],
                     [ "CVH/API", "RequestCount", "client", "web", { "visible": false } ],
@@ -505,7 +505,7 @@ Resources:
                   "period": 604800,
                   "stat": "Sum",
                   "start": "-P7D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ { "expression": "SUM(METRICS())", "label": "Total", "id": "total" } ],
                     [ "CVH/API", "RequestCount", "client", "web", { "visible": false } ],
@@ -524,7 +524,7 @@ Resources:
                   "period": 2592000,
                   "stat": "Sum",
                   "start": "-P30D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ { "expression": "SUM(METRICS())", "label": "Total", "id": "total" } ],
                     [ "CVH/API", "RequestCount", "client", "web", { "visible": false } ],
@@ -543,7 +543,7 @@ Resources:
                   "period": 86400,
                   "stat": "Sum",
                   "start": "-P1D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ { "expression": "SUM(METRICS())", "label": "Errors", "id": "errors" } ],
                     [ "CVH/API", "ErrorCount", "client", "web", { "visible": false } ],
@@ -562,7 +562,7 @@ Resources:
                   "period": 604800,
                   "stat": "Sum",
                   "start": "-P7D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ "CVH/API", "RequestCount", "client", "web", { "label": "Web" } ],
                     [ "...", "python", { "label": "Python" } ],
@@ -581,7 +581,7 @@ Resources:
                   "period": 86400,
                   "stat": "Sum",
                   "start": "-P30D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ "CVH/API", "RequestCount", "client", "web" ],
                     [ "...", "python" ],
@@ -600,7 +600,7 @@ Resources:
                   "period": 86400,
                   "stat": "Sum",
                   "start": "-P30D",
-                  "end": "P0D",
+                  "end": "",
                   "metrics": [
                     [ "CVH/API", "ErrorCount", "client", "web" ],
                     [ "...", "python" ],
@@ -616,7 +616,7 @@ Resources:
                   "view": "pie",
                   "region": "${AWS::Region}",
                   "start": "-P7D",
-                  "end": "P0D",
+                  "end": "",
                   "query": "SOURCE '${LogGroup}' | fields @timestamp, status | filter event = 'api_request' | stats count() by status"
                 }
               },
@@ -628,7 +628,7 @@ Resources:
                   "view": "bar",
                   "region": "${AWS::Region}",
                   "start": "-P30D",
-                  "end": "P0D",
+                  "end": "",
                   "query": "SOURCE '${LogGroup}' | fields @timestamp, user_id | filter event = 'api_request' and ispresent(user_id) | stats count_distinct(user_id) as users by bin(1d)"
                 }
               },
@@ -640,7 +640,7 @@ Resources:
                   "view": "bar",
                   "region": "${AWS::Region}",
                   "start": "-P7D",
-                  "end": "P0D",
+                  "end": "",
                   "query": "SOURCE '${LogGroup}' | fields @timestamp | filter event = 'api_request' | stats count() as requests by datefloor(@timestamp, 1h) as hour | sort hour asc"
                 }
               },
@@ -652,8 +652,8 @@ Resources:
                   "view": "table",
                   "region": "${AWS::Region}",
                   "start": "-P7D",
-                  "end": "P0D",
-                  "query": "SOURCE '${LogGroup}' | fields @timestamp, client, method, path, status | filter event = 'api_request' | stats count() as calls by path, client | sort calls desc | limit 20"
+                  "end": "",
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp, client, method, endpoint, status | filter event = 'api_request' | stats count() as calls by endpoint, client | sort calls desc | limit 20"
                 }
               },
               {
@@ -663,7 +663,7 @@ Resources:
                   "title": "Recent requests (last 50)",
                   "view": "table",
                   "region": "${AWS::Region}",
-                  "query": "SOURCE '${LogGroup}' | fields @timestamp, client, method, path, status, duration_ms, user_id | filter event = 'api_request' | sort @timestamp desc | limit 50"
+                  "query": "SOURCE '${LogGroup}' | fields @timestamp, client, method, endpoint, status, Latency, user_id | filter event = 'api_request' | sort @timestamp desc | limit 50"
                 }
               }
             ]
