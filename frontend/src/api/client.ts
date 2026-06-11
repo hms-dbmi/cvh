@@ -22,6 +22,9 @@ function useAuthMiddleware() {
       async onRequest({ request }) {
         const token = await getToken();
         request.headers.set("Authorization", `Bearer ${token}`);
+        // Identifies this client to the backend's API usage middleware so
+        // requests can be split out from the Python client on the dashboard.
+        request.headers.set("X-CVH-Client", "web");
         return request;
       },
     }),

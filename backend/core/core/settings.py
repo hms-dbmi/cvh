@@ -108,6 +108,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "core.middleware.HealthCheckMiddleware",
+    # ApiUsageMiddleware wraps everything below so it can record the final
+    # response status/duration for every request (including 4xx/5xx).
+    "core.middleware.ApiUsageMiddleware",
     "django.middleware.security.SecurityMiddleware",
     # WhiteNoise must sit directly after SecurityMiddleware so it can
     # serve collected static files (admin CSS/JS) from the container,
@@ -238,6 +241,37 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(",")
+
+# Allow the custom client-identification header the frontend and the Python
+# client send for API usage tracking.
+from corsheaders.defaults import default_headers  # noqa: E402
+
+CORS_ALLOW_HEADERS = (*default_headers, "x-cvh-client")
+
+# Structured logging for the ApiUsageMiddleware. The middleware emits a single
+# JSON object per request line; we leave the formatter as a passthrough so
+# CloudWatch Logs receives the JSON exactly as written. Logs Insights and the
+# Embedded Metric Format parser both ingest the JSON directly.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "passthrough": {"format": "%(message)s"},
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "passthrough",
+        },
+    },
+    "loggers": {
+        "api_usage": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
 
 # We sit behind an ALB that terminates TLS and forwards plain HTTP to
 # the container. Without this, Django thinks every request is HTTP, so
