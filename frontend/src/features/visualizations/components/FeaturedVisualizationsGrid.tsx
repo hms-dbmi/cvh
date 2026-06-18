@@ -29,7 +29,7 @@ function FeaturedTile({
           borderRadius: "16px 16px 0 16px",
           padding: 1,
           width: "100%",
-          aspectRatio: "1.6 / 1",
+          aspectRatio: "1.8 / 1",
           objectFit: "contain",
           display: "block",
         }}
