@@ -18,7 +18,13 @@ export function useFeaturedVisualizations() {
       const url = isAbsolute
         ? path
         : `${import.meta.env.VITE_CLOUDFRONT_URL}/${path}`;
-      const res = await fetch(url);
+      // `cache: "no-cache"` forces the browser to revalidate with the server
+      // (sending If-None-Match / If-Modified-Since) instead of serving from
+      // disk cache. Avoids the "stale featured.json" problem when an
+      // upstream Cache-Control max-age has lingered in users' browsers.
+      // CloudFront's edge cache is unaffected — it's controlled by the
+      // origin response headers, not by client request headers.
+      const res = await fetch(url, { cache: "no-cache" });
       if (!res.ok) {
         throw new Error(
           `Failed to fetch featured visualizations: ${res.status}`,
