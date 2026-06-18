@@ -47,7 +47,7 @@ function RouteComponent() {
                 maxWidth: "60ch",
               }}
             >
-              Create and Share Interactive Genomics Data Visualizations
+              Create and Share Interactive Visualization for Genomics, Spatial, and Single-Cell Data
             </Typography>
             <Typography
               component="p"
