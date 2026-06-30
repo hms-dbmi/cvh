@@ -17,6 +17,7 @@ import {
 import { type ComponentProps, memo, useCallback, useMemo } from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { useGetPaginatedProjectDatasets } from "@/features/datasets/api/useDatasets";
+import { toGoslingAssembly } from "@/features/datasets/assemblies";
 import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore.ts";
 import type { components } from "@/types/schema";
 import { useUpdateVisualization } from "../api/useVisualizations";
@@ -41,7 +42,10 @@ const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]): GDData[] => {
     id: dataset.uuid,
     metadata: {},
     url: dataset.source_url,
-    assembly: dataset?.assembly ?? undefined,
+    // Translate cfdb's raw assembly value to something Gosling can render:
+    // a known assembly string, an alias, or inline ChromSizes. See
+    // assemblies.ts for the mapping.
+    assembly: toGoslingAssembly(dataset?.assembly),
     indexURL: dataset?.index_url ?? undefined,
     header: dataset?.headers ?? undefined,
     separator: dataset?.separator ?? undefined,

@@ -80,9 +80,11 @@ class WorkspaceOutWithMembersCount(WorkspaceOut):
 
 
 class GoslingDataCommon(ModelSchema):
-    assembly: Literal[
-        "hg38", "hg19", "hg18", "hg17", "hg16", "mm10", "mm9", "unknown"
-    ]
+    # cfdb emits assembly values Gosling doesn't recognize directly
+    # (GRCh38, GRCm38, dm6, ce11, T2T-CHM13, …). Store them raw so we
+    # don't lose information; the frontend's `toGoslingAssembly` helper
+    # translates at the rendering seam (alias or inline ChromSizes).
+    assembly: str = Field(max_length=50)
 
     class Meta:
         model = Dataset

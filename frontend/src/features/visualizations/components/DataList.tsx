@@ -31,6 +31,7 @@ import {
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
+import { toGoslingAssembly } from "@/features/datasets/assemblies";
 import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
 import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
 import AddTagButton from "@/features/datasets/components/AddTagButton";
@@ -309,7 +310,10 @@ function DatasetListItem({
         name: dataset.name,
         id: dataset.uuid,
         url: dataset.source_url,
-        assembly: dataset.assembly ?? undefined,
+        // Gosling consumes assembly via the drop handler; translate from
+        // cfdb's raw value (e.g. GRCh38, dm6) to a Gosling-compatible
+        // assembly name or inline ChromSizes.
+        assembly: toGoslingAssembly(dataset.assembly),
         indexURL: dataset.index_url ?? undefined,
         tags: dataset.tags.map((t) => [t.key, t.tag]),
       },
