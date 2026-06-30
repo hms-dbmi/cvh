@@ -31,6 +31,18 @@ import {
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
+import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
+import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
+import AddTagButton from "@/features/datasets/components/AddTagButton";
+import DatasetAttributeSelect from "@/features/datasets/components/DatasetAttributeSelect";
+import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
+import EditDatasetButton from "@/features/datasets/components/EditDatasetButton";
+import ProcessingStateRow from "@/features/datasets/components/ProcessingStateRow";
+import type { ProcessingStatus } from "@/features/datasets/formatEligibility";
+import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore";
+import { useGetProject } from "@/features/projects/api/useProjects";
+import type { components } from "@/types/schema";
+import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
@@ -41,16 +53,6 @@ import {
   useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
 import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
-import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
-import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
-import AddTagButton from "@/features/datasets/components/AddTagButton";
-import EditDatasetButton from "@/features/datasets/components/EditDatasetButton";
-import DatasetAttributeSelect from "@/features/datasets/components/DatasetAttributeSelect";
-import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
-import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore";
-import { useGetProject } from "@/features/projects/api/useProjects";
-import type { components } from "@/types/schema";
-import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { VitessceWarningBanner } from "./VitessceWarningBanner";
 
 export function DatasetActionsMenu({
@@ -284,10 +286,24 @@ function DatasetListItem({
   readOnly?: boolean;
   disableDrag?: boolean;
 }) {
+  const processingStatus = (dataset.processing_status ??
+    "not_needed") as ProcessingStatus;
+  const processingJobId = dataset.processing_job_id ?? null;
+  const processingStartedAt = dataset.processing_started_at ?? null;
+  const processingCompletedAt = dataset.processing_completed_at ?? null;
+  const processingError = dataset.processing_error ?? null;
+
+  // Datasets awaiting processing can't be used as tracks — disable drag
+  // until they're either NOT_NEEDED (regular dataset) or PROCESSED
+  // (cfdb-sourced and ready).
+  const isUsable =
+    processingStatus === "not_needed" || processingStatus === "processed";
+  const hasWritePermissions = !readOnly;
+
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({
       id: dataset.uuid,
-      disabled: disableDrag,
+      disabled: disableDrag || !isUsable,
       data: {
         type: dataset.file_type,
         name: dataset.name,
@@ -348,6 +364,15 @@ function DatasetListItem({
               dataset.file_type,
               dataset.assembly && ` \u00B7 ${dataset.assembly}`,
             ]}
+          />
+          <ProcessingStateRow
+            datasetUuid={dataset.uuid}
+            status={processingStatus}
+            jobId={processingJobId}
+            startedAt={processingStartedAt}
+            completedAt={processingCompletedAt}
+            errorMessage={processingError}
+            hasWritePermissions={hasWritePermissions}
           />
           {dataset.tags?.length > 0 && (
             <Stack
@@ -550,9 +575,7 @@ function DataAccordion({
                     disabled: !hasWritePermissions,
                   }}
                 />
-                <BrowseLibraryButton
-                  buttonProps={{ variant: "contained" }}
-                />
+                <BrowseLibraryButton buttonProps={{ variant: "contained" }} />
               </Stack>
             </Stack>
           )}

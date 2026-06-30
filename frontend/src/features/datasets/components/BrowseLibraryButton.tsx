@@ -34,10 +34,13 @@ import { useCallback, useMemo, useState } from "react";
 import type { DccType } from "../../../../cfdb-types";
 import {
   buildCfdbFileSourceUrl,
+  CFDB_PROCESSED_FILE_TYPE,
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
   fetchCfdbSelectedFiles,
-  isBrowseLibrarySimpleType,
+  getCfdbDccSlug,
+  isBrowseLibraryProcessableType,
+  isBrowseLibraryReadyType,
   isCfdbFileSupported,
   useCfdbDccAssemblies,
   useCfdbDccFileFormats,
@@ -658,7 +661,6 @@ function DatasetRow({
   );
 }
 
-
 function AddToWorkspaceButton({
   selectedIds,
   onDone,
@@ -686,9 +688,7 @@ function AddToWorkspaceButton({
 
     // Selection can include files that aren't in the currently-rendered
     // page of `useCfdbDccFiles`, so ask CFDB for the full set by id.
-    const selectedFiles = await fetchCfdbSelectedFiles(
-      Array.from(selectedIds),
-    );
+    const selectedFiles = await fetchCfdbSelectedFiles(Array.from(selectedIds));
 
     const buildDataset = (file: CfdbFile) => {
       const assembly =
@@ -726,35 +726,63 @@ function AddToWorkspaceButton({
       }
 
       // Only Browse-Library-supported file_types reach the API. Selection
-      // is gated in the UI by `isCfdbFileSupported`, so this `return null`
-      // is just a type-safe backstop — at runtime it shouldn't fire.
+      // is gated in the UI by `isCfdbFileSupported`, so the `return null`
+      // below is just a type-safe backstop — at runtime it shouldn't fire.
       const goslingType =
-        file.fileFormat?.id &&
-        CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
-      if (!goslingType || !isBrowseLibrarySimpleType(goslingType)) {
-        return null;
+        file.fileFormat?.id && CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
+
+      if (goslingType && isBrowseLibraryReadyType(goslingType)) {
+        return {
+          name: file.filename,
+          source_url: buildCfdbFileSourceUrl(file),
+          data_type: goslingType,
+          assembly,
+          file_type: goslingType,
+        };
       }
 
-      return {
-        name: file.filename,
-        source_url: buildCfdbFileSourceUrl(file),
-        data_type: goslingType,
-        assembly,
-        file_type: goslingType,
-      };
+      if (goslingType && isBrowseLibraryProcessableType(goslingType)) {
+        // Processable types: send DCC + ID so the backend derives
+        // source_url and flags the row for cfdb processing. index_url
+        // is intentionally omitted — cfdb generates it.
+        //
+        // We persist the POST-processed file_type (e.g. bigbed → bed,
+        // sam → bam) so Gosling reads the right thing once the cfdb
+        // artifact lands. The cfdb URL still references the original
+        // input file via cfdb_id.
+        const processedType =
+          CFDB_PROCESSED_FILE_TYPE[goslingType] ?? goslingType;
+        return {
+          name: file.filename,
+          data_type: processedType,
+          assembly,
+          file_type: processedType,
+          cfdb_dcc: getCfdbDccSlug(file),
+          cfdb_id: file.localId,
+        };
+      }
+
+      return null;
     };
 
     await Promise.all(
       selectedFiles
         .map((file) => ({ file, dataset: buildDataset(file) }))
         .filter(
-          (entry): entry is { file: CfdbFile; dataset: NonNullable<ReturnType<typeof buildDataset>> } =>
-            entry.dataset !== null,
+          (
+            entry,
+          ): entry is {
+            file: CfdbFile;
+            dataset: NonNullable<ReturnType<typeof buildDataset>>;
+          } => entry.dataset !== null,
         )
         .map(({ dataset }) =>
           createDataset({
             body: {
               workspace_uuid: selectedProject.uuid,
+              // @ts-expect-error Schema regen pending: index_url is now
+              // optional and cfdb_dcc/cfdb_id are new on the dataset union.
+              // Run `npm run gen-api-types` once the backend ships.
               dataset,
             },
           }),

@@ -151,6 +151,34 @@ function useTagDataset() {
   });
 }
 
+function useProcessDataset() {
+  const { toastSuccess, toastError } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("post", `${path}/{dataset_uuid}/process`, {
+    onSuccess: () => {
+      toastSuccess("Processing started.");
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to start processing.");
+    },
+  });
+}
+
+function useUpdateProcessingStatus() {
+  const queryClient = useQueryClient();
+  const client = useClient();
+  // The browser uses this to persist a polled outcome from cfdb. No toast —
+  // the UI state machine already conveys the result; a toast here would
+  // double up with the visible chip change.
+  return client.useMutation("put", `${path}/{dataset_uuid}/processing-status`, {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+  });
+}
+
 function useGetProjectDatasetFieldValues(
   workspace_uuid: string,
   field: "assembly" | "file_type",
@@ -182,6 +210,8 @@ export {
   useGetPaginatedProjectDatasets,
   useGetProjectDatasetFieldValues,
   useGetProjectDatasetTags,
+  useProcessDataset,
   useTagDataset,
   useUpdateDataset,
+  useUpdateProcessingStatus,
 };
