@@ -1,13 +1,18 @@
 from typing import Literal
 from uuid import UUID
 
+from django.conf import settings
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from ninja import Query, Router
+from ninja.errors import HttpError
 from ninja.pagination import PageNumberPagination, paginate
 
 from ..auth import Authorized
+from ..cfdb import CfdbError, check_artifact_ready, dispatch_artifact
+from ..dccs import SUPPORTED_DCCS
 from ..examples import EXAMPLE_DATASETS
 from ..helpers import (
     _get_workspace,
@@ -22,6 +27,8 @@ from ..schema import (
     DatasetUpdate,
     DatasetWithTagsOut,
     ExampleDatasetIn,
+    ProcessingOut,
+    ProcessingStatusUpdate,
     SuccessOut,
     TagOut,
     TagsIn,
@@ -46,21 +53,56 @@ def create_dataset(request, dataset: DatasetIn):
     workspace_uuid = dataset_dict.get("workspace_uuid")
     del dataset_dict["workspace_uuid"]
 
+    fields = _apply_cfdb_source(dataset_dict["dataset"])
+
     if workspace_uuid:
         try:
             project = Project.objects.get_write_project(
                 user=request.auth, project_uuid=workspace_uuid
             )
-            Dataset.objects.create(
-                **dataset_dict["dataset"], project_key=project
-            )
+            Dataset.objects.create(**fields, project_key=project)
             return dataset
         except Project.DoesNotExist:
             raise Http404("Failed to create dataset.") from None
-    Dataset.objects.create(
-        **dataset_dict["dataset"], user_key=request.auth
-    )
+    Dataset.objects.create(**fields, user_key=request.auth)
     return dataset
+
+
+def _apply_cfdb_source(fields: dict) -> dict:
+    """If the payload carries cfdb identifiers, validate the DCC and derive
+    `source_url` (and `index_url` for indexed file types) from cfdb's
+    `/data/{dcc}/{id}` and `/index/{dcc}/{id}` endpoints. The user-supplied
+    URLs are ignored for cfdb-sourced datasets so the backend stays in
+    control of where bytes come from.
+    """
+    dcc = fields.get("cfdb_dcc")
+    cfdb_id = fields.get("cfdb_id")
+    if not dcc and not cfdb_id:
+        return fields
+
+    if dcc not in SUPPORTED_DCCS:
+        raise HttpError(
+            400,
+            f"Unsupported DCC '{dcc}'. Supported: {', '.join(SUPPORTED_DCCS)}.",
+        )
+
+    base = settings.CFDB_BASE_URL
+    resolved: dict = {
+        **fields,
+        "source_url": f"{base}/data/{dcc}/{cfdb_id}",
+    }
+    # cfdb produces a sidecar index for the formats that need one. Set
+    # index_url at creation time so the dataset row carries everything
+    # Gosling needs once processing completes. The URL is deterministic;
+    # both data + index are served from the same cfdb hostname.
+    if fields.get("file_type") in _CFDB_INDEXED_FILE_TYPES:
+        resolved["index_url"] = f"{base}/index/{dcc}/{cfdb_id}"
+    return resolved
+
+
+# File types whose Gosling schema requires an `index_url`. Stays in sync
+# with `GoslingDesignerBam` and `GoslingDesignerIndex` in api/schema.py.
+_CFDB_INDEXED_FILE_TYPES = frozenset({"bam", "vcf", "bed", "gff"})
 
 
 @router.post(
@@ -303,3 +345,209 @@ def delete_dataset(request, dataset_uuid: UUID):
 
     dataset.delete()
     return {"success": True}
+
+
+@router.post(
+    "/datasets/{dataset_uuid}/process",
+    auth=Authorized(),
+    response=ProcessingOut,
+    summary="Start cfdb processing for a dataset",
+    description=(
+        "Dispatches the next-needed cfdb workflow for a cfdb-sourced"
+        " dataset. Only /data or /index is dispatched per call — cfdb"
+        " auto-queues the index workflow once data finishes, so the"
+        " frontend re-calls /processing-status when polling completes"
+        " and the server advances the phase. Requires write access to"
+        " the parent workspace."
+    ),
+)
+def process_dataset(request, dataset_uuid: UUID):
+    dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=dataset.project_key.uuid,
+            user=request.auth,
+        )
+    except Project.DoesNotExist:
+        raise Http404("Dataset not found.") from None
+
+    if not (dataset.cfdb_dcc and dataset.cfdb_id):
+        raise HttpError(
+            400,
+            "Only cfdb-sourced datasets can be processed via this endpoint.",
+        )
+
+    # Allow dispatch from NEEDED (initial) and FAILED (retry). Disallow
+    # dispatching while a job is already in flight or already complete —
+    # the caller should refresh.
+    if dataset.processing_status not in (
+        Dataset.ProcessingStatus.NEEDED,
+        Dataset.ProcessingStatus.FAILED,
+    ):
+        raise HttpError(
+            409,
+            f"Dataset is in state '{dataset.processing_status}'; cannot"
+            " dispatch processing.",
+        )
+
+    _advance_processing(dataset)
+    return dataset
+
+
+def _advance_processing(dataset: Dataset) -> None:
+    """Advance the dataset's processing state one phase forward based on
+    cfdb's current readiness. Encodes the two-phase contract: data is
+    dispatched first; cfdb auto-queues the index workflow once data
+    completes, so we only need to *fetch* the index job id (by hitting
+    /index/{dcc}/{id}) once data is ready.
+
+    Phase logic:
+      both /data and /index ready  → PROCESSED
+      /data ready, /index pending  → dispatch /index, STARTED with new job_id
+      /data not ready              → dispatch /data,  STARTED with data job_id
+                                     (cfdb queues /index automatically when
+                                     data finishes — caller will hit /index
+                                     once that job completes)
+    """
+    needs_index = dataset.file_type in _CFDB_INDEXED_FILE_TYPES
+    try:
+        data_ready = check_artifact_ready(
+            dataset.cfdb_dcc, dataset.cfdb_id, kind="data"
+        )
+        index_ready = (
+            check_artifact_ready(
+                dataset.cfdb_dcc, dataset.cfdb_id, kind="index"
+            )
+            if needs_index
+            else True
+        )
+    except CfdbError as exc:
+        dataset.processing_status = Dataset.ProcessingStatus.FAILED
+        dataset.processing_error = str(exc)
+        dataset.save(
+            update_fields=[
+                "processing_status",
+                "processing_error",
+                "modified_timestamp",
+            ]
+        )
+        raise HttpError(502, f"cfdb status check failed: {exc}") from exc
+
+    now = timezone.now()
+
+    if data_ready and index_ready:
+        dataset.processing_status = Dataset.ProcessingStatus.PROCESSED
+        dataset.processing_completed_at = now
+        dataset.processing_error = None
+        dataset.save(
+            update_fields=[
+                "processing_status",
+                "processing_completed_at",
+                "processing_error",
+                "modified_timestamp",
+            ]
+        )
+        return
+
+    # Decide which single side to dispatch next. We never dispatch both
+    # at once — cfdb will auto-queue the index once data finishes.
+    next_kind = "data" if not data_ready else "index"
+
+    try:
+        result = dispatch_artifact(
+            dataset.cfdb_dcc, dataset.cfdb_id, kind=next_kind
+        )
+    except CfdbError as exc:
+        dataset.processing_status = Dataset.ProcessingStatus.FAILED
+        dataset.processing_error = str(exc)
+        dataset.save(
+            update_fields=[
+                "processing_status",
+                "processing_error",
+                "modified_timestamp",
+            ]
+        )
+        raise HttpError(502, f"cfdb dispatch failed: {exc}") from exc
+
+    if result.status_code == 202:
+        # New job dispatched — track its id. If we're advancing from data
+        # phase to index phase, this replaces the prior (already-finished)
+        # data job_id so the frontend polls the right thing next.
+        dataset.processing_status = Dataset.ProcessingStatus.STARTED
+        dataset.processing_job_id = result.job_id
+        if dataset.processing_started_at is None:
+            dataset.processing_started_at = now
+        dataset.processing_error = None
+        dataset.save(
+            update_fields=[
+                "processing_status",
+                "processing_job_id",
+                "processing_started_at",
+                "processing_error",
+                "modified_timestamp",
+            ]
+        )
+        return
+
+    # Race: /status said not-ready but the dispatch returned 200/206.
+    # Recurse — re-probe and see if both sides are now ready.
+    _advance_processing(dataset)
+
+
+@router.put(
+    "/datasets/{dataset_uuid}/processing-status",
+    auth=Authorized(),
+    response=ProcessingOut,
+    summary="Report cfdb processing outcome",
+    description=(
+        "Called by the frontend when its polled cfdb job reaches a terminal"
+        " state. The server re-probes cfdb's /status endpoints to decide"
+        " what's next: marking PROCESSED if both /data and /index are"
+        " ready, or dispatching /index and persisting the new job_id if"
+        " only the data side just finished. A reported failure is trusted"
+        " and marks the row FAILED."
+        " Requires write access to the parent workspace."
+    ),
+)
+def update_processing_status(
+    request, dataset_uuid: UUID, payload: ProcessingStatusUpdate
+):
+    dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
+    try:
+        Project.objects.get_write_project(
+            project_uuid=dataset.project_key.uuid,
+            user=request.auth,
+        )
+    except Project.DoesNotExist:
+        raise Http404("Dataset not found.") from None
+
+    if dataset.processing_status != Dataset.ProcessingStatus.STARTED:
+        raise HttpError(
+            409,
+            f"Dataset is in state '{dataset.processing_status}'; only"
+            " 'started' jobs may be marked complete.",
+        )
+
+    # Client-reported failure: trust the client, no point probing cfdb.
+    if payload.status == "failed":
+        dataset.processing_status = Dataset.ProcessingStatus.FAILED
+        dataset.processing_completed_at = timezone.now()
+        dataset.processing_error = payload.error
+        dataset.save(
+            update_fields=[
+                "processing_status",
+                "processing_completed_at",
+                "processing_error",
+                "modified_timestamp",
+            ]
+        )
+        return dataset
+
+    # Client says the polled job completed. Verify with cfdb and decide
+    # whether we're done (both /data and /index ready) or whether we
+    # need to advance to the index phase. `_advance_processing` handles
+    # both transitions: it'll dispatch /index if data just finished and
+    # index isn't ready yet, replacing the persisted job_id with the
+    # new one so the frontend polls the next phase.
+    _advance_processing(dataset)
+    return dataset
