@@ -101,6 +101,18 @@ class Tag(models.Model):
 
 
 class Dataset(UserCreated):
+    class ProcessingStatus(models.TextChoices):
+        # File format doesn't need server-side processing (e.g. bigwig, cooler).
+        NOT_NEEDED = "not_needed", "Not needed"
+        # Processable format but processing hasn't been dispatched yet.
+        NEEDED = "needed", "Needed"
+        # Dispatch sent to cfdb; job in flight.
+        STARTED = "started", "Started"
+        # cfdb reports completion; artifacts are cached and ready to serve.
+        PROCESSED = "processed", "Processed"
+        # cfdb returned an error; user may retry.
+        FAILED = "failed", "Failed"
+
     source_url = models.URLField(max_length=1000)
     file_type = models.CharField(max_length=50)
     data_type = models.CharField(max_length=50)
@@ -115,6 +127,45 @@ class Dataset(UserCreated):
     headers = models.BooleanField(default=False)
     data_column = models.JSONField(null=True, blank=True)
     row_names = ArrayField(models.CharField(max_length=500), null=True, blank=True)
+
+    # cfdb-backed datasets. Populated for processable file types; null for
+    # raw-URL uploads (existing bigwig/cooler/csv/etc. flows). `source_url`
+    # is derived from these at create time as
+    # `{settings.CFDB_BASE_URL}/data/{cfdb_dcc}/{cfdb_id}`.
+    cfdb_dcc = models.CharField(max_length=50, null=True, blank=True)
+    cfdb_id = models.CharField(max_length=200, null=True, blank=True)
+
+    # Processing state. Set automatically from `file_type` on first save.
+    # See `api.format_eligibility.PROCESSABLE_FORMATS` for which file types
+    # require processing.
+    processing_status = models.CharField(
+        max_length=20,
+        choices=ProcessingStatus,
+        default=ProcessingStatus.NOT_NEEDED,
+    )
+    processing_job_id = models.CharField(max_length=100, null=True, blank=True)
+    processing_started_at = models.DateTimeField(null=True, blank=True)
+    processing_completed_at = models.DateTimeField(null=True, blank=True)
+    processing_error = models.TextField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Only set the initial status on first save — never on update, so we
+        # don't overwrite started/processed/failed states.
+        #
+        # Processing applies to library-sourced datasets only: a row must
+        # carry cfdb_dcc + cfdb_id AND be a processable file type. User-
+        # added datasets (raw URL uploads) don't go through cfdb regardless
+        # of their file_type.
+        if self._state.adding:
+            from .format_eligibility import is_processable
+
+            backed_by_cfdb = bool(self.cfdb_dcc and self.cfdb_id)
+            self.processing_status = (
+                self.ProcessingStatus.NEEDED
+                if backed_by_cfdb and is_processable(self.file_type)
+                else self.ProcessingStatus.NOT_NEEDED
+            )
+        super().save(*args, **kwargs)
 
 
 class VisualizationConf(UserCreated):

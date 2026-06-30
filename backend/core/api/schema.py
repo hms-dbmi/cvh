@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import Annotated, Any, Literal, TypedDict
 
 from ninja import ModelSchema, Schema
-from pydantic import UUID4, EmailStr, Field
+from pydantic import UUID4, EmailStr, Field, model_validator
 
 from .models import Dataset, Project, ProjectMember, Tag, VisualizationConf
 
@@ -97,9 +98,50 @@ class GoslingDesignerMultiVec(GoslingDataCommon):
     row_names: list[str]
 
 
-class GoslingDesignerBam(GoslingDataCommon):
+class CfdbSourced(Schema):
+    """Mixin for variants that can be sourced from cfdb (Browse Library)
+    instead of a user-pasted URL+index. When `cfdb_dcc` + `cfdb_id` are
+    set, the backend derives `source_url` and `index_url` is omitted —
+    cfdb generates the index server-side. Validated via the model_validator
+    on each consumer; cannot live on the mixin because it must run after
+    the consumer's `file_type` resolves.
+    """
+
+    cfdb_dcc: str | None = None
+    cfdb_id: str | None = None
+
+
+def _validate_url_or_cfdb_source(values: Any) -> Any:
+    """Validator for variants that accept either user-pasted
+    source_url + index_url OR a cfdb {dcc}/{id} pair. Exactly one path
+    must be present — both cfdb identifiers must be set together; an
+    incomplete pair counts as the user-URL path.
+    """
+    has_user_urls = bool(getattr(values, "source_url", None)) and bool(
+        getattr(values, "index_url", None)
+    )
+    has_cfdb = bool(
+        getattr(values, "cfdb_dcc", None)
+        and getattr(values, "cfdb_id", None)
+    )
+    if has_user_urls == has_cfdb:
+        raise ValueError(
+            "Provide either source_url + index_url OR both cfdb_dcc and"
+            " cfdb_id, not both."
+        )
+    return values
+
+
+class GoslingDesignerBam(GoslingDataCommon, CfdbSourced):
     file_type: Literal["bam"]
-    index_url: str
+    # Optional at the schema layer — the cfdb path derives source_url
+    # server-side. Validated by `_check_source` below.
+    source_url: str | None = None
+    index_url: str | None = None
+
+    @model_validator(mode="after")
+    def _check_source(self):
+        return _validate_url_or_cfdb_source(self)
 
 
 class GoslingDesignerDataColumn(Schema):
@@ -121,10 +163,17 @@ class GoslingDesignerDataColumn(Schema):
 
 
 class GoslingDesignerIndex(
-    GoslingDataCommon, GoslingDesignerDataColumn
+    GoslingDataCommon, GoslingDesignerDataColumn, CfdbSourced
 ):
     file_type: Literal["vcf", "bed", "gff"]
-    index_url: str
+    # Optional at the schema layer — the cfdb path derives source_url
+    # server-side. Validated by `_check_source` below.
+    source_url: str | None = None
+    index_url: str | None = None
+
+    @model_validator(mode="after")
+    def _check_source(self):
+        return _validate_url_or_cfdb_source(self)
 
 
 class GoslingDesignerBEDB(
@@ -204,6 +253,13 @@ class DatasetOut(ModelSchema):
             "headers",
             "index_url",
             "separator",
+            "cfdb_dcc",
+            "cfdb_id",
+            "processing_status",
+            "processing_job_id",
+            "processing_started_at",
+            "processing_completed_at",
+            "processing_error",
             *shared_output_fields,
         ]
 
@@ -310,3 +366,28 @@ class WorkspaceMemberOut(ModelSchema):
 
 class SuccessOut(Schema):
     success: bool
+
+
+class ProcessingStatusUpdate(Schema):
+    """Client-reported terminal state for a processing job. The frontend
+    polls cfdb's `/jobs/{id}` directly and PUTs the result here so that
+    CVH persists the outcome across browser sessions. Only terminal
+    statuses are accepted; transient `started` is set by the dispatch
+    endpoint and shouldn't be reported back.
+    """
+
+    status: Literal["processed", "failed"]
+    error: str | None = None
+
+
+class ProcessingOut(Schema):
+    """Snapshot of a dataset's processing state. Returned by the dispatch
+    and status-update endpoints so the frontend can update its view
+    without a separate read.
+    """
+
+    processing_status: str
+    processing_job_id: str | None = None
+    processing_started_at: datetime | None = None
+    processing_completed_at: datetime | None = None
+    processing_error: str | None = None

@@ -284,6 +284,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/{dataset_uuid}/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start cfdb processing for a dataset
+         * @description Dispatches the cfdb processing workflow for a cfdb-sourced dataset. The frontend polls cfdb's /jobs/{id} directly after dispatch. Requires write access to the parent workspace.
+         */
+        post: operations["api_routers_datasets_process_dataset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasets/{dataset_uuid}/processing-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Report cfdb processing outcome
+         * @description Persists the terminal outcome of a cfdb processing job after the frontend has polled cfdb's /jobs/{id} directly. Only the STARTED state may transition into PROCESSED or FAILED via this endpoint. Requires write access to the parent workspace.
+         */
+        put: operations["api_routers_datasets_update_processing_status"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/visualizations": {
         parameters: {
             query?: never;
@@ -701,6 +741,10 @@ export interface components {
         };
         /** GoslingDesignerBam */
         GoslingDesignerBam: {
+            /** Cfdb Dcc */
+            cfdb_dcc?: string | null;
+            /** Cfdb Id */
+            cfdb_id?: string | null;
             /**
              * Assembly
              * @enum {string}
@@ -720,7 +764,7 @@ export interface components {
              */
             file_type: "bam";
             /** Index Url */
-            index_url: string;
+            index_url?: string | null;
         };
         /** GoslingDesignerCSV */
         GoslingDesignerCSV: {
@@ -754,6 +798,10 @@ export interface components {
         };
         /** GoslingDesignerIndex */
         GoslingDesignerIndex: {
+            /** Cfdb Dcc */
+            cfdb_dcc?: string | null;
+            /** Cfdb Id */
+            cfdb_id?: string | null;
             /** Data Column */
             data_column?: [
                 string,
@@ -778,7 +826,7 @@ export interface components {
              */
             file_type: "bed" | "gff" | "vcf";
             /** Index Url */
-            index_url: string;
+            index_url?: string | null;
         };
         /** GoslingDesignerMultiVec */
         GoslingDesignerMultiVec: {
@@ -826,6 +874,23 @@ export interface components {
             index_url?: string | null;
             /** Separator */
             separator?: string | null;
+            /** Cfdb Dcc */
+            cfdb_dcc?: string | null;
+            /** Cfdb Id */
+            cfdb_id?: string | null;
+            /**
+             * Processing Status
+             * @default not_needed
+             */
+            processing_status: string;
+            /** Processing Job Id */
+            processing_job_id?: string | null;
+            /** Processing Started At */
+            processing_started_at?: string | null;
+            /** Processing Completed At */
+            processing_completed_at?: string | null;
+            /** Processing Error */
+            processing_error?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -921,6 +986,23 @@ export interface components {
             index_url?: string | null;
             /** Separator */
             separator?: string | null;
+            /** Cfdb Dcc */
+            cfdb_dcc?: string | null;
+            /** Cfdb Id */
+            cfdb_id?: string | null;
+            /**
+             * Processing Status
+             * @default not_needed
+             */
+            processing_status: string;
+            /** Processing Job Id */
+            processing_job_id?: string | null;
+            /** Processing Started At */
+            processing_started_at?: string | null;
+            /** Processing Completed At */
+            processing_completed_at?: string | null;
+            /** Processing Error */
+            processing_error?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -989,6 +1071,41 @@ export interface components {
             items: components["schemas"]["DatasetWithTagsOut"][];
             /** Count */
             count: number;
+        };
+        /**
+         * ProcessingOut
+         * @description Snapshot of a dataset's processing state. Returned by the dispatch
+         *     and status-update endpoints so the frontend can update its view
+         *     without a separate read.
+         */
+        ProcessingOut: {
+            /** Processing Status */
+            processing_status: string;
+            /** Processing Job Id */
+            processing_job_id?: string | null;
+            /** Processing Started At */
+            processing_started_at?: string | null;
+            /** Processing Completed At */
+            processing_completed_at?: string | null;
+            /** Processing Error */
+            processing_error?: string | null;
+        };
+        /**
+         * ProcessingStatusUpdate
+         * @description Client-reported terminal state for a processing job. The frontend
+         *     polls cfdb's `/jobs/{id}` directly and PUTs the result here so that
+         *     CVH persists the outcome across browser sessions. Only terminal
+         *     statuses are accepted; transient `started` is set by the dispatch
+         *     endpoint and shouldn't be reported back.
+         */
+        ProcessingStatusUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "processed" | "failed";
+            /** Error */
+            error?: string | null;
         };
         /** VisualizationQuerySchema */
         VisualizationQuerySchema: {
@@ -1690,6 +1807,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TagOut"][];
+                };
+            };
+        };
+    };
+    api_routers_datasets_process_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_update_processing_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessingStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingOut"];
                 };
             };
         };
