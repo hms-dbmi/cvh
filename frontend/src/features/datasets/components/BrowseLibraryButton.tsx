@@ -891,32 +891,45 @@ function AddToWorkspaceButton({
 
   return (
     <>
-      <Button
-        onClick={handleAdd}
-        disabled={disabled}
+      {/* Visual pill wrapper. The left "Add to" side is a real Button
+          that toggles disabled state; the right workspace-picker is a
+          sibling (not a descendant), so it stays clickable when the
+          Button is disabled. HTML disables all descendants of a disabled
+          <button> at the event level, so nesting doesn't work here. */}
+      <Box
         sx={{
-          bgcolor: "black",
-          color: "white",
+          display: "inline-flex",
+          alignItems: "center",
+          bgcolor: disabled ? "#999" : "black",
           borderRadius: "8px",
-          textTransform: "none",
-          fontSize: 14,
-          fontWeight: 500,
-          letterSpacing: "0.28px",
           pl: 2,
           pr: 0.5,
           py: 0.5,
           gap: 1.25,
-          "&:hover": { bgcolor: "#333" },
-          "&.Mui-disabled": { bgcolor: "#999", color: "#ccc" },
         }}
       >
-        <Plus size={20} />
-        Add to
-        <Box
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuAnchor(e.currentTarget);
+        <Button
+          onClick={handleAdd}
+          disabled={disabled}
+          disableRipple
+          sx={{
+            color: "white",
+            textTransform: "none",
+            fontSize: 14,
+            fontWeight: 500,
+            letterSpacing: "0.28px",
+            gap: 1.25,
+            p: 0,
+            minWidth: 0,
+            "&:hover": { bgcolor: "transparent" },
+            "&.Mui-disabled": { color: "#ccc" },
           }}
+        >
+          <Plus size={20} />
+          Add to
+        </Button>
+        <Box
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
           sx={{
             bgcolor: "white",
             border: "1px solid #C8CCCE",
@@ -965,7 +978,7 @@ function AddToWorkspaceButton({
           </Typography>
           <CaretDown size={20} color="#4E5A63" />
         </Box>
-      </Button>
+      </Box>
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
