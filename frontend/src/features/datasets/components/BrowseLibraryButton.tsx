@@ -30,14 +30,25 @@ import {
   MagnifyingGlass,
   Plus,
 } from "@phosphor-icons/react";
-import { useCallback, useMemo, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { DccType } from "../../../../cfdb-types";
 import {
   buildCfdbFileSourceUrl,
+  CFDB_PROCESSED_FILE_TYPE,
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
   fetchCfdbSelectedFiles,
-  isBrowseLibrarySimpleType,
+  getCfdbDccSlug,
+  isBrowseLibraryProcessableType,
+  isBrowseLibraryReadyType,
   isCfdbFileSupported,
   useCfdbDccAssemblies,
   useCfdbDccFileFormats,
@@ -341,16 +352,28 @@ function DccDetailView({
     new Set(),
   );
 
+  // Defer filter inputs from the heavy table+query work below: the input
+  // controls themselves re-render synchronously on every keystroke / click
+  // (keeping the UI responsive), while the cfdb query and the table only
+  // re-render once React has time. The user sees their keystrokes land
+  // instantly; the network call fires once typing pauses.
+  const deferredSearch = useDeferredValue(searchQuery);
+  const deferredAssemblyFilters = useDeferredValue(assemblyFilters);
+  const deferredFileFormatFilters = useDeferredValue(fileFormatFilters);
+
+  // Server-side filters are still applied via cfdb's GraphQL (assembly,
+  // file format) because those are categorical and cheap to filter
+  // upstream. Text search runs client-side instead — cfdb's filename
+  // filter is too strict (no substring / case-insensitive matching).
   const apiFilters = useMemo(
     () => ({
-      assemblies: Array.from(assemblyFilters),
-      fileFormatNames: Array.from(fileFormatFilters),
-      search: searchQuery || undefined,
+      assemblies: Array.from(deferredAssemblyFilters),
+      fileFormatNames: Array.from(deferredFileFormatFilters),
     }),
-    [assemblyFilters, fileFormatFilters, searchQuery],
+    [deferredAssemblyFilters, deferredFileFormatFilters],
   );
 
-  const { data: files = [], isLoading } = useCfdbDccFiles(
+  const { data: allFiles = [], isLoading } = useCfdbDccFiles(
     dcc.dccName,
     apiFilters,
   );
@@ -361,6 +384,42 @@ function DccDetailView({
     () => fileFormats.map((name) => ({ value: name, label: name })),
     [fileFormats],
   );
+
+  // Case-insensitive substring match against filename and localId. Both
+  // fields are user-facing — searching by either should "just work."
+  const files = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    if (!query) return allFiles;
+    return allFiles.filter((file) => {
+      const filename = file.filename?.toLowerCase() ?? "";
+      const localId = file.localId?.toLowerCase() ?? "";
+      return filename.includes(query) || localId.includes(query);
+    });
+  }, [allFiles, deferredSearch]);
+
+  // Virtualize the table so only rows in (or near) the viewport are
+  // mounted. With up to 10k files per DCC, the un-virtualized DOM made
+  // scrolling sluggish even with React.memo on each row.
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  // Each row is two stacked lines of text + a checkbox + small padding.
+  // 56px is empirically close; the virtualizer measures the real height
+  // after first render and re-positions automatically.
+  const ROW_HEIGHT_PX = 56;
+  const rowVirtualizer = useVirtualizer({
+    count: files.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => ROW_HEIGHT_PX,
+    // Render a few rows above and below the viewport so fast scrolls don't
+    // flash empty space.
+    overscan: 8,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const paddingBottom =
+    virtualRows.length > 0
+      ? totalHeight - virtualRows[virtualRows.length - 1].end
+      : 0;
 
   // Only rows whose format maps to a Browse-Library-supported Gosling
   // file_type are selectable; everything else is shown but disabled.
@@ -541,8 +600,11 @@ function DccDetailView({
             <CircularProgress />
           </Stack>
         ) : (
-          <TableContainer>
-            <Table size="small">
+          <TableContainer
+            ref={scrollContainerRef}
+            sx={{ maxHeight: 600, overflow: "auto" }}
+          >
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow
                   sx={{ bgcolor: "#F5F7FA", "& th": { fontWeight: 500 } }}
@@ -597,15 +659,33 @@ function DccDetailView({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {files.map((file) => (
-                  <DatasetRow
-                    key={file.localId}
-                    file={file}
-                    selected={selectedIds.has(file.localId)}
-                    disabled={!selectableIds.has(file.localId)}
-                    onToggle={handleToggle}
-                  />
-                ))}
+                {/* Top spacer keeps the virtualized rows positioned at the
+                    correct scroll offset without abandoning <tr> semantics. */}
+                {paddingTop > 0 && (
+                  <TableRow style={{ height: paddingTop }} aria-hidden="true">
+                    <TableCell colSpan={4} sx={{ p: 0, border: 0 }} />
+                  </TableRow>
+                )}
+                {virtualRows.map((virtualRow) => {
+                  const file = files[virtualRow.index];
+                  return (
+                    <DatasetRow
+                      key={file.localId}
+                      file={file}
+                      selected={selectedIds.has(file.localId)}
+                      disabled={!selectableIds.has(file.localId)}
+                      onToggle={handleToggle}
+                    />
+                  );
+                })}
+                {paddingBottom > 0 && (
+                  <TableRow
+                    style={{ height: paddingBottom }}
+                    aria-hidden="true"
+                  >
+                    <TableCell colSpan={4} sx={{ p: 0, border: 0 }} />
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -615,7 +695,11 @@ function DccDetailView({
   );
 }
 
-function DatasetRow({
+// `React.memo` so toggling one checkbox doesn't re-render thousands of
+// rows. The parent passes a stable `onToggle` (useCallback) and the `file`
+// reference is stable across renders (React Query keeps the array identity
+// stable while the query is fresh), so a default shallow compare works.
+const DatasetRow = memo(function DatasetRow({
   file,
   selected,
   disabled,
@@ -656,8 +740,7 @@ function DatasetRow({
       </TableCell>
     </TableRow>
   );
-}
-
+});
 
 function AddToWorkspaceButton({
   selectedIds,
@@ -686,9 +769,7 @@ function AddToWorkspaceButton({
 
     // Selection can include files that aren't in the currently-rendered
     // page of `useCfdbDccFiles`, so ask CFDB for the full set by id.
-    const selectedFiles = await fetchCfdbSelectedFiles(
-      Array.from(selectedIds),
-    );
+    const selectedFiles = await fetchCfdbSelectedFiles(Array.from(selectedIds));
 
     const buildDataset = (file: CfdbFile) => {
       const assembly =
@@ -726,35 +807,63 @@ function AddToWorkspaceButton({
       }
 
       // Only Browse-Library-supported file_types reach the API. Selection
-      // is gated in the UI by `isCfdbFileSupported`, so this `return null`
-      // is just a type-safe backstop — at runtime it shouldn't fire.
+      // is gated in the UI by `isCfdbFileSupported`, so the `return null`
+      // below is just a type-safe backstop — at runtime it shouldn't fire.
       const goslingType =
-        file.fileFormat?.id &&
-        CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
-      if (!goslingType || !isBrowseLibrarySimpleType(goslingType)) {
-        return null;
+        file.fileFormat?.id && CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
+
+      if (goslingType && isBrowseLibraryReadyType(goslingType)) {
+        return {
+          name: file.filename,
+          source_url: buildCfdbFileSourceUrl(file),
+          data_type: goslingType,
+          assembly,
+          file_type: goslingType,
+        };
       }
 
-      return {
-        name: file.filename,
-        source_url: buildCfdbFileSourceUrl(file),
-        data_type: goslingType,
-        assembly,
-        file_type: goslingType,
-      };
+      if (goslingType && isBrowseLibraryProcessableType(goslingType)) {
+        // Processable types: send DCC + ID so the backend derives
+        // source_url and flags the row for cfdb processing. index_url
+        // is intentionally omitted — cfdb generates it.
+        //
+        // We persist the POST-processed file_type (e.g. bigbed → bed,
+        // sam → bam) so Gosling reads the right thing once the cfdb
+        // artifact lands. The cfdb URL still references the original
+        // input file via cfdb_id.
+        const processedType =
+          CFDB_PROCESSED_FILE_TYPE[goslingType] ?? goslingType;
+        return {
+          name: file.filename,
+          data_type: processedType,
+          assembly,
+          file_type: processedType,
+          cfdb_dcc: getCfdbDccSlug(file),
+          cfdb_id: file.localId,
+        };
+      }
+
+      return null;
     };
 
     await Promise.all(
       selectedFiles
         .map((file) => ({ file, dataset: buildDataset(file) }))
         .filter(
-          (entry): entry is { file: CfdbFile; dataset: NonNullable<ReturnType<typeof buildDataset>> } =>
-            entry.dataset !== null,
+          (
+            entry,
+          ): entry is {
+            file: CfdbFile;
+            dataset: NonNullable<ReturnType<typeof buildDataset>>;
+          } => entry.dataset !== null,
         )
         .map(({ dataset }) =>
           createDataset({
             body: {
               workspace_uuid: selectedProject.uuid,
+              // @ts-expect-error Schema regen pending: index_url is now
+              // optional and cfdb_dcc/cfdb_id are new on the dataset union.
+              // Run `npm run gen-api-types` once the backend ships.
               dataset,
             },
           }),

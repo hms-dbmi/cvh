@@ -240,6 +240,13 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Base URL for cfdb, the data-processing service. Used to derive
+# `Dataset.source_url` for datasets backed by cfdb. Strip any trailing slash.
+# Defaults to the dev environment; override in prod via the env file.
+CFDB_BASE_URL = env.str(
+    "CFDB_BASE_URL", default="https://dev.cfdb.vis-api.link"
+).rstrip("/")
+
 CORS_ALLOWED_ORIGINS = env.str("ALLOWED_ORIGINS").split(",")
 
 # Allow the custom client-identification header the frontend and the Python

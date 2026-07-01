@@ -122,56 +122,133 @@ const CFDB_DCC_URL_SLUG: Record<string, string> = {
 };
 
 /**
+ * The DCC slug used by CFDB's REST endpoints — `4DN_DCIC` → `4dn`, etc.
+ * Sent to the CVH backend as `cfdb_dcc` so that backend `source_url`
+ * derivation matches what the browser would have generated.
+ */
+export function getCfdbDccSlug(file: CfdbFile): string {
+  return (
+    CFDB_DCC_URL_SLUG[file.dcc.dccAbbreviation] ??
+    file.dcc.dccAbbreviation.toLowerCase()
+  );
+}
+
+/**
  * URL for fetching a CFDB file's bytes. Points at CFDB's
  * `/data/{dcc}/{local_id}` REST endpoint, with the DCC segment mapped
  * via `CFDB_DCC_URL_SLUG`.
  */
 export function buildCfdbFileSourceUrl(file: CfdbFile): string {
-  const dccSlug =
-    CFDB_DCC_URL_SLUG[file.dcc.dccAbbreviation] ??
-    file.dcc.dccAbbreviation.toLowerCase();
+  const dccSlug = getCfdbDccSlug(file);
   return `${CFDB_API_URL}/data/${encodeURIComponent(dccSlug)}/${encodeURIComponent(file.localId)}`;
 }
 
-/** Maps CFDB file format IDs to Gosling file_type values */
+/** Maps CFDB file format IDs to Gosling file_type values. */
 export const CFDB_TO_GOSLING_FILE_TYPE: Record<string, string> = {
   "format:2572": "bam",
+  "format:2573": "sam",
   "format:3003": "bed",
+  "format:3004": "bigbed",
   "format:3006": "bigwig",
   "format:3016": "vcf",
+  "format:1975": "gff3",
+  "format:1939": "gff",
+  "format:2306": "gtf",
   "format:3475": "csv",
 };
 
 /**
- * Gosling file_types that map cleanly to a "simple" GoslingDesigner
- * dataset (no extra row_names / data_column / separator / index_url
- * fields needed). Browse Library only lets the user select rows whose
- * format maps to one of these.
+ * Gosling file_types that map cleanly to a "ready" GoslingDesigner
+ * dataset (usable as-is, no server-side processing). Browse Library
+ * sends these straight to the existing dataset-create endpoint.
  */
-export const BROWSE_LIBRARY_SIMPLE_TYPES = [
+export const BROWSE_LIBRARY_READY_TYPES = [
   "bigwig",
   "vector",
   "cooler",
 ] as const;
 
-export type BrowseLibrarySimpleType =
-  (typeof BROWSE_LIBRARY_SIMPLE_TYPES)[number];
+export type BrowseLibraryReadyType =
+  (typeof BROWSE_LIBRARY_READY_TYPES)[number];
 
-export function isBrowseLibrarySimpleType(
+export function isBrowseLibraryReadyType(
   value: string,
-): value is BrowseLibrarySimpleType {
-  return (BROWSE_LIBRARY_SIMPLE_TYPES as readonly string[]).includes(value);
+): value is BrowseLibraryReadyType {
+  return (BROWSE_LIBRARY_READY_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Gosling file_types that require server-side processing via cfdb.
+ * Browse Library passes `cfdb_dcc` + `cfdb_id` to the backend; the
+ * backend derives `source_url`, the `Dataset.save()` hook flags the
+ * row as `processing_status = "needed"`, and the user later triggers
+ * processing manually.
+ */
+export const BROWSE_LIBRARY_PROCESSABLE_TYPES = [
+  "bam",
+  "sam",
+  "vcf",
+  "gff",
+  "gff3",
+  "gtf",
+  "bed",
+  "broadpeak",
+  "narrowpeak",
+  "bigbed",
+] as const;
+
+/**
+ * Maps each cfdb-catalog file_type to the file_type Gosling actually
+ * consumes once cfdb has finished processing. See the cfdb README's
+ * processor table for the underlying conversions.
+ *
+ * The cfdb URL (`/data/{dcc}/{id}`) still references the *input* file —
+ * cfdb's input→output translation is opaque to CVH — so this map only
+ * affects what we persist in the Dataset row's `file_type` (i.e. what
+ * Gosling reads).
+ */
+export const CFDB_PROCESSED_FILE_TYPE: Record<string, string> = {
+  // Identity entries: cfdb only indexes these, doesn't rewrite the format.
+  bam: "bam",
+  vcf: "vcf",
+  gff: "gff",
+  bed: "bed",
+  // SAM → BAM (cfdb converts SAM→BAM during indexing).
+  sam: "bam",
+  // GFF3 / GTF both end up as bgzipped GFF3, which the existing
+  // GoslingDesignerIndex schema accepts as "gff".
+  gff3: "gff",
+  gtf: "gff",
+  // BED-family formats all end up as bgzipped BED.
+  broadpeak: "bed",
+  narrowpeak: "bed",
+  bigbed: "bed",
+};
+
+export type BrowseLibraryProcessableType =
+  (typeof BROWSE_LIBRARY_PROCESSABLE_TYPES)[number];
+
+export function isBrowseLibraryProcessableType(
+  value: string,
+): value is BrowseLibraryProcessableType {
+  return (BROWSE_LIBRARY_PROCESSABLE_TYPES as readonly string[]).includes(
+    value,
+  );
 }
 
 /**
  * Whether a CFDB file's format maps to a Browse-Library-supported
- * Gosling file_type. Used to disable selection on rows that would
- * otherwise be skipped during dataset creation.
+ * Gosling file_type (ready or processable). Used to disable selection
+ * on rows that would otherwise be skipped during dataset creation.
  */
 export function isCfdbFileSupported(file: CfdbFile): boolean {
   const goslingType =
     file.fileFormat?.id && CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
-  return Boolean(goslingType && isBrowseLibrarySimpleType(goslingType));
+  if (!goslingType) return false;
+  return (
+    isBrowseLibraryReadyType(goslingType) ||
+    isBrowseLibraryProcessableType(goslingType)
+  );
 }
 
 export type CfdbFileFilters = {
@@ -191,7 +268,9 @@ function buildFileInput(
     input.genomeAssembly = filters.assemblies;
   }
   if (filters?.fileFormatNames?.length) {
-    input.fileFormat = filters.fileFormatNames.map((name) => ({ name: [name] }));
+    input.fileFormat = filters.fileFormatNames.map((name) => ({
+      name: [name],
+    }));
   }
   if (filters?.search) {
     input.filename = [filters.search];
@@ -284,6 +363,77 @@ export function useCfdbDccAssemblies(dccName: string | undefined) {
     },
     enabled: !!dccName,
     staleTime: 1000 * 60 * 10,
+  });
+}
+
+/**
+ * Snapshot of a cfdb processing job. Mirrors the shape documented in
+ * cfdb's README for `GET /jobs/{id}`. We only consume the fields that
+ * drive UI state transitions; cfdb may return more (progress, stage
+ * names, etc.) but they are ignored here.
+ */
+export type CfdbJobStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "superseded";
+
+export type CfdbJob = {
+  status: CfdbJobStatus;
+  progress?: number | null;
+  error?: string | null;
+  superseded_by?: string | null;
+};
+
+function isTerminalJob(job: CfdbJob): boolean {
+  return job.status === "completed" || job.status === "failed";
+}
+
+async function fetchCfdbJob(jobId: string): Promise<CfdbJob> {
+  const res = await fetch(`${CFDB_API_URL}/jobs/${encodeURIComponent(jobId)}`);
+  if (!res.ok) {
+    throw new Error(`CFDB job lookup failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
+ * cfdb processing jobs typically take 20+ minutes; sub-minute polling
+ * just burns network. Refetch every minute while in flight; mount /
+ * tab-focus also triggers an immediate fetch via React Query's defaults,
+ * so the user sees current state on page load without waiting a full
+ * interval.
+ */
+const CFDB_JOB_POLL_INTERVAL_MS = 60 * 1000;
+
+/**
+ * Poll a cfdb processing job. The query auto-stops once the job reaches
+ * a terminal state (complete or failed). Caller is responsible for
+ * persisting the terminal state back to CVH via `useUpdateProcessingStatus`.
+ *
+ * Pass `enabled: false` when no job is in flight (status !== "started").
+ */
+export function useCfdbJob(
+  jobId: string | null | undefined,
+  options?: { enabled?: boolean },
+) {
+  const enabled = (options?.enabled ?? true) && Boolean(jobId);
+  return useQuery({
+    queryKey: ["cfdb", "job", jobId],
+    queryFn: () => fetchCfdbJob(jobId as string),
+    enabled,
+    refetchInterval: (query) => {
+      const data = query.state.data as CfdbJob | undefined;
+      // Stop polling once we have a terminal state.
+      if (data && isTerminalJob(data)) return false;
+      return CFDB_JOB_POLL_INTERVAL_MS;
+    },
+    // staleTime: 0 so React Query always considers the data stale and
+    // refetches on mount / tab focus / window reconnect. Combined with
+    // the 2-minute interval, the user sees fresh status without waiting
+    // for a full poll cycle when they open the page.
+    staleTime: 0,
   });
 }
 
