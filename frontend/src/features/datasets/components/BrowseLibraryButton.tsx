@@ -30,6 +30,7 @@ import {
   MagnifyingGlass,
   Plus,
 } from "@phosphor-icons/react";
+import { useParams } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   memo,
@@ -752,6 +753,9 @@ function AddToWorkspaceButton({
   const { data: projectsData } = useGetProjects();
   const projects = projectsData?.items ?? [];
   const { mutateAsync: createDataset } = useCreateDataset();
+  // The Browse Library opens from a workspace page; default the dropdown
+  // to that workspace so the user usually doesn't need to change it.
+  const { projectId: currentProjectId } = useParams({ strict: false });
 
   const [selectedProject, setSelectedProject] = useState<{
     uuid: string;
@@ -759,9 +763,16 @@ function AddToWorkspaceButton({
   } | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
-  // Auto-select first project when data loads.
-  if (!selectedProject && projects.length > 0 && projects[0].uuid) {
-    setSelectedProject({ uuid: projects[0].uuid, name: projects[0].name });
+  // Auto-select the current workspace (from URL) if it's in the user's
+  // project list; otherwise fall back to the first project.
+  if (!selectedProject && projects.length > 0) {
+    const currentWorkspace = currentProjectId
+      ? projects.find((p) => p.uuid === currentProjectId)
+      : undefined;
+    const initial = currentWorkspace ?? projects[0];
+    if (initial?.uuid) {
+      setSelectedProject({ uuid: initial.uuid, name: initial.name });
+    }
   }
 
   const handleAdd = useCallback(async () => {
