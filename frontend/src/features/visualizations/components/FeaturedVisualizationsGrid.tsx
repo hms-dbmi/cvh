@@ -34,7 +34,7 @@ function FeaturedTile({
           display: "block",
         }}
       />
-      <Stack
+      <Box
         sx={{
           borderRadius: "0 0 8px 8px",
           backgroundColor: "#fff",
@@ -42,19 +42,22 @@ function FeaturedTile({
           float: "right",
           border: "1px solid #C8CCCE",
         }}
-        direction="row"
-        spacing={1}
       >
         <Typography
           variant="button"
           component={Link}
           to={`/visualizations/${uuid}`}
-          sx={{ textDecoration: "none" }}
+          sx={{
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 1,
+          }}
         >
           View Visualization
+          <ArrowBendUpRight color="#4E5A63" size={20} />
         </Typography>
-        <ArrowBendUpRight color="#4E5A63" size={20} />
-      </Stack>
+      </Box>
     </Box>
   );
 }
