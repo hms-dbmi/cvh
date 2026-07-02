@@ -113,7 +113,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const saveViz = useMemo(() => {
-    const DEBOUNCE_MS = 500;
+    const DEBOUNCE_MS = 5000;
     return (config: object) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
