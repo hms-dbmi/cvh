@@ -23,10 +23,12 @@ interface VitessceViewerProps {
 function CodeEditor({
   editorValue,
   setEditorValue,
+  onPasteFlush,
   readOnly,
 }: {
   editorValue: string;
   setEditorValue: (value: string) => void;
+  onPasteFlush?: (value: string) => void;
   readOnly?: boolean;
 }) {
   return (
@@ -54,6 +56,14 @@ function CodeEditor({
           language="json"
           value={editorValue}
           onChange={(value) => setEditorValue(value ?? "")}
+          onMount={(editor) => {
+            // Paste is a discrete "committed" action — don't make the
+            // user wait out the debounce. Read the value straight off
+            // the editor because React state hasn't caught up yet.
+            editor.onDidPaste(() => {
+              onPasteFlush?.(editor.getValue());
+            });
+          }}
           options={{
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
@@ -144,22 +154,23 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     }
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
-  // Auto-save the editor after typing settles. Invalid JSON / invalid
-  // Vitessce config surfaces as a toast so the user knows their edit
-  // wasn't persisted.
-  useEffect(() => {
-    if (!selectedVizId || !hasWritePermissions) return;
-    if (editorValue === lastServerValueRef.current) return;
-    if (editorValue === "") return;
+  // Editor timer lives on a ref so `saveEditorValue` (which paste can
+  // call directly) can cancel a pending debounced save before firing
+  // immediately.
+  const editorSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
-    // Shorter than the exploring-mode viewer's debounce — typing is a
-    // continuous stream where a 5s pause feels laggy; 2.5s catches
-    // natural "done typing" pauses without spamming mid-edit toasts.
-    const DEBOUNCE_MS = 2500;
-    const t = setTimeout(() => {
+  const saveEditorValue = useCallback(
+    (value: string) => {
+      if (!selectedVizId || !hasWritePermissions) return;
+      if (editorSaveTimeoutRef.current) {
+        clearTimeout(editorSaveTimeoutRef.current);
+        editorSaveTimeoutRef.current = null;
+      }
       let parsed: object;
       try {
-        parsed = JSON.parse(editorValue);
+        parsed = JSON.parse(value);
       } catch {
         toastError("Invalid JSON — changes not saved.");
         return;
@@ -174,21 +185,40 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           return;
         }
       }
+      // Optimistically mark this value as committed so the debounced
+      // effect that re-fires from setEditorValue after paste doesn't
+      // schedule a redundant save with the same content.
+      lastServerValueRef.current = value;
       updateViz({
         params: { path: { visualization_uuid: selectedVizId } },
         body: { conf: parsed as Record<string, never> },
       });
+    },
+    [selectedVizId, hasWritePermissions, data?.tool, updateViz, toastError],
+  );
+
+  // Auto-save the editor after typing settles.
+  useEffect(() => {
+    if (!selectedVizId || !hasWritePermissions) return;
+    if (editorValue === lastServerValueRef.current) return;
+    if (editorValue === "") return;
+
+    // Shorter than the exploring-mode viewer's debounce — typing is a
+    // continuous stream where a 5s pause feels laggy; 2.5s catches
+    // natural "done typing" pauses without spamming mid-edit toasts.
+    const DEBOUNCE_MS = 2500;
+    editorSaveTimeoutRef.current = setTimeout(() => {
+      editorSaveTimeoutRef.current = null;
+      saveEditorValue(editorValue);
     }, DEBOUNCE_MS);
 
-    return () => clearTimeout(t);
-  }, [
-    editorValue,
-    selectedVizId,
-    hasWritePermissions,
-    updateViz,
-    toastError,
-    data?.tool,
-  ]);
+    return () => {
+      if (editorSaveTimeoutRef.current) {
+        clearTimeout(editorSaveTimeoutRef.current);
+        editorSaveTimeoutRef.current = null;
+      }
+    };
+  }, [editorValue, selectedVizId, hasWritePermissions, saveEditorValue]);
 
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
@@ -213,6 +243,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           <CodeEditor
             editorValue={editorValue}
             setEditorValue={setEditorValue}
+            onPasteFlush={hasWritePermissions ? saveEditorValue : undefined}
             readOnly={!hasWritePermissions}
           />
         )}
