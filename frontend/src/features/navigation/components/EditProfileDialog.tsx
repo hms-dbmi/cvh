@@ -107,13 +107,13 @@ export default function EditProfileDialog({
           name="firstName"
           label="First Name"
           control={control}
-          placeholder="Last name..."
+          placeholder="First name..."
         />
         <FormTextField
           name="lastName"
           label="Last Name"
           control={control}
-          placeholder="First name..."
+          placeholder="Last name..."
         />
       </Stack>
     </DialogButtonCopy>

@@ -1,10 +1,9 @@
 import Editor from "@monaco-editor/react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { CheckCircle, Code } from "@phosphor-icons/react";
+import { Code } from "@phosphor-icons/react";
 import { upgradeAndParse } from "@vitessce/schemas";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vitessce } from "vitessce";
@@ -24,12 +23,12 @@ interface VitessceViewerProps {
 function CodeEditor({
   editorValue,
   setEditorValue,
-  onApply,
+  onPasteFlush,
   readOnly,
 }: {
   editorValue: string;
   setEditorValue: (value: string) => void;
-  onApply: () => void;
+  onPasteFlush?: (value: string) => void;
   readOnly?: boolean;
 }) {
   return (
@@ -42,15 +41,6 @@ function CodeEditor({
         >
           {readOnly ? "CONFIGURATION" : "CODE EDITOR"}
         </Typography>
-        {!readOnly && (
-          <Button
-            startIcon={<CheckCircle size={20} weight="fill" color="#1976d2" />}
-            onClick={onApply}
-            sx={{ textTransform: "none", ml: 1 }}
-          >
-            Apply Changes
-          </Button>
-        )}
       </Stack>
       <Box
         sx={{
@@ -66,6 +56,14 @@ function CodeEditor({
           language="json"
           value={editorValue}
           onChange={(value) => setEditorValue(value ?? "")}
+          onMount={(editor) => {
+            // Paste is a discrete "committed" action — don't make the
+            // user wait out the debounce. Read the value straight off
+            // the editor because React state hasn't caught up yet.
+            editor.onDidPaste(() => {
+              onPasteFlush?.(editor.getValue());
+            });
+          }}
           options={{
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
@@ -92,12 +90,14 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
 
   const hasWritePermissions = permissions >= 2;
 
+  // Track the last string that came from the server so the auto-save
+  // effect below can skip when the editor's value is just what we loaded.
+  const lastServerValueRef = useRef<string>("");
+
   useEffect(() => {
-    if (data?.conf) {
-      setEditorValue(JSON.stringify(data.conf, null, 2));
-    } else {
-      setEditorValue("");
-    }
+    const serverVal = data?.conf ? JSON.stringify(data.conf, null, 2) : "";
+    lastServerValueRef.current = serverVal;
+    setEditorValue(serverVal);
   }, [data?.conf]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
@@ -113,7 +113,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const saveViz = useMemo(() => {
-    const DEBOUNCE_MS = 500;
+    const DEBOUNCE_MS = 5000;
     return (config: object) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -154,34 +154,71 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     }
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
-  // Manual save for editor mode
-  const handleEditorSave = useCallback(() => {
-    if (!selectedVizId) return;
+  // Editor timer lives on a ref so `saveEditorValue` (which paste can
+  // call directly) can cancel a pending debounced save before firing
+  // immediately.
+  const editorSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
-    let parsed: object;
-    try {
-      parsed = JSON.parse(editorValue);
-    } catch {
-      toastError("Invalid JSON. Please fix syntax errors before saving.");
-      return;
-    }
-
-    if (data?.tool === "vitessce") {
+  const saveEditorValue = useCallback(
+    (value: string) => {
+      if (!selectedVizId || !hasWritePermissions) return;
+      if (editorSaveTimeoutRef.current) {
+        clearTimeout(editorSaveTimeoutRef.current);
+        editorSaveTimeoutRef.current = null;
+      }
+      let parsed: object;
       try {
-        upgradeAndParse(parsed);
-      } catch (e) {
-        const message =
-          e instanceof Error ? e.message : "Unknown validation error";
-        toastError(`Invalid Vitessce config: ${message}`);
+        parsed = JSON.parse(value);
+      } catch {
+        toastError("Invalid JSON — changes not saved.");
         return;
       }
-    }
+      if (data?.tool === "vitessce") {
+        try {
+          upgradeAndParse(parsed);
+        } catch (e) {
+          const message =
+            e instanceof Error ? e.message : "Unknown validation error";
+          toastError(`Invalid Vitessce config: ${message} — changes not saved.`);
+          return;
+        }
+      }
+      // Optimistically mark this value as committed so the debounced
+      // effect that re-fires from setEditorValue after paste doesn't
+      // schedule a redundant save with the same content.
+      lastServerValueRef.current = value;
+      updateViz({
+        params: { path: { visualization_uuid: selectedVizId } },
+        body: { conf: parsed as Record<string, never> },
+      });
+    },
+    [selectedVizId, hasWritePermissions, data?.tool, updateViz, toastError],
+  );
 
-    updateViz({
-      params: { path: { visualization_uuid: selectedVizId } },
-      body: { conf: parsed as Record<string, never> },
-    });
-  }, [editorValue, updateViz, selectedVizId, toastError, data?.tool]);
+  // Auto-save the editor after typing settles.
+  useEffect(() => {
+    if (!selectedVizId || !hasWritePermissions) return;
+    if (editorValue === lastServerValueRef.current) return;
+    if (editorValue === "") return;
+
+    // Shorter than the exploring-mode viewer's debounce — typing is a
+    // continuous stream where a 5s pause feels laggy; 2.5s catches
+    // natural "done typing" pauses without spamming mid-edit toasts.
+    const DEBOUNCE_MS = 2500;
+    editorSaveTimeoutRef.current = setTimeout(() => {
+      editorSaveTimeoutRef.current = null;
+      saveEditorValue(editorValue);
+    }, DEBOUNCE_MS);
+
+    return () => {
+      if (editorSaveTimeoutRef.current) {
+        clearTimeout(editorSaveTimeoutRef.current);
+        editorSaveTimeoutRef.current = null;
+      }
+    };
+  }, [editorValue, selectedVizId, hasWritePermissions, saveEditorValue]);
 
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
@@ -206,7 +243,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           <CodeEditor
             editorValue={editorValue}
             setEditorValue={setEditorValue}
-            onApply={handleEditorSave}
+            onPasteFlush={hasWritePermissions ? saveEditorValue : undefined}
             readOnly={!hasWritePermissions}
           />
         )}

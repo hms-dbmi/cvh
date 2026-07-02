@@ -14,7 +14,7 @@ import {
   type GDData,
   useGoslingDndHandlers,
 } from "gosling-designer-vec";
-import { type ComponentProps, memo, useCallback, useMemo } from "react";
+import { type ComponentProps, memo, useCallback, useMemo, useRef } from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { useGetPaginatedProjectDatasets } from "@/features/datasets/api/useDatasets";
 import { toGoslingAssembly } from "@/features/datasets/assemblies";
@@ -125,16 +125,25 @@ function GoslingVizShell({
 
   const hasWritePermissions = permissions >= 2;
 
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const onChange = useMemo<ComponentProps<typeof AppStateProvider>["onChange"]>(
-    () =>
-      ({ vis, nTracks, nDatasets }) => {
+    () => {
+      const DEBOUNCE_MS = 5000;
+      return ({ vis, nTracks, nDatasets }) => {
         const conf = vis?.spec;
         if (!selectedVizId || !hasWritePermissions) return;
-        updateViz({
-          body: { conf, n_tracks: nTracks, n_datasets: nDatasets },
-          params: { path: { visualization_uuid: selectedVizId } },
-        });
-      },
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+          updateViz({
+            body: { conf, n_tracks: nTracks, n_datasets: nDatasets },
+            params: { path: { visualization_uuid: selectedVizId } },
+          });
+        }, DEBOUNCE_MS);
+      };
+    },
     [updateViz, selectedVizId, hasWritePermissions],
   );
 
