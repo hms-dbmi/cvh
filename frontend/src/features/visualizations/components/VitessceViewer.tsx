@@ -1,10 +1,9 @@
 import Editor from "@monaco-editor/react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { CheckCircle, Code } from "@phosphor-icons/react";
+import { Code } from "@phosphor-icons/react";
 import { upgradeAndParse } from "@vitessce/schemas";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vitessce } from "vitessce";
@@ -24,12 +23,10 @@ interface VitessceViewerProps {
 function CodeEditor({
   editorValue,
   setEditorValue,
-  onApply,
   readOnly,
 }: {
   editorValue: string;
   setEditorValue: (value: string) => void;
-  onApply: () => void;
   readOnly?: boolean;
 }) {
   return (
@@ -42,15 +39,6 @@ function CodeEditor({
         >
           {readOnly ? "CONFIGURATION" : "CODE EDITOR"}
         </Typography>
-        {!readOnly && (
-          <Button
-            startIcon={<CheckCircle size={20} weight="fill" color="#1976d2" />}
-            onClick={onApply}
-            sx={{ textTransform: "none", ml: 1 }}
-          >
-            Apply Changes
-          </Button>
-        )}
       </Stack>
       <Box
         sx={{
@@ -92,12 +80,14 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
 
   const hasWritePermissions = permissions >= 2;
 
+  // Track the last string that came from the server so the auto-save
+  // effect below can skip when the editor's value is just what we loaded.
+  const lastServerValueRef = useRef<string>("");
+
   useEffect(() => {
-    if (data?.conf) {
-      setEditorValue(JSON.stringify(data.conf, null, 2));
-    } else {
-      setEditorValue("");
-    }
+    const serverVal = data?.conf ? JSON.stringify(data.conf, null, 2) : "";
+    lastServerValueRef.current = serverVal;
+    setEditorValue(serverVal);
   }, [data?.conf]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
@@ -154,34 +144,51 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     }
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
-  // Manual save for editor mode
-  const handleEditorSave = useCallback(() => {
-    if (!selectedVizId) return;
+  // Auto-save the editor after typing settles. Invalid JSON / invalid
+  // Vitessce config surfaces as a toast so the user knows their edit
+  // wasn't persisted.
+  useEffect(() => {
+    if (!selectedVizId || !hasWritePermissions) return;
+    if (editorValue === lastServerValueRef.current) return;
+    if (editorValue === "") return;
 
-    let parsed: object;
-    try {
-      parsed = JSON.parse(editorValue);
-    } catch {
-      toastError("Invalid JSON. Please fix syntax errors before saving.");
-      return;
-    }
-
-    if (data?.tool === "vitessce") {
+    // Shorter than the exploring-mode viewer's debounce — typing is a
+    // continuous stream where a 5s pause feels laggy; 2.5s catches
+    // natural "done typing" pauses without spamming mid-edit toasts.
+    const DEBOUNCE_MS = 2500;
+    const t = setTimeout(() => {
+      let parsed: object;
       try {
-        upgradeAndParse(parsed);
-      } catch (e) {
-        const message =
-          e instanceof Error ? e.message : "Unknown validation error";
-        toastError(`Invalid Vitessce config: ${message}`);
+        parsed = JSON.parse(editorValue);
+      } catch {
+        toastError("Invalid JSON — changes not saved.");
         return;
       }
-    }
+      if (data?.tool === "vitessce") {
+        try {
+          upgradeAndParse(parsed);
+        } catch (e) {
+          const message =
+            e instanceof Error ? e.message : "Unknown validation error";
+          toastError(`Invalid Vitessce config: ${message} — changes not saved.`);
+          return;
+        }
+      }
+      updateViz({
+        params: { path: { visualization_uuid: selectedVizId } },
+        body: { conf: parsed as Record<string, never> },
+      });
+    }, DEBOUNCE_MS);
 
-    updateViz({
-      params: { path: { visualization_uuid: selectedVizId } },
-      body: { conf: parsed as Record<string, never> },
-    });
-  }, [editorValue, updateViz, selectedVizId, toastError, data?.tool]);
+    return () => clearTimeout(t);
+  }, [
+    editorValue,
+    selectedVizId,
+    hasWritePermissions,
+    updateViz,
+    toastError,
+    data?.tool,
+  ]);
 
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
@@ -206,7 +213,6 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           <CodeEditor
             editorValue={editorValue}
             setEditorValue={setEditorValue}
-            onApply={handleEditorSave}
             readOnly={!hasWritePermissions}
           />
         )}
