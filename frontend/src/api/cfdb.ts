@@ -89,6 +89,17 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
       id
       name
     }
+    assayType {
+      id
+      name
+    }
+    collections {
+      localId
+      name
+      abbreviation
+      description
+      experimentTarget
+    }
     dcc {
       id
       dccName
@@ -101,14 +112,42 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
 // add real pagination to the Browse Library UI.
 const DCC_FILES_PAGE_SIZE = 10000;
 
+export type CfdbCollection = {
+  localId: string;
+  name: string;
+  abbreviation?: string | null;
+  description?: string | null;
+  experimentTarget?: string | null;
+};
+
 export type CfdbFile = {
   localId: string;
   filename: string;
   accessUrl?: string | null;
   genomeAssembly?: string | null;
   fileFormat?: { id: string; name: string } | null;
+  assayType?: { id: string; name: string } | null;
+  collections?: CfdbCollection[] | null;
   dcc: { id: string; dccName: string; dccAbbreviation: string };
 };
+
+/**
+ * Files in cfdb can belong to multiple collections but the catalog UI
+ * displays a single value per column. Per the Public Data Catalogue
+ * spec, we surface the first collection whose target field is populated
+ * — otherwise we'd render blanks when the primary collection lacks a
+ * value another sibling collection does have.
+ */
+export function firstCollectionWithField<K extends keyof CfdbCollection>(
+  file: CfdbFile,
+  key: K,
+): CfdbCollection[K] | null {
+  const value = file.collections?.find((c) => {
+    const v = c[key];
+    return typeof v === "string" && v.trim().length > 0;
+  })?.[key];
+  return value ?? null;
+}
 
 /**
  * CFDB GraphQL returns DCC abbreviations in a different form than what
