@@ -36,6 +36,7 @@ import {
   memo,
   useCallback,
   useDeferredValue,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -47,6 +48,7 @@ import {
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
   fetchCfdbSelectedFiles,
+  firstCollectionWithField,
   getCfdbDccSlug,
   isBrowseLibraryProcessableType,
   isBrowseLibraryReadyType,
@@ -459,6 +461,23 @@ function DccDetailView({
     }
   }, [selectableFiles, selectedIds.size, setSelectedIds]);
 
+  // Description column supports inline row expansion — collapsed shows
+  // clamped text with a "Show More" button; expanded shows the full
+  // description. `useVirtualizer`'s `measureElement` picks up the new
+  // row height automatically.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const handleToggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
   const handleReset = useCallback(() => {
     setAssemblyFilters(new Set());
     setFileFormatFilters(new Set());
@@ -605,10 +624,24 @@ function DccDetailView({
             ref={scrollContainerRef}
             sx={{ maxHeight: 600, overflow: "auto" }}
           >
-            <Table size="small" stickyHeader>
+            {/* Table is wider than the modal — the extra columns
+                (Assay Type / Target / Collections / Description) push
+                the layout past the viewport, so horizontal scroll is
+                expected here. */}
+            <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
               <TableHead>
                 <TableRow
-                  sx={{ bgcolor: "#F5F7FA", "& th": { fontWeight: 500 } }}
+                  sx={{
+                    bgcolor: "#F5F7FA",
+                    "& th": {
+                      fontWeight: 500,
+                      fontSize: 14,
+                      letterSpacing: "1px",
+                      textTransform: "uppercase",
+                      color: "#4E5A63",
+                      whiteSpace: "nowrap",
+                    },
+                  }}
                 >
                   <TableCell padding="checkbox">
                     <Checkbox
@@ -625,38 +658,13 @@ function DccDetailView({
                       onChange={handleToggleAll}
                     />
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                    }}
-                  >
-                    Dataset Name
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                    }}
-                  >
-                    Type
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                    }}
-                  >
-                    Assembly
-                  </TableCell>
+                  <TableCell>Dataset Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Assay Type</TableCell>
+                  <TableCell>Assay Target</TableCell>
+                  <TableCell>Assembly</TableCell>
+                  <TableCell>Collections</TableCell>
+                  <TableCell sx={{ minWidth: 300 }}>Description</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -664,7 +672,7 @@ function DccDetailView({
                     correct scroll offset without abandoning <tr> semantics. */}
                 {paddingTop > 0 && (
                   <TableRow style={{ height: paddingTop }} aria-hidden="true">
-                    <TableCell colSpan={4} sx={{ p: 0, border: 0 }} />
+                    <TableCell colSpan={8} sx={{ p: 0, border: 0 }} />
                   </TableRow>
                 )}
                 {virtualRows.map((virtualRow) => {
@@ -675,7 +683,11 @@ function DccDetailView({
                       file={file}
                       selected={selectedIds.has(file.localId)}
                       disabled={!selectableIds.has(file.localId)}
+                      expanded={expandedIds.has(file.localId)}
                       onToggle={handleToggle}
+                      onToggleExpanded={handleToggleExpanded}
+                      measureRef={rowVirtualizer.measureElement}
+                      dataIndex={virtualRow.index}
                     />
                   );
                 })}
@@ -684,7 +696,7 @@ function DccDetailView({
                     style={{ height: paddingBottom }}
                     aria-hidden="true"
                   >
-                    <TableCell colSpan={4} sx={{ p: 0, border: 0 }} />
+                    <TableCell colSpan={8} sx={{ p: 0, border: 0 }} />
                   </TableRow>
                 )}
               </TableBody>
@@ -704,15 +716,47 @@ const DatasetRow = memo(function DatasetRow({
   file,
   selected,
   disabled,
+  expanded,
   onToggle,
+  onToggleExpanded,
+  measureRef,
+  dataIndex,
 }: {
   file: CfdbFile;
   selected: boolean;
   disabled: boolean;
+  expanded: boolean;
   onToggle: (id: string) => void;
+  onToggleExpanded: (id: string) => void;
+  measureRef: (el: HTMLElement | null) => void;
+  dataIndex: number;
 }) {
+  const assayTarget = firstCollectionWithField(file, "experimentTarget");
+  const description = firstCollectionWithField(file, "description");
+  const collections = file.collections ?? [];
+  const collectionsSummary = collections
+    .map((c) => c.abbreviation || c.name)
+    .filter(Boolean)
+    .join(", ");
+
+  const CELL_TEXT_SX = { fontSize: 14, color: "#4E5A63" } as const;
+
+  // Detect whether the clamped description is actually being cut off.
+  // If everything fits in two lines there's nothing to expand, so we
+  // suppress the "Show More" affordance. Only re-measure in the
+  // collapsed state — when expanded the clamp is off and heights match
+  // by definition.
+  const descRef = useRef<HTMLSpanElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  useLayoutEffect(() => {
+    if (expanded) return;
+    const el = descRef.current;
+    if (!el) return;
+    setIsOverflowing(el.scrollHeight > el.clientHeight);
+  }, [description, expanded]);
+
   return (
-    <TableRow hover>
+    <TableRow hover ref={measureRef} data-index={dataIndex}>
       <TableCell padding="checkbox">
         <Checkbox
           size="small"
@@ -729,15 +773,61 @@ const DatasetRow = memo(function DatasetRow({
           {file.localId}
         </Typography>
       </TableCell>
-      <TableCell align="right">
-        <Typography sx={{ fontSize: 14, color: "#4E5A63" }}>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>
           {file.fileFormat?.name ?? "—"}
         </Typography>
       </TableCell>
-      <TableCell align="right">
-        <Typography sx={{ fontSize: 14, color: "#4E5A63" }}>
-          {file.genomeAssembly ?? "—"}
-        </Typography>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{file.assayType?.name ?? "—"}</Typography>
+      </TableCell>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{assayTarget ?? "—"}</Typography>
+      </TableCell>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{file.genomeAssembly ?? "—"}</Typography>
+      </TableCell>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{collectionsSummary || "—"}</Typography>
+      </TableCell>
+      <TableCell sx={{ minWidth: 300, maxWidth: 400 }}>
+        {description ? (
+          <>
+            <Typography
+              ref={descRef}
+              sx={{
+                ...CELL_TEXT_SX,
+                display: "-webkit-box",
+                WebkitLineClamp: expanded ? "unset" : 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {description}
+            </Typography>
+            {(isOverflowing || expanded) && (
+              <Typography
+                component="button"
+                onClick={() => onToggleExpanded(file.localId)}
+                sx={{
+                  mt: 0.5,
+                  background: "none",
+                  border: "none",
+                  p: 0,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "#010101",
+                  textDecoration: "underline",
+                }}
+              >
+                {expanded ? "Show Less" : "Show More"}
+              </Typography>
+            )}
+          </>
+        ) : (
+          <Typography sx={CELL_TEXT_SX}>—</Typography>
+        )}
       </TableCell>
     </TableRow>
   );
