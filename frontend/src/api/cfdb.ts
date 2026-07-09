@@ -16,6 +16,8 @@ const DCC_DETAILS_QUERY = `query DccDetails($input: [FileMetadataInput!]) {
       id
       dccName
       dccDescription
+      dccAbbreviation
+      dccUrl
     }
   }
 }`;
@@ -177,6 +179,19 @@ export function getFileAccession(file: CfdbFile): string {
     }
   }
   return file.localId;
+}
+
+/**
+ * Short human-facing DCC name for UI labels ("4DN", "ENCODE"). Prefers
+ * `dccAbbreviation`, stripping the common "_DCIC" suffix so "4DN_DCIC"
+ * reads as "4DN". Falls back to the long `dccName` if no abbreviation.
+ */
+export function getDccShortName(dcc: {
+  dccAbbreviation?: string | null;
+  dccName: string;
+}): string {
+  const abbrev = (dcc.dccAbbreviation ?? "").replace(/_DCIC$/i, "");
+  return abbrev || dcc.dccName;
 }
 
 /**

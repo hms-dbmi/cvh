@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Button, { type ButtonProps } from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
+import Collapse from "@mui/material/Collapse";
 import Grid from "@mui/material/Grid2";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
@@ -23,8 +24,10 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import {
   ArrowLeft,
+  ArrowSquareOut,
   CaretDown,
   CaretRight,
+  CaretUp,
   Database,
   Info,
   LinkSimple,
@@ -51,6 +54,7 @@ import {
   fetchCfdbSelectedFiles,
   firstCollectionWithField,
   getCfdbDccSlug,
+  getDccShortName,
   getFileAccession,
   isBrowseLibraryProcessableType,
   isBrowseLibraryReadyType,
@@ -463,6 +467,11 @@ function DccDetailView({
     }
   }, [selectableFiles, selectedIds.size, setSelectedIds]);
 
+  // Quick Dataset ID Lookup card is collapsible — starts open so the
+  // search input is discoverable, but the user can hide it to give the
+  // table more vertical space.
+  const [lookupOpen, setLookupOpen] = useState(true);
+
   // Description column supports inline row expansion — collapsed shows
   // clamped text with a "Show More" button; expanded shows the full
   // description. `useVirtualizer`'s `measureElement` picks up the new
@@ -546,43 +555,113 @@ function DccDetailView({
             mb: 2,
           }}
         >
-          <Typography
+          <Stack
+            component="button"
+            type="button"
+            onClick={() => setLookupOpen((v) => !v)}
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            aria-expanded={lookupOpen}
+            aria-controls="quick-lookup-content"
             sx={{
-              fontSize: 14,
-              fontWeight: 500,
-              letterSpacing: "0.1px",
-              mb: 1.5,
+              width: "100%",
+              background: "none",
+              border: "none",
+              p: 0,
+              cursor: "pointer",
+              // Only add the header→content gap when the section is
+              // open — a collapsed header shouldn't drag a phantom
+              // margin along with it.
+              mb: lookupOpen ? 1.5 : 0,
             }}
           >
-            Quick Dataset ID Lookup
-          </Typography>
-          <InputBase
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            fullWidth
-            placeholder="Enter dataset identifier ( ex. 4DNwadsefrdghtjyku.bigWig )"
-            startAdornment={
-              <InputAdornment position="start">
-                <MagnifyingGlass size={20} />
-              </InputAdornment>
-            }
-            sx={{
-              bgcolor: "white",
-              border: "1px solid #C8CCCE",
-              borderRadius: "4px",
-              px: 1,
-              py: 0.5,
-              fontSize: 14,
-              mb: 1.5,
-            }}
-          />
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Info size={20} color="#4E5A63" />
-            <Typography sx={{ fontSize: 13, color: "#4E5A63" }}>
-              Use the quick filters below to explore datasets, or search by ID
-              above.
+            <Typography
+              sx={{
+                fontSize: 14,
+                fontWeight: 500,
+                letterSpacing: "0.1px",
+                color: "#010101",
+              }}
+            >
+              Quick Dataset ID Lookup
             </Typography>
+            {lookupOpen ? <CaretUp size={20} /> : <CaretDown size={20} />}
           </Stack>
+          <Collapse in={lookupOpen} timeout="auto" unmountOnExit>
+            <Box id="quick-lookup-content">
+              <InputBase
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                fullWidth
+                placeholder="Enter dataset identifier ( ex. 4DNwadsefrdghtjyku.bigWig )"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <MagnifyingGlass size={20} />
+                  </InputAdornment>
+                }
+                sx={{
+                  bgcolor: "white",
+                  border: "1px solid #C8CCCE",
+                  borderRadius: "4px",
+                  px: 1,
+                  py: 0.5,
+                  fontSize: 14,
+                  mb: 1.5,
+                }}
+              />
+              <Box sx={{ height: "1px", bgcolor: "#CAD5DA", mb: 2 }} />
+              <Box>
+                {/* Icon sits on the same row as the title so it's centered
+                    with the first line rather than the entire text block. */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Info size={20} color="#4E5A63" style={{ flexShrink: 0 }} />
+                  <Typography
+                    sx={{ fontSize: 13, fontWeight: 500, color: "#010101" }}
+                  >
+                    Don't know the dataset ID? Want more advanced filtering?
+                  </Typography>
+                </Stack>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    color: "#4E5A63",
+                    pl: "28px",
+                    mt: "4px",
+                  }}
+                >
+                  Use the quick filters below to explore datasets with filters,
+                  or visit the {getDccShortName(dcc)} Portal for advanced search
+                  capabilities.
+                </Typography>
+                {dcc.dccUrl && (
+                  <Button
+                    component="a"
+                    href={dcc.dccUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    endIcon={<ArrowSquareOut size={16} />}
+                    sx={{
+                      ml: "28px",
+                      mt: 1.5,
+                      bgcolor: "white",
+                      border: "1px solid #C8CCCE",
+                      borderRadius: "10px",
+                      color: "#0A0A0A",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      textTransform: "none",
+                      px: 2,
+                      py: 1,
+                      "&:hover": { bgcolor: "#F5F7FA" },
+                    }}
+                  >
+                    Open {getDccShortName(dcc)} Portal
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Collapse>
         </Box>
 
         <Stack direction="row" spacing={0.5} sx={{ mb: 2 }} alignItems="center">
