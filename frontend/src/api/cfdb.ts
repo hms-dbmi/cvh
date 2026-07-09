@@ -16,6 +16,8 @@ const DCC_DETAILS_QUERY = `query DccDetails($input: [FileMetadataInput!]) {
       id
       dccName
       dccDescription
+      dccAbbreviation
+      dccUrl
     }
   }
 }`;
@@ -84,10 +86,23 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
     localId
     filename
     accessUrl
+    persistentId
     genomeAssembly
     fileFormat {
       id
       name
+    }
+    assayType {
+      id
+      name
+    }
+    collections {
+      localId
+      name
+      abbreviation
+      description
+      experimentTarget
+      persistentId
     }
     dcc {
       id
@@ -101,14 +116,83 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
 // add real pagination to the Browse Library UI.
 const DCC_FILES_PAGE_SIZE = 10000;
 
+export type CfdbCollection = {
+  localId: string;
+  name: string;
+  abbreviation?: string | null;
+  description?: string | null;
+  experimentTarget?: string | null;
+  // Resolvable URL to the collection's landing page on the DCC (e.g.
+  // `https://www.encodeproject.org/experiments/ENCSR066LZB/`).
+  persistentId?: string | null;
+};
+
 export type CfdbFile = {
   localId: string;
   filename: string;
   accessUrl?: string | null;
+  // Resolvable URL pointing at the file's landing page on the DCC's own
+  // portal (e.g. `https://www.encodeproject.org/files/ENCFF684QMZ/`).
+  // Populated by cfdb across all DCCs we've observed.
+  persistentId?: string | null;
   genomeAssembly?: string | null;
   fileFormat?: { id: string; name: string } | null;
+  assayType?: { id: string; name: string } | null;
+  collections?: CfdbCollection[] | null;
   dcc: { id: string; dccName: string; dccAbbreviation: string };
 };
+
+/**
+ * Files in cfdb can belong to multiple collections but the catalog UI
+ * displays a single value per column. Per the Public Data Catalogue
+ * spec, we surface the first collection whose target field is populated
+ * — otherwise we'd render blanks when the primary collection lacks a
+ * value another sibling collection does have.
+ */
+export function firstCollectionWithField<K extends keyof CfdbCollection>(
+  file: CfdbFile,
+  key: K,
+): CfdbCollection[K] | null {
+  const value = file.collections?.find((c) => {
+    const v = c[key];
+    return typeof v === "string" && v.trim().length > 0;
+  })?.[key];
+  return value ?? null;
+}
+
+/**
+ * The DCC-facing accession for a file. TEMPORARY: cfdb doesn't expose
+ * a dedicated accession field, so we parse the last path segment of
+ * `persistentId` — which contains the accession for the DCCs we ship
+ * (ENCODE, 4DN). Falls back to `localId` when persistentId is missing
+ * or unparseable. Remove this helper once cfdb surfaces the accession
+ * directly.
+ */
+export function getFileAccession(file: CfdbFile): string {
+  if (file.persistentId) {
+    try {
+      const path = new URL(file.persistentId).pathname.replace(/\/+$/, "");
+      const last = path.split("/").filter(Boolean).pop();
+      if (last) return last;
+    } catch {
+      // Malformed URL — fall through to localId.
+    }
+  }
+  return file.localId;
+}
+
+/**
+ * Short human-facing DCC name for UI labels ("4DN", "ENCODE"). Prefers
+ * `dccAbbreviation`, stripping the common "_DCIC" suffix so "4DN_DCIC"
+ * reads as "4DN". Falls back to the long `dccName` if no abbreviation.
+ */
+export function getDccShortName(dcc: {
+  dccAbbreviation?: string | null;
+  dccName: string;
+}): string {
+  const abbrev = (dcc.dccAbbreviation ?? "").replace(/_DCIC$/i, "");
+  return abbrev || dcc.dccName;
+}
 
 /**
  * CFDB GraphQL returns DCC abbreviations in a different form than what

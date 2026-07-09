@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Button, { type ButtonProps } from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
+import Collapse from "@mui/material/Collapse";
 import Grid from "@mui/material/Grid2";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
@@ -23,10 +24,13 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import {
   ArrowLeft,
+  ArrowSquareOut,
   CaretDown,
   CaretRight,
+  CaretUp,
   Database,
   Info,
+  LinkSimple,
   MagnifyingGlass,
   Plus,
 } from "@phosphor-icons/react";
@@ -36,6 +40,7 @@ import {
   memo,
   useCallback,
   useDeferredValue,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -47,7 +52,10 @@ import {
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
   fetchCfdbSelectedFiles,
+  firstCollectionWithField,
   getCfdbDccSlug,
+  getDccShortName,
+  getFileAccession,
   isBrowseLibraryProcessableType,
   isBrowseLibraryReadyType,
   isCfdbFileSupported,
@@ -459,6 +467,28 @@ function DccDetailView({
     }
   }, [selectableFiles, selectedIds.size, setSelectedIds]);
 
+  // Quick Dataset ID Lookup card is collapsible — starts open so the
+  // search input is discoverable, but the user can hide it to give the
+  // table more vertical space.
+  const [lookupOpen, setLookupOpen] = useState(true);
+
+  // Description column supports inline row expansion — collapsed shows
+  // clamped text with a "Show More" button; expanded shows the full
+  // description. `useVirtualizer`'s `measureElement` picks up the new
+  // row height automatically.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const handleToggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
   const handleReset = useCallback(() => {
     setAssemblyFilters(new Set());
     setFileFormatFilters(new Set());
@@ -525,43 +555,113 @@ function DccDetailView({
             mb: 2,
           }}
         >
-          <Typography
+          <Stack
+            component="button"
+            type="button"
+            onClick={() => setLookupOpen((v) => !v)}
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            aria-expanded={lookupOpen}
+            aria-controls="quick-lookup-content"
             sx={{
-              fontSize: 14,
-              fontWeight: 500,
-              letterSpacing: "0.1px",
-              mb: 1.5,
+              width: "100%",
+              background: "none",
+              border: "none",
+              p: 0,
+              cursor: "pointer",
+              // Only add the header→content gap when the section is
+              // open — a collapsed header shouldn't drag a phantom
+              // margin along with it.
+              mb: lookupOpen ? 1.5 : 0,
             }}
           >
-            Quick Dataset ID Lookup
-          </Typography>
-          <InputBase
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            fullWidth
-            placeholder="Enter dataset identifier ( ex. 4DNwadsefrdghtjyku.bigWig )"
-            startAdornment={
-              <InputAdornment position="start">
-                <MagnifyingGlass size={20} />
-              </InputAdornment>
-            }
-            sx={{
-              bgcolor: "white",
-              border: "1px solid #C8CCCE",
-              borderRadius: "4px",
-              px: 1,
-              py: 0.5,
-              fontSize: 14,
-              mb: 1.5,
-            }}
-          />
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Info size={20} color="#4E5A63" />
-            <Typography sx={{ fontSize: 13, color: "#4E5A63" }}>
-              Use the quick filters below to explore datasets, or search by ID
-              above.
+            <Typography
+              sx={{
+                fontSize: 14,
+                fontWeight: 500,
+                letterSpacing: "0.1px",
+                color: "#010101",
+              }}
+            >
+              Quick Dataset ID Lookup
             </Typography>
+            {lookupOpen ? <CaretUp size={20} /> : <CaretDown size={20} />}
           </Stack>
+          <Collapse in={lookupOpen} timeout="auto" unmountOnExit>
+            <Box id="quick-lookup-content">
+              <InputBase
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                fullWidth
+                placeholder="Enter dataset identifier ( ex. 4DNwadsefrdghtjyku.bigWig )"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <MagnifyingGlass size={20} />
+                  </InputAdornment>
+                }
+                sx={{
+                  bgcolor: "white",
+                  border: "1px solid #C8CCCE",
+                  borderRadius: "4px",
+                  px: 1,
+                  py: 0.5,
+                  fontSize: 14,
+                  mb: 1.5,
+                }}
+              />
+              <Box sx={{ height: "1px", bgcolor: "#CAD5DA", mb: 2 }} />
+              <Box>
+                {/* Icon sits on the same row as the title so it's centered
+                    with the first line rather than the entire text block. */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Info size={20} color="#4E5A63" style={{ flexShrink: 0 }} />
+                  <Typography
+                    sx={{ fontSize: 13, fontWeight: 500, color: "#010101" }}
+                  >
+                    Don't know the dataset ID? Want more advanced filtering?
+                  </Typography>
+                </Stack>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    color: "#4E5A63",
+                    pl: "28px",
+                    mt: "4px",
+                  }}
+                >
+                  Use the quick filters below to explore datasets with filters,
+                  or visit the {getDccShortName(dcc)} Portal for advanced search
+                  capabilities.
+                </Typography>
+                {dcc.dccUrl && (
+                  <Button
+                    component="a"
+                    href={dcc.dccUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    endIcon={<ArrowSquareOut size={16} />}
+                    sx={{
+                      ml: "28px",
+                      mt: 1.5,
+                      bgcolor: "white",
+                      border: "1px solid #C8CCCE",
+                      borderRadius: "10px",
+                      color: "#0A0A0A",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      textTransform: "none",
+                      px: 2,
+                      py: 1,
+                      "&:hover": { bgcolor: "#F5F7FA" },
+                    }}
+                  >
+                    Open {getDccShortName(dcc)} Portal
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Collapse>
         </Box>
 
         <Stack direction="row" spacing={0.5} sx={{ mb: 2 }} alignItems="center">
@@ -603,12 +703,36 @@ function DccDetailView({
         ) : (
           <TableContainer
             ref={scrollContainerRef}
-            sx={{ maxHeight: 600, overflow: "auto" }}
+            // minHeight keeps the container from collapsing onto a
+            // single row — otherwise the horizontal scrollbar sits
+            // flush with the row and can clip the accession-ID line
+            // underneath. Reserves gutter for the scrollbar too, so
+            // the bottom edge doesn't jump when it appears/disappears.
+            sx={{
+              minHeight: 240,
+              maxHeight: 600,
+              overflow: "auto",
+              scrollbarGutter: "stable",
+            }}
           >
-            <Table size="small" stickyHeader>
+            {/* Table is wider than the modal — the extra columns
+                (Assay Type / Target / Collections / Description) push
+                the layout past the viewport, so horizontal scroll is
+                expected here. */}
+            <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
               <TableHead>
                 <TableRow
-                  sx={{ bgcolor: "#F5F7FA", "& th": { fontWeight: 500 } }}
+                  sx={{
+                    bgcolor: "#F5F7FA",
+                    "& th": {
+                      fontWeight: 500,
+                      fontSize: 14,
+                      letterSpacing: "1px",
+                      textTransform: "uppercase",
+                      color: "#4E5A63",
+                      whiteSpace: "nowrap",
+                    },
+                  }}
                 >
                   <TableCell padding="checkbox">
                     <Checkbox
@@ -625,38 +749,13 @@ function DccDetailView({
                       onChange={handleToggleAll}
                     />
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                    }}
-                  >
-                    Dataset Name
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                    }}
-                  >
-                    Type
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                    }}
-                  >
-                    Assembly
-                  </TableCell>
+                  <TableCell>Dataset Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Assay Type</TableCell>
+                  <TableCell>Assay Target</TableCell>
+                  <TableCell>Assembly</TableCell>
+                  <TableCell>Collections</TableCell>
+                  <TableCell sx={{ minWidth: 300 }}>Description</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -664,7 +763,7 @@ function DccDetailView({
                     correct scroll offset without abandoning <tr> semantics. */}
                 {paddingTop > 0 && (
                   <TableRow style={{ height: paddingTop }} aria-hidden="true">
-                    <TableCell colSpan={4} sx={{ p: 0, border: 0 }} />
+                    <TableCell colSpan={8} sx={{ p: 0, border: 0 }} />
                   </TableRow>
                 )}
                 {virtualRows.map((virtualRow) => {
@@ -675,7 +774,11 @@ function DccDetailView({
                       file={file}
                       selected={selectedIds.has(file.localId)}
                       disabled={!selectableIds.has(file.localId)}
+                      expanded={expandedIds.has(file.localId)}
                       onToggle={handleToggle}
+                      onToggleExpanded={handleToggleExpanded}
+                      measureRef={rowVirtualizer.measureElement}
+                      dataIndex={virtualRow.index}
                     />
                   );
                 })}
@@ -684,7 +787,7 @@ function DccDetailView({
                     style={{ height: paddingBottom }}
                     aria-hidden="true"
                   >
-                    <TableCell colSpan={4} sx={{ p: 0, border: 0 }} />
+                    <TableCell colSpan={8} sx={{ p: 0, border: 0 }} />
                   </TableRow>
                 )}
               </TableBody>
@@ -704,15 +807,43 @@ const DatasetRow = memo(function DatasetRow({
   file,
   selected,
   disabled,
+  expanded,
   onToggle,
+  onToggleExpanded,
+  measureRef,
+  dataIndex,
 }: {
   file: CfdbFile;
   selected: boolean;
   disabled: boolean;
+  expanded: boolean;
   onToggle: (id: string) => void;
+  onToggleExpanded: (id: string) => void;
+  measureRef: (el: HTMLElement | null) => void;
+  dataIndex: number;
 }) {
+  const assayTarget = firstCollectionWithField(file, "experimentTarget");
+  const description = firstCollectionWithField(file, "description");
+  const collections = file.collections ?? [];
+
+  const CELL_TEXT_SX = { fontSize: 14, color: "#4E5A63" } as const;
+
+  // Detect whether the clamped description is actually being cut off.
+  // If everything fits in two lines there's nothing to expand, so we
+  // suppress the "Show More" affordance. Only re-measure in the
+  // collapsed state — when expanded the clamp is off and heights match
+  // by definition.
+  const descRef = useRef<HTMLSpanElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  useLayoutEffect(() => {
+    if (expanded) return;
+    const el = descRef.current;
+    if (!el) return;
+    setIsOverflowing(el.scrollHeight > el.clientHeight);
+  }, [description, expanded]);
+
   return (
-    <TableRow hover>
+    <TableRow hover ref={measureRef} data-index={dataIndex}>
       <TableCell padding="checkbox">
         <Checkbox
           size="small"
@@ -722,22 +853,150 @@ const DatasetRow = memo(function DatasetRow({
         />
       </TableCell>
       <TableCell>
-        <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-          {file.filename}
-        </Typography>
-        <Typography sx={{ fontSize: 12, color: "#4E5A63" }}>
-          {file.localId}
-        </Typography>
+        <Stack sx={{ gap: "5px" }}>
+          <Typography
+            sx={{
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: 1.2,
+              color: "#010101",
+            }}
+          >
+            {file.filename}
+          </Typography>
+          {(() => {
+            const accession = getFileAccession(file);
+            return file.persistentId ? (
+              <Typography
+                component="a"
+                href={file.persistentId}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Open ${accession} on ${file.dcc.dccName}`}
+                // Stop the click from bubbling to the row (which would
+                // toggle the checkbox); the accession is a link, not a
+                // selection affordance.
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  fontSize: 12,
+                  fontWeight: 400,
+                  lineHeight: 1.2,
+                  color: "#010101",
+                  textDecoration: "underline",
+                  "&:hover": { color: "#4E5A63" },
+                }}
+              >
+                {accession}
+                <LinkSimple size={14} style={{ flexShrink: 0 }} />
+              </Typography>
+            ) : (
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 400,
+                  lineHeight: 1.2,
+                  color: "#010101",
+                }}
+              >
+                {accession}
+              </Typography>
+            );
+          })()}
+        </Stack>
       </TableCell>
-      <TableCell align="right">
-        <Typography sx={{ fontSize: 14, color: "#4E5A63" }}>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>
           {file.fileFormat?.name ?? "—"}
         </Typography>
       </TableCell>
-      <TableCell align="right">
-        <Typography sx={{ fontSize: 14, color: "#4E5A63" }}>
-          {file.genomeAssembly ?? "—"}
-        </Typography>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{file.assayType?.name ?? "—"}</Typography>
+      </TableCell>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{assayTarget ?? "—"}</Typography>
+      </TableCell>
+      <TableCell>
+        <Typography sx={CELL_TEXT_SX}>{file.genomeAssembly ?? "—"}</Typography>
+      </TableCell>
+      <TableCell>
+        {collections.length === 0 ? (
+          <Typography sx={CELL_TEXT_SX}>—</Typography>
+        ) : (
+          <Typography sx={CELL_TEXT_SX}>
+            {collections.map((c, i) => {
+              const label = c.abbreviation || c.name || c.localId;
+              return (
+                <span key={c.localId}>
+                  {i > 0 && ", "}
+                  {c.persistentId ? (
+                    <Typography
+                      component="a"
+                      href={c.persistentId}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        ...CELL_TEXT_SX,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.25,
+                        textDecoration: "underline",
+                        "&:hover": { color: "#010101" },
+                      }}
+                    >
+                      {label}
+                      <LinkSimple size={14} style={{ flexShrink: 0 }} />
+                    </Typography>
+                  ) : (
+                    label
+                  )}
+                </span>
+              );
+            })}
+          </Typography>
+        )}
+      </TableCell>
+      <TableCell sx={{ minWidth: 300, maxWidth: 400 }}>
+        {description ? (
+          <>
+            <Typography
+              ref={descRef}
+              sx={{
+                ...CELL_TEXT_SX,
+                display: "-webkit-box",
+                WebkitLineClamp: expanded ? "unset" : 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {description}
+            </Typography>
+            {(isOverflowing || expanded) && (
+              <Typography
+                component="button"
+                onClick={() => onToggleExpanded(file.localId)}
+                sx={{
+                  mt: 0.5,
+                  background: "none",
+                  border: "none",
+                  p: 0,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "#010101",
+                  textDecoration: "underline",
+                }}
+              >
+                {expanded ? "Show Less" : "Show More"}
+              </Typography>
+            )}
+          </>
+        ) : (
+          <Typography sx={CELL_TEXT_SX}>—</Typography>
+        )}
       </TableCell>
     </TableRow>
   );
