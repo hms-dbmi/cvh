@@ -27,6 +27,7 @@ import {
   CaretRight,
   Database,
   Info,
+  LinkSimple,
   MagnifyingGlass,
   Plus,
 } from "@phosphor-icons/react";
@@ -50,6 +51,7 @@ import {
   fetchCfdbSelectedFiles,
   firstCollectionWithField,
   getCfdbDccSlug,
+  getFileAccession,
   isBrowseLibraryProcessableType,
   isBrowseLibraryReadyType,
   isCfdbFileSupported,
@@ -622,7 +624,17 @@ function DccDetailView({
         ) : (
           <TableContainer
             ref={scrollContainerRef}
-            sx={{ maxHeight: 600, overflow: "auto" }}
+            // minHeight keeps the container from collapsing onto a
+            // single row — otherwise the horizontal scrollbar sits
+            // flush with the row and can clip the accession-ID line
+            // underneath. Reserves gutter for the scrollbar too, so
+            // the bottom edge doesn't jump when it appears/disappears.
+            sx={{
+              minHeight: 240,
+              maxHeight: 600,
+              overflow: "auto",
+              scrollbarGutter: "stable",
+            }}
           >
             {/* Table is wider than the modal — the extra columns
                 (Assay Type / Target / Collections / Description) push
@@ -734,10 +746,6 @@ const DatasetRow = memo(function DatasetRow({
   const assayTarget = firstCollectionWithField(file, "experimentTarget");
   const description = firstCollectionWithField(file, "description");
   const collections = file.collections ?? [];
-  const collectionsSummary = collections
-    .map((c) => c.abbreviation || c.name)
-    .filter(Boolean)
-    .join(", ");
 
   const CELL_TEXT_SX = { fontSize: 14, color: "#4E5A63" } as const;
 
@@ -766,12 +774,59 @@ const DatasetRow = memo(function DatasetRow({
         />
       </TableCell>
       <TableCell>
-        <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-          {file.filename}
-        </Typography>
-        <Typography sx={{ fontSize: 12, color: "#4E5A63" }}>
-          {file.localId}
-        </Typography>
+        <Stack sx={{ gap: "5px" }}>
+          <Typography
+            sx={{
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: 1.2,
+              color: "#010101",
+            }}
+          >
+            {file.filename}
+          </Typography>
+          {(() => {
+            const accession = getFileAccession(file);
+            return file.persistentId ? (
+              <Typography
+                component="a"
+                href={file.persistentId}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Open ${accession} on ${file.dcc.dccName}`}
+                // Stop the click from bubbling to the row (which would
+                // toggle the checkbox); the accession is a link, not a
+                // selection affordance.
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  fontSize: 12,
+                  fontWeight: 400,
+                  lineHeight: 1.2,
+                  color: "#010101",
+                  textDecoration: "underline",
+                  "&:hover": { color: "#4E5A63" },
+                }}
+              >
+                {accession}
+                <LinkSimple size={14} style={{ flexShrink: 0 }} />
+              </Typography>
+            ) : (
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 400,
+                  lineHeight: 1.2,
+                  color: "#010101",
+                }}
+              >
+                {accession}
+              </Typography>
+            );
+          })()}
+        </Stack>
       </TableCell>
       <TableCell>
         <Typography sx={CELL_TEXT_SX}>
@@ -788,7 +843,42 @@ const DatasetRow = memo(function DatasetRow({
         <Typography sx={CELL_TEXT_SX}>{file.genomeAssembly ?? "—"}</Typography>
       </TableCell>
       <TableCell>
-        <Typography sx={CELL_TEXT_SX}>{collectionsSummary || "—"}</Typography>
+        {collections.length === 0 ? (
+          <Typography sx={CELL_TEXT_SX}>—</Typography>
+        ) : (
+          <Typography sx={CELL_TEXT_SX}>
+            {collections.map((c, i) => {
+              const label = c.abbreviation || c.name || c.localId;
+              return (
+                <span key={c.localId}>
+                  {i > 0 && ", "}
+                  {c.persistentId ? (
+                    <Typography
+                      component="a"
+                      href={c.persistentId}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        ...CELL_TEXT_SX,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.25,
+                        textDecoration: "underline",
+                        "&:hover": { color: "#010101" },
+                      }}
+                    >
+                      {label}
+                      <LinkSimple size={14} style={{ flexShrink: 0 }} />
+                    </Typography>
+                  ) : (
+                    label
+                  )}
+                </span>
+              );
+            })}
+          </Typography>
+        )}
       </TableCell>
       <TableCell sx={{ minWidth: 300, maxWidth: 400 }}>
         {description ? (

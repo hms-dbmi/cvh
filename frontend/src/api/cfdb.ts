@@ -84,6 +84,7 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
     localId
     filename
     accessUrl
+    persistentId
     genomeAssembly
     fileFormat {
       id
@@ -99,6 +100,7 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
       abbreviation
       description
       experimentTarget
+      persistentId
     }
     dcc {
       id
@@ -118,12 +120,19 @@ export type CfdbCollection = {
   abbreviation?: string | null;
   description?: string | null;
   experimentTarget?: string | null;
+  // Resolvable URL to the collection's landing page on the DCC (e.g.
+  // `https://www.encodeproject.org/experiments/ENCSR066LZB/`).
+  persistentId?: string | null;
 };
 
 export type CfdbFile = {
   localId: string;
   filename: string;
   accessUrl?: string | null;
+  // Resolvable URL pointing at the file's landing page on the DCC's own
+  // portal (e.g. `https://www.encodeproject.org/files/ENCFF684QMZ/`).
+  // Populated by cfdb across all DCCs we've observed.
+  persistentId?: string | null;
   genomeAssembly?: string | null;
   fileFormat?: { id: string; name: string } | null;
   assayType?: { id: string; name: string } | null;
@@ -147,6 +156,27 @@ export function firstCollectionWithField<K extends keyof CfdbCollection>(
     return typeof v === "string" && v.trim().length > 0;
   })?.[key];
   return value ?? null;
+}
+
+/**
+ * The DCC-facing accession for a file. TEMPORARY: cfdb doesn't expose
+ * a dedicated accession field, so we parse the last path segment of
+ * `persistentId` — which contains the accession for the DCCs we ship
+ * (ENCODE, 4DN). Falls back to `localId` when persistentId is missing
+ * or unparseable. Remove this helper once cfdb surfaces the accession
+ * directly.
+ */
+export function getFileAccession(file: CfdbFile): string {
+  if (file.persistentId) {
+    try {
+      const path = new URL(file.persistentId).pathname.replace(/\/+$/, "");
+      const last = path.split("/").filter(Boolean).pop();
+      if (last) return last;
+    } catch {
+      // Malformed URL — fall through to localId.
+    }
+  }
+  return file.localId;
 }
 
 /**
