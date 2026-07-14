@@ -1,0 +1,64 @@
+name: Deploy API (prod)
+
+# Manual promotion: retag whatever's currently `cvh-api:latest` in ECR
+# as `cvh-api:prod`, then force the prod ECS service to redeploy so it
+# pulls the new manifest. `latest` is what the `Deploy API` workflow
+# publishes on every push to main — this workflow does not rebuild.
+#
+# Rollback: run the workflow again with a specific source tag (via the
+# `source_tag` input) instead of `latest`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: "ECR tag to promote to prod (default: latest)"
+        required: false
+        default: latest
+
+jobs:
+  promote:
+    if: github.repository == 'hms-dbmi/cvh'
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+          aws-region: us-east-2
+
+      - name: Retag source image as `prod`
+        env:
+          REPOSITORY: cvh-api
+          SOURCE_TAG: ${{ github.event.inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          MANIFEST=$(aws ecr batch-get-image \
+            --repository-name "$REPOSITORY" \
+            --image-ids imageTag="$SOURCE_TAG" \
+            --query 'images[].imageManifest' --output text)
+          if [ -z "$MANIFEST" ]; then
+            echo "No image found for tag $SOURCE_TAG" >&2
+            exit 1
+          fi
+          aws ecr put-image \
+            --repository-name "$REPOSITORY" \
+            --image-tag prod \
+            --image-manifest "$MANIFEST"
+
+      - name: Force new ECS deployment (API + admin)
+        env:
+          CLUSTER: ${{ secrets.ECS_CLUSTER }}
+          API_SERVICE: ${{ secrets.ECS_API_SERVICE }}
+          ADMIN_SERVICE: ${{ secrets.ECS_ADMIN_SERVICE }}
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$CLUSTER" \
+            --service "$API_SERVICE" --force-new-deployment
+          aws ecs update-service --cluster "$CLUSTER" \
+            --service "$ADMIN_SERVICE" --force-new-deployment
