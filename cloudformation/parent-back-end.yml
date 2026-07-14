@@ -18,6 +18,42 @@ Parameters:
     Type: String
     Default: dev
     AllowedValues: [prod, dev]
+  # Per-env DNS + resources. Defaults are the dev values so an
+  # `aws cloudformation deploy` without overrides continues to work for
+  # dev. Every prod deploy must override each of these.
+  HostedZoneName:
+    Type: String
+    Default: vis-api.link
+  HostedZoneId:
+    Type: String
+    Default: Z09477406JQAR0KB7G87
+  BackendRootDomainName:
+    Type: String
+    Description: >
+      Root domain for the API. In prod this is served as-is; in dev the
+      environment prefix (e.g. `dev.`) is prepended by the back-end stack.
+    Default: api.vis-api.link
+  AdminRootDomainName:
+    Type: String
+    Description: Root domain for the admin service. Same prod/dev rules as BackendRootDomainName.
+    Default: admin.vis-api.link
+  ImageURI:
+    Type: String
+    Description: >
+      ECR image URI for both the API and admin tasks. Prod uses a
+      dedicated tag (e.g. `:prod`) that the deploy workflow retags from
+      `:latest` after promotion.
+    Default: "605134458779.dkr.ecr.us-east-2.amazonaws.com/cvh-api:latest"
+  BackendTaskEnvFile:
+    Type: String
+    Description: ARN of the API task's env file in S3.
+    Default: "arn:aws:s3:::cvh-env-dev/cvh-env-dev.env"
+    NoEcho: true
+  AdminTaskEnvFile:
+    Type: String
+    Description: ARN of the admin task's env file in S3.
+    Default: "arn:aws:s3:::cvh-env-dev/cvh-env-dev-admin.env"
+    NoEcho: true
   NetworkTemplateURL:
     Type: String
     Default: https://cvh-templates.s3.us-east-2.amazonaws.com/network.yml
@@ -62,6 +98,11 @@ Resources:
         DBHost: !GetAtt Database.Outputs.DBEndpointAddress
         DBPort: !GetAtt Database.Outputs.DBEndpointPort
         DBName: !GetAtt Database.Outputs.DBName
+        HostedZoneName: !Ref HostedZoneName
+        HostedZoneId: !Ref HostedZoneId
+        RootDomainName: !Ref BackendRootDomainName
+        ImageURI: !Ref ImageURI
+        TaskEnvFile: !Ref BackendTaskEnvFile
     DependsOn:
       - Network
       - Database
@@ -80,6 +121,11 @@ Resources:
         DBHost: !GetAtt Database.Outputs.DBEndpointAddress
         DBPort: !GetAtt Database.Outputs.DBEndpointPort
         DBName: !GetAtt Database.Outputs.DBName
+        HostedZoneName: !Ref HostedZoneName
+        HostedZoneId: !Ref HostedZoneId
+        RootDomainName: !Ref AdminRootDomainName
+        ImageURI: !Ref ImageURI
+        TaskEnvFile: !Ref AdminTaskEnvFile
         # Per-env SSM path holding the prefix list ID for the admin IP
         # allowlist. The prefix list itself is managed in EC2 — see
         # docs/admin-deployment.md for setup.
