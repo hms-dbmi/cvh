@@ -44,7 +44,9 @@ function VisualizationViewer({
     }
   }, [selectedVizId, visualizations]);
 
-  const tool = selectedViz?.tool ?? "gosling";
+  // Backend enforces the enum; narrow here so props stay typesafe.
+  const tool: "gosling" | "vitessce" =
+    selectedViz?.tool === "vitessce" ? "vitessce" : "gosling";
   const isVitessce = tool === "vitessce";
 
   const sidebar = useMemo(
@@ -59,7 +61,7 @@ function VisualizationViewer({
         <DataList
           showVitessceWarning={isVitessce}
           showActions
-          disableDrag={isVitessce}
+          tool={tool}
         />
       </>
     ),

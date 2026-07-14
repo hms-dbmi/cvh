@@ -281,11 +281,13 @@ function DatasetListItem({
   showActions,
   readOnly,
   disableDrag,
+  vizTool,
 }: {
   dataset: Required<Dataset>;
   showActions?: boolean;
   readOnly?: boolean;
   disableDrag?: boolean;
+  vizTool?: "gosling" | "vitessce";
 }) {
   const processingStatus = (dataset.processing_status ??
     "not_needed") as ProcessingStatus;
@@ -299,12 +301,19 @@ function DatasetListItem({
   // (cfdb-sourced and ready).
   const isUsable =
     processingStatus === "not_needed" || processingStatus === "processed";
+  // Vitessce datasets are surfaced for reference/copy-URL only —
+  // there's no drop target that consumes them. Only Gosling datasets
+  // are draggable, and only when the current visualization is Gosling
+  // (a Gosling dataset dropped into a Vitessce viz has nowhere to go).
+  const toolMismatch =
+    dataset.tool === "vitessce" ||
+    (vizTool !== undefined && dataset.tool !== vizTool);
   const hasWritePermissions = !readOnly;
 
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({
       id: dataset.uuid,
-      disabled: disableDrag || !isUsable,
+      disabled: disableDrag || !isUsable || toolMismatch,
       data: {
         type: dataset.file_type,
         name: dataset.name,
@@ -338,7 +347,7 @@ function DatasetListItem({
       }
     >
       <Stack direction="row" alignItems="flex-start" width="100%" sx={{ p: 1 }}>
-        {!disableDrag && (
+        {!disableDrag && !toolMismatch && (
           <Box
             ref={setActivatorNodeRef}
             {...listeners}
@@ -423,10 +432,12 @@ function DataList({
   projectId,
   showActions,
   disableDrag,
+  tool,
 }: {
   projectId: string;
   showActions?: boolean;
   disableDrag?: boolean;
+  tool?: "gosling" | "vitessce";
 }) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
@@ -490,7 +501,9 @@ function DataList({
         })}
       />
       <Stack direction="row" spacing={1}>
-        {hasWritePermissions && <AddDatasetButton projectId={projectId} />}
+        {hasWritePermissions && (
+          <AddDatasetButton projectId={projectId} tool={tool} />
+        )}
         <BrowseLibraryButton />
       </Stack>
       <DataSelects projectId={projectId} />
@@ -502,6 +515,7 @@ function DataList({
             showActions={showActions}
             readOnly={!hasWritePermissions}
             disableDrag={disableDrag}
+            vizTool={tool}
           />
         ))}
       </List>
@@ -514,12 +528,14 @@ function DataAccordion({
   showVitessceWarning,
   showActions,
   disableDrag,
+  tool,
   children: _children,
 }: {
   projectId: string;
   showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
+  tool?: "gosling" | "vitessce";
   children?: React.ReactNode;
 }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
@@ -560,6 +576,7 @@ function DataAccordion({
                 projectId={projectId}
                 showActions={showActions}
                 disableDrag={disableDrag}
+                tool={tool}
               />
             )
           ) : (
@@ -574,6 +591,7 @@ function DataAccordion({
               <Stack direction="row" spacing={1}>
                 <AddDatasetButton
                   projectId={projectId}
+                  tool={tool}
                   buttonProps={{
                     variant: "contained",
                     disabled: !hasWritePermissions,
@@ -593,11 +611,13 @@ export default function Wrapper({
   showVitessceWarning,
   showActions,
   disableDrag,
+  tool,
   children,
 }: {
   showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
+  tool?: "gosling" | "vitessce";
   children?: React.ReactNode;
 }) {
   const { projectId } = useParams({ strict: false });
@@ -612,6 +632,7 @@ export default function Wrapper({
       showVitessceWarning={showVitessceWarning}
       showActions={showActions}
       disableDrag={disableDrag}
+      tool={tool}
     >
       {children}
     </DataAccordion>

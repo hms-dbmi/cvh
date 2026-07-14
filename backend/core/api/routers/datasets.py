@@ -54,6 +54,10 @@ def create_dataset(request, dataset: DatasetIn):
     del dataset_dict["workspace_uuid"]
 
     fields = _apply_cfdb_source(dataset_dict["dataset"])
+    # `tool` lives at the DatasetIn top level (not inside the file-type
+    # discriminated union) because a file type like BAM can belong to
+    # either Gosling or Vitessce workspaces. Merge it in before persist.
+    fields["tool"] = dataset_dict["tool"]
 
     if workspace_uuid:
         try:
@@ -247,6 +251,8 @@ def get_workspace_datasets(
         q &= Q(file_type__in=query_filters.file_type)
     if query_filters.name:
         q &= Q(name__icontains=query_filters.name)
+    if query_filters.tool:
+        q &= Q(tool=query_filters.tool)
     datasets = (
         Dataset.objects.filter(Q(project_key=project) & q)
         .order_by("-modified_timestamp")

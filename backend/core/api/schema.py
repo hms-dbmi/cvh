@@ -12,6 +12,7 @@ class DatasetQuerySchema(Schema):
     assembly: list[str] = Field(None, alias="assembly")
     file_type: list[str] = Field(None, alias="file_type")
     name: str = Field(None, alias="name")
+    tool: Literal["gosling", "vitessce"] | None = Field(None, alias="tool")
 
 
 class VisualizationQuerySchema(Schema):
@@ -202,19 +203,44 @@ class GoslingDesignerCSV(GoslingDataCommon):
     ]
 
 
+class VitessceDataset(ModelSchema):
+    """Vitessce-native dataset variants. Vitessce configs reference these
+    URLs directly; unlike the Gosling variants there's no assembly, index
+    sidecar, or column typing to capture — the config itself carries all
+    the projection/coordination metadata Vitessce needs.
+    """
+
+    # https://vitessce.io/docs/data-file-types/
+    file_type: Literal[
+        "ome-tiff", "ome-zarr", "anndata.zarr", "spatialdata.zarr"
+    ]
+
+    class Meta:
+        model = Dataset
+        fields = ["name", "description", "source_url", "data_type"]
+
+
+# Union of all dataset variants the create endpoint accepts. Named
+# `GoslingDesignerModel` for historical reasons — kept for API stability
+# now that Vitessce shares the same union.
 GoslingDesignerModel = Annotated[
     GoslingDatasetSimple
     | GoslingDesignerBam
     | GoslingDesignerMultiVec
     | GoslingDesignerIndex
     | GoslingDesignerBEDB
-    | GoslingDesignerCSV,
+    | GoslingDesignerCSV
+    | VitessceDataset,
     Field(discriminator="file_type"),
 ]
 
 
 class DatasetIn(Schema):
     workspace_uuid: UUID4 | None = None
+    # Which viewer this dataset was uploaded for. Governs which
+    # workspace's data panel surfaces it. Defaults to Gosling so
+    # existing callers keep working unchanged.
+    tool: Literal["gosling", "vitessce"] = "gosling"
     dataset: GoslingDesignerModel
 
 
@@ -232,6 +258,7 @@ class DatasetUpdate(ModelSchema, OptionalSchema):
             "description",
             "source_url",
             "file_type",
+            "tool",
             "data_type",
             "assembly",
             "data_column",
@@ -248,6 +275,7 @@ class DatasetOut(ModelSchema):
         fields = [
             "source_url",
             "file_type",
+            "tool",
             "data_type",
             "assembly",
             "data_column",

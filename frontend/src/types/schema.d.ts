@@ -689,8 +689,29 @@ export interface components {
         DatasetIn: {
             /** Workspace Uuid */
             workspace_uuid?: string | null;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool?: "gosling" | "vitessce";
             /** Dataset */
-            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
+            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"] | components["schemas"]["VitessceDataset"];
+        };
+        /** VitessceDataset */
+        VitessceDataset: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Data Type */
+            data_type: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "ome-tiff" | "ome-zarr" | "anndata.zarr" | "spatialdata.zarr";
         };
         /** GoslingDatasetSimple */
         GoslingDatasetSimple: {
@@ -857,6 +878,11 @@ export interface components {
             source_url: string;
             /** File Type */
             file_type: string;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: "gosling" | "vitessce";
             /** Data Type */
             data_type: string;
             /** Assembly */
