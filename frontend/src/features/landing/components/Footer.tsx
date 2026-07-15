@@ -37,7 +37,7 @@ const HIDIVE_TEAM: ExternalLink[] = [
 
 const CONTRIBUTORS: ExternalLink[] = [
   { label: "Nezar Abdennur", href: "https://abdenlab.org/" },
-  { label: "Conrad Burza", href: "https://abdenlab.org/" },
+  { label: "Conrad Bzura", href: "https://abdenlab.org/" },
 ];
 
 function FooterLink({ link }: { link: ExternalLink }) {
