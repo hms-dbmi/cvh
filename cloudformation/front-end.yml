@@ -289,7 +289,7 @@ Resources:
         Type: AWS::CloudFront::Function
         Properties:
             AutoPublish: true
-            Name: !Sub "${Environment}-gosling-add-index_html"
+            Name: !Sub "${Environment}-cvh-add-index_html"
             FunctionCode: !Sub |
                 function handler(event) {
                     var request = event.request;
