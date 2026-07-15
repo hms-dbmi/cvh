@@ -53,7 +53,7 @@ jobs:
     - name: Upload to S3
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
       run: |
-        aws s3 sync ./dist s3://dev.vis-api.link
+        aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }}
     
     - name: Invalidate Cache
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}

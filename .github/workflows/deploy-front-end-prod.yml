@@ -1,0 +1,63 @@
+name: Deploy Front-End (prod)
+
+# Manual promotion. Rebuilds the frontend with prod Auth0 / API values
+# from the `production` GitHub environment, uploads to the prod bucket,
+# and invalidates the prod CloudFront distribution.
+#
+# Uses environment secrets (not repo secrets) so prod credentials stay
+# isolated from dev.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.repository == 'hms-dbmi/cvh'
+    runs-on: ubuntu-24.04
+    environment: production
+    defaults:
+      run:
+        working-directory: ./frontend
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "./frontend/.nvmrc"
+          cache: "npm"
+          cache-dependency-path: "./frontend/package-lock.json"
+
+      - name: Install node dependencies
+        run: npm ci
+
+      - name: Build vite
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          VITE_AUTH0_DOMAIN: ${{ secrets.VITE_AUTH0_DOMAIN }}
+          VITE_AUTH0_CLIENTID: ${{ secrets.VITE_AUTH0_CLIENTID }}
+          VITE_API_AUDIENCE: ${{ secrets.VITE_API_AUDIENCE }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_CLOUDFRONT_URL: ${{ secrets.VITE_CLOUDFRONT_URL }}
+          VITE_CFDB_API_URL: ${{ secrets.VITE_CFDB_API_URL }}
+          VITE_FEATURED_PATH: featured/prod-featured.json
+        run: npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+          aws-region: us-east-1
+
+      - name: Upload to S3
+        run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }}
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} \
+            --paths "/*"

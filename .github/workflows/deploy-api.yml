@@ -41,3 +41,20 @@ jobs:
         run: |
             docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
             docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Force new ECS deployment (API + admin)
+        # API and admin live in separate ECS clusters — the admin
+        # service has its own cluster (AdminECSCluster in
+        # admin-back-end.yml) so the two can be scaled and monitored
+        # independently.
+        env:
+          API_CLUSTER: ${{ secrets.ECS_API_CLUSTER }}
+          API_SERVICE: ${{ secrets.ECS_API_SERVICE }}
+          ADMIN_CLUSTER: ${{ secrets.ECS_ADMIN_CLUSTER }}
+          ADMIN_SERVICE: ${{ secrets.ECS_ADMIN_SERVICE }}
+        run: |
+            set -euo pipefail
+            aws ecs update-service --cluster "$API_CLUSTER" \
+              --service "$API_SERVICE" --force-new-deployment
+            aws ecs update-service --cluster "$ADMIN_CLUSTER" \
+              --service "$ADMIN_SERVICE" --force-new-deployment
