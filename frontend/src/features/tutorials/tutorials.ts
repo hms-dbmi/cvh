@@ -39,5 +39,7 @@ export function getTutorialBySlug(slug: string | undefined): Tutorial {
  */
 export function resolveTutorialMarkdown(markdown: string): string {
   const cloudfrontUrl = import.meta.env.VITE_CLOUDFRONT_URL ?? "";
-  return markdown.replaceAll("%CLOUDFRONT_URL%", cloudfrontUrl);
+  // `String.replaceAll` is ES2021; tsconfig.app.json targets ES2020,
+  // so use the split/join form to stay lib-compat.
+  return markdown.split("%CLOUDFRONT_URL%").join(cloudfrontUrl);
 }

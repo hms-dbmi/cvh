@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# TanStack Router's file-based route generator writes temp files here
+# during the atomic rename to src/routeTree.gen.ts. Orphans sometimes
+# linger when the dev server is killed mid-write.
+.tanstack/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
