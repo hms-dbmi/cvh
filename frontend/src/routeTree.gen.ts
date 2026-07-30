@@ -9,18 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VisualizationsVisualizationIdRouteImport } from './routes/visualizations.$visualizationId'
 import { Route as ProjectChar123ProjectIdChar125RouteImport } from './routes/project.{-$projectId}'
 import { Route as ProjectVitessceChar123ProjectIdChar125RouteImport } from './routes/project.vitessce.{-$projectId}'
 
-const ProjectsRoute = ProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -53,7 +47,6 @@ const ProjectVitessceChar123ProjectIdChar125Route =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
   '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
@@ -61,7 +54,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
   '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
@@ -70,7 +62,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/projects': typeof ProjectsRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
   '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
@@ -80,7 +71,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/profile'
-    | '/projects'
     | '/project/{-$projectId}'
     | '/visualizations/$visualizationId'
     | '/project/vitessce/{-$projectId}'
@@ -88,7 +78,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/profile'
-    | '/projects'
     | '/project/{-$projectId}'
     | '/visualizations/$visualizationId'
     | '/project/vitessce/{-$projectId}'
@@ -96,7 +85,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/profile'
-    | '/projects'
     | '/project/{-$projectId}'
     | '/visualizations/$visualizationId'
     | '/project/vitessce/{-$projectId}'
@@ -105,7 +93,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProfileRoute: typeof ProfileRoute
-  ProjectsRoute: typeof ProjectsRoute
   ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
   VisualizationsVisualizationIdRoute: typeof VisualizationsVisualizationIdRoute
   ProjectVitessceChar123ProjectIdChar125Route: typeof ProjectVitessceChar123ProjectIdChar125Route
@@ -113,13 +100,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/projects': {
-      id: '/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof ProjectsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -161,7 +141,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProfileRoute: ProfileRoute,
-  ProjectsRoute: ProjectsRoute,
   ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
   VisualizationsVisualizationIdRoute: VisualizationsVisualizationIdRoute,
   ProjectVitessceChar123ProjectIdChar125Route:
