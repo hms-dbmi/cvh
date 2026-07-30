@@ -215,23 +215,33 @@ function ProjectsBar() {
 
   if (router.location.pathname.startsWith("/project") && projectId) {
     return (
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        flexGrow={1}
-        ml={2}
-        mr={2}
-      >
+      <Box flexGrow={1} ml={2}>
         <WorkspaceMenu projectId={projectId} />
-        <Stack direction="row" spacing={1} alignItems="center">
-          <CollaboratorsMenu projectId={projectId} />
-          <PublishedVisualizationsButton />
-        </Stack>
-      </Stack>
+      </Box>
     );
   }
 
   return <Box flexGrow={1} aria-hidden />;
+}
+
+// The Collaborators + Published-viz buttons only make sense when a
+// user is inside a workspace. Rendered from the outer toolbar so
+// the right-side cluster's visual order matches the Figma spec:
+// Tutorials → Collaborators → Published → Profile.
+function ProjectControls() {
+  const { projectId } = useParams({ strict: false });
+  const router = useRouterState();
+
+  if (!router.location.pathname.startsWith("/project") || !projectId) {
+    return null;
+  }
+
+  return (
+    <>
+      <CollaboratorsMenu projectId={projectId} />
+      <PublishedVisualizationsButton />
+    </>
+  );
 }
 
 function ProfileMenu() {
@@ -390,7 +400,33 @@ export default function Header() {
             </Link>
           </Stack>
           <ProjectsBar />
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Link
+              to="/tutorials/{-$slug}"
+              params={{ slug: "getting-started" }}
+              sx={{
+                textDecoration: "none",
+                px: 2,
+                py: 1.5,
+                borderRadius: "8px",
+                fontSize: 14,
+                fontWeight: 500,
+                color: "#000",
+                "&:hover": { bgcolor: "#F5F7FA" },
+              }}
+            >
+              Tutorials
+            </Link>
+            {/* `flexItem` stretches the divider to the full toolbar
+                height regardless of `my` — switching to an explicit
+                height lets alignItems="center" on the parent Stack
+                center a fixed-length line, which is what the Figma
+                spec shows. */}
+            <Divider
+              orientation="vertical"
+              sx={{ borderColor: "#CAD5DA", height: 32 }}
+            />
+            <ProjectControls />
             {isAuthenticated ? <ProfileMenu /> : <LoginButton />}
           </Stack>
         </Toolbar>
