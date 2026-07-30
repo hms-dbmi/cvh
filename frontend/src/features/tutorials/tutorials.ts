@@ -43,3 +43,39 @@ export function resolveTutorialMarkdown(markdown: string): string {
   // so use the split/join form to stay lib-compat.
   return markdown.split("%CLOUDFRONT_URL%").join(cloudfrontUrl);
 }
+
+/**
+ * Stable id for an in-page anchor derived from a heading's text.
+ * `#Creating a Workspace` → `creating-a-workspace`. Kept consistent
+ * with GitHub's slug rules for markdown headings so links written
+ * out-of-band still work.
+ */
+export function slugify(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+}
+
+export interface Heading {
+  text: string;
+  slug: string;
+}
+
+/**
+ * Extract H2 headings from a tutorial markdown string so the right-rail
+ * TOC can render them as anchor links. Only H2s — H1 is the article
+ * title (rendered once at the top) and we have no H3s.
+ */
+export function extractHeadings(markdown: string): Heading[] {
+  const headings: Heading[] = [];
+  for (const line of markdown.split("\n")) {
+    const match = /^##\s+(.+?)\s*$/.exec(line);
+    if (match) {
+      const text = match[1];
+      headings.push({ text, slug: slugify(text) });
+    }
+  }
+  return headings;
+}

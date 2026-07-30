@@ -1,11 +1,13 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import { getTutorialBySlug } from "../tutorials";
+import { extractHeadings, getTutorialBySlug } from "../tutorials";
 import TutorialArticle from "./TutorialArticle";
 import TutorialSidebar from "./TutorialSidebar";
+import TutorialToc from "./TutorialToc";
 
 export default function TutorialsPage({ slug }: { slug: string | undefined }) {
   const tutorial = getTutorialBySlug(slug);
+  const headings = extractHeadings(tutorial.markdown);
 
   return (
     <Stack
@@ -17,6 +19,7 @@ export default function TutorialsPage({ slug }: { slug: string | undefined }) {
       <Box sx={{ flex: 1, minWidth: 0, px: 5, py: 4 }}>
         <TutorialArticle tutorial={tutorial} />
       </Box>
+      <TutorialToc headings={headings} />
     </Stack>
   );
 }
