@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VisualizationsVisualizationIdRouteImport } from './routes/visualizations.$visualizationId'
+import { Route as TutorialsChar123SlugChar125RouteImport } from './routes/tutorials.{-$slug}'
 import { Route as ProjectChar123ProjectIdChar125RouteImport } from './routes/project.{-$projectId}'
 import { Route as ProjectVitessceChar123ProjectIdChar125RouteImport } from './routes/project.vitessce.{-$projectId}'
 
@@ -31,6 +32,12 @@ const VisualizationsVisualizationIdRoute =
     path: '/visualizations/$visualizationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const TutorialsChar123SlugChar125Route =
+  TutorialsChar123SlugChar125RouteImport.update({
+    id: '/tutorials/{-$slug}',
+    path: '/tutorials/{-$slug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ProjectChar123ProjectIdChar125Route =
   ProjectChar123ProjectIdChar125RouteImport.update({
     id: '/project/{-$projectId}',
@@ -48,6 +55,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
   '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
 }
@@ -55,6 +63,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
   '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
 }
@@ -63,6 +72,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
   '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
 }
@@ -72,6 +82,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile'
     | '/project/{-$projectId}'
+    | '/tutorials/{-$slug}'
     | '/visualizations/$visualizationId'
     | '/project/vitessce/{-$projectId}'
   fileRoutesByTo: FileRoutesByTo
@@ -79,6 +90,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile'
     | '/project/{-$projectId}'
+    | '/tutorials/{-$slug}'
     | '/visualizations/$visualizationId'
     | '/project/vitessce/{-$projectId}'
   id:
@@ -86,6 +98,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile'
     | '/project/{-$projectId}'
+    | '/tutorials/{-$slug}'
     | '/visualizations/$visualizationId'
     | '/project/vitessce/{-$projectId}'
   fileRoutesById: FileRoutesById
@@ -94,6 +107,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProfileRoute: typeof ProfileRoute
   ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
+  TutorialsChar123SlugChar125Route: typeof TutorialsChar123SlugChar125Route
   VisualizationsVisualizationIdRoute: typeof VisualizationsVisualizationIdRoute
   ProjectVitessceChar123ProjectIdChar125Route: typeof ProjectVitessceChar123ProjectIdChar125Route
 }
@@ -121,6 +135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VisualizationsVisualizationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tutorials/{-$slug}': {
+      id: '/tutorials/{-$slug}'
+      path: '/tutorials/{-$slug}'
+      fullPath: '/tutorials/{-$slug}'
+      preLoaderRoute: typeof TutorialsChar123SlugChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/project/{-$projectId}': {
       id: '/project/{-$projectId}'
       path: '/project/{-$projectId}'
@@ -142,6 +163,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProfileRoute: ProfileRoute,
   ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
+  TutorialsChar123SlugChar125Route: TutorialsChar123SlugChar125Route,
   VisualizationsVisualizationIdRoute: VisualizationsVisualizationIdRoute,
   ProjectVitessceChar123ProjectIdChar125Route:
     ProjectVitessceChar123ProjectIdChar125Route,
