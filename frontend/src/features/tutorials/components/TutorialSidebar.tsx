@@ -10,16 +10,25 @@ export default function TutorialSidebar({
   activeSlug: string;
 }) {
   return (
-    <Box
-      sx={{
-        width: 280,
-        flexShrink: 0,
-        borderRight: "1px solid #E5E7EB",
-        py: 2,
-        px: 1,
-      }}
-    >
-      <Stack spacing={0.25}>
+    // Two layers: outer wrapper stretches to full row height and owns
+    // the right border so the divider spans the whole article length;
+    // inner nav is sticky so it stays put on scroll.
+    <Box sx={{ width: 280, flexShrink: 0, borderRight: "1px solid #E5E7EB" }}>
+      <Stack
+        component="nav"
+        aria-label="Tutorials"
+        spacing={0.25}
+        sx={{
+          // Header uses position="static" so it scrolls out of view.
+          // Rails stick 16px from the top of the viewport.
+          position: "sticky",
+          top: 16,
+          maxHeight: "calc(100vh - 16px)",
+          overflowY: "auto",
+          py: 2,
+          px: 1,
+        }}
+      >
         {TUTORIALS.map((t) => {
           const active = t.slug === activeSlug;
           return (
