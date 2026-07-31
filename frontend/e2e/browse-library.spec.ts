@@ -28,13 +28,13 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
   await expect(bigwigRow.getByRole("checkbox")).toBeEnabled();
   await bigwigRow.getByRole("checkbox").check();
 
-  // The "Add to <workspace>" button has an inner clickable Box on the
-  // right that stops propagation (it opens the workspace picker). Click
-  // the upper-left corner of the button — that's the Plus icon, well
-  // outside the inner Box, so the outer button's handleAdd fires.
-  await dialog
-    .getByRole("button", { name: /Add to.*E2E Test Project/i })
-    .click({ position: { x: 8, y: 8 } });
+  // The visible pill reads "+ Add to  [E2E Test Project]" but the
+  // workspace-name half is a sibling Box, not part of the button.
+  // The button's accessible name is just "Add to". A separate
+  // workspace-picker click is only needed when the user wants to
+  // change the target workspace — the current workspace is
+  // pre-selected via the URL.
+  await dialog.getByRole("button", { name: "Add to" }).click();
 
   await expect.poll(() => readRequests(page)).toContainEqual({
     method: "POST",
