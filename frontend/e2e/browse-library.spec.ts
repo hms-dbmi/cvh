@@ -19,16 +19,13 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
   const dialog = page.getByRole("dialog");
   await dialog.getByText("4D NUCLEOME DATA COORDINATION").click();
 
-  // The mocked file list has one bigwig (selectable) and one BAM (not in
-  // the supported subset, so its checkbox is disabled). Toggle bigwig.
+  // The mocked file list has one bigwig and one BAM — both are
+  // supported (bigwig as a ready type, BAM as a cfdb-processable type)
+  // so both checkboxes should be enabled. Toggle the bigwig row.
   const bigwigRow = dialog
     .getByRole("row")
     .filter({ hasText: "e2e-track.bigwig" });
-  const bamRow = dialog
-    .getByRole("row")
-    .filter({ hasText: "e2e-alignments.bam" });
   await expect(bigwigRow.getByRole("checkbox")).toBeEnabled();
-  await expect(bamRow.getByRole("checkbox")).toBeDisabled();
   await bigwigRow.getByRole("checkbox").check();
 
   // The "Add to <workspace>" button has an inner clickable Box on the
@@ -44,10 +41,6 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
     path: "/api/datasets",
     body: {
       workspace_uuid: PROJECT_ID,
-      // Backend added a top-level `tool` field on DatasetIn; frontend
-      // sends it on every create. Defaults to gosling for the browse
-      // library flow.
-      tool: "gosling",
       dataset: {
         name: "e2e-track.bigwig",
         source_url: EXPECTED_SOURCE_URL,
