@@ -44,6 +44,10 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
     path: "/api/datasets",
     body: {
       workspace_uuid: PROJECT_ID,
+      // Backend added a top-level `tool` field on DatasetIn; frontend
+      // sends it on every create. Defaults to gosling for the browse
+      // library flow.
+      tool: "gosling",
       dataset: {
         name: "e2e-track.bigwig",
         source_url: EXPECTED_SOURCE_URL,

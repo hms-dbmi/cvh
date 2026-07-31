@@ -6,16 +6,21 @@ const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 test("creating a bigwig dataset fires POST /api/datasets", async ({ page }) => {
   await page.goto(`/project/${PROJECT_ID}`);
 
-  await page.getByRole("button", { name: "Add Data Source" }).click();
+  await page.getByRole("button", { name: "Link Data Source" }).click();
 
-  // Tab 1: pick the file type, then advance. Each file-type button's
-  // accessible name is "<type> <tooltip>", so we match by leading text.
   const dialog = page.getByRole("dialog");
+
+  // Tab 1: Tool selection. Defaults to Gosling from the workspace's
+  // viz tool, so just advance.
+  await dialog.getByRole("button", { name: "Next" }).click();
+
+  // Tab 2: pick the file type, then advance. Each file-type button's
+  // accessible name is "<type> <tooltip>", so we match by leading text.
   await dialog.getByRole("button", { name: /^bigwig\b/ }).click();
   await dialog.getByRole("button", { name: "Next" }).click();
 
-  // Tab 2: fill the basic fields (file_type is locked from tab 1, assembly
-  // defaults to hg38, data_type stays empty by default).
+  // Tab 3: fill the basic fields (file_type is locked from tab 2,
+  // assembly defaults to hg38, data_type stays empty by default).
   await dialog
     .getByLabel("Source URL")
     .fill("https://example.com/example.bigwig");
@@ -35,6 +40,7 @@ test("creating a bigwig dataset fires POST /api/datasets", async ({ page }) => {
         file_type: "bigwig",
       },
       workspace_uuid: PROJECT_ID,
+      tool: "gosling",
     },
   });
 });
