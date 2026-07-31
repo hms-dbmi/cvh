@@ -1,6 +1,12 @@
-# CVH
+# Community Visualization Hub
 
-Community Visualization Hub — a platform for creating and managing genomic visualizations using [Gosling](https://gosling-lang.org/).
+A platform for creating, sharing, and collaborating on genomic and single-cell visualizations powered by [Gosling](https://gosling-lang.org/) and [Vitessce](https://vitessce.io/).
+
+**Live instance:** [visualizationhub.org](https://visualizationhub.org)
+
+## Contributing
+
+Bug reports, feature requests, and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started. Licensed under [MIT](./LICENSE).
 
 ## Prerequisites
 
@@ -187,7 +193,11 @@ The backend serves interactive API documentation via [Django Ninja](https://djan
 - **Swagger UI:** [http://127.0.0.1:8000/api/docs](http://127.0.0.1:8000/api/docs)
 - **OpenAPI schema (JSON):** [http://127.0.0.1:8000/api/openapi.json](http://127.0.0.1:8000/api/openapi.json)
 
-In production these are available at `https://api.designer.gosling-lang.org/api/docs` and `https://api.designer.gosling-lang.org/api/openapi.json`.
+In production these are available at `https://api.visualizationhub.org/api/docs` and `https://api.visualizationhub.org/api/openapi.json`.
+
+## License
+
+Released under the [MIT License](./LICENSE).
 
 ## Acknowledgements
 
