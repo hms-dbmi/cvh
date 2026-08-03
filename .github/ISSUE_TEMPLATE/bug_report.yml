@@ -1,0 +1,65 @@
+name: Bug report
+description: Something isn't working correctly on visualizationhub.org or in the codebase.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. The more detail you can share, the faster we can reproduce and fix it.
+
+        For anything security-sensitive, please email **hidive@hms.harvard.edu** instead of filing a public issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: When I clicked "Add Data Source" the dialog closed but no dataset was created.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: What behavior did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps that reliably reproduce the bug. Include URLs where relevant.
+      placeholder: |
+        1. Go to visualizationhub.org
+        2. Open a workspace
+        3. Click "Add Data Source"
+        4. Fill in ...
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where did this happen?
+      options:
+        - visualizationhub.org (production)
+        - dev.vis-api.link (development)
+        - Local dev environment
+        - Other (please describe below)
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      description: Browser + version and operating system.
+      placeholder: Chrome 147 on macOS 14.5
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots, console errors, or recordings
+      description: Drag and drop images or paste any console errors from your browser's DevTools.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help — related datasets, workspace UUIDs, timing, whether it's intermittent, etc.

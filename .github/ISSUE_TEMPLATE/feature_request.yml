@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest a new feature or capability.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. For larger changes, please open the issue *before* writing a PR so we can align on the approach first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the use case or gap you're running into. What are you trying to do that the current app doesn't support?
+      placeholder: I want to compare two published visualizations side-by-side, but the current viewer only shows one at a time.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How do you imagine this working? Rough is fine — sketches, screenshots, or prose all welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you've tried, or other approaches you thought about but ruled out?
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Who benefits from this?
+      multiple: true
+      options:
+        - Visualization authors
+        - Collaborators / viewers
+        - Workspace admins
+        - Developers integrating with the API
+        - Documentation readers
+        - Other
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Links, related work in other tools, references to similar features elsewhere.

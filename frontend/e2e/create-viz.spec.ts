@@ -10,7 +10,11 @@ async function fillNewVizDialog(
   await page.goto(`/project/${PROJECT_ID}`);
   await page.getByRole("button", { name: "New Visualization" }).click();
 
+  // Gate on the dialog being present before filling fields — cold CI
+  // runners occasionally reach the getByLabel before MUI's Dialog and
+  // its child inputs finish mounting.
   const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
   await dialog.getByLabel("Name").fill(name);
   await dialog.getByLabel("Description").fill(`E2E ${tool} viz`);
   await dialog.getByLabel("Author").fill("E2E");

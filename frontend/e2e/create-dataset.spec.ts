@@ -14,8 +14,8 @@ test("creating a bigwig dataset fires POST /api/datasets", async ({ page }) => {
   await dialog.getByRole("button", { name: /^bigwig\b/ }).click();
   await dialog.getByRole("button", { name: "Next" }).click();
 
-  // Tab 2: fill the basic fields (file_type is locked from tab 1, assembly
-  // defaults to hg38, data_type stays empty by default).
+  // Tab 2: fill the basic fields (file_type is locked from tab 1,
+  // assembly defaults to hg38, data_type stays empty by default).
   await dialog
     .getByLabel("Source URL")
     .fill("https://example.com/example.bigwig");
