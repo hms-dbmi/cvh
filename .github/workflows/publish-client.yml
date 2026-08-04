@@ -1,16 +1,29 @@
-name: Publish to TestPyPI
+name: Publish cvh-client to TestPyPI
+
+# Manual dispatch — cutting a client release means:
+#   1. bump python-client/VERSION.txt (and pyproject.toml)
+#   2. commit + merge to main
+#   3. run this workflow with the new version string as confirmation
+#
+# Trusted publishing (OIDC) — no long-lived PyPI token. The `testpypi`
+# environment on this repo is configured on TestPyPI to trust this
+# workflow file's OIDC identity.
 
 on:
   workflow_dispatch:
     inputs:
       confirm_version:
-        description: "Confirm version to publish (must match VERSION.txt)"
+        description: "Confirm version to publish (must match python-client/VERSION.txt)"
         required: true
         type: string
 
 permissions:
   contents: read
   id-token: write
+
+defaults:
+  run:
+    working-directory: python-client
 
 jobs:
   verify-and-publish:
@@ -21,7 +34,7 @@ jobs:
       url: https://test.pypi.org/project/cvh-client/${{ steps.read-version.outputs.version }}/
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -80,6 +93,11 @@ jobs:
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          # `pypa/gh-action-pypi-publish` doesn't honor the job-level
+          # `working-directory: python-client` default (it treats
+          # paths relative to the checkout root), so point it at the
+          # subdir explicitly.
+          packages-dir: python-client/dist
           repository-url: https://test.pypi.org/legacy/
           print-hash: true
 
