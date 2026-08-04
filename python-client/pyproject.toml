@@ -28,9 +28,9 @@ dependencies = [
 vitessce = ["vitessce>=3.0"]
 
 [project.urls]
-Homepage = "https://github.com/hms-dbmi/cvh-client"
-Repository = "https://github.com/hms-dbmi/cvh-client"
-Issues = "https://github.com/hms-dbmi/cvh-client/issues"
+Homepage = "https://visualizationhub.org"
+Repository = "https://github.com/hms-dbmi/cvh"
+Issues = "https://github.com/hms-dbmi/cvh/issues"
 
 [dependency-groups]
 dev = [

@@ -1,6 +1,8 @@
 # cvh-client
 
-Python API client for the [Community Visualization Hub (CVH)](https://github.com/hms-dbmi/community-visualization-hub) — a platform for creating and managing genomic visualizations using [Gosling.js](https://gosling-lang.org/) and [Vitessce](https://vitessce.io/). Designed for use in Jupyter notebooks.
+Python API client for the [Community Visualization Hub (CVH)](https://github.com/hms-dbmi/cvh) — a platform for creating and sharing interactive genomic, spatial, and single-cell visualizations powered by [Gosling.js](https://gosling-lang.org/) and [Vitessce](https://vitessce.io/). Designed for use in Jupyter notebooks.
+
+Source lives in the CVH monorepo under [`python-client/`](https://github.com/hms-dbmi/cvh/tree/main/python-client). File issues at [hms-dbmi/cvh/issues](https://github.com/hms-dbmi/cvh/issues).
 
 ## Installation
 
@@ -21,12 +23,14 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 ```python
 from cvh_client import CVHClient
 
-# Authenticate via Auth0 (opens browser)
+# Authenticate via Auth0 (opens browser). For the hosted instance,
+# base_url = "https://api.visualizationhub.org"; for a self-hosted
+# deployment, use whichever domain your backend is served on.
 client = CVHClient.from_login(
-    base_url="https://your-cvh-instance.com",
+    base_url="https://api.visualizationhub.org",
     domain="your-tenant.auth0.com",
     client_id="your-client-id",
-    audience="https://your-cvh-instance.com",
+    audience="your-api-identifier",
 )
 
 # List workspaces
@@ -101,17 +105,25 @@ See the `examples/` directory for Jupyter notebooks:
 
 ## Development
 
+Run these from inside `python-client/` (checkout the [monorepo](https://github.com/hms-dbmi/cvh) first).
+
 ```bash
-uv sync                          # Install dependencies
-uv run pytest                    # Run tests
-uv run ruff check src/           # Lint
-uv run ruff format src/          # Format
+uv sync                                # Install dependencies
+uv run pytest                          # Run tests
+uv run ruff check src/ tests/          # Lint
+uv run ruff format src/ tests/         # Format
 ```
 
-## Publishing
+## Releasing
 
-Releases are published to PyPI automatically via GitHub Actions when a [GitHub release](https://docs.github.com/en/repositories/releasing-projects-on-github) is created. The workflow uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) (no API token needed).
+Currently published to [TestPyPI](https://test.pypi.org/project/cvh-client/) via manual GitHub Actions dispatch. To cut a release:
 
-Setup required once on PyPI:
-1. Go to https://pypi.org/manage/project/cvh-client/settings/publishing/
-2. Add a trusted publisher with repository `hms-dbmi/cvh-client`, workflow `publish.yml`, and environment `pypi`
+1. Bump the version in **both** `VERSION.txt` and `pyproject.toml` (they must match).
+2. Merge to `main`.
+3. In the CVH repo's Actions tab → **Publish cvh-client to TestPyPI** → **Run workflow**, entering the same version string as confirmation.
+
+The workflow uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) (OIDC — no long-lived token). Trust is configured on TestPyPI as:
+
+- **Repository**: `hms-dbmi/cvh`
+- **Workflow**: `publish-client.yml`
+- **Environment**: `testpypi`
