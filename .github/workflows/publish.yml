@@ -1,0 +1,93 @@
+name: Publish to TestPyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_version:
+        description: "Confirm version to publish (must match VERSION.txt)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify-and-publish:
+    name: Verify and Publish to TestPyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/cvh-client/${{ steps.read-version.outputs.version }}/
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Read VERSION.txt
+        id: read-version
+        run: |
+          VERSION=$(cat VERSION.txt | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 VERSION.txt contains: $VERSION"
+
+      - name: Verify version match
+        run: |
+          if [ "${{ steps.read-version.outputs.version }}" != "${{ inputs.confirm_version }}" ]; then
+            echo "❌ ERROR: Confirmed version (${{ inputs.confirm_version }}) does not match VERSION.txt (${{ steps.read-version.outputs.version }})"
+            echo "Please update VERSION.txt first or correct the input version"
+            exit 1
+          fi
+          echo "✅ Version confirmed: ${{ steps.read-version.outputs.version }}"
+
+      - name: Install build dependencies
+        run: uv sync --group dev
+
+      - name: Run linting checks
+        run: |
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+
+      - name: Run thin install tests
+        run: uv run pytest -m "not requires_full" -vv --doctest-modules
+        env:
+          GH_ACTIONS: true
+
+      - name: Install full dependencies
+        run: uv sync --all-extras
+
+      - name: Clean previous builds
+        run: rm -rf dist/ build/ src/*.egg-info
+
+      - name: Build package
+        run: uv build
+
+      - name: Check built distributions
+        run: |
+          uvx twine check dist/*
+          echo "📦 Built distributions:"
+          ls -lh dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          print-hash: true
+
+      - name: Installation test
+        run: |
+          sleep 30  # Wait for TestPyPI to update
+          uv venv test-env
+          source test-env/bin/activate
+          uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cvh-client==${{ steps.read-version.outputs.version }}
+          python -c "from cvh_client import CVHClient; print('✅ TestPyPI install verified')"
+          deactivate
