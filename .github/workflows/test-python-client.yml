@@ -1,0 +1,54 @@
+name: Python client tests
+
+# Runs on PRs (and push to main) that touch the client itself or the
+# backend API surface. Backend-side changes trigger this workflow
+# because the client consumes the backend's schema — model drift
+# should surface here before a release attempt.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "python-client/**"
+      - "backend/core/api/**"
+      - ".github/workflows/test-python-client.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "python-client/**"
+      - "backend/core/api/**"
+      - ".github/workflows/test-python-client.yml"
+
+defaults:
+  run:
+    working-directory: python-client
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: python-client/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --group dev --all-extras
+
+      - name: Lint
+        run: |
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+
+      - name: Tests
+        run: uv run pytest -vv

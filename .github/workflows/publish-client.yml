@@ -101,11 +101,43 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
           print-hash: true
 
-      - name: Installation test
+      - name: Installation + live smoke test
+        env:
+          # TestPyPI publishes always smoke against dev. If we add a
+          # real-PyPI publish workflow later, it should smoke against
+          # api.visualizationhub.org instead.
+          CVH_SMOKE_BASE_URL: https://dev.api.vis-api.link
         run: |
           sleep 30  # Wait for TestPyPI to update
           uv venv test-env
           source test-env/bin/activate
           uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cvh-client==${{ steps.read-version.outputs.version }}
+
+          # Install-time smoke: import works, package is on-disk.
           python -c "from cvh_client import CVHClient; print('✅ TestPyPI install verified')"
+
+          # Live smoke: exercise the transport + pydantic parse path
+          # against a real backend using anonymous endpoints. This
+          # catches model drift (missing / wrong fields) that install-
+          # only tests miss.
+          python - <<'PY'
+          import os, httpx
+          base = os.environ["CVH_SMOKE_BASE_URL"]
+
+          # /health is served by HealthCheckMiddleware and bypasses
+          # ALLOWED_HOSTS, auth, and routing. A 200 here proves the
+          # transport works and the domain resolves.
+          r = httpx.get(f"{base}/health", timeout=15)
+          r.raise_for_status()
+          print("✅ /health reachable")
+
+          # Public workspaces endpoint doesn't need auth and returns
+          # PagedWorkspaces — this parses through the pydantic model
+          # and fails loudly if the schema has drifted.
+          from cvh_client.models import PagedWorkspaces
+          r = httpx.get(f"{base}/api/public/workspaces", timeout=15)
+          r.raise_for_status()
+          PagedWorkspaces.model_validate(r.json())
+          print("✅ PagedWorkspaces schema still matches")
+          PY
           deactivate
