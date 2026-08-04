@@ -46,6 +46,20 @@ class Dataset(BaseModel):
     headers: bool = False
     index_url: str | None = None
     separator: str | None = None
+    # cfdb-backed datasets (added via the Browse Library flow) carry
+    # `cfdb_dcc` + `cfdb_id`; the backend derives `source_url` from
+    # them. User-added datasets (raw URL uploads) leave both null.
+    cfdb_dcc: str | None = None
+    cfdb_id: str | None = None
+    # Processing state — populated for cfdb-sourced datasets in
+    # formats that require server-side processing (BAM/VCF/BED/GFF).
+    # "not_needed" for ready formats (bigwig/cooler/vector) and for
+    # user-added URL uploads. Terminal states: "processed", "failed".
+    processing_status: str = "not_needed"
+    processing_job_id: str | None = None
+    processing_started_at: datetime | None = None
+    processing_completed_at: datetime | None = None
+    processing_error: str | None = None
     created_timestamp: datetime
     modified_timestamp: datetime
     last_viewed_timestamp: datetime
