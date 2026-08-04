@@ -8,6 +8,24 @@ A platform for creating, sharing, and collaborating on genomic and single-cell v
 
 Bug reports, feature requests, and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started. Licensed under [MIT](./LICENSE).
 
+## Common commands
+
+Each package is developed in its own subdirectory. Run these from inside the package (`cd backend` or `cd frontend`).
+
+| Task | Backend (`backend/`) | Frontend (`frontend/`) |
+|---|---|---|
+| Install deps | `uv sync` | `npm install` |
+| Dev server | `python core/manage.py runserver` | `npm run dev` |
+| Unit tests | `python core/manage.py test` | `npm test` (or `npx vitest run`) |
+| E2E tests | — | `npm run e2e` |
+| Lint | `uv run ruff check .` | `npm run lint` |
+| Lint (auto-fix) | `uv run ruff check --fix .` | `npm run lint:fix` |
+| Format | `uv run ruff format .` | `npm run format` |
+| Build (prod bundle) | — (Docker builds via `Dockerfile`) | `npm run build` |
+| Regen OpenAPI types | — | `npm run gen-api-types` (backend must be running) |
+
+Full setup instructions and environment configuration are below.
+
 ## Prerequisites
 
 - `git`: Suggest [installing Apple Xcode](https://developer.apple.com/xcode/).
