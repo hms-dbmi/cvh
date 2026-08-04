@@ -1,0 +1,14 @@
+# CODEOWNERS routes required reviews to the right people.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-configuration/customizing-your-repository/about-code-owners
+
+# Python client — routes client-only PRs.
+/python-client/                        @john-conroy
+
+# Prod deploy workflows — protect against drive-by modifications to
+# the guards that gate production deploys.
+/.github/workflows/deploy-api-prod.yml         @john-conroy
+/.github/workflows/deploy-front-end-prod.yml   @john-conroy
+/.github/workflows/publish-client.yml          @john-conroy
+
+# Infrastructure — CloudFormation templates.
+/cloudformation/                       @john-conroy

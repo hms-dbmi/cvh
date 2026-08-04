@@ -10,19 +10,19 @@ Bug reports, feature requests, and pull requests are welcome. See [CONTRIBUTING.
 
 ## Common commands
 
-Each package is developed in its own subdirectory. Run these from inside the package (`cd backend` or `cd frontend`).
+Each package is developed in its own subdirectory. Run these from inside the package (`cd backend`, `cd frontend`, or `cd python-client`).
 
-| Task | Backend (`backend/`) | Frontend (`frontend/`) |
-|---|---|---|
-| Install deps | `uv sync` | `npm install` |
-| Dev server | `python core/manage.py runserver` | `npm run dev` |
-| Unit tests | `python core/manage.py test` | `npm test` (or `npx vitest run`) |
-| E2E tests | — | `npm run e2e` |
-| Lint | `uv run ruff check .` | `npm run lint` |
-| Lint (auto-fix) | `uv run ruff check --fix .` | `npm run lint:fix` |
-| Format | `uv run ruff format .` | `npm run format` |
-| Build (prod bundle) | — (Docker builds via `Dockerfile`) | `npm run build` |
-| Regen OpenAPI types | — | `npm run gen-api-types` (backend must be running) |
+| Task | Backend (`backend/`) | Frontend (`frontend/`) | Python client (`python-client/`) |
+|---|---|---|---|
+| Install deps | `uv sync` | `npm install` | `uv sync` |
+| Dev server | `python core/manage.py runserver` | `npm run dev` | — (library) |
+| Unit tests | `python core/manage.py test` | `npm test` (or `npx vitest run`) | `uv run pytest` |
+| E2E tests | — | `npm run e2e` | — |
+| Lint | `uv run ruff check .` | `npm run lint` | `uv run ruff check src/ tests/` |
+| Lint (auto-fix) | `uv run ruff check --fix .` | `npm run lint:fix` | `uv run ruff check --fix src/ tests/` |
+| Format | `uv run ruff format .` | `npm run format` | `uv run ruff format src/ tests/` |
+| Build (prod bundle) | — (Docker builds via `Dockerfile`) | `npm run build` | `uv build` |
+| Regen OpenAPI types | — | `npm run gen-api-types` (backend must be running) | — (client is hand-written) |
 
 Full setup instructions and environment configuration are below.
 
