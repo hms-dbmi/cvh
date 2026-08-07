@@ -15,7 +15,7 @@ The Data Panel displays all the datasets available to you and your collaborators
 
 ![Data Panel — empty and populated](%CLOUDFRONT_URL%/tutorials/data-panel.png)
 
-Once datasets are in your workspace, the panel displays key information for each file—including its **name**, **data type**, **assembly**, and associated **tags**. Clicking the **kebab menu** (three horizontal dots) next to any dataset allows you to edit its details, as well as create and assign unique tags to help with filtering.
+Once datasets are in your workspace, the panel displays key information for each file—including its **name**, **data type**, **assembly**, and associated **tags**. Clicking the **meatball menu** (three horizontal dots) next to any dataset allows you to edit its details, as well as create and assign unique tags to help with filtering.
 
 ## Browsing for Data in Data Library
 
