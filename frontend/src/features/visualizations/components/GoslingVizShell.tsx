@@ -36,7 +36,7 @@ interface GoslingVizShellProps {
 }
 
 const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]): GDData[] =>
-  datasets.map(toGoslingDataset) as GDData[];
+  datasets.map(toGoslingDataset);
 
 function DndWrapper({ children }: { children: React.ReactNode }) {
   const { collisionDetection, onDragStart, onDragEnd, dragOverlay } =

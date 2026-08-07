@@ -1,3 +1,4 @@
+import type { GDData } from "gosling-designer-vec";
 import type { components } from "@/types/schema";
 import { toGoslingAssembly } from "./assemblies";
 
@@ -70,7 +71,7 @@ function computeChrToGenomicFields(
  * where the two shapes drift and a field required by MRi is silently
  * missing from one of them.
  */
-export function toGoslingDataset(dataset: Dataset): Record<string, unknown> {
+export function toGoslingDataset(dataset: Dataset): GDData {
   const dataColumn = (dataset.data_column ?? undefined) as
     | [string, string][]
     | null
@@ -102,5 +103,8 @@ export function toGoslingDataset(dataset: Dataset): Record<string, unknown> {
         }
       : { optionalFields: dataColumn ?? undefined }),
     tags: dataset.tags.map((t) => [t.key, t.tag]),
-  };
+    // TS can't discriminate the union without narrowing on
+    // `file_type` first; structurally the object is a valid GDData
+    // for whichever file_type the dataset has.
+  } as unknown as GDData;
 }
