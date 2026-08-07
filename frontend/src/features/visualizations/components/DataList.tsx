@@ -44,6 +44,59 @@ import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFilt
 import { useGetProject } from "@/features/projects/api/useProjects";
 import type { components } from "@/types/schema";
 import { useHandleCopyClick } from "@/utils/useHandleCopyText";
+
+/**
+ * Build a `chrToGenomicFields` mapping from a CSV dataset's field
+ * tuples. Mirrors the algorithm inside gosling-designer-vec: each
+ * chromosome-typed field is paired with the (up to) two immediately
+ * following genomic-typed fields. Supports paired-region formats
+ * (BEDPE) which have two chromosome fields — the second one is picked
+ * up as `findLastIndex`, distinct from the first.
+ *
+ * gosling-designer-vec computes this internally when a dataset enters
+ * its workspace catalog, but the drop handler (MRi) reads it straight
+ * off the drop payload without consulting the catalog. So the drag
+ * payload has to include it explicitly.
+ */
+function computeChrToGenomicFields(
+  fields: [string, string][] | null | undefined,
+): Record<string, string[]> | undefined {
+  if (!fields || fields.length === 0) return undefined;
+
+  const result: Record<string, string[]> = {};
+
+  const collectFor = (idx: number) => {
+    if (idx < 0) return;
+    const chrName = fields[idx][0];
+    const collected: string[] = [];
+    for (const offset of [1, 2] as const) {
+      const next = fields[idx + offset];
+      if (next && next[1] === "genomic") {
+        collected.push(next[0]);
+      } else {
+        break;
+      }
+    }
+    if (collected.length > 0) {
+      result[chrName] = collected;
+    }
+  };
+
+  // `findLastIndex` is ES2023; tsconfig targets ES2020. Manual reverse
+  // scan keeps us lib-compat.
+  const first = fields.findIndex((f) => f[1] === "chromosome");
+  collectFor(first);
+  let last = -1;
+  for (let i = fields.length - 1; i >= 0; i--) {
+    if (fields[i][1] === "chromosome") {
+      last = i;
+      break;
+    }
+  }
+  if (last !== first) collectFor(last);
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
@@ -315,6 +368,26 @@ function DatasetListItem({
         // assembly name or inline ChromSizes.
         assembly: toGoslingAssembly(dataset.assembly),
         indexURL: dataset.index_url ?? undefined,
+        // CSV-shaped datasets (including BEDPE stored as CSV) can't be
+        // introspected by higlass — the drop handler needs field
+        // typing, separator, and header state up front to build the
+        // track. Mirror what formatCvhDatasetsAsGoslingDatasets does
+        // for the workspace catalog so the payload alone is sufficient
+        // for the drop handler.
+        separator: dataset.separator ?? undefined,
+        header: dataset.headers ?? undefined,
+        rowNames: dataset.row_names ?? undefined,
+        ...(dataset.file_type === "csv"
+          ? {
+              fields: dataset.data_column ?? undefined,
+              // MRi (the drop-to-track builder in gosling-designer-vec)
+              // reads chrToGenomicFields off the drop payload. See the
+              // helper above for details.
+              chrToGenomicFields: computeChrToGenomicFields(
+                dataset.data_column as [string, string][] | null | undefined,
+              ),
+            }
+          : { optionalFields: dataset.data_column ?? undefined }),
         tags: dataset.tags.map((t) => [t.key, t.tag]),
       },
     });
