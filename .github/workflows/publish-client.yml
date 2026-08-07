@@ -1,0 +1,143 @@
+name: Publish cvh-client to TestPyPI
+
+# Manual dispatch — cutting a client release means:
+#   1. bump python-client/VERSION.txt (and pyproject.toml)
+#   2. commit + merge to main
+#   3. run this workflow with the new version string as confirmation
+#
+# Trusted publishing (OIDC) — no long-lived PyPI token. The `testpypi`
+# environment on this repo is configured on TestPyPI to trust this
+# workflow file's OIDC identity.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_version:
+        description: "Confirm version to publish (must match python-client/VERSION.txt)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+defaults:
+  run:
+    working-directory: python-client
+
+jobs:
+  verify-and-publish:
+    name: Verify and Publish to TestPyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/cvh-client/${{ steps.read-version.outputs.version }}/
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Read VERSION.txt
+        id: read-version
+        run: |
+          VERSION=$(cat VERSION.txt | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 VERSION.txt contains: $VERSION"
+
+      - name: Verify version match
+        run: |
+          if [ "${{ steps.read-version.outputs.version }}" != "${{ inputs.confirm_version }}" ]; then
+            echo "❌ ERROR: Confirmed version (${{ inputs.confirm_version }}) does not match VERSION.txt (${{ steps.read-version.outputs.version }})"
+            echo "Please update VERSION.txt first or correct the input version"
+            exit 1
+          fi
+          echo "✅ Version confirmed: ${{ steps.read-version.outputs.version }}"
+
+      - name: Install build dependencies
+        run: uv sync --group dev
+
+      - name: Run linting checks
+        run: |
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+
+      - name: Run thin install tests
+        run: uv run pytest -m "not requires_full" -vv --doctest-modules
+        env:
+          GH_ACTIONS: true
+
+      - name: Install full dependencies
+        run: uv sync --all-extras
+
+      - name: Clean previous builds
+        run: rm -rf dist/ build/ src/*.egg-info
+
+      - name: Build package
+        run: uv build
+
+      - name: Check built distributions
+        run: |
+          uvx twine check dist/*
+          echo "📦 Built distributions:"
+          ls -lh dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # `pypa/gh-action-pypi-publish` doesn't honor the job-level
+          # `working-directory: python-client` default (it treats
+          # paths relative to the checkout root), so point it at the
+          # subdir explicitly.
+          packages-dir: python-client/dist
+          repository-url: https://test.pypi.org/legacy/
+          print-hash: true
+
+      - name: Installation + live smoke test
+        env:
+          # TestPyPI publishes always smoke against dev. If we add a
+          # real-PyPI publish workflow later, it should smoke against
+          # api.visualizationhub.org instead.
+          CVH_SMOKE_BASE_URL: https://dev.api.vis-api.link
+        run: |
+          sleep 30  # Wait for TestPyPI to update
+          uv venv test-env
+          source test-env/bin/activate
+          uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cvh-client==${{ steps.read-version.outputs.version }}
+
+          # Install-time smoke: import works, package is on-disk.
+          python -c "from cvh_client import CVHClient; print('✅ TestPyPI install verified')"
+
+          # Live smoke: exercise the transport + pydantic parse path
+          # against a real backend using anonymous endpoints. This
+          # catches model drift (missing / wrong fields) that install-
+          # only tests miss.
+          python - <<'PY'
+          import os, httpx
+          base = os.environ["CVH_SMOKE_BASE_URL"]
+
+          # /health is served by HealthCheckMiddleware and bypasses
+          # ALLOWED_HOSTS, auth, and routing. A 200 here proves the
+          # transport works and the domain resolves.
+          r = httpx.get(f"{base}/health", timeout=15)
+          r.raise_for_status()
+          print("✅ /health reachable")
+
+          # Public workspaces endpoint doesn't need auth and returns
+          # PagedWorkspaces — this parses through the pydantic model
+          # and fails loudly if the schema has drifted.
+          from cvh_client.models import PagedWorkspaces
+          r = httpx.get(f"{base}/api/public/workspaces", timeout=15)
+          r.raise_for_status()
+          PagedWorkspaces.model_validate(r.json())
+          print("✅ PagedWorkspaces schema still matches")
+          PY
+          deactivate

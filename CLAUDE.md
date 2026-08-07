@@ -12,9 +12,10 @@ Community Visualization Hub (CVH) — a platform for creating and managing genom
 
 - **Backend:** Django 5.1 + Django Ninja REST API, Python 3.13, PostgreSQL 17
 - **Frontend:** React 19 + TypeScript 5.7, Vite 6, TanStack Router + Query, MUI 6, Zustand
+- **Python client** (`python-client/`): hand-written httpx + pydantic library, published to TestPyPI as `cvh-client`. See `python-client/CLAUDE.md` for client-specific guidance.
 - **Auth:** Auth0 (JWT tokens)
 - **Infra:** AWS (ECS Fargate, S3, CloudFront, RDS), CloudFormation in `cloudformation/`
-- **Package managers:** `uv` (backend), `npm` (frontend)
+- **Package managers:** `uv` (backend, python-client), `npm` (frontend)
 
 ## Common Commands
 
