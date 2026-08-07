@@ -131,13 +131,14 @@ jobs:
           r.raise_for_status()
           print("✅ /health reachable")
 
-          # Public workspaces endpoint doesn't need auth and returns
-          # PagedWorkspaces — this parses through the pydantic model
-          # and fails loudly if the schema has drifted.
-          from cvh_client.models import PagedWorkspaces
-          r = httpx.get(f"{base}/api/public/workspaces", timeout=15)
+          # /api/public/visualizations is the only endpoint currently
+          # served without auth (despite the name, /public/workspaces
+          # requires a token). It returns @paginate output, so parse
+          # through PagedVisualizations to catch model drift.
+          from cvh_client.models import PagedVisualizations
+          r = httpx.get(f"{base}/api/public/visualizations", timeout=15)
           r.raise_for_status()
-          PagedWorkspaces.model_validate(r.json())
-          print("✅ PagedWorkspaces schema still matches")
+          PagedVisualizations.model_validate(r.json())
+          print("✅ PagedVisualizations schema still matches")
           PY
           deactivate
