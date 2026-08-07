@@ -22,7 +22,41 @@ from cvh_client.models import (
 
 
 class CVHClient:
-    """API client for CVH."""
+    """HTTP client for the Community Visualization Hub API.
+
+    Typical usage — authenticate once, then call resource methods:
+
+        client = CVHClient.from_login(
+            base_url="https://api.visualizationhub.org",
+            domain="auth.visualizationhub.org",
+            client_id="BlOrQcABtV8FrluOQnIO3bWCG1MQU9bx",
+            audience="cvh-api-prod-id",
+        )
+        workspaces = client.list_workspaces()
+
+    All methods return typed pydantic models (`Workspace`, `Dataset`,
+    `Visualization`, etc.) — introspect them with `?` in a notebook or
+    dot-access their fields.
+
+    Methods are grouped by resource. Each has a docstring with args,
+    return type, and an example — access with `Shift+Tab` in a
+    notebook or `client.<method>?`:
+
+        Workspaces:      create_workspace, list_workspaces,
+                         get_workspace, update_workspace, delete_workspace
+        Datasets:        list_datasets, get_dataset, update_dataset,
+                         delete_dataset
+        Visualizations:  create_visualization, list_visualizations,
+                         get_visualization, update_visualization,
+                         delete_visualization
+
+    The client is a context manager — using `with CVHClient(...) as client:`
+    ensures the underlying HTTP connection pool is closed.
+
+    Errors are raised as `CVHError` subclasses. Catch `NotFoundError`
+    for 404s, `AuthorizationError` for 401/403, and `CVHAPIError` as a
+    catch-all for other 4xx/5xx responses.
+    """
 
     def __init__(self, base_url: str, token: str | None = None, timeout: float = 30.0):
         self._base_url = base_url
