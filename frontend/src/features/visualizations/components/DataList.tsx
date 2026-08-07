@@ -31,7 +31,6 @@ import {
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { toGoslingAssembly } from "@/features/datasets/assemblies";
 import AddDatasetButton from "@/features/datasets/components/AddDatasetButton";
 import AddExamplesDatasets from "@/features/datasets/components/AddExampleDatasets";
 import AddTagButton from "@/features/datasets/components/AddTagButton";
@@ -44,6 +43,7 @@ import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFilt
 import { useGetProject } from "@/features/projects/api/useProjects";
 import type { components } from "@/types/schema";
 import { useHandleCopyClick } from "@/utils/useHandleCopyText";
+import { toGoslingDataset } from "@/features/datasets/toGoslingDataset";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
@@ -305,18 +305,10 @@ function DatasetListItem({
     useDraggable({
       id: dataset.uuid,
       disabled: disableDrag || !isUsable,
-      data: {
-        type: dataset.file_type,
-        name: dataset.name,
-        id: dataset.uuid,
-        url: dataset.source_url,
-        // Gosling consumes assembly via the drop handler; translate from
-        // cfdb's raw value (e.g. GRCh38, dm6) to a Gosling-compatible
-        // assembly name or inline ChromSizes.
-        assembly: toGoslingAssembly(dataset.assembly),
-        indexURL: dataset.index_url ?? undefined,
-        tags: dataset.tags.map((t) => [t.key, t.tag]),
-      },
+      // Same transform as the workspace catalog uses. Keeping both on
+      // one helper prevents drift where the drop handler reads a field
+      // one side computes and the other doesn't.
+      data: toGoslingDataset(dataset),
     });
 
   return (
