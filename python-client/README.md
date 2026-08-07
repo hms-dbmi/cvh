@@ -23,14 +23,15 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 ```python
 from cvh_client import CVHClient
 
-# Authenticate via Auth0 (opens browser). For the hosted instance,
-# base_url = "https://api.visualizationhub.org"; for a self-hosted
-# deployment, use whichever domain your backend is served on.
+# Authenticate against the hosted CVH via Auth0 (opens a browser
+# for the device-authorization flow). Swap `base_url`, `domain`,
+# `client_id`, and `audience` for your own deployment's values if
+# you're self-hosting.
 client = CVHClient.from_login(
     base_url="https://api.visualizationhub.org",
-    domain="your-tenant.auth0.com",
-    client_id="your-client-id",
-    audience="your-api-identifier",
+    domain="auth.visualizationhub.org",
+    client_id="BlOrQcABtV8FrluOQnIO3bWCG1MQU9bx",
+    audience="cvh-api-prod-id",
 )
 
 # List workspaces
