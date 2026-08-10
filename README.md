@@ -4,6 +4,8 @@ A platform for creating, sharing, and collaborating on genomic and single-cell v
 
 **Live instance:** [visualizationhub.org](https://visualizationhub.org)
 
+**Architecture:** See [docs/architecture.md](./docs/architecture.md) for a high-level runtime topology diagram.
+
 ## Contributing
 
 Bug reports, feature requests, and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started. Licensed under [MIT](./LICENSE).
