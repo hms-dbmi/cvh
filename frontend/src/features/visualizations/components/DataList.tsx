@@ -512,7 +512,7 @@ function DataList({
       />
       <Stack direction="row" spacing={1}>
         {hasWritePermissions && (
-          <AddDatasetButton projectId={projectId} tool={tool} />
+          <AddDatasetButton projectId={projectId} />
         )}
         <BrowseLibraryButton />
       </Stack>
@@ -601,7 +601,6 @@ function DataAccordion({
               <Stack direction="row" spacing={1}>
                 <AddDatasetButton
                   projectId={projectId}
-                  tool={tool}
                   buttonProps={{
                     variant: "contained",
                     disabled: !hasWritePermissions,

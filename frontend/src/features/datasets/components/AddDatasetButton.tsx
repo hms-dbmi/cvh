@@ -1094,11 +1094,9 @@ export function DataColumns({
 export default function AddDatasetButton({
   buttonProps,
   projectId,
-  tool = "gosling",
 }: {
   buttonProps?: Partial<ButtonProps>;
   projectId?: string;
-  tool?: "gosling" | "vitessce";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -1119,10 +1117,15 @@ export default function AddDatasetButton({
   const dataType = watch("data_type");
 
   // Wizard step 1 lets the user pick a tool independently of the
-  // workspace's currently-selected visualization. Default to the prop
-  // so the common case (adding a dataset to a Gosling viz workspace)
-  // pre-selects Gosling.
-  const [wizardTool, setWizardTool] = useState<"gosling" | "vitessce">(tool);
+  // workspace's currently-selected visualization. Always default to
+  // Gosling — it's the more common upload path, and forcing an
+  // explicit click on the Vitessce card makes the switch intentional
+  // rather than a surprise coming out of the workspace's current viz.
+  // The `tool` prop is still accepted for callers that want to bias
+  // the initial value later without breaking their signatures.
+  const [wizardTool, setWizardTool] = useState<"gosling" | "vitessce">(
+    "gosling",
+  );
 
   const handleToolChange = useCallback(
     (next: "gosling" | "vitessce") => {
@@ -1143,8 +1146,12 @@ export default function AddDatasetButton({
     reset();
     setOpen(false);
     setTab(1);
-    setWizardTool(tool);
-  }, [reset, tool]);
+    // Restore to the same Gosling default the wizard opens with. If we
+    // restored to `tool` (the workspace's current-viz tool), a Vitessce
+    // workspace would re-open the wizard on Vitessce every time — even
+    // after the user explicitly picked Gosling the previous time.
+    setWizardTool("gosling");
+  }, [reset]);
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
