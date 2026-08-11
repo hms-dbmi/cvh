@@ -54,7 +54,6 @@ import {
   useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
 import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
-import { VitessceWarningBanner } from "./VitessceWarningBanner";
 
 export function DatasetActionsMenu({
   datasetID,
@@ -525,14 +524,12 @@ function DataList({
 
 function DataAccordion({
   projectId,
-  showVitessceWarning,
   showActions,
   disableDrag,
   tool,
   children: _children,
 }: {
   projectId: string;
-  showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
   tool?: "gosling" | "vitessce";
@@ -566,7 +563,6 @@ function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 0 }}>
-        {showVitessceWarning && <VitessceWarningBanner />}
         <Box sx={{ p: 2 }}>
           {datasets?.length ? (
             _children ? (
@@ -608,13 +604,11 @@ function DataAccordion({
 }
 
 export default function Wrapper({
-  showVitessceWarning,
   showActions,
   disableDrag,
   tool,
   children,
 }: {
-  showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
   tool?: "gosling" | "vitessce";
@@ -629,7 +623,6 @@ export default function Wrapper({
   return (
     <DataAccordion
       projectId={projectId}
-      showVitessceWarning={showVitessceWarning}
       showActions={showActions}
       disableDrag={disableDrag}
       tool={tool}
