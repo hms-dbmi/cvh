@@ -23,7 +23,9 @@ jobs:
     environment: production
     permissions:
       id-token: write
-      contents: read
+      # `contents: write` is required so the post-deploy step can push
+      # a `prod-api-*` tag back to the repo.
+      contents: write
 
     steps:
       - name: Configure AWS Credentials
@@ -65,3 +67,25 @@ jobs:
             --service "$API_SERVICE" --force-new-deployment
           aws ecs update-service --cluster "$ADMIN_CLUSTER" \
             --service "$ADMIN_SERVICE" --force-new-deployment
+
+      - name: Checkout main to tag
+        # Only need the git tree here (the promote job above doesn't
+        # check out because it's ECR-only).
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Tag commit as prod-api-YYYY-MM-DD
+        # Marks the git commit whose image was promoted. The source ECR
+        # tag (`latest` or a rollback tag) is included in the annotation
+        # for traceability. See `docs/release.md` for how to roll
+        # CHANGELOG.md's `[Unreleased]` section after a successful deploy.
+        env:
+          SOURCE_TAG: ${{ github.event.inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y-%m-%d)
+          SHA=$(git rev-parse --short HEAD)
+          TAG="prod-api-${DATE}-${SHA}"
+          git tag -a "$TAG" -m "API prod deploy $DATE ($SHA), source ECR tag: $SOURCE_TAG"
+          git push origin "$TAG"
