@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -93,10 +93,20 @@ class Dataset(BaseModel):
     source_url: str = Field(
         description="URL the visualization tool fetches data bytes from."
     )
+    tool: Literal["gosling", "vitessce"] = Field(
+        default="gosling",
+        description=(
+            "Which viewer this dataset was uploaded for. Governs which"
+            " workspace's data panel surfaces it — Gosling datasets and"
+            " Vitessce datasets don't mix in a single visualization."
+        ),
+    )
     file_type: str = Field(
         description=(
-            "Data format. Gosling recognises: bigwig, cooler, vector,"
-            " bam, vcf, bed, gff, csv, multivec, beddb."
+            "Data format. Depends on `tool`: Gosling recognises bigwig,"
+            " cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb;"
+            " Vitessce recognises ome-tiff, ome-zarr, anndata.zarr,"
+            " spatialdata.zarr."
         ),
     )
     data_type: str = Field(
