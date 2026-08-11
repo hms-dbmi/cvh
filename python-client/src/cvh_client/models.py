@@ -112,8 +112,15 @@ class Dataset(BaseModel):
     )
     data_type: str = Field(
         description=(
-            "Free-form data-type label displayed alongside file_type"
-            " (e.g. 'signal', 'annotation'). Frequently empty."
+            "Category of the dataset. For Gosling datasets this is a"
+            " free-form label displayed alongside file_type (e.g."
+            " 'signal', 'annotation'), frequently empty. For Vitessce"
+            " datasets it's one of the Vitessce data types (image,"
+            " obsFeatureMatrix, obsEmbedding, obsSets, obsLocations,"
+            " obsSpots, obsPoints, obsSegmentations, obsLabels,"
+            " featureLabels, sampleSets) — empty when the value hasn't"
+            " been set yet (e.g., cfdb-imported datasets waiting for a"
+            " user to pick one)."
         ),
     )
     assembly: str | None = Field(

@@ -245,19 +245,28 @@ class VitessceDataset(ModelSchema):
         "obsSegmentations.ome-zarr",
         "obsSegmentations.ome-zarr.zip",
     ]
-    data_type: Literal[
-        "image",
-        "obsFeatureMatrix",
-        "obsEmbedding",
-        "obsSets",
-        "obsLocations",
-        "obsSpots",
-        "obsPoints",
-        "obsSegmentations",
-        "obsLabels",
-        "featureLabels",
-        "sampleSets",
-    ]
+    # Optional: the Add Dataset wizard requires a value (paired with
+    # `file_type` via the two-dropdown UI), but other create paths —
+    # notably a future cfdb → Vitessce importer — only know the file
+    # format at import time. Persisted as empty string when absent; the
+    # user can pick a value later in the Edit dialog. Kept as a Literal
+    # so any non-empty value is one vitessce.js recognizes.
+    data_type: (
+        Literal[
+            "image",
+            "obsFeatureMatrix",
+            "obsEmbedding",
+            "obsSets",
+            "obsLocations",
+            "obsSpots",
+            "obsPoints",
+            "obsSegmentations",
+            "obsLabels",
+            "featureLabels",
+            "sampleSets",
+        ]
+        | None
+    ) = None
 
     class Meta:
         model = Dataset

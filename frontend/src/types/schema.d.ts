@@ -953,9 +953,9 @@ export interface components {
             file_type: "anndata.h5ad" | "anndata.zarr" | "anndata.zarr.zip" | "featureLabels.csv" | "image.ome-tiff" | "image.ome-zarr" | "image.ome-zarr.zip" | "obsEmbedding.csv" | "obsFeatureMatrix.csv" | "obsLabels.csv" | "obsLocations.csv" | "obsPoints.csv" | "obsSegmentations.json" | "obsSegmentations.ome-zarr" | "obsSegmentations.ome-zarr.zip" | "obsSets.csv" | "obsSets.json" | "obsSpots.csv" | "sampleSets.csv" | "spatialdata.zarr" | "spatialdata.zarr.zip";
             /**
              * Data Type
-             * @enum {string}
+             * @enum {string|null}
              */
-            data_type: "featureLabels" | "image" | "obsEmbedding" | "obsFeatureMatrix" | "obsLabels" | "obsLocations" | "obsPoints" | "obsSegmentations" | "obsSets" | "obsSpots" | "sampleSets";
+            data_type?: "featureLabels" | "image" | "obsEmbedding" | "obsFeatureMatrix" | "obsLabels" | "obsLocations" | "obsPoints" | "obsSegmentations" | "obsSets" | "obsSpots" | "sampleSets" | null;
             /**
              * Name
              * @description Human-readable name shown in the UI.

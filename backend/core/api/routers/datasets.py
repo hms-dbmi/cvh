@@ -58,6 +58,13 @@ def create_dataset(request, dataset: DatasetIn):
     # discriminated union) because a file type like BAM can belong to
     # either Gosling or Vitessce workspaces. Merge it in before persist.
     fields["tool"] = dataset_dict["tool"]
+    # VitessceDataset accepts `data_type=None` (e.g., cfdb imports where
+    # only the file format is known); the Dataset model's `data_type`
+    # is a non-null CharField, so translate to the empty-string sentinel
+    # here rather than making the DB column nullable and rewriting every
+    # downstream reader.
+    if fields.get("data_type") is None:
+        fields["data_type"] = ""
 
     if workspace_uuid:
         try:
