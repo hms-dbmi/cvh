@@ -29,8 +29,10 @@ export function VitessceWarningBanner() {
           variant="body2"
           sx={{ fontSize: 12, lineHeight: "16px", letterSpacing: "0.4px" }}
         >
-          Only the copy and paste of public data possible. Upload of local data
-          into Vitessce visualizations is not currently supported.
+          Only publicly-hosted datasets can be used in Vitessce visualizations.
+          Drag one from the sidebar to auto-generate a configuration, or paste
+          a config directly into the code editor. Uploading local files is not
+          currently supported.
         </Typography>
       </Stack>
     </Box>

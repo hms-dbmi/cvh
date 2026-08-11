@@ -1,12 +1,19 @@
+import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import Editor from "@monaco-editor/react";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Code } from "@phosphor-icons/react";
 import { upgradeAndParse } from "@vitessce/schemas";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Vitessce } from "vitessce";
+import { generateConfig, Vitessce } from "vitessce";
 import "react-grid-layout/css/styles.css";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import {
@@ -14,6 +21,24 @@ import {
   useUpdateVisualization,
 } from "../api/useVisualizations";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
+
+const DROP_ZONE_ID = "vitessce-drop-zone";
+
+type VitessceDragPayload = {
+  tool: "vitessce";
+  url: string;
+  name: string;
+  id: string;
+};
+
+function isVitessceDragPayload(data: unknown): data is VitessceDragPayload {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { tool?: unknown }).tool === "vitessce" &&
+    typeof (data as { url?: unknown }).url === "string"
+  );
+}
 
 interface VitessceViewerProps {
   permissions: number;
@@ -81,14 +106,27 @@ function CodeEditor({
 function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const [mode, setMode] = useState<Mode>("exploring");
   const [editorValue, setEditorValue] = useState("");
+  // Held while a dropped dataset is waiting on user confirmation to
+  // overwrite the current config. Cleared after apply or cancel.
+  const [pendingDrop, setPendingDrop] = useState<VitessceDragPayload | null>(
+    null,
+  );
 
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
 
   const { mutate: updateViz } = useUpdateVisualization();
-  const { toastError } = useSnackbarActions();
+  const { toastError, toastSuccess } = useSnackbarActions();
 
   const hasWritePermissions = permissions >= 2;
+
+  const hasExistingConfig =
+    !!data?.conf && Object.keys(data.conf as object).length > 0;
+
+  const { isOver, setNodeRef: setDropRef } = useDroppable({
+    id: DROP_ZONE_ID,
+    disabled: !hasWritePermissions || !selectedVizId,
+  });
 
   // Track the last string that came from the server so the auto-save
   // effect below can skip when the editor's value is just what we loaded.
@@ -197,6 +235,54 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     [selectedVizId, hasWritePermissions, data?.tool, updateViz, toastError],
   );
 
+  // Generate a fresh Vitessce config from a single dataset URL and
+  // save it. Called both directly (empty-config path) and after the
+  // user confirms overwriting an existing config.
+  const applyGeneratedConfig = useCallback(
+    async (payload: VitessceDragPayload) => {
+      if (!selectedVizId || !hasWritePermissions) return;
+      try {
+        const generated = await generateConfig([payload.url]);
+        updateViz({
+          params: { path: { visualization_uuid: selectedVizId } },
+          body: { conf: generated as Record<string, never> },
+        });
+        toastSuccess(`Generated Vitessce config from "${payload.name}".`);
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : "Unknown error";
+        toastError(`Could not generate config: ${message}`);
+        console.error(e);
+      }
+    },
+    [
+      selectedVizId,
+      hasWritePermissions,
+      updateViz,
+      toastSuccess,
+      toastError,
+    ],
+  );
+
+  // Observe drops on the parent DndContext (installed by VitessceVizShell).
+  // We only react when the drop landed on our droppable and the payload
+  // is a vitessce dataset; anything else is either irrelevant or a stray
+  // Gosling drag that shouldn't reach us.
+  useDndMonitor({
+    onDragEnd: (event) => {
+      if (event.over?.id !== DROP_ZONE_ID) return;
+      if (!isVitessceDragPayload(event.active.data.current)) return;
+      if (!hasWritePermissions) return;
+      const payload = event.active.data.current;
+      if (hasExistingConfig) {
+        // Preserve existing config until the user confirms overwrite.
+        setPendingDrop(payload);
+      } else {
+        void applyGeneratedConfig(payload);
+      }
+    },
+  });
+
   // Auto-save the editor after typing settles.
   useEffect(() => {
     if (!selectedVizId || !hasWritePermissions) return;
@@ -223,12 +309,20 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   return (
     <Box sx={{ height: "100%", position: "relative" }}>
       <Paper
+        ref={setDropRef}
         sx={{
           flex: 1,
           minWidth: 0,
           m: 2,
           height: "calc(100% - 125px)",
           overflow: "hidden",
+          // Highlight the panel edge while a compatible dataset hovers over
+          // it. `isOver` only becomes true for drops @dnd-kit considers
+          // targeted at this droppable, so we don't need to inspect the
+          // payload here.
+          outline: isOver ? "2px solid" : "2px solid transparent",
+          outlineColor: isOver ? "primary.main" : "transparent",
+          transition: "outline-color 120ms ease",
         }}
       >
         {mode === "exploring" && vitessceConfig && (
@@ -248,6 +342,30 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           />
         )}
       </Paper>
+      <Dialog open={pendingDrop !== null} onClose={() => setPendingDrop(null)}>
+        <DialogTitle>Replace current configuration?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Dropping <strong>{pendingDrop?.name}</strong> will overwrite the
+            visualization's current configuration with a freshly generated one.
+            This can't be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingDrop(null)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (pendingDrop) {
+                void applyGeneratedConfig(pendingDrop);
+              }
+              setPendingDrop(null);
+            }}
+          >
+            Replace
+          </Button>
+        </DialogActions>
+      </Dialog>
       {selectedVizId && (
         <Box
           sx={{

@@ -301,23 +301,31 @@ function DatasetListItem({
   // (cfdb-sourced and ready).
   const isUsable =
     processingStatus === "not_needed" || processingStatus === "processed";
-  // Vitessce datasets are surfaced for reference/copy-URL only —
-  // there's no drop target that consumes them. Only Gosling datasets
-  // are draggable, and only when the current visualization is Gosling
-  // (a Gosling dataset dropped into a Vitessce viz has nowhere to go).
-  const toolMismatch =
-    dataset.tool === "vitessce" ||
-    (vizTool !== undefined && dataset.tool !== vizTool);
+  // Only allow drags where the dataset's tool matches the current
+  // visualization's tool. A Gosling dataset dropped into a Vitessce
+  // viz (or vice versa) has nowhere useful to go.
+  const toolMismatch = vizTool !== undefined && dataset.tool !== vizTool;
   const hasWritePermissions = !readOnly;
 
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({
       id: dataset.uuid,
       disabled: disableDrag || !isUsable || toolMismatch,
-      // Same transform as the workspace catalog uses. Keeping both on
-      // one helper prevents drift where the drop handler reads a field
-      // one side computes and the other doesn't.
-      data: toGoslingDataset(dataset),
+      // Payload shape depends on the destination viz's tool:
+      //   - Gosling drop handler expects the full `GDData`-shaped
+      //     transform (matches the workspace catalog it reads from).
+      //   - Vitessce drop handler just needs the URL — it feeds it into
+      //     `generateConfig` from `@vitessce/config` to build a fresh
+      //     config. Include `tool` so the drop target can discriminate.
+      data:
+        dataset.tool === "vitessce"
+          ? {
+              tool: "vitessce" as const,
+              url: dataset.source_url,
+              name: dataset.name,
+              id: dataset.uuid,
+            }
+          : toGoslingDataset(dataset),
     });
 
   return (
