@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -93,16 +93,34 @@ class Dataset(BaseModel):
     source_url: str = Field(
         description="URL the visualization tool fetches data bytes from."
     )
+    tool: Literal["gosling", "vitessce"] = Field(
+        default="gosling",
+        description=(
+            "Which viewer this dataset was uploaded for. Governs which"
+            " workspace's data panel surfaces it — Gosling datasets and"
+            " Vitessce datasets don't mix in a single visualization."
+        ),
+    )
     file_type: str = Field(
         description=(
-            "Data format. Gosling recognises: bigwig, cooler, vector,"
-            " bam, vcf, bed, gff, csv, multivec, beddb."
+            "Data format. Depends on `tool`: Gosling recognises bigwig,"
+            " cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb;"
+            " Vitessce recognises image.ome-tiff, image.ome-zarr,"
+            " image.ome-zarr.zip, anndata.zarr, anndata.zarr.zip,"
+            " anndata.h5ad, spatialdata.zarr, spatialdata.zarr.zip."
         ),
     )
     data_type: str = Field(
         description=(
-            "Free-form data-type label displayed alongside file_type"
-            " (e.g. 'signal', 'annotation'). Frequently empty."
+            "Category of the dataset. For Gosling datasets this is a"
+            " free-form label displayed alongside file_type (e.g."
+            " 'signal', 'annotation'), frequently empty. For Vitessce"
+            " datasets it's one of the Vitessce data types (image,"
+            " obsFeatureMatrix, obsEmbedding, obsSets, obsLocations,"
+            " obsSpots, obsPoints, obsSegmentations, obsLabels,"
+            " featureLabels, sampleSets) — empty when the value hasn't"
+            " been set yet (e.g., cfdb-imported datasets waiting for a"
+            " user to pick one)."
         ),
     )
     assembly: str | None = Field(

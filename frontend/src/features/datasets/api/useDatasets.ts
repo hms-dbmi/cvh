@@ -42,29 +42,34 @@ function useGetPaginatedProjectDatasets({
   assemblies,
   fileTypes,
   name,
+  tool,
 }: {
   projectId: string;
   tags?: string[];
   fileTypes?: string[];
   assemblies?: string[];
   name?: string;
+  tool?: "gosling" | "vitessce";
 }) {
   const tagsFilter = tags.length ? { tags } : {};
   const fileTypeFilter = fileTypes ? { file_type: fileTypes } : {};
   const assemblyFilter = assemblies ? { assembly: assemblies } : {};
   const nameFilter = name ? { name } : {};
+  const toolFilter = tool ? { tool } : {};
 
   const queryOptions =
     hasFilter(tagsFilter) ||
     hasFilter(fileTypeFilter) ||
     hasFilter(assemblyFilter) ||
-    hasFilter(nameFilter)
+    hasFilter(nameFilter) ||
+    hasFilter(toolFilter)
       ? {
           query: {
             ...tagsFilter,
             ...fileTypeFilter,
             ...assemblyFilter,
             ...nameFilter,
+            ...toolFilter,
           },
         }
       : {};

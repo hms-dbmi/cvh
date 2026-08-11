@@ -8,9 +8,10 @@ Categories: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Se
 
 ## [Unreleased]
 
-<!--
-Add entries here in the PR that introduces the change. Example:
-
 ### Added
-- Support for X endpoint ([#123](https://github.com/hms-dbmi/cvh/pull/123))
--->
+- Datasets now report which viewer they belong to. A new `tool` field on each `Dataset` is either `"gosling"` or `"vitessce"`.
+- `list_datasets(...)` accepts a `tool` argument, so you can narrow a workspace's listing to just Gosling or just Vitessce datasets.
+- Vitessce-native file types (OME-TIFF, OME-Zarr including its zipped variant, AnnData in Zarr including zipped and h5ad, SpatialData in Zarr including zipped) are now documented alongside Gosling's formats in the `Dataset.file_type` docstring.
+
+### Changed
+- `update_dataset(...)` now documents `tool` as an updatable field, so callers know they can move a dataset between viewers if it was created under the wrong one.

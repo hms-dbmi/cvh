@@ -10,14 +10,15 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
-<!--
-Add entries here as part of the PR that introduces the change. One line per
-change, grouped by category. Link to the PR when possible: (#123).
-
-Example:
 ### Added
-- Feature X for use case Y ([#123](https://github.com/hms-dbmi/cvh/pull/123))
+- Vitessce visualizations can now use CVH datasets. Upload Vitessce-native formats — OME-TIFF, OME-Zarr (plus its zipped variant), AnnData in Zarr (plus zipped and h5ad variants), and SpatialData in Zarr (plus zipped) — the same way you upload Gosling datasets. Each dataset is tagged with the viewer it belongs to, and the two don't mix inside a single visualization.
+- The Add Dataset wizard now starts by asking whether you're adding data for Gosling or Vitessce, and then shows only the file types that viewer supports. For Vitessce, the file-type step is a two-step picker — choose a Data Type (matrix, embedding, image, …) first and the File Type dropdown narrows to just the formats that can carry it (per vitessce.io/docs/data-types-file-types).
+- Drag a Vitessce-compatible dataset from the sidebar onto a Vitessce visualization to auto-generate a starter configuration. If the visualization already has a configuration, you'll be asked to confirm before it's replaced. Empty Vitessce visualizations show a hint pointing you at the drop area. Drag-and-drop is only enabled for the file formats Vitessce's automatic config generator supports — OME-TIFF, OME-Zarr, and AnnData-Zarr (see [Vitessce default config docs](https://vitessce.io/docs/default-config-json/)). Other formats can still be used by pasting a hand-written config into the code editor, and a banner above the data-source list on Vitessce visualizations spells this out.
 
-### Fixed
-- Bug in Z that caused W ([#124](https://github.com/hms-dbmi/cvh/pull/124))
--->
+### Changed
+- A dataset can only be dragged into a visualization built for the same viewer — Gosling datasets to Gosling visualizations, Vitessce datasets to Vitessce visualizations.
+- Vitessce file-type strings now match vitessce.js's canonical names — `image.ome-tiff` / `image.ome-zarr` (with the `image.` prefix) instead of the earlier `ome-tiff` / `ome-zarr`. A migration renames any existing rows so nothing needs to be re-uploaded.
+- The Edit Dataset dialog handles Vitessce datasets: an editable Data Type dropdown appears alongside the locked File Type, and the dropdown only offers data types compatible with the file type (e.g., an OME-TIFF file's Data Type is always "image"; an AnnData Zarr can be any of the nine obs / feature / sample data types).
+- The "Data Type" label on the locked file-type field in the Add and Edit dialogs is now "File Type" to match the field's actual meaning — "Data Type" is now a distinct, editable field for Vitessce datasets.
+- Vitessce dataset `data_type` is now optional on the create-dataset API. The Add Dataset wizard still requires the user to pick a value, but non-wizard paths (a future cfdb → Vitessce import, direct API callers) can omit it and let the user fill it in via the Edit dialog later. Persisted as an empty string when absent.
+

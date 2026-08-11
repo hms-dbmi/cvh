@@ -12,6 +12,7 @@ class DatasetQuerySchema(Schema):
     assembly: list[str] = Field(None, alias="assembly")
     file_type: list[str] = Field(None, alias="file_type")
     name: str = Field(None, alias="name")
+    tool: Literal["gosling", "vitessce"] | None = Field(None, alias="tool")
 
 
 class VisualizationQuerySchema(Schema):
@@ -202,19 +203,100 @@ class GoslingDesignerCSV(GoslingDataCommon):
     ]
 
 
+class VitessceDataset(ModelSchema):
+    """Vitessce-native dataset variants. Vitessce configs reference these
+    URLs directly; unlike the Gosling variants there's no assembly, index
+    sidecar, or column typing to capture — the config itself carries all
+    the projection/coordination metadata Vitessce needs.
+    """
+
+    # https://vitessce.io/docs/data-types-file-types/ — strings match
+    # vitessce's own `FileType` constants (see @vitessce/constants-internal).
+    # Names are case-sensitive; the `image.` prefix on OME variants and
+    # the `.zip` / `.h5ad` suffixes are load-bearing on the vitessce side.
+    # The list mirrors the frontend's `VITESSCE_FILE_TYPES` and covers
+    # both the "joint" Zarr stores (which carry many data types) and the
+    # per-data-type atomic files a user picks after choosing a Data Type
+    # in the wizard.
+    file_type: Literal[
+        # Joint stores
+        "anndata.zarr",
+        "anndata.zarr.zip",
+        "anndata.h5ad",
+        "spatialdata.zarr",
+        "spatialdata.zarr.zip",
+        # Image
+        "image.ome-tiff",
+        "image.ome-zarr",
+        "image.ome-zarr.zip",
+        # Atomic CSV / JSON
+        "obsEmbedding.csv",
+        "obsFeatureMatrix.csv",
+        "obsSets.csv",
+        "obsSets.json",
+        "obsSpots.csv",
+        "obsPoints.csv",
+        "obsLocations.csv",
+        "obsLabels.csv",
+        "featureLabels.csv",
+        "sampleSets.csv",
+        # Segmentations
+        "obsSegmentations.json",
+        "obsSegmentations.ome-zarr",
+        "obsSegmentations.ome-zarr.zip",
+    ]
+    # Optional: the Add Dataset wizard requires a value (paired with
+    # `file_type` via the two-dropdown UI), but other create paths —
+    # notably a future cfdb → Vitessce importer — only know the file
+    # format at import time. Persisted as empty string when absent; the
+    # user can pick a value later in the Edit dialog. Kept as a Literal
+    # so any non-empty value is one vitessce.js recognizes.
+    data_type: (
+        Literal[
+            "image",
+            "obsFeatureMatrix",
+            "obsEmbedding",
+            "obsSets",
+            "obsLocations",
+            "obsSpots",
+            "obsPoints",
+            "obsSegmentations",
+            "obsLabels",
+            "featureLabels",
+            "sampleSets",
+        ]
+        | None
+    ) = None
+
+    class Meta:
+        model = Dataset
+        # `data_type` is declared as a Literal on the class body above —
+        # if we included it in `fields` here, Ninja would pull the model's
+        # free-form CharField definition and shadow the Literal.
+        fields = ["name", "description", "source_url"]
+
+
+# Union of all dataset variants the create endpoint accepts. Named
+# `GoslingDesignerModel` for historical reasons — kept for API stability
+# now that Vitessce shares the same union.
 GoslingDesignerModel = Annotated[
     GoslingDatasetSimple
     | GoslingDesignerBam
     | GoslingDesignerMultiVec
     | GoslingDesignerIndex
     | GoslingDesignerBEDB
-    | GoslingDesignerCSV,
+    | GoslingDesignerCSV
+    | VitessceDataset,
     Field(discriminator="file_type"),
 ]
 
 
 class DatasetIn(Schema):
     workspace_uuid: UUID4 | None = None
+    # Which viewer this dataset was uploaded for. Governs which
+    # workspace's data panel surfaces it. Defaults to Gosling so
+    # existing callers keep working unchanged.
+    tool: Literal["gosling", "vitessce"] = "gosling"
     dataset: GoslingDesignerModel
 
 
@@ -232,6 +314,7 @@ class DatasetUpdate(ModelSchema, OptionalSchema):
             "description",
             "source_url",
             "file_type",
+            "tool",
             "data_type",
             "assembly",
             "data_column",
@@ -248,6 +331,7 @@ class DatasetOut(ModelSchema):
         fields = [
             "source_url",
             "file_type",
+            "tool",
             "data_type",
             "assembly",
             "data_column",

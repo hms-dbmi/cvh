@@ -1,8 +1,15 @@
 import Box from "@mui/material/Box";
+import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Warning } from "@phosphor-icons/react";
 
+// Shown above the data-source list on Vitessce visualizations.
+// Drag-and-drop into a Vitessce viewer runs through vitessce's
+// auto-config-from-URL path, which only knows how to handle a subset
+// of Vitessce's supported file formats — see
+// https://vitessce.io/docs/default-config-json/. This banner tells
+// users which formats can be dropped and how to bring the rest in.
 export function VitessceWarningBanner() {
   return (
     <Box
@@ -23,14 +30,31 @@ export function VitessceWarningBanner() {
       </Box>
       <Stack spacing={1}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          Limited Functionality
+          Limited Drag-and-Drop Support
         </Typography>
         <Typography
           variant="body2"
           sx={{ fontSize: 12, lineHeight: "16px", letterSpacing: "0.4px" }}
         >
-          Only the copy and paste of public data possible. Upload of local data
-          into Vitessce visualizations is not currently supported.
+          Vitessce currently supports automatic view config generation for the
+          following file formats:
+          <br />
+          &bull; OME-TIFF
+          <br />
+          &bull; OME-Zarr
+          <br />
+          &bull; AnnData-Zarr (AnnData objects saved to a Zarr store)
+          <br />
+          Datasets in other formats can still be referenced by pasting a
+          hand-written config into the code editor. See the{" "}
+          <Link
+            href="https://vitessce.io/docs/default-config-json/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Vitessce default config docs
+          </Link>{" "}
+          for details.
         </Typography>
       </Stack>
     </Box>

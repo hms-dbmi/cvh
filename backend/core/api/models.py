@@ -179,6 +179,15 @@ class Dataset(UserCreated):
         # cfdb returned an error; user may retry.
         FAILED = "failed", "Failed"
 
+    class Tool(models.TextChoices):
+        # Which visualization tool this dataset was uploaded for. Governs
+        # which workspace's data panel surfaces it. Same string set as
+        # VisualizationConf.Tool — kept in sync manually rather than
+        # imported because that model imports this one at module scope.
+        gosling = "gosling"
+        vitessce = "vitessce"
+
+    tool = models.CharField(max_length=10, choices=Tool, default=Tool.gosling)
     source_url = models.URLField(
         max_length=1000,
         help_text="URL from which the visualization tool fetches data bytes.",

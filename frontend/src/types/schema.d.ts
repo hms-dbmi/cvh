@@ -295,7 +295,7 @@ export interface paths {
         put?: never;
         /**
          * Start cfdb processing for a dataset
-         * @description Dispatches the cfdb processing workflow for a cfdb-sourced dataset. The frontend polls cfdb's /jobs/{id} directly after dispatch. Requires write access to the parent workspace.
+         * @description Dispatches the next-needed cfdb workflow for a cfdb-sourced dataset. Only /data or /index is dispatched per call — cfdb auto-queues the index workflow once data finishes, so the frontend re-calls /processing-status when polling completes and the server advances the phase. Requires write access to the parent workspace.
          */
         post: operations["api_routers_datasets_process_dataset"];
         delete?: never;
@@ -314,7 +314,7 @@ export interface paths {
         get?: never;
         /**
          * Report cfdb processing outcome
-         * @description Persists the terminal outcome of a cfdb processing job after the frontend has polled cfdb's /jobs/{id} directly. Only the STARTED state may transition into PROCESSED or FAILED via this endpoint. Requires write access to the parent workspace.
+         * @description Called by the frontend when its polled cfdb job reaches a terminal state. The server re-probes cfdb's /status endpoints to decide what's next: marking PROCESSED if both /data and /index are ready, or dispatching /index and persisting the new job_id if only the data side just finished. A reported failure is trusted and marks the row FAILED. Requires write access to the parent workspace.
          */
         put: operations["api_routers_datasets_update_processing_status"];
         post?: never;
@@ -539,6 +539,7 @@ export interface components {
             email: string;
             /**
              * Permissions
+             * @description Access level: 1=read (view only), 2=write (add and edit data and visualizations), 3=admin (also manage members and workspace settings).
              * @default 1
              */
             permissions: number;
@@ -558,6 +559,7 @@ export interface components {
             last_name?: string | null;
             /**
              * Permissions
+             * @description Access level: 1=read (view only), 2=write (add and edit data and visualizations), 3=admin (also manage members and workspace settings).
              * @default 1
              */
             permissions: number;
@@ -601,31 +603,42 @@ export interface components {
             permissions?: number | null;
             /**
              * Private
+             * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
              * @default true
              */
             private: boolean;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
              */
             uuid?: string;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /**
              * Created Timestamp
              * Format: date-time
+             * @description When the record was first created.
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
              * Format: date-time
+             * @description When any field last changed.
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
              * Format: date-time
+             * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
             /** Workspace Members Count */
@@ -641,41 +654,61 @@ export interface components {
             permissions?: number | null;
             /**
              * Private
+             * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
              * @default true
              */
             private: boolean;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
              */
             uuid?: string;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /**
              * Created Timestamp
              * Format: date-time
+             * @description When the record was first created.
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
              * Format: date-time
+             * @description When any field last changed.
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
              * Format: date-time
+             * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
         };
         /** WorkspaceUpdate */
         WorkspaceUpdate: {
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name?: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Private */
+            /**
+             * Private
+             * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
+             */
             private?: boolean;
         };
         /** PagedWorkspaceOut */
@@ -689,23 +722,38 @@ export interface components {
         DatasetIn: {
             /** Workspace Uuid */
             workspace_uuid?: string | null;
+            /**
+             * Tool
+             * @default gosling
+             * @enum {string}
+             */
+            tool: "gosling" | "vitessce";
             /** Dataset */
-            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"];
+            dataset: components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"] | components["schemas"]["VitessceDataset"];
         };
         /** GoslingDatasetSimple */
         GoslingDatasetSimple: {
+            /** Assembly */
+            assembly: string;
             /**
-             * Assembly
-             * @enum {string}
+             * Name
+             * @description Human-readable name shown in the UI.
              */
-            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
-            /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url: string;
-            /** Data Type */
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -720,18 +768,27 @@ export interface components {
                 string,
                 "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
             ][] | null;
+            /** Assembly */
+            assembly: string;
             /**
-             * Assembly
-             * @enum {string}
+             * Name
+             * @description Human-readable name shown in the UI.
              */
-            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
-            /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url: string;
-            /** Data Type */
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -745,18 +802,24 @@ export interface components {
             cfdb_dcc?: string | null;
             /** Cfdb Id */
             cfdb_id?: string | null;
+            /** Assembly */
+            assembly: string;
             /**
-             * Assembly
-             * @enum {string}
+             * Name
+             * @description Human-readable name shown in the UI.
              */
-            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
-            /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /** Source Url */
-            source_url: string;
-            /** Data Type */
+            source_url?: string | null;
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -768,18 +831,27 @@ export interface components {
         };
         /** GoslingDesignerCSV */
         GoslingDesignerCSV: {
+            /** Assembly */
+            assembly: string;
             /**
-             * Assembly
-             * @enum {string}
+             * Name
+             * @description Human-readable name shown in the UI.
              */
-            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
-            /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url: string;
-            /** Data Type */
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -807,18 +879,24 @@ export interface components {
                 string,
                 "nominal" | "quantitative" | "chromosome" | "genomic" | "key"
             ][] | null;
+            /** Assembly */
+            assembly: string;
             /**
-             * Assembly
-             * @enum {string}
+             * Name
+             * @description Human-readable name shown in the UI.
              */
-            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
-            /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /** Source Url */
-            source_url: string;
-            /** Data Type */
+            source_url?: string | null;
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -830,18 +908,27 @@ export interface components {
         };
         /** GoslingDesignerMultiVec */
         GoslingDesignerMultiVec: {
+            /** Assembly */
+            assembly: string;
             /**
-             * Assembly
-             * @enum {string}
+             * Name
+             * @description Human-readable name shown in the UI.
              */
-            assembly: "hg38" | "hg19" | "hg18" | "hg17" | "hg16" | "mm10" | "mm9" | "unknown";
-            /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url: string;
-            /** Data Type */
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -851,68 +938,161 @@ export interface components {
             /** Row Names */
             row_names: string[];
         };
+        /**
+         * VitessceDataset
+         * @description Vitessce-native dataset variants. Vitessce configs reference these
+         *     URLs directly; unlike the Gosling variants there's no assembly, index
+         *     sidecar, or column typing to capture — the config itself carries all
+         *     the projection/coordination metadata Vitessce needs.
+         */
+        VitessceDataset: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            file_type: "anndata.h5ad" | "anndata.zarr" | "anndata.zarr.zip" | "featureLabels.csv" | "image.ome-tiff" | "image.ome-zarr" | "image.ome-zarr.zip" | "obsEmbedding.csv" | "obsFeatureMatrix.csv" | "obsLabels.csv" | "obsLocations.csv" | "obsPoints.csv" | "obsSegmentations.json" | "obsSegmentations.ome-zarr" | "obsSegmentations.ome-zarr.zip" | "obsSets.csv" | "obsSets.json" | "obsSpots.csv" | "sampleSets.csv" | "spatialdata.zarr" | "spatialdata.zarr.zip";
+            /**
+             * Data Type
+             * @enum {string|null}
+             */
+            data_type?: "featureLabels" | "image" | "obsEmbedding" | "obsFeatureMatrix" | "obsLabels" | "obsLocations" | "obsPoints" | "obsSegmentations" | "obsSets" | "obsSpots" | "sampleSets" | null;
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
+            name: string;
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
+            description?: string | null;
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
+            source_url: string;
+        };
         /** DatasetOut */
         DatasetOut: {
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url: string;
-            /** File Type */
+            /**
+             * File Type
+             * @description Data format. Recognized values: bigwig, cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb.
+             */
             file_type: string;
-            /** Data Type */
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
-            /** Assembly */
+            /**
+             * Assembly
+             * @description Genome assembly the data is aligned to — e.g. hg38, mm10, dm6, T2T-CHM13. Null for coordinate-free formats.
+             */
             assembly?: string | null;
-            /** Data Column */
+            /**
+             * Data Column
+             * @description For tabular formats (CSV, BED, VCF, GFF): mapping of column names to their semantic type (nominal, quantitative, chromosome, genomic, key).
+             */
             data_column?: Record<string, never> | null;
-            /** Row Names */
+            /**
+             * Row Names
+             * @description For multivec: names of the rows (samples/tracks).
+             */
             row_names?: unknown[] | null;
             /**
              * Headers
+             * @description For CSV: whether the file has a header row.
              * @default false
              */
             headers: boolean;
-            /** Index Url */
+            /**
+             * Index Url
+             * @description For indexed formats (BAM, VCF, BED, GFF): URL of the sidecar index file (.bai, .tbi, etc.).
+             */
             index_url?: string | null;
-            /** Separator */
+            /**
+             * Separator
+             * @description For CSV: field separator character (e.g. ',' or '\t').
+             */
             separator?: string | null;
-            /** Cfdb Dcc */
+            /**
+             * Cfdb Dcc
+             * @description cfdb Data Coordination Center slug (e.g. '4dn', 'encode'). Non-null for datasets added via the Browse Library flow.
+             */
             cfdb_dcc?: string | null;
-            /** Cfdb Id */
+            /**
+             * Cfdb Id
+             * @description cfdb-side identifier for the file. Paired with cfdb_dcc; source_url is derived from these at create time.
+             */
             cfdb_id?: string | null;
             /**
              * Processing Status
+             * @description State machine for cfdb-backed datasets that need server-side processing (BAM/VCF/BED/GFF). Terminal states: PROCESSED (ready to render), FAILED (see processing_error).
              * @default not_needed
              */
             processing_status: string;
-            /** Processing Job Id */
+            /**
+             * Processing Job Id
+             * @description cfdb job identifier while processing is in flight.
+             */
             processing_job_id?: string | null;
-            /** Processing Started At */
+            /**
+             * Processing Started At
+             * @description When cfdb processing began.
+             */
             processing_started_at?: string | null;
-            /** Processing Completed At */
+            /**
+             * Processing Completed At
+             * @description When cfdb processing reached a terminal state.
+             */
             processing_completed_at?: string | null;
-            /** Processing Error */
+            /**
+             * Processing Error
+             * @description Error message from cfdb if processing_status is FAILED.
+             */
             processing_error?: string | null;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
              */
             uuid?: string;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /**
              * Created Timestamp
              * Format: date-time
+             * @description When the record was first created.
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
              * Format: date-time
+             * @description When any field last changed.
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
              * Format: date-time
+             * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
         };
@@ -940,91 +1120,185 @@ export interface components {
         };
         /** DatasetUpdate */
         DatasetUpdate: {
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name?: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url?: string;
-            /** File Type */
+            /**
+             * File Type
+             * @description Data format. Recognized values: bigwig, cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb.
+             */
             file_type?: string;
-            /** Data Type */
+            /** Tool */
+            tool?: string;
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type?: string;
-            /** Assembly */
+            /**
+             * Assembly
+             * @description Genome assembly the data is aligned to — e.g. hg38, mm10, dm6, T2T-CHM13. Null for coordinate-free formats.
+             */
             assembly?: string | null;
-            /** Data Column */
+            /**
+             * Data Column
+             * @description For tabular formats (CSV, BED, VCF, GFF): mapping of column names to their semantic type (nominal, quantitative, chromosome, genomic, key).
+             */
             data_column?: Record<string, never> | null;
-            /** Row Names */
+            /**
+             * Row Names
+             * @description For multivec: names of the rows (samples/tracks).
+             */
             row_names?: unknown[] | null;
-            /** Headers */
+            /**
+             * Headers
+             * @description For CSV: whether the file has a header row.
+             */
             headers?: boolean;
-            /** Index Url */
+            /**
+             * Index Url
+             * @description For indexed formats (BAM, VCF, BED, GFF): URL of the sidecar index file (.bai, .tbi, etc.).
+             */
             index_url?: string | null;
-            /** Separator */
+            /**
+             * Separator
+             * @description For CSV: field separator character (e.g. ',' or '\t').
+             */
             separator?: string | null;
         };
         /** DatasetWithTagsOut */
         DatasetWithTagsOut: {
-            /** Source Url */
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
             source_url: string;
-            /** File Type */
+            /**
+             * File Type
+             * @description Data format. Recognized values: bigwig, cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb.
+             */
             file_type: string;
-            /** Data Type */
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
             data_type: string;
-            /** Assembly */
+            /**
+             * Assembly
+             * @description Genome assembly the data is aligned to — e.g. hg38, mm10, dm6, T2T-CHM13. Null for coordinate-free formats.
+             */
             assembly?: string | null;
-            /** Data Column */
+            /**
+             * Data Column
+             * @description For tabular formats (CSV, BED, VCF, GFF): mapping of column names to their semantic type (nominal, quantitative, chromosome, genomic, key).
+             */
             data_column?: Record<string, never> | null;
-            /** Row Names */
+            /**
+             * Row Names
+             * @description For multivec: names of the rows (samples/tracks).
+             */
             row_names?: unknown[] | null;
             /**
              * Headers
+             * @description For CSV: whether the file has a header row.
              * @default false
              */
             headers: boolean;
-            /** Index Url */
+            /**
+             * Index Url
+             * @description For indexed formats (BAM, VCF, BED, GFF): URL of the sidecar index file (.bai, .tbi, etc.).
+             */
             index_url?: string | null;
-            /** Separator */
+            /**
+             * Separator
+             * @description For CSV: field separator character (e.g. ',' or '\t').
+             */
             separator?: string | null;
-            /** Cfdb Dcc */
+            /**
+             * Cfdb Dcc
+             * @description cfdb Data Coordination Center slug (e.g. '4dn', 'encode'). Non-null for datasets added via the Browse Library flow.
+             */
             cfdb_dcc?: string | null;
-            /** Cfdb Id */
+            /**
+             * Cfdb Id
+             * @description cfdb-side identifier for the file. Paired with cfdb_dcc; source_url is derived from these at create time.
+             */
             cfdb_id?: string | null;
             /**
              * Processing Status
+             * @description State machine for cfdb-backed datasets that need server-side processing (BAM/VCF/BED/GFF). Terminal states: PROCESSED (ready to render), FAILED (see processing_error).
              * @default not_needed
              */
             processing_status: string;
-            /** Processing Job Id */
+            /**
+             * Processing Job Id
+             * @description cfdb job identifier while processing is in flight.
+             */
             processing_job_id?: string | null;
-            /** Processing Started At */
+            /**
+             * Processing Started At
+             * @description When cfdb processing began.
+             */
             processing_started_at?: string | null;
-            /** Processing Completed At */
+            /**
+             * Processing Completed At
+             * @description When cfdb processing reached a terminal state.
+             */
             processing_completed_at?: string | null;
-            /** Processing Error */
+            /**
+             * Processing Error
+             * @description Error message from cfdb if processing_status is FAILED.
+             */
             processing_error?: string | null;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
              */
             uuid?: string;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /**
              * Created Timestamp
              * Format: date-time
+             * @description When the record was first created.
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
              * Format: date-time
+             * @description When any field last changed.
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
              * Format: date-time
+             * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
             /** Tags */
@@ -1032,13 +1306,20 @@ export interface components {
         };
         /** TagOut */
         TagOut: {
-            /** Tag */
+            /**
+             * Tag
+             * @description The tag's label value.
+             */
             tag: string;
-            /** Key */
+            /**
+             * Key
+             * @description Optional namespace/category the tag belongs to (e.g. 'assay').
+             */
             key?: string | null;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique tag identifier.
              */
             uuid?: string;
         };
@@ -1064,6 +1345,8 @@ export interface components {
             file_type?: string[];
             /** Name */
             name?: string;
+            /** Tool */
+            tool?: ("gosling" | "vitessce") | null;
         };
         /** PagedDatasetWithTagsOut */
         PagedDatasetWithTagsOut: {
@@ -1127,52 +1410,72 @@ export interface components {
         VisualizationSummaryOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
-            /** Author */
+            /**
+             * Author
+             * @description Attribution string shown alongside the visualization in the UI.
+             */
             author?: string | null;
             /**
              * Tool
+             * @description Rendering tool: 'gosling' or 'vitessce'.
              * @default gosling
              */
             tool: string;
             /**
              * Published
+             * @description If True, visible on the public visualizations endpoint and embeddable without authentication.
              * @default false
              */
             published: boolean;
             /**
              * N Tracks
+             * @description Number of tracks in the visualization's config. Cached from the config on save so list responses don't need to parse the full spec.
              * @default 0
              */
             n_tracks: number | null;
             /**
              * N Datasets
+             * @description Number of distinct datasets referenced by the config.
              * @default 0
              */
             n_datasets: number | null;
-            /** Published Timestamp */
+            /**
+             * Published Timestamp
+             * @description When the visualization was last published. Null if never.
+             */
             published_timestamp?: string | null;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
              */
             uuid?: string;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /**
              * Created Timestamp
              * Format: date-time
+             * @description When the record was first created.
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
              * Format: date-time
+             * @description When any field last changed.
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
              * Format: date-time
+             * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
         };
@@ -1180,74 +1483,121 @@ export interface components {
         VisualizationOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
-            /** Conf */
+            /**
+             * Conf
+             * @description Gosling spec (for tool='gosling') or Vitessce config (for tool='vitessce'). Structure depends on the tool — consult the respective docs for the schema.
+             */
             conf?: Record<string, never> | null;
-            /** Author */
+            /**
+             * Author
+             * @description Attribution string shown alongside the visualization in the UI.
+             */
             author?: string | null;
             /**
              * Tool
+             * @description Rendering tool: 'gosling' or 'vitessce'.
              * @default gosling
              */
             tool: string;
             /**
              * Published
+             * @description If True, visible on the public visualizations endpoint and embeddable without authentication.
              * @default false
              */
             published: boolean;
             /**
              * N Tracks
+             * @description Number of tracks in the visualization's config. Cached from the config on save so list responses don't need to parse the full spec.
              * @default 0
              */
             n_tracks: number | null;
             /**
              * N Datasets
+             * @description Number of distinct datasets referenced by the config.
              * @default 0
              */
             n_datasets: number | null;
-            /** Published Timestamp */
+            /**
+             * Published Timestamp
+             * @description When the visualization was last published. Null if never.
+             */
             published_timestamp?: string | null;
             /**
              * Uuid
              * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
              */
             uuid?: string;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
             /**
              * Created Timestamp
              * Format: date-time
+             * @description When the record was first created.
              */
             created_timestamp: string;
             /**
              * Modified Timestamp
              * Format: date-time
+             * @description When any field last changed.
              */
             modified_timestamp: string;
             /**
              * Last Viewed Timestamp
              * Format: date-time
+             * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
         };
         /** VisualizationUpdate */
         VisualizationUpdate: {
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name?: string;
-            /** Description */
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
             description?: string | null;
-            /** Author */
+            /**
+             * Author
+             * @description Attribution string shown alongside the visualization in the UI.
+             */
             author?: string | null;
-            /** Tool */
+            /**
+             * Tool
+             * @description Rendering tool: 'gosling' or 'vitessce'.
+             */
             tool?: string;
-            /** Conf */
+            /**
+             * Conf
+             * @description Gosling spec (for tool='gosling') or Vitessce config (for tool='vitessce'). Structure depends on the tool — consult the respective docs for the schema.
+             */
             conf?: Record<string, never> | null;
-            /** Published */
+            /**
+             * Published
+             * @description If True, visible on the public visualizations endpoint and embeddable without authentication.
+             */
             published?: boolean;
-            /** N Tracks */
+            /**
+             * N Tracks
+             * @description Number of tracks in the visualization's config. Cached from the config on save so list responses don't need to parse the full spec.
+             */
             n_tracks?: number | null;
-            /** N Datasets */
+            /**
+             * N Datasets
+             * @description Number of distinct datasets referenced by the config.
+             */
             n_datasets?: number | null;
         };
         /** VisualizationIn */
@@ -1261,10 +1611,14 @@ export interface components {
             description?: string | null;
             /** Author */
             author?: string | null;
-            /** Name */
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
             name: string;
             /**
              * Tool
+             * @description Rendering tool: 'gosling' or 'vitessce'.
              * @default gosling
              */
             tool: string;
@@ -1743,6 +2097,7 @@ export interface operations {
                 assembly?: string[];
                 file_type?: string[];
                 name?: string;
+                tool?: ("gosling" | "vitessce") | null;
                 page?: number;
                 page_size?: number | null;
             };
