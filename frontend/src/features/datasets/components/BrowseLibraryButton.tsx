@@ -63,6 +63,7 @@ import {
   useCfdbDccFileFormats,
   useCfdbDccFiles,
   useCfdbDccs,
+  useCfdbFileLookup,
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
@@ -382,7 +383,7 @@ function DccDetailView({
     [deferredAssemblyFilters, deferredFileFormatFilters],
   );
 
-  const { data: allFiles = [], isLoading } = useCfdbDccFiles(
+  const { data: allFiles = [], isLoading: isDccFilesLoading } = useCfdbDccFiles(
     dcc.dccName,
     apiFilters,
   );
@@ -394,17 +395,18 @@ function DccDetailView({
     [fileFormats],
   );
 
-  // Case-insensitive substring match against filename and localId. Both
-  // fields are user-facing — searching by either should "just work."
-  const files = useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
-    if (!query) return allFiles;
-    return allFiles.filter((file) => {
-      const filename = file.filename?.toLowerCase() ?? "";
-      const localId = file.localId?.toLowerCase() ?? "";
-      return filename.includes(query) || localId.includes(query);
-    });
-  }, [allFiles, deferredSearch]);
+  // Dataset ID lookup goes through the server: cfdb caps `pageSize` at
+  // 500 (see `DCC_FILES_PAGE_SIZE` in api/cfdb.ts), so client-side
+  // filtering against `allFiles` couldn't find IDs outside the first
+  // page. The lookup query ORs `localId` and `filename` inputs so it
+  // matches whether the user pastes the accession (`ENCFF525XQX`) or
+  // the full filename (`ENCFF525XQX.bigBed`).
+  const hasSearch = deferredSearch.trim().length > 0;
+  const { data: lookupFiles = [], isLoading: isLookupLoading } =
+    useCfdbFileLookup(dcc.dccName, deferredSearch);
+
+  const files = hasSearch ? lookupFiles : allFiles;
+  const isLoading = hasSearch ? isLookupLoading : isDccFilesLoading;
 
   // Virtualize the table so only rows in (or near) the viewport are
   // mounted. With up to 10k files per DCC, the un-virtualized DOM made
