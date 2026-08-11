@@ -107,6 +107,35 @@ export const VITESSCE_FILE_TYPES = [
 
 export type VitessceFileType = (typeof VITESSCE_FILE_TYPES)[number];
 
+/**
+ * File types that Vitessce's default-config generation
+ * (`@vitessce/config`'s `generateConfig`) knows how to auto-configure
+ * from just a URL — see https://vitessce.io/docs/default-config-json/.
+ *
+ * The Add Dataset wizard accepts a much broader set of Vitessce file
+ * types (see `VITESSCE_FILE_TYPES` above), but drag-and-drop into a
+ * Vitessce visualization requires the auto-config path to work, so
+ * drops are restricted to this narrower list. Datasets in other
+ * formats can still be referenced by pasting a hand-written config
+ * into the code editor.
+ */
+export const VITESSCE_AUTO_CONFIG_FILE_TYPES = [
+  "image.ome-tiff",
+  "image.ome-zarr",
+  "anndata.zarr",
+] as const satisfies readonly VitessceFileType[];
+
+export type VitessceAutoConfigFileType =
+  (typeof VITESSCE_AUTO_CONFIG_FILE_TYPES)[number];
+
+export function isVitessceAutoConfigFileType(
+  value: string | null | undefined,
+): value is VitessceAutoConfigFileType {
+  return (VITESSCE_AUTO_CONFIG_FILE_TYPES as readonly string[]).includes(
+    String(value ?? ""),
+  );
+}
+
 // File types that carry a given data type. Includes both atomic
 // (single-data-type) files and the joint Zarr stores that carry many
 // data types at once. Users can pick either from the File Type dropdown

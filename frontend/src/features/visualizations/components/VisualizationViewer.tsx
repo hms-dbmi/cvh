@@ -58,7 +58,7 @@ function VisualizationViewer({
           selectedVizId={selectedVizId}
           permissions={permissions}
         />
-        <DataList showActions tool={tool} />
+        <DataList showVitessceWarning={isVitessce} showActions tool={tool} />
       </>
     ),
     [projectId, selectedVizId, permissions, isVitessce],

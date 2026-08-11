@@ -44,6 +44,7 @@ import { useGetProject } from "@/features/projects/api/useProjects";
 import type { components } from "@/types/schema";
 import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { toGoslingDataset } from "@/features/datasets/toGoslingDataset";
+import { isVitessceAutoConfigFileType } from "@/features/datasets/vitessceDataTypes";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
@@ -54,6 +55,7 @@ import {
   useGetProjectDatasetTags,
 } from "../../datasets/api/useDatasets";
 import BrowseLibraryButton from "../../datasets/components/BrowseLibraryButton";
+import { VitessceWarningBanner } from "./VitessceWarningBanner";
 
 export function DatasetActionsMenu({
   datasetID,
@@ -304,12 +306,21 @@ function DatasetListItem({
   // visualization's tool. A Gosling dataset dropped into a Vitessce
   // viz (or vice versa) has nowhere useful to go.
   const toolMismatch = vizTool !== undefined && dataset.tool !== vizTool;
+  // For Vitessce datasets, drag-and-drop only works when the file
+  // format is one vitessce's auto-config generator can build a config
+  // from (see `VitessceWarningBanner` above the list). Disable drag on
+  // formats that aren't in the auto-config set — the user can still
+  // reference them by pasting a hand-written config into the editor.
+  const noVitessceAutoConfig =
+    dataset.tool === "vitessce" &&
+    !isVitessceAutoConfigFileType(dataset.file_type);
   const hasWritePermissions = !readOnly;
 
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({
       id: dataset.uuid,
-      disabled: disableDrag || !isUsable || toolMismatch,
+      disabled:
+        disableDrag || !isUsable || toolMismatch || noVitessceAutoConfig,
       // Payload shape depends on the destination viz's tool:
       //   - Gosling drop handler expects the full `GDData`-shaped
       //     transform (matches the workspace catalog it reads from).
@@ -346,7 +357,7 @@ function DatasetListItem({
       }
     >
       <Stack direction="row" alignItems="flex-start" width="100%" sx={{ p: 1 }}>
-        {!disableDrag && !toolMismatch && (
+        {!disableDrag && !toolMismatch && !noVitessceAutoConfig && (
           <Box
             ref={setActivatorNodeRef}
             {...listeners}
@@ -524,12 +535,14 @@ function DataList({
 
 function DataAccordion({
   projectId,
+  showVitessceWarning,
   showActions,
   disableDrag,
   tool,
   children: _children,
 }: {
   projectId: string;
+  showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
   tool?: "gosling" | "vitessce";
@@ -563,6 +576,7 @@ function DataAccordion({
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 0 }}>
+        {showVitessceWarning && <VitessceWarningBanner />}
         <Box sx={{ p: 2 }}>
           {datasets?.length ? (
             _children ? (
@@ -604,11 +618,13 @@ function DataAccordion({
 }
 
 export default function Wrapper({
+  showVitessceWarning,
   showActions,
   disableDrag,
   tool,
   children,
 }: {
+  showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
   tool?: "gosling" | "vitessce";
@@ -623,6 +639,7 @@ export default function Wrapper({
   return (
     <DataAccordion
       projectId={projectId}
+      showVitessceWarning={showVitessceWarning}
       showActions={showActions}
       disableDrag={disableDrag}
       tool={tool}
