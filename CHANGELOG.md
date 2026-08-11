@@ -18,4 +18,6 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 ### Changed
 - A dataset can only be dragged into a visualization built for the same viewer — Gosling datasets to Gosling visualizations, Vitessce datasets to Vitessce visualizations.
 - Vitessce file-type strings now match vitessce.js's canonical names — `image.ome-tiff` / `image.ome-zarr` (with the `image.` prefix) instead of the earlier `ome-tiff` / `ome-zarr`. A migration renames any existing rows so nothing needs to be re-uploaded.
+- The Edit Dataset dialog handles Vitessce datasets: an editable Data Type dropdown appears alongside the locked File Type, and the dropdown only offers data types compatible with the file type (e.g., an OME-TIFF file's Data Type is always "image"; an AnnData Zarr can be any of the nine obs / feature / sample data types).
+- The "Data Type" label on the locked file-type field in the Add and Edit dialogs is now "File Type" to match the field's actual meaning — "Data Type" is now a distinct, editable field for Vitessce datasets.
 
