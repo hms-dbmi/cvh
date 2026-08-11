@@ -4,7 +4,7 @@ test("anonymous landing renders the marketing headline", async ({ page }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: /Create and Share Interactive Genomics Data Visualizations/i,
+      name: /Create and Share Interactive Visualization for Genomics/i,
     }),
   ).toBeVisible();
 });

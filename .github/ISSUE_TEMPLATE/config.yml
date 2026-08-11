@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: mailto:hidive@hms.harvard.edu?subject=CVH%20security%20report
+    about: For vulnerabilities or anything that could compromise user data or credentials, please email rather than file a public issue.
+  - name: General contact
+    url: mailto:hidive@hms.harvard.edu
+    about: For anything that doesn't fit an issue — collaboration inquiries, press, or general questions.

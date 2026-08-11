@@ -140,23 +140,23 @@ Resources:
       Subnets: !Ref PublicSubnetIds
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
       Type: application
 
   # Target Group for ECS Service
   LoadBalancerListenerTargetGroupECS:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub "gosling-dmc-tg-${Environment}"
+      Name: !Sub "cvh-tg-${Environment}"
       HealthCheckPath: /health
       Port: 8000
       Protocol: HTTP
       # ProtocolVersion: HTTP2
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-api"
         - Key: environment
           Value: !Ref Environment
       TargetType: ip
@@ -213,12 +213,12 @@ Resources:
   ECSFargateCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub "gosling-dmc-api-${AWS::StackName}"
+      ClusterName: !Sub "cvh-api-${AWS::StackName}"
       Tags:
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-api"
         - Key: environment
           Value: !Ref Environment
 
@@ -250,7 +250,7 @@ Resources:
             - "${StackName}:ECSService"
             - StackName: !Ref AWS::StackName
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
       TaskDefinition: !Ref ECSServiceTaskDefinition
     DependsOn:
       - LoadBalancerListenerTargetGroupECS
@@ -326,9 +326,9 @@ Resources:
             - "${StackName}:ECSTaskDef"
             - StackName: !Ref AWS::StackName
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-api"
       TaskRoleArn: !Ref TaskContainerRole
     DependsOn:
       - TaskContainerRole
@@ -347,7 +347,7 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: gosling-dmc-api-container
+        - PolicyName: cvh-api-container
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -391,9 +391,9 @@ Resources:
             - "${StackName}:TaskContainerRole"
             - StackName: !Ref AWS::StackName
         - Key: project
-          Value: "gosling-dmc"
+          Value: "cvh"
         - Key: component
-          Value: "gosling-dmc-api"
+          Value: "cvh-api"
 
   ECSExecutionRole:
     Type: AWS::IAM::Role
@@ -682,8 +682,6 @@ Outputs:
   ECSClusterService:
     Description: The name of the ECS Service
     Value: !GetAtt ECSService.Name
-    Export:
-      Name: ECSClusterService
 
   ECSClusterServiceArn:
     Description: The ECS cluster service definition

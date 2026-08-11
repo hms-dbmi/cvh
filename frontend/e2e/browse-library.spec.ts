@@ -19,25 +19,22 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
   const dialog = page.getByRole("dialog");
   await dialog.getByText("4D NUCLEOME DATA COORDINATION").click();
 
-  // The mocked file list has one bigwig (selectable) and one BAM (not in
-  // the supported subset, so its checkbox is disabled). Toggle bigwig.
+  // The mocked file list has one bigwig and one BAM — both are
+  // supported (bigwig as a ready type, BAM as a cfdb-processable type)
+  // so both checkboxes should be enabled. Toggle the bigwig row.
   const bigwigRow = dialog
     .getByRole("row")
     .filter({ hasText: "e2e-track.bigwig" });
-  const bamRow = dialog
-    .getByRole("row")
-    .filter({ hasText: "e2e-alignments.bam" });
   await expect(bigwigRow.getByRole("checkbox")).toBeEnabled();
-  await expect(bamRow.getByRole("checkbox")).toBeDisabled();
   await bigwigRow.getByRole("checkbox").check();
 
-  // The "Add to <workspace>" button has an inner clickable Box on the
-  // right that stops propagation (it opens the workspace picker). Click
-  // the upper-left corner of the button — that's the Plus icon, well
-  // outside the inner Box, so the outer button's handleAdd fires.
-  await dialog
-    .getByRole("button", { name: /Add to.*E2E Test Project/i })
-    .click({ position: { x: 8, y: 8 } });
+  // The visible pill reads "+ Add to  [E2E Test Project]" but the
+  // workspace-name half is a sibling Box, not part of the button.
+  // The button's accessible name is just "Add to". A separate
+  // workspace-picker click is only needed when the user wants to
+  // change the target workspace — the current workspace is
+  // pre-selected via the URL.
+  await dialog.getByRole("button", { name: "Add to" }).click();
 
   await expect.poll(() => readRequests(page)).toContainEqual({
     method: "POST",

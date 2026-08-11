@@ -52,13 +52,16 @@ jobs:
             --image-manifest "$MANIFEST"
 
       - name: Force new ECS deployment (API + admin)
+        # API and admin live in separate ECS clusters — see comment in
+        # deploy-api.yml.
         env:
-          CLUSTER: ${{ secrets.ECS_CLUSTER }}
+          API_CLUSTER: ${{ secrets.ECS_API_CLUSTER }}
           API_SERVICE: ${{ secrets.ECS_API_SERVICE }}
+          ADMIN_CLUSTER: ${{ secrets.ECS_ADMIN_CLUSTER }}
           ADMIN_SERVICE: ${{ secrets.ECS_ADMIN_SERVICE }}
         run: |
           set -euo pipefail
-          aws ecs update-service --cluster "$CLUSTER" \
+          aws ecs update-service --cluster "$API_CLUSTER" \
             --service "$API_SERVICE" --force-new-deployment
-          aws ecs update-service --cluster "$CLUSTER" \
+          aws ecs update-service --cluster "$ADMIN_CLUSTER" \
             --service "$ADMIN_SERVICE" --force-new-deployment

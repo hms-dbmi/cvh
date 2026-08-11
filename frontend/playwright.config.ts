@@ -8,6 +8,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // CI runners can be an order of magnitude slower than local dev when
+  // this app's heavy JS bundles (Gosling, Vitessce, Monaco) parse on
+  // first-mount. The 30s Playwright default was tripping several
+  // specs at their first interaction. Give slow runs more room in CI
+  // while keeping the tight bound locally.
+  timeout: process.env.CI ? 60_000 : 30_000,
   reporter: "list",
   use: {
     baseURL,

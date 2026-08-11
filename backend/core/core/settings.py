@@ -277,6 +277,16 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        # Django's default `mail_admins` handler for django.request only
+        # fires when ADMINS is set — we don't have that in prod, so 500
+        # tracebacks would otherwise be silent. Route to console so
+        # CloudWatch captures the full traceback alongside the
+        # ApiUsageMiddleware request line.
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
 }
 

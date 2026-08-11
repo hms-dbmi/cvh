@@ -17,7 +17,10 @@ test("adding example datasets fires POST /api/examples with the workspace uuid",
 
   await page.getByRole("button", { name: "Example Data Sources" }).click();
 
+  // Gate on the dialog being present before interacting inside it —
+  // cold CI runners occasionally click before MUI's Dialog mounts.
   const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
   // Each example renders as a clickable Stack with the title as a heading.
   await dialog.getByRole("paragraph").filter({ hasText: "Two Basic Views" }).click();
   await dialog
