@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0030_dataset_processing_fields'),
+        ('api', '0031_alter_dataset_assembly_alter_dataset_cfdb_dcc_and_more'),
     ]
 
     operations = [
