@@ -966,7 +966,7 @@ export function BasicFields({
         <Typography>Data Metadata</Typography>
         <FormTextField
           name="file_type"
-          label="Data Type"
+          label="File Type"
           control={control}
           value={field.value}
           disabled

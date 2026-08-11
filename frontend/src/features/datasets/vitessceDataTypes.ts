@@ -136,6 +136,26 @@ export function isVitessceAutoConfigFileType(
   );
 }
 
+/**
+ * Reverse lookup: which Vitessce data types can be carried by a given
+ * file type? Used in the Edit dialog where the file type is locked and
+ * the Data Type dropdown must show only the compatible choices (an
+ * OME-TIFF file's data type is always `image`; an `anndata.zarr` can
+ * carry any of the ~9 obs-* / feature / sample data types).
+ *
+ * Computed by filtering `VITESSCE_DATA_TYPE_TO_FILE_TYPES` so the two
+ * mappings can't drift.
+ */
+export function vitessceDataTypesForFileType(
+  fileType: VitessceFileType,
+): VitessceDataType[] {
+  return VITESSCE_DATA_TYPES.filter((dt) =>
+    (VITESSCE_DATA_TYPE_TO_FILE_TYPES[dt] as readonly string[]).includes(
+      fileType,
+    ),
+  );
+}
+
 // File types that carry a given data type. Includes both atomic
 // (single-data-type) files and the joint Zarr stores that carry many
 // data types at once. Users can pick either from the File Type dropdown

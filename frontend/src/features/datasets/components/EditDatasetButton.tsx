@@ -1,10 +1,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useController, useForm } from "react-hook-form";
 import DialogButtonCopy from "@/components/DialogButtonCopy";
 import type { components } from "@/types/schema";
 import { useUpdateDataset } from "../api/useDatasets";
+import {
+  VITESSCE_DATA_TYPE_LABELS,
+  VITESSCE_DATA_TYPES,
+  VITESSCE_FILE_TYPES,
+  type VitessceDataType,
+  type VitessceFileType,
+  vitessceDataTypesForFileType,
+} from "../vitessceDataTypes";
 import {
   BasicFields,
   type DataColumn,
@@ -26,7 +39,19 @@ type ApiColumnType =
   | "genomic"
   | "key";
 
-type AssemblyFormValue = FormValues["assembly"];
+// Vitessce variants of `FormValues` don't carry `assembly`, so
+// `FormValues["assembly"]` can't be extracted uniformly. Enumerate the
+// values inline instead; assembly is Gosling-only and only used when
+// `isVitessceFileType(dataset.file_type)` is false.
+type AssemblyFormValue =
+  | "hg38"
+  | "hg19"
+  | "hg18"
+  | "hg17"
+  | "hg16"
+  | "mm10"
+  | "mm9"
+  | "unknown";
 const ASSEMBLIES: AssemblyFormValue[] = [
   "hg38",
   "hg19",
@@ -71,12 +96,51 @@ function isAssembly(value: unknown): value is AssemblyFormValue {
   );
 }
 
+function isVitessceFileType(value: string): value is VitessceFileType {
+  return (VITESSCE_FILE_TYPES as readonly string[]).includes(value);
+}
+
+function isKnownVitessceDataType(
+  value: unknown,
+): value is VitessceDataType {
+  return (
+    typeof value === "string" &&
+    (VITESSCE_DATA_TYPES as readonly string[]).includes(value)
+  );
+}
+
 /**
  * Build the RHF defaultValues for an existing dataset. The discriminator
  * is `file_type`, so the union picks the right variant once defaults
  * include it. Fields outside the variant are ignored by RHF.
  */
 function toFormDefaults(dataset: DatasetOut): FormValues {
+  // Vitessce variants don't share the Gosling `assembly` field and use
+  // `data_type` as a constrained enum rather than a free-form label.
+  // Route those first so the switch below stays focused on Gosling.
+  if (isVitessceFileType(dataset.file_type)) {
+    const compatibleDataTypes = vitessceDataTypesForFileType(dataset.file_type);
+    // Two reasons the stored value might not be usable as the initial
+    // form value: (a) it was never set (older row), or (b) it was set
+    // but is inconsistent with the locked file_type (e.g. a legacy
+    // row where the file_type / data_type pair was never validated).
+    // In either case blank the field so the user has to pick from the
+    // filtered options — Zod keeps Submit disabled until they do.
+    // Extract into a local so TypeScript can narrow via the type guard.
+    const stored = dataset.data_type;
+    const initialDataType: VitessceDataType =
+      isKnownVitessceDataType(stored) && compatibleDataTypes.includes(stored)
+        ? stored
+        : ("" as VitessceDataType);
+    return {
+      name: dataset.name,
+      description: dataset.description ?? "",
+      source_url: dataset.source_url,
+      data_type: initialDataType,
+      file_type: dataset.file_type,
+    };
+  }
+
   const base = {
     name: dataset.name,
     description: dataset.description ?? "",
@@ -175,6 +239,56 @@ function buildUpdateBody(formData: FormValues) {
   return formData;
 }
 
+/**
+ * Vitessce-only follow-up to `BasicFields`: lets the user change the
+ * abstract Data Type (matrix, embedding, image, …) on an existing
+ * Vitessce dataset. File Type stays locked in `BasicFields` — changing
+ * it would silently invalidate the URL contract with Vitessce.
+ *
+ * The dropdown is filtered against the locked file_type so the user
+ * can't pick an incompatible pair (e.g., `obsEmbedding` on an
+ * `image.ome-tiff` file). If the file type only carries one data type
+ * (OME-TIFF → `image`), the dropdown still renders as a single-option
+ * select rather than being auto-set: the user still has to interact
+ * with the field once, and it makes the constraint visible.
+ */
+function VitessceDataTypeField({
+  control,
+  fileType,
+}: {
+  control: Parameters<typeof useController<FormValues>>[0]["control"];
+  fileType: VitessceFileType;
+}) {
+  const { field } = useController({
+    name: "data_type",
+    control,
+    rules: { required: true },
+  });
+  const value = (field.value as string | undefined) ?? "";
+  const validDataTypes = vitessceDataTypesForFileType(fileType);
+
+  return (
+    <Stack spacing={1}>
+      <Typography>Data Type</Typography>
+      <FormControl fullWidth>
+        <InputLabel id="vitessce-edit-data-type-label">Data Type</InputLabel>
+        <Select
+          labelId="vitessce-edit-data-type-label"
+          label="Data Type"
+          value={value}
+          onChange={(event) => field.onChange(event.target.value)}
+        >
+          {validDataTypes.map((dt) => (
+            <MenuItem key={dt} value={dt}>
+              {VITESSCE_DATA_TYPE_LABELS[dt]}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Stack>
+  );
+}
+
 export default function EditDatasetButton({
   dataset,
   open,
@@ -239,6 +353,9 @@ export default function EditDatasetButton({
     >
       <Stack spacing={3} p={2}>
         <BasicFields control={control} />
+        {isVitessceFileType(fileType) && (
+          <VitessceDataTypeField control={control} fileType={fileType} />
+        )}
         {fileType === "multivec" && (
           <RowNames
             control={control}

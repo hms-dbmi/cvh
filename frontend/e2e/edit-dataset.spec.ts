@@ -22,10 +22,10 @@ test("editing a dataset opens a prepopulated dialog and fires PUT /api/datasets/
   await expect(dialog.getByLabel("Source URL")).toHaveValue(
     "https://example.com/example.bigwig",
   );
-  // file_type is locked — the Data Type field is disabled and shows the
+  // file_type is locked — the File Type field is disabled and shows the
   // current value.
-  await expect(dialog.getByLabel("Data Type")).toBeDisabled();
-  await expect(dialog.getByLabel("Data Type")).toHaveValue("bigwig");
+  await expect(dialog.getByLabel("File Type")).toBeDisabled();
+  await expect(dialog.getByLabel("File Type")).toHaveValue("bigwig");
 
   await dialog.getByLabel("Name").fill("Updated Dataset Name");
   await dialog.getByRole("button", { name: "Submit" }).click();
