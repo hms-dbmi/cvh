@@ -10,14 +10,13 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
-<!--
-Add entries here as part of the PR that introduces the change. One line per
-change, grouped by category. Link to the PR when possible: (#123).
-
-Example:
 ### Added
-- Feature X for use case Y ([#123](https://github.com/hms-dbmi/cvh/pull/123))
+- Vitessce visualizations can now use CVH datasets. Upload Vitessce-native formats (OME-TIFF, OME-Zarr, AnnData Zarr, SpatialData Zarr) the same way you upload Gosling datasets — each dataset is tagged with the viewer it belongs to, and the two don't mix inside a single visualization.
+- The Add Dataset wizard now starts by asking whether you're adding data for Gosling or Vitessce, and then shows only the file types that viewer supports.
+- Drag a Vitessce-compatible dataset from the sidebar onto a Vitessce visualization to auto-generate a starter configuration. If the visualization already has a configuration, you'll be asked to confirm before it's replaced. Empty Vitessce visualizations show a hint pointing you at the drop area.
 
-### Fixed
-- Bug in Z that caused W ([#124](https://github.com/hms-dbmi/cvh/pull/124))
--->
+### Changed
+- A dataset can only be dragged into a visualization built for the same viewer — Gosling datasets to Gosling visualizations, Vitessce datasets to Vitessce visualizations.
+
+### Removed
+- The "Limited Functionality" banner that used to appear above Vitessce visualizations' data panels. Its "no data supported" wording was out of date now that datasets can be added directly.
