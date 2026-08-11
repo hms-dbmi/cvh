@@ -20,7 +20,9 @@ jobs:
         working-directory: ./frontend
     permissions:
       id-token: write
-      contents: read
+      # `contents: write` is required so the post-deploy step can push
+      # a `prod-frontend-*` tag back to the repo.
+      contents: write
 
     steps:
       - uses: actions/checkout@v5
@@ -61,3 +63,16 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} \
             --paths "/*"
+
+      - name: Tag commit as prod-frontend-YYYY-MM-DD
+        # Marks what's actually running on prod. Pair with the
+        # deploy-api-prod tag to bracket "everything that shipped in
+        # this deploy." See `docs/release.md` for how to roll
+        # CHANGELOG.md's `[Unreleased]` section after a successful deploy.
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y-%m-%d)
+          SHA=$(git rev-parse --short HEAD)
+          TAG="prod-frontend-${DATE}-${SHA}"
+          git tag -a "$TAG" -m "Frontend prod deploy $DATE ($SHA)"
+          git push origin "$TAG"
