@@ -4,6 +4,8 @@ A platform for creating, sharing, and collaborating on genomic and single-cell v
 
 **Live instance:** [visualizationhub.org](https://visualizationhub.org)
 
+**Changelog:** [`CHANGELOG.md`](./CHANGELOG.md) tracks what's merged to `main` (running on dev) vs. what's shipped to prod. The `[Unreleased]` section is dev-but-not-yet-prod. Release process lives in [`docs/release.md`](./docs/release.md).
+
 ## Contributing
 
 Bug reports, feature requests, and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started. Licensed under [MIT](./LICENSE).
