@@ -105,8 +105,9 @@ class Dataset(BaseModel):
         description=(
             "Data format. Depends on `tool`: Gosling recognises bigwig,"
             " cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb;"
-            " Vitessce recognises ome-tiff, ome-zarr, anndata.zarr,"
-            " spatialdata.zarr."
+            " Vitessce recognises image.ome-tiff, image.ome-zarr,"
+            " image.ome-zarr.zip, anndata.zarr, anndata.zarr.zip,"
+            " anndata.h5ad, spatialdata.zarr, spatialdata.zarr.zip."
         ),
     )
     data_type: str = Field(

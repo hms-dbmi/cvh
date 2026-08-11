@@ -950,7 +950,12 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            file_type: "anndata.zarr" | "ome-tiff" | "ome-zarr" | "spatialdata.zarr";
+            file_type: "anndata.h5ad" | "anndata.zarr" | "anndata.zarr.zip" | "featureLabels.csv" | "image.ome-tiff" | "image.ome-zarr" | "image.ome-zarr.zip" | "obsEmbedding.csv" | "obsFeatureMatrix.csv" | "obsLabels.csv" | "obsLocations.csv" | "obsPoints.csv" | "obsSegmentations.json" | "obsSegmentations.ome-zarr" | "obsSegmentations.ome-zarr.zip" | "obsSets.csv" | "obsSets.json" | "obsSpots.csv" | "sampleSets.csv" | "spatialdata.zarr" | "spatialdata.zarr.zip";
+            /**
+             * Data Type
+             * @enum {string}
+             */
+            data_type: "featureLabels" | "image" | "obsEmbedding" | "obsFeatureMatrix" | "obsLabels" | "obsLocations" | "obsPoints" | "obsSegmentations" | "obsSets" | "obsSpots" | "sampleSets";
             /**
              * Name
              * @description Human-readable name shown in the UI.
@@ -966,11 +971,6 @@ export interface components {
              * @description URL from which the visualization tool fetches data bytes.
              */
             source_url: string;
-            /**
-             * Data Type
-             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
-             */
-            data_type: string;
         };
         /** DatasetOut */
         DatasetOut: {

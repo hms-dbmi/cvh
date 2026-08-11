@@ -210,14 +210,61 @@ class VitessceDataset(ModelSchema):
     the projection/coordination metadata Vitessce needs.
     """
 
-    # https://vitessce.io/docs/data-file-types/
+    # https://vitessce.io/docs/data-types-file-types/ — strings match
+    # vitessce's own `FileType` constants (see @vitessce/constants-internal).
+    # Names are case-sensitive; the `image.` prefix on OME variants and
+    # the `.zip` / `.h5ad` suffixes are load-bearing on the vitessce side.
+    # The list mirrors the frontend's `VITESSCE_FILE_TYPES` and covers
+    # both the "joint" Zarr stores (which carry many data types) and the
+    # per-data-type atomic files a user picks after choosing a Data Type
+    # in the wizard.
     file_type: Literal[
-        "ome-tiff", "ome-zarr", "anndata.zarr", "spatialdata.zarr"
+        # Joint stores
+        "anndata.zarr",
+        "anndata.zarr.zip",
+        "anndata.h5ad",
+        "spatialdata.zarr",
+        "spatialdata.zarr.zip",
+        # Image
+        "image.ome-tiff",
+        "image.ome-zarr",
+        "image.ome-zarr.zip",
+        # Atomic CSV / JSON
+        "obsEmbedding.csv",
+        "obsFeatureMatrix.csv",
+        "obsSets.csv",
+        "obsSets.json",
+        "obsSpots.csv",
+        "obsPoints.csv",
+        "obsLocations.csv",
+        "obsLabels.csv",
+        "featureLabels.csv",
+        "sampleSets.csv",
+        # Segmentations
+        "obsSegmentations.json",
+        "obsSegmentations.ome-zarr",
+        "obsSegmentations.ome-zarr.zip",
+    ]
+    data_type: Literal[
+        "image",
+        "obsFeatureMatrix",
+        "obsEmbedding",
+        "obsSets",
+        "obsLocations",
+        "obsSpots",
+        "obsPoints",
+        "obsSegmentations",
+        "obsLabels",
+        "featureLabels",
+        "sampleSets",
     ]
 
     class Meta:
         model = Dataset
-        fields = ["name", "description", "source_url", "data_type"]
+        # `data_type` is declared as a Literal on the class body above —
+        # if we included it in `fields` here, Ninja would pull the model's
+        # free-form CharField definition and shadow the Literal.
+        fields = ["name", "description", "source_url"]
 
 
 # Union of all dataset variants the create endpoint accepts. Named
