@@ -325,6 +325,40 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           transition: "outline-color 120ms ease",
         }}
       >
+        {mode === "exploring" && !vitessceConfig && selectedVizId && (
+          <Stack
+            sx={{
+              // 100% of Paper minus the 16px margins on each axis so the
+              // dashed border stays inside the Paper's overflow:hidden
+              // clip (otherwise the bottom + right borders get cut off).
+              height: "calc(100% - 32px)",
+              width: "calc(100% - 32px)",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 4,
+              textAlign: "center",
+              color: "text.secondary",
+              // Match the panel's drag-over highlight with a dashed border
+              // so the placeholder reads as a drop zone at rest, not just
+              // empty space.
+              border: "2px dashed",
+              borderColor: isOver ? "primary.main" : "#CAD5DA",
+              borderRadius: 2,
+              m: 2,
+              transition: "border-color 120ms ease",
+            }}
+            spacing={1}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              No configuration yet
+            </Typography>
+            <Typography variant="body2">
+              {hasWritePermissions
+                ? "Drag a Vitessce-compatible dataset from the sidebar to generate a default configuration, or paste a config into the code editor."
+                : "This visualization has no configuration yet."}
+            </Typography>
+          </Stack>
+        )}
         {mode === "exploring" && vitessceConfig && (
           <Vitessce
             config={vitessceConfig}
