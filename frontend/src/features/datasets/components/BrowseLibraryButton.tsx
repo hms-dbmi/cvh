@@ -55,6 +55,7 @@ import {
   fetchCfdbSelectedFiles,
   firstCollectionWithField,
   getCfdbDccSlug,
+  getDccAccessionExample,
   getDccShortName,
   getFileAccession,
   isBrowseLibraryProcessableType,
@@ -628,7 +629,12 @@ function DccDetailView({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 fullWidth
-                placeholder="Enter file or experiment accession (e.g. ENCFF525XQX or ENCSR918ZSJ)"
+                placeholder={(() => {
+                  const ex = getDccAccessionExample(dcc);
+                  return ex
+                    ? `Enter file or experiment accession (e.g. ${ex.file} or ${ex.collection})`
+                    : "Enter file or experiment accession";
+                })()}
                 startAdornment={
                   <InputAdornment position="start">
                     <MagnifyingGlass size={20} />

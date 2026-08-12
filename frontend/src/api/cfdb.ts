@@ -292,6 +292,26 @@ export function getDccShortName(dcc: {
 }
 
 /**
+ * Sample file/experiment accession IDs for a DCC, used to hint the
+ * expected format in the Quick Dataset ID Lookup placeholder. Returns
+ * `null` for DCCs we haven't catalogued yet — callers should fall back
+ * to a generic placeholder in that case.
+ */
+export function getDccAccessionExample(dcc: {
+  dccAbbreviation?: string | null;
+  dccName: string;
+}): { file: string; collection: string } | null {
+  const short = getDccShortName(dcc).toUpperCase();
+  if (short === "ENCODE") {
+    return { file: "ENCFF525XQX", collection: "ENCSR918ZSJ" };
+  }
+  if (short === "4DN") {
+    return { file: "4DNFIILS2P5P", collection: "4DNEXYB8YD4K" };
+  }
+  return null;
+}
+
+/**
  * CFDB GraphQL returns DCC abbreviations in a different form than what
  * the `/data/{dcc}/...` REST endpoint accepts (e.g. GraphQL `4DN_DCIC`
  * → URL `4dn`). Maintain an explicit mapping rather than guessing —
