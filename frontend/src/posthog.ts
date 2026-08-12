@@ -29,6 +29,17 @@ if (shouldCapture && apiKey && apiHost) {
     defaults: "2026-01-30",
     capture_exceptions: true,
     debug: import.meta.env.DEV,
+    // Session replay privacy defaults: CVH's UI shows workspace names,
+    // dataset descriptions, viz titles, and pasted Vitessce/Gosling
+    // configs — plenty of surfaces where a user might have unpublished
+    // or embargoed metadata visible. Mask all input values by default so
+    // form fields (Add Dataset URL/name, the Monaco code editor, the
+    // Quick Dataset ID Lookup) don't stream verbatim into recordings.
+    // To un-mask a specific field, add `data-ph-capture-attribute-...`
+    // or the `ph-no-mask` class per PostHog's recording API.
+    session_recording: {
+      maskAllInputs: true,
+    },
     loaded: (ph) => {
       // Register as a super-property so every subsequent capture (and
       // autocapture) attaches it automatically.
