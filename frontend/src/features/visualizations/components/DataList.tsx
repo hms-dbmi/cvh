@@ -44,6 +44,7 @@ import { useGetProject } from "@/features/projects/api/useProjects";
 import type { components } from "@/types/schema";
 import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { toGoslingDataset } from "@/features/datasets/toGoslingDataset";
+import { isVitessceAutoConfigFileType } from "@/features/datasets/vitessceDataTypes";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
@@ -281,11 +282,13 @@ function DatasetListItem({
   showActions,
   readOnly,
   disableDrag,
+  vizTool,
 }: {
   dataset: Required<Dataset>;
   showActions?: boolean;
   readOnly?: boolean;
   disableDrag?: boolean;
+  vizTool?: "gosling" | "vitessce";
 }) {
   const processingStatus = (dataset.processing_status ??
     "not_needed") as ProcessingStatus;
@@ -299,16 +302,40 @@ function DatasetListItem({
   // (cfdb-sourced and ready).
   const isUsable =
     processingStatus === "not_needed" || processingStatus === "processed";
+  // Only allow drags where the dataset's tool matches the current
+  // visualization's tool. A Gosling dataset dropped into a Vitessce
+  // viz (or vice versa) has nowhere useful to go.
+  const toolMismatch = vizTool !== undefined && dataset.tool !== vizTool;
+  // For Vitessce datasets, drag-and-drop only works when the file
+  // format is one vitessce's auto-config generator can build a config
+  // from (see `VitessceWarningBanner` above the list). Disable drag on
+  // formats that aren't in the auto-config set — the user can still
+  // reference them by pasting a hand-written config into the editor.
+  const noVitessceAutoConfig =
+    dataset.tool === "vitessce" &&
+    !isVitessceAutoConfigFileType(dataset.file_type);
   const hasWritePermissions = !readOnly;
 
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({
       id: dataset.uuid,
-      disabled: disableDrag || !isUsable,
-      // Same transform as the workspace catalog uses. Keeping both on
-      // one helper prevents drift where the drop handler reads a field
-      // one side computes and the other doesn't.
-      data: toGoslingDataset(dataset),
+      disabled:
+        disableDrag || !isUsable || toolMismatch || noVitessceAutoConfig,
+      // Payload shape depends on the destination viz's tool:
+      //   - Gosling drop handler expects the full `GDData`-shaped
+      //     transform (matches the workspace catalog it reads from).
+      //   - Vitessce drop handler just needs the URL — it feeds it into
+      //     `generateConfig` from `@vitessce/config` to build a fresh
+      //     config. Include `tool` so the drop target can discriminate.
+      data:
+        dataset.tool === "vitessce"
+          ? {
+              tool: "vitessce" as const,
+              url: dataset.source_url,
+              name: dataset.name,
+              id: dataset.uuid,
+            }
+          : toGoslingDataset(dataset),
     });
 
   return (
@@ -330,7 +357,7 @@ function DatasetListItem({
       }
     >
       <Stack direction="row" alignItems="flex-start" width="100%" sx={{ p: 1 }}>
-        {!disableDrag && (
+        {!disableDrag && !toolMismatch && !noVitessceAutoConfig && (
           <Box
             ref={setActivatorNodeRef}
             {...listeners}
@@ -415,10 +442,12 @@ function DataList({
   projectId,
   showActions,
   disableDrag,
+  tool,
 }: {
   projectId: string;
   showActions?: boolean;
   disableDrag?: boolean;
+  tool?: "gosling" | "vitessce";
 }) {
   const nameSubstring = useDatasetFiltersStore((state) => state.nameSubstring);
 
@@ -482,7 +511,9 @@ function DataList({
         })}
       />
       <Stack direction="row" spacing={1}>
-        {hasWritePermissions && <AddDatasetButton projectId={projectId} />}
+        {hasWritePermissions && (
+          <AddDatasetButton projectId={projectId} />
+        )}
         <BrowseLibraryButton />
       </Stack>
       <DataSelects projectId={projectId} />
@@ -494,6 +525,7 @@ function DataList({
             showActions={showActions}
             readOnly={!hasWritePermissions}
             disableDrag={disableDrag}
+            vizTool={tool}
           />
         ))}
       </List>
@@ -506,12 +538,14 @@ function DataAccordion({
   showVitessceWarning,
   showActions,
   disableDrag,
+  tool,
   children: _children,
 }: {
   projectId: string;
   showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
+  tool?: "gosling" | "vitessce";
   children?: React.ReactNode;
 }) {
   const { data } = useGetPaginatedProjectDatasets({ projectId, tags: [] });
@@ -552,6 +586,7 @@ function DataAccordion({
                 projectId={projectId}
                 showActions={showActions}
                 disableDrag={disableDrag}
+                tool={tool}
               />
             )
           ) : (
@@ -585,11 +620,13 @@ export default function Wrapper({
   showVitessceWarning,
   showActions,
   disableDrag,
+  tool,
   children,
 }: {
   showVitessceWarning?: boolean;
   showActions?: boolean;
   disableDrag?: boolean;
+  tool?: "gosling" | "vitessce";
   children?: React.ReactNode;
 }) {
   const { projectId } = useParams({ strict: false });
@@ -604,6 +641,7 @@ export default function Wrapper({
       showVitessceWarning={showVitessceWarning}
       showActions={showActions}
       disableDrag={disableDrag}
+      tool={tool}
     >
       {children}
     </DataAccordion>

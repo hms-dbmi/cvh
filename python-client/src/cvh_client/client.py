@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 
@@ -302,10 +302,11 @@ class CVHClient:
         assembly: list[str] | None = None,
         file_type: list[str] | None = None,
         name: str | None = None,
+        tool: Literal["gosling", "vitessce"] | None = None,
         page: int = 1,
         page_size: int | None = None,
     ) -> PagedDatasets:
-        """List datasets in a workspace, filterable by tag/assembly/type/name.
+        """List datasets in a workspace, filterable by tag/assembly/type/name/tool.
 
         All filter kwargs combine with AND. Filters within a single list
         combine with OR (e.g. `file_type=["bigwig", "cooler"]` returns
@@ -319,6 +320,9 @@ class CVHClient:
             file_type: Restrict to these file types, e.g.
                 `["bigwig", "bam"]`.
             name: Case-insensitive substring match against dataset name.
+            tool: Restrict to a single viewer's datasets — `"gosling"`
+                or `"vitessce"`. Useful when the workspace mixes both
+                and you only care about one.
             page: 1-based page number.
             page_size: Results per page. Backend default if `None`.
 
@@ -343,6 +347,8 @@ class CVHClient:
             params["file_type"] = file_type
         if name:
             params["name"] = name
+        if tool is not None:
+            params["tool"] = tool
         data = self.get(f"/api/workspaces/{workspace_uuid}/datasets", params=params)
         return PagedDatasets.model_validate(data)
 
@@ -368,9 +374,9 @@ class CVHClient:
         Args:
             dataset_uuid: UUID of the dataset.
             **fields: Updatable fields — `name`, `description`,
-                `source_url`, `file_type`, `data_type`, `assembly`,
-                `data_column`, `row_names`, `headers`, `index_url`,
-                `separator`.
+                `source_url`, `file_type`, `tool`, `data_type`,
+                `assembly`, `data_column`, `row_names`, `headers`,
+                `index_url`, `separator`.
 
         Returns:
             Raw JSON response body.
