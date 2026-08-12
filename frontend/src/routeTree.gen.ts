@@ -8,134 +8,74 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as VisualizationsVisualizationIdRouteImport } from './routes/visualizations.$visualizationId'
+import { Route as TutorialsChar123SlugChar125RouteImport } from './routes/tutorials.{-$slug}'
+import { Route as ProjectChar123ProjectIdChar125RouteImport } from './routes/project.{-$projectId}'
+import { Route as ProjectVitessceChar123ProjectIdChar125RouteImport } from './routes/project.vitessce.{-$projectId}'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as ProfileImport } from './routes/profile'
-import { Route as IndexImport } from './routes/index'
-import { Route as VisualizationsVisualizationIdImport } from './routes/visualizations.$visualizationId'
-import { Route as TutorialsSlugImport } from './routes/tutorials.{-$slug}'
-import { Route as ProjectProjectIdImport } from './routes/project.{-$projectId}'
-import { Route as ProjectVitessceProjectIdImport } from './routes/project.vitessce.{-$projectId}'
-
-// Create/Update Routes
-
-const ProfileRoute = ProfileImport.update({
+const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const IndexRoute = IndexImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
 const VisualizationsVisualizationIdRoute =
-  VisualizationsVisualizationIdImport.update({
+  VisualizationsVisualizationIdRouteImport.update({
     id: '/visualizations/$visualizationId',
     path: '/visualizations/$visualizationId',
-    getParentRoute: () => rootRoute,
+    getParentRoute: () => rootRouteImport,
   } as any)
-
-const TutorialsSlugRoute = TutorialsSlugImport.update({
-  id: '/tutorials/{-$slug}',
-  path: '/tutorials/{-$slug}',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ProjectProjectIdRoute = ProjectProjectIdImport.update({
-  id: '/project/{-$projectId}',
-  path: '/project/{-$projectId}',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ProjectVitessceProjectIdRoute = ProjectVitessceProjectIdImport.update({
-  id: '/project/vitessce/{-$projectId}',
-  path: '/project/vitessce/{-$projectId}',
-  getParentRoute: () => rootRoute,
-} as any)
-
-// Populate the FileRoutesByPath interface
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileImport
-      parentRoute: typeof rootRoute
-    }
-    '/project/{-$projectId}': {
-      id: '/project/{-$projectId}'
-      path: '/project/{-$projectId}'
-      fullPath: '/project/{-$projectId}'
-      preLoaderRoute: typeof ProjectProjectIdImport
-      parentRoute: typeof rootRoute
-    }
-    '/tutorials/{-$slug}': {
-      id: '/tutorials/{-$slug}'
-      path: '/tutorials/{-$slug}'
-      fullPath: '/tutorials/{-$slug}'
-      preLoaderRoute: typeof TutorialsSlugImport
-      parentRoute: typeof rootRoute
-    }
-    '/visualizations/$visualizationId': {
-      id: '/visualizations/$visualizationId'
-      path: '/visualizations/$visualizationId'
-      fullPath: '/visualizations/$visualizationId'
-      preLoaderRoute: typeof VisualizationsVisualizationIdImport
-      parentRoute: typeof rootRoute
-    }
-    '/project/vitessce/{-$projectId}': {
-      id: '/project/vitessce/{-$projectId}'
-      path: '/project/vitessce/{-$projectId}'
-      fullPath: '/project/vitessce/{-$projectId}'
-      preLoaderRoute: typeof ProjectVitessceProjectIdImport
-      parentRoute: typeof rootRoute
-    }
-  }
-}
-
-// Create and export the route tree
+const TutorialsChar123SlugChar125Route =
+  TutorialsChar123SlugChar125RouteImport.update({
+    id: '/tutorials/{-$slug}',
+    path: '/tutorials/{-$slug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ProjectChar123ProjectIdChar125Route =
+  ProjectChar123ProjectIdChar125RouteImport.update({
+    id: '/project/{-$projectId}',
+    path: '/project/{-$projectId}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ProjectVitessceChar123ProjectIdChar125Route =
+  ProjectVitessceChar123ProjectIdChar125RouteImport.update({
+    id: '/project/vitessce/{-$projectId}',
+    path: '/project/vitessce/{-$projectId}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/project/{-$projectId}': typeof ProjectProjectIdRoute
-  '/tutorials/{-$slug}': typeof TutorialsSlugRoute
+  '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
-  '/project/vitessce/{-$projectId}': typeof ProjectVitessceProjectIdRoute
+  '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
 }
-
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/project/{-$projectId}': typeof ProjectProjectIdRoute
-  '/tutorials/{-$slug}': typeof TutorialsSlugRoute
+  '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
-  '/project/vitessce/{-$projectId}': typeof ProjectVitessceProjectIdRoute
+  '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
 }
-
 export interface FileRoutesById {
-  __root__: typeof rootRoute
+  __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/project/{-$projectId}': typeof ProjectProjectIdRoute
-  '/tutorials/{-$slug}': typeof TutorialsSlugRoute
+  '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
+  '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
-  '/project/vitessce/{-$projectId}': typeof ProjectVitessceProjectIdRoute
+  '/project/vitessce/{-$projectId}': typeof ProjectVitessceChar123ProjectIdChar125Route
 }
-
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
@@ -163,61 +103,71 @@ export interface FileRouteTypes {
     | '/project/vitessce/{-$projectId}'
   fileRoutesById: FileRoutesById
 }
-
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProfileRoute: typeof ProfileRoute
-  ProjectProjectIdRoute: typeof ProjectProjectIdRoute
-  TutorialsSlugRoute: typeof TutorialsSlugRoute
+  ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
+  TutorialsChar123SlugChar125Route: typeof TutorialsChar123SlugChar125Route
   VisualizationsVisualizationIdRoute: typeof VisualizationsVisualizationIdRoute
-  ProjectVitessceProjectIdRoute: typeof ProjectVitessceProjectIdRoute
+  ProjectVitessceChar123ProjectIdChar125Route: typeof ProjectVitessceChar123ProjectIdChar125Route
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/visualizations/$visualizationId': {
+      id: '/visualizations/$visualizationId'
+      path: '/visualizations/$visualizationId'
+      fullPath: '/visualizations/$visualizationId'
+      preLoaderRoute: typeof VisualizationsVisualizationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorials/{-$slug}': {
+      id: '/tutorials/{-$slug}'
+      path: '/tutorials/{-$slug}'
+      fullPath: '/tutorials/{-$slug}'
+      preLoaderRoute: typeof TutorialsChar123SlugChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/project/{-$projectId}': {
+      id: '/project/{-$projectId}'
+      path: '/project/{-$projectId}'
+      fullPath: '/project/{-$projectId}'
+      preLoaderRoute: typeof ProjectChar123ProjectIdChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/project/vitessce/{-$projectId}': {
+      id: '/project/vitessce/{-$projectId}'
+      path: '/project/vitessce/{-$projectId}'
+      fullPath: '/project/vitessce/{-$projectId}'
+      preLoaderRoute: typeof ProjectVitessceChar123ProjectIdChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProfileRoute: ProfileRoute,
-  ProjectProjectIdRoute: ProjectProjectIdRoute,
-  TutorialsSlugRoute: TutorialsSlugRoute,
+  ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
+  TutorialsChar123SlugChar125Route: TutorialsChar123SlugChar125Route,
   VisualizationsVisualizationIdRoute: VisualizationsVisualizationIdRoute,
-  ProjectVitessceProjectIdRoute: ProjectVitessceProjectIdRoute,
+  ProjectVitessceChar123ProjectIdChar125Route:
+    ProjectVitessceChar123ProjectIdChar125Route,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/",
-        "/profile",
-        "/project/{-$projectId}",
-        "/tutorials/{-$slug}",
-        "/visualizations/$visualizationId",
-        "/project/vitessce/{-$projectId}"
-      ]
-    },
-    "/": {
-      "filePath": "index.tsx"
-    },
-    "/profile": {
-      "filePath": "profile.tsx"
-    },
-    "/project/{-$projectId}": {
-      "filePath": "project.{-$projectId}.tsx"
-    },
-    "/tutorials/{-$slug}": {
-      "filePath": "tutorials.{-$slug}.tsx"
-    },
-    "/visualizations/$visualizationId": {
-      "filePath": "visualizations.$visualizationId.tsx"
-    },
-    "/project/vitessce/{-$projectId}": {
-      "filePath": "project.vitessce.{-$projectId}.tsx"
-    }
-  }
-}
-ROUTE_MANIFEST_END */
