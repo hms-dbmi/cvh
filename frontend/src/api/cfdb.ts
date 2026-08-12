@@ -141,6 +141,7 @@ const DCC_FILES_QUERY_NEW = `query DccFiles($input: [FileMetadataInput!], $pageS
     items {
       localId
       filename
+      accessionId
       accessUrl
       persistentId
       genomeAssembly
@@ -154,6 +155,7 @@ const DCC_FILES_QUERY_NEW = `query DccFiles($input: [FileMetadataInput!], $pageS
       }
       collections {
         localId
+        accessionId
         name
         abbreviation
         description
@@ -173,6 +175,7 @@ const DCC_FILES_QUERY_OLD = `query DccFiles($input: [FileMetadataInput!], $pageS
   files(input: $input, pageSize: $pageSize) {
     localId
     filename
+    accessionId
     accessUrl
     persistentId
     genomeAssembly
@@ -186,6 +189,7 @@ const DCC_FILES_QUERY_OLD = `query DccFiles($input: [FileMetadataInput!], $pageS
     }
     collections {
       localId
+      accessionId
       name
       abbreviation
       description
@@ -210,6 +214,7 @@ const DCC_FILES_PAGE_SIZE = 500;
 
 export type CfdbCollection = {
   localId: string;
+  accessionId?: string | null;
   name: string;
   abbreviation?: string | null;
   description?: string | null;
@@ -222,6 +227,7 @@ export type CfdbCollection = {
 export type CfdbFile = {
   localId: string;
   filename: string;
+  accessionId?: string | null;
   accessUrl?: string | null;
   // Resolvable URL pointing at the file's landing page on the DCC's own
   // portal (e.g. `https://www.encodeproject.org/files/ENCFF684QMZ/`).
@@ -253,14 +259,13 @@ export function firstCollectionWithField<K extends keyof CfdbCollection>(
 }
 
 /**
- * The DCC-facing accession for a file. TEMPORARY: cfdb doesn't expose
- * a dedicated accession field, so we parse the last path segment of
- * `persistentId` — which contains the accession for the DCCs we ship
- * (ENCODE, 4DN). Falls back to `localId` when persistentId is missing
- * or unparseable. Remove this helper once cfdb surfaces the accession
- * directly.
+ * The DCC-facing accession for a file. Prefers cfdb's dedicated
+ * `accessionId` field; falls back to parsing the last path segment of
+ * `persistentId` (still populated for older cfdb responses that pre-date
+ * the `accessionId` rollout), then finally to `localId`.
  */
 export function getFileAccession(file: CfdbFile): string {
+  if (file.accessionId) return file.accessionId;
   if (file.persistentId) {
     try {
       const path = new URL(file.persistentId).pathname.replace(/\/+$/, "");
@@ -491,10 +496,10 @@ async function fetchCfdbFilesByLocalIds(
 /**
  * Server-side exact-match lookup for the Browse Library's Quick Dataset
  * ID Lookup input. Sends two ORed input entries so the same query hits
- * whether the user pastes the accession (matches `localId`, e.g.
- * `ENCFF525XQX`) or the full filename (matches `filename`, e.g.
- * `ENCFF525XQX.bigBed`). Scoped to the DCC the user is currently
- * browsing.
+ * whether the user pastes a file accession (matches `accessionId`, e.g.
+ * `ENCFF525XQX`) or a collection accession (matches any file whose
+ * `collections[].accessionId` equals the query, e.g. `ENCSR918ZSJ`).
+ * Scoped to the DCC the user is currently browsing.
  *
  * Required because the DCC file listing is now capped at 500 items by
  * cfdb (see `DCC_FILES_PAGE_SIZE`), so client-side filtering against
@@ -508,8 +513,8 @@ async function fetchCfdbFileLookup(
   if (!trimmed) return [];
   const dccFilter = { dccName: [dccName] };
   const input = [
-    { dcc: [dccFilter], localId: [trimmed] },
-    { dcc: [dccFilter], filename: [trimmed] },
+    { dcc: [dccFilter], accessionId: [trimmed] },
+    { dcc: [dccFilter], collections: [{ accessionId: [trimmed] }] },
   ];
   try {
     return await fetchFilesWithFallback<CfdbFile>(
@@ -522,10 +527,7 @@ async function fetchCfdbFileLookup(
   }
 }
 
-export function useCfdbFileLookup(
-  dccName: string | undefined,
-  query: string,
-) {
+export function useCfdbFileLookup(dccName: string | undefined, query: string) {
   const trimmed = query.trim();
   return useQuery({
     queryKey: ["cfdb", "file-lookup", dccName, trimmed],

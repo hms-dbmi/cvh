@@ -398,9 +398,9 @@ function DccDetailView({
   // Dataset ID lookup goes through the server: cfdb caps `pageSize` at
   // 500 (see `DCC_FILES_PAGE_SIZE` in api/cfdb.ts), so client-side
   // filtering against `allFiles` couldn't find IDs outside the first
-  // page. The lookup query ORs `localId` and `filename` inputs so it
-  // matches whether the user pastes the accession (`ENCFF525XQX`) or
-  // the full filename (`ENCFF525XQX.bigBed`).
+  // page. The lookup query ORs `accessionId` and `collections.accessionId`
+  // inputs so it matches whether the user pastes a file accession
+  // (`ENCFF525XQX`) or a collection/experiment accession (`ENCSR918ZSJ`).
   const hasSearch = deferredSearch.trim().length > 0;
   const { data: lookupFiles = [], isLoading: isLookupLoading } =
     useCfdbFileLookup(dcc.dccName, deferredSearch);
@@ -596,7 +596,7 @@ function DccDetailView({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 fullWidth
-                placeholder="Enter dataset identifier ( ex. 4DNwadsefrdghtjyku.bigWig )"
+                placeholder="Enter file or experiment accession (e.g. ENCFF525XQX or ENCSR918ZSJ)"
                 startAdornment={
                   <InputAdornment position="start">
                     <MagnifyingGlass size={20} />
