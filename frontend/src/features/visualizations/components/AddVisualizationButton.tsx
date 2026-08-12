@@ -11,6 +11,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 import DialogButton from "@/components/DialogButton";
+import posthog from "@/posthog";
 import { useCreateVisualization } from "../api/useVisualizations";
 
 const text = {
@@ -97,6 +98,9 @@ export default function AddVisualizationButton({
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
+      posthog.capture("visualization_creation_submitted", {
+        visualization_tool: formData.tool,
+      });
       mutate({ body: { ...formData, workspace_uuid: projectId } });
       handleReset();
       return;

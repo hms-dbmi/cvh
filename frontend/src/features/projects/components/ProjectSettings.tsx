@@ -16,6 +16,7 @@ import { Check, Trash, Users } from "@phosphor-icons/react";
 import { type ChangeEvent, useCallback, useState } from "react";
 import DialogButton from "@/components/DialogButton";
 import { useGetUser } from "@/features/navigation/api/useUser";
+import posthog from "@/posthog";
 import type { components } from "@/types/schema";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import {
@@ -142,6 +143,7 @@ function MemberSettings({
   const { mutate } = useRemoveProjectMember();
 
   const handleRemoveProjectMember = useCallback(() => {
+    posthog.capture("workspace_member_removed");
     mutate({
       params: { path: { workspace_uuid: projectId } },
       body: { email: member.email },

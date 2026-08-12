@@ -29,6 +29,7 @@ import useGetProjects from "@/features/projects/api/useProjects";
 import AddProjectButton from "@/features/projects/components/AddProjectButton";
 import ProjectSettings from "@/features/projects/components/ProjectSettings";
 import PublishedVizModal from "@/features/visualizations/components/PublishedVizModal";
+import posthog from "@/posthog";
 import type { components } from "@/types/schema";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
@@ -261,6 +262,7 @@ function ProfileMenu() {
   }, []);
 
   const handleLogOut = useCallback(() => {
+    posthog.reset();
     logout({ logoutParams: { returnTo: window.location.origin } });
   }, [logout]);
 

@@ -36,6 +36,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 import DialogButton from "@/components/DialogButton";
+import posthog from "@/posthog";
 import { useCreateDataset } from "../api/useDatasets";
 import {
   VITESSCE_DATA_TYPE_DESCRIPTIONS,
@@ -1156,6 +1157,10 @@ export default function AddDatasetButton({
   const onSubmit = useCallback(
     (formData: FormValues) => {
       if (projectId) {
+        posthog.capture("dataset_creation_submitted", {
+          dataset_file_type: formData.file_type,
+          visualization_tool: wizardTool,
+        });
         if (
           "data_column" in formData &&
           formData?.data_column?.length &&
@@ -1252,7 +1257,6 @@ export default function AddDatasetButton({
     },
     [mutate, projectId, wizardTool, handleReset],
   );
-
 
   return (
     <DialogButton

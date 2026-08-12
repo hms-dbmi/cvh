@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo } from "react";
 import { useController, useForm } from "react-hook-form";
 import DialogButtonCopy from "@/components/DialogButtonCopy";
+import posthog from "@/posthog";
 import type { components } from "@/types/schema";
 import { useUpdateDataset } from "../api/useDatasets";
 import {
@@ -324,6 +325,9 @@ export default function EditDatasetButton({
     (formData: FormValues) => {
       if (!dataset.uuid) return;
       const body = buildUpdateBody(formData);
+      posthog.capture("dataset_update_submitted", {
+        dataset_file_type: formData.file_type,
+      });
       mutate({
         params: { path: { dataset_uuid: dataset.uuid } },
         // DatasetUpdate accepts a wider, all-optional shape than what we

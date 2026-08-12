@@ -1,8 +1,9 @@
-import { Auth0Provider } from "@auth0/auth0-react";
+import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { PropsWithChildren } from "react";
+import { type PropsWithChildren, useEffect } from "react";
+import posthog from "./posthog";
 import { router } from "./router";
 import { MockAuth0Provider } from "./test/auth-mock";
 import theme from "./theme";
@@ -10,6 +11,23 @@ import theme from "./theme";
 const queryClient = new QueryClient();
 
 const isE2E = import.meta.env.VITE_E2E === "true";
+
+function PostHogIdentity({ children }: PropsWithChildren) {
+  const { isAuthenticated, user } = useAuth0();
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.sub) {
+      return;
+    }
+
+    posthog.identify(user.sub, {
+      email: user.email,
+      name: user.name,
+    });
+  }, [isAuthenticated, user?.email, user?.name, user?.sub]);
+
+  return children;
+}
 
 function AuthProvider({ children }: PropsWithChildren) {
   if (isE2E) {
@@ -41,7 +59,7 @@ function AuthProvider({ children }: PropsWithChildren) {
       // cache for the stronger XSS posture.
       cacheLocation={import.meta.env.DEV ? "localstorage" : "memory"}
     >
-      {children}
+      <PostHogIdentity>{children}</PostHogIdentity>
     </Auth0Provider>
   );
 }

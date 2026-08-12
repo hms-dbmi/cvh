@@ -10,6 +10,7 @@ import {
 import { useCallback } from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { LinkMenuItem } from "@/features/navigation/components/Links";
+import posthog from "@/posthog";
 import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { useUpdateVisualization } from "../api/useVisualizations";
 
@@ -36,6 +37,7 @@ function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
       if (!visualizationID) {
         return;
       }
+      posthog.capture("visualization_unpublished");
       updateViz({
         body: { published: false },
         params: {

@@ -12,6 +12,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 
+import posthog from "@/posthog";
 import { useAddProjectMember } from "../api/useProjects";
 
 interface FormValues {
@@ -68,6 +69,7 @@ export default function ShareProjectButton({
 
   const onSubmit = useCallback(
     ({ email }: FormValues) => {
+      posthog.capture("workspace_member_invitation_submitted");
       mutate({
         params: { path: { workspace_uuid: projectId } },
         body: { email },

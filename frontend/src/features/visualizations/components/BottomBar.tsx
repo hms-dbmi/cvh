@@ -5,6 +5,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import { Code, GlobeSimple, PresentationChart } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
+import posthog from "@/posthog";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
 
 export type Mode = "editing" | "exploring";
@@ -33,6 +34,7 @@ export function BottomBar({
       if (published) {
         setMenuAnchor(e.currentTarget);
       } else {
+        posthog.capture("visualization_published");
         onPublish?.();
       }
     },

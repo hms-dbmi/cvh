@@ -9,6 +9,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
+import posthog from "@/posthog";
 import { useUpdateVisualization } from "../api/useVisualizations.ts";
 
 interface FormValues {
@@ -85,6 +86,7 @@ export default function EditVisualizationDialog({
 
   const onSubmit = useCallback(
     ({ name, description, author }: FormValues) => {
+      posthog.capture("visualization_details_update_submitted");
       mutate({
         params: { path: { visualization_uuid: visualizationId } },
         body: {

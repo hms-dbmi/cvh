@@ -40,11 +40,12 @@ import EditDatasetButton from "@/features/datasets/components/EditDatasetButton"
 import ProcessingStateRow from "@/features/datasets/components/ProcessingStateRow";
 import type { ProcessingStatus } from "@/features/datasets/formatEligibility";
 import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore";
-import { useGetProject } from "@/features/projects/api/useProjects";
-import type { components } from "@/types/schema";
-import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { toGoslingDataset } from "@/features/datasets/toGoslingDataset";
 import { isVitessceAutoConfigFileType } from "@/features/datasets/vitessceDataTypes";
+import { useGetProject } from "@/features/projects/api/useProjects";
+import posthog from "@/posthog";
+import type { components } from "@/types/schema";
+import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import NoDataSVG from "../../../assets/nodata.svg?react";
 import DialogButtonCopy from "../../../components/DialogButtonCopy";
 import {
@@ -87,6 +88,7 @@ export function DatasetActionsMenu({
 
   const submitDelete = useCallback(() => {
     if (datasetID) {
+      posthog.capture("dataset_deleted");
       deleteDataset({
         params: {
           path: { dataset_uuid: datasetID },

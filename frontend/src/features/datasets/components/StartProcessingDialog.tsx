@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { X } from "@phosphor-icons/react";
 import NoDataSVG from "@/assets/nodata.svg?react";
+import posthog from "@/posthog";
 import { useProcessDataset } from "../api/useDatasets";
 
 interface StartProcessingDialogProps {
@@ -27,6 +28,7 @@ function StartProcessingDialog({
   const { mutate, isPending } = useProcessDataset();
 
   const handleProcess = () => {
+    posthog.capture("dataset_processing_started");
     mutate(
       { params: { path: { dataset_uuid: datasetUuid } } },
       { onSettled: onClose },
