@@ -36,7 +36,7 @@ Full setup instructions and environment configuration are below.
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (backend package manager)
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating) (Node.js version manager)
 - Python 3.13.1 (managed via `.python-version`)
-- Node.js 22.13.1 (managed via `.nvmrc`)
+- Node.js 22.23.2 (managed via `.nvmrc`)
 - PostgreSQL (or Docker)
 - An [Auth0](https://auth0.com/) tenant with a Single Page Application and API configured
 
