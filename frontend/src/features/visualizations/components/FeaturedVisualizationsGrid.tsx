@@ -70,7 +70,15 @@ function FeaturedVisualizationsGrid() {
     return null;
   }
 
-  const [rowOne, rowTwo] = [featured.slice(0, 2), featured.slice(2, 5)];
+  // First two entries render as a hero row of half-width tiles; the rest
+  // flow into rows of three third-width tiles. Anything past the first
+  // two grows the grid downward without being truncated.
+  const heroRow = featured.slice(0, 2);
+  const remaining = featured.slice(2);
+  const trailingRows: FeaturedVisualization[][] = [];
+  for (let i = 0; i < remaining.length; i += 3) {
+    trailingRows.push(remaining.slice(i, i + 3));
+  }
 
   // When the CTA below is hidden (authenticated users), extend the bottom
   // padding so the grid background behind this section remains visible
@@ -116,24 +124,24 @@ function FeaturedVisualizationsGrid() {
           linked views, and public datasets for exploratory analysis.
         </Typography>
       </Stack>
-      {rowOne.length > 0 && (
+      {heroRow.length > 0 && (
         <Grid container spacing={4}>
-          {rowOne.map((v) => (
+          {heroRow.map((v) => (
             <Grid key={v.uuid} size={6}>
               <FeaturedTile visualization={v} />
             </Grid>
           ))}
         </Grid>
       )}
-      {rowTwo.length > 0 && (
-        <Grid container spacing={4}>
-          {rowTwo.map((v) => (
+      {trailingRows.map((row) => (
+        <Grid container spacing={4} key={row.map((v) => v.uuid).join("|")}>
+          {row.map((v) => (
             <Grid key={v.uuid} size={4}>
               <FeaturedTile visualization={v} />
             </Grid>
           ))}
         </Grid>
-      )}
+      ))}
     </Stack>
   );
 }
