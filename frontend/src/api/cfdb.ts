@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { DccType, DistinctFieldType } from "../../cfdb-types";
 
 const CFDB_API_URL = import.meta.env.VITE_CFDB_API_URL;
@@ -136,8 +136,9 @@ export function useCfdbDccs() {
   });
 }
 
-const DCC_FILES_QUERY_NEW = `query DccFiles($input: [FileMetadataInput!], $pageSize: Int) {
-  files(input: $input, pageSize: $pageSize) {
+const DCC_FILES_QUERY_NEW = `query DccFiles($input: [FileMetadataInput!], $page: Int, $pageSize: Int) {
+  files(input: $input, page: $page, pageSize: $pageSize) {
+    totalCount
     items {
       localId
       filename
@@ -171,8 +172,8 @@ const DCC_FILES_QUERY_NEW = `query DccFiles($input: [FileMetadataInput!], $pageS
   }
 }`;
 
-const DCC_FILES_QUERY_OLD = `query DccFiles($input: [FileMetadataInput!], $pageSize: Int) {
-  files(input: $input, pageSize: $pageSize) {
+const DCC_FILES_QUERY_OLD = `query DccFiles($input: [FileMetadataInput!], $page: Int, $pageSize: Int) {
+  files(input: $input, page: $page, pageSize: $pageSize) {
     localId
     filename
     accessionId
@@ -204,12 +205,11 @@ const DCC_FILES_QUERY_OLD = `query DccFiles($input: [FileMetadataInput!], $pageS
   }
 }`;
 
-// cfdb now enforces a hard cap of 500 on `pageSize` (returns a schema
-// error otherwise). Real pagination via the `page` arg is available but
-// the Browse Library UI hasn't wired it up yet, so users will only see
-// the first 500 files per DCC until we do — see the follow-up in the
-// Browse Library issue. Prior to the cap we passed 10000 to cover any
-// DCC's full file set in one request.
+// cfdb caps `pageSize` at 500 (returns a schema error otherwise) and
+// exposes `page` (0-indexed) for pagination. Some DCCs are much larger
+// than one page — ENCODE alone is ~230k files — so the Browse Library
+// pages through them via `useCfdbDccFiles` (infinite query) rather than
+// asking for a single mega-page.
 const DCC_FILES_PAGE_SIZE = 500;
 
 export type CfdbCollection = {
@@ -459,22 +459,49 @@ function buildFileInput(
   return [input];
 }
 
-async function fetchDccFiles(
+export type CfdbDccFilesPage = {
+  items: CfdbFile[];
+  // Only populated when the deployed cfdb speaks the new FileList shape
+  // (see `DCC_FILES_QUERY_NEW`). Older cfdb returns `files: [items]`
+  // directly, with no way to know the total up front — in that case we
+  // rely on a short final page to stop paging.
+  totalCount: number | null;
+};
+
+async function fetchDccFilesPage(
   dccName: string,
-  filters?: CfdbFileFilters,
-): Promise<CfdbFile[]> {
+  filters: CfdbFileFilters | undefined,
+  page: number,
+): Promise<CfdbDccFilesPage> {
+  const variables = {
+    input: buildFileInput(dccName, filters),
+    page,
+    pageSize: DCC_FILES_PAGE_SIZE,
+  };
   try {
-    return await fetchFilesWithFallback<CfdbFile>(
-      DCC_FILES_QUERY_NEW,
-      DCC_FILES_QUERY_OLD,
-      {
-        input: buildFileInput(dccName, filters),
-        pageSize: DCC_FILES_PAGE_SIZE,
-      },
-    );
+    const data = await fetchGraphQL(DCC_FILES_QUERY_NEW, variables);
+    const files = (data as { files?: unknown } | null | undefined)?.files;
+    if (files && !Array.isArray(files)) {
+      const wrapper = files as {
+        items?: CfdbFile[];
+        totalCount?: number | null;
+      };
+      return {
+        items: wrapper.items ?? [],
+        totalCount:
+          typeof wrapper.totalCount === "number" ? wrapper.totalCount : null,
+      };
+    }
+    // Fall through: cfdb accepted the query but returned the old shape.
   } catch {
-    // Some DCCs have malformed data that causes server-side validation errors
-    return [];
+    // Fall through to the OLD query variant on schema mismatch.
+  }
+  try {
+    const data = await fetchGraphQL(DCC_FILES_QUERY_OLD, variables);
+    return { items: readFilesItems<CfdbFile>(data), totalCount: null };
+  } catch {
+    // Some DCCs have malformed data that causes server-side validation errors.
+    return { items: [], totalCount: null };
   }
 }
 
@@ -549,13 +576,35 @@ export function fetchCfdbSelectedFiles(localIds: string[]) {
   return fetchCfdbFilesByLocalIds(localIds);
 }
 
+/**
+ * Infinite query over a DCC's file list. Pages through cfdb's `files`
+ * query 500 rows at a time (the enforced `pageSize` cap); the Browse
+ * Library scrolls into new pages as the user reaches the bottom of the
+ * virtualized table.
+ *
+ * `getNextPageParam` stops paging when either the last page returned
+ * fewer rows than `DCC_FILES_PAGE_SIZE` (definitive end-of-list) or —
+ * when the new-shape response includes `totalCount` — the accumulated
+ * item count reaches the total. The two-signal approach lets us keep
+ * working against older cfdb deployments that don't populate
+ * `totalCount`.
+ */
 export function useCfdbDccFiles(
   dccName: string | undefined,
   filters?: CfdbFileFilters,
 ) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["cfdb", "dcc-files", dccName, filters],
-    queryFn: () => fetchDccFiles(dccName!, filters),
+    queryFn: ({ pageParam }) => fetchDccFilesPage(dccName!, filters, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < DCC_FILES_PAGE_SIZE) return undefined;
+      if (lastPage.totalCount != null) {
+        const loaded = allPages.reduce((n, p) => n + p.items.length, 0);
+        if (loaded >= lastPage.totalCount) return undefined;
+      }
+      return allPages.length;
+    },
     enabled: !!dccName,
     staleTime: 1000 * 60 * 10,
   });

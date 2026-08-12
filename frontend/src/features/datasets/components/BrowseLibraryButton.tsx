@@ -40,6 +40,7 @@ import {
   memo,
   useCallback,
   useDeferredValue,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -383,9 +384,16 @@ function DccDetailView({
     [deferredAssemblyFilters, deferredFileFormatFilters],
   );
 
-  const { data: allFiles = [], isLoading: isDccFilesLoading } = useCfdbDccFiles(
-    dcc.dccName,
-    apiFilters,
+  const {
+    data: dccFilesData,
+    isLoading: isDccFilesLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useCfdbDccFiles(dcc.dccName, apiFilters);
+  const allFiles = useMemo(
+    () => dccFilesData?.pages.flatMap((p) => p.items) ?? [],
+    [dccFilesData],
   );
   const { data: assemblies = [] } = useCfdbDccAssemblies(dcc.dccName);
   const { data: fileFormats = [] } = useCfdbDccFileFormats(dcc.dccName);
@@ -409,8 +417,9 @@ function DccDetailView({
   const isLoading = hasSearch ? isLookupLoading : isDccFilesLoading;
 
   // Virtualize the table so only rows in (or near) the viewport are
-  // mounted. With up to 10k files per DCC, the un-virtualized DOM made
-  // scrolling sluggish even with React.memo on each row.
+  // mounted. Some DCCs are hundreds of thousands of files (~230k for
+  // ENCODE), so both virtualization and paginated fetching are required
+  // to keep the scroll responsive.
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   // Each row is two stacked lines of text + a checkbox + small padding.
   // 56px is empirically close; the virtualizer measures the real height
@@ -431,6 +440,29 @@ function DccDetailView({
     virtualRows.length > 0
       ? totalHeight - virtualRows[virtualRows.length - 1].end
       : 0;
+
+  // Trigger the next page when the virtualizer nears the bottom of the
+  // currently-loaded rows. Only paginates the unfiltered DCC listing —
+  // the lookup query already narrows to a small candidate set, so we
+  // don't paginate that path. The `NEXT_PAGE_TRIGGER_OFFSET` gives cfdb
+  // some headroom to respond before the user actually reaches the end,
+  // so the scroll stays smooth.
+  const NEXT_PAGE_TRIGGER_OFFSET = 20;
+  const lastVirtualRow = virtualRows[virtualRows.length - 1];
+  useEffect(() => {
+    if (hasSearch || !hasNextPage || isFetchingNextPage) return;
+    if (!lastVirtualRow) return;
+    if (lastVirtualRow.index >= allFiles.length - NEXT_PAGE_TRIGGER_OFFSET) {
+      fetchNextPage();
+    }
+  }, [
+    hasSearch,
+    hasNextPage,
+    isFetchingNextPage,
+    lastVirtualRow,
+    allFiles.length,
+    fetchNextPage,
+  ]);
 
   // Only rows whose format maps to a Browse-Library-supported Gosling
   // file_type are selectable; everything else is shown but disabled.
