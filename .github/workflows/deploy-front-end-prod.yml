@@ -47,6 +47,12 @@ jobs:
           VITE_CLOUDFRONT_URL: ${{ secrets.VITE_CLOUDFRONT_URL }}
           VITE_CFDB_API_URL: ${{ secrets.VITE_CFDB_API_URL }}
           VITE_FEATURED_PATH: featured/prod-featured.json
+          VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+          VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
+          # Prod deploy — PostHog captures unconditionally, and every
+          # event is tagged `environment: production` so it lands in
+          # the prod slice of the shared free-tier project.
+          VITE_ENVIRONMENT: production
         run: npm run build
 
       - name: Configure AWS Credentials

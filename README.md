@@ -127,6 +127,10 @@ cp .env.example .env
 | `VITE_API_AUDIENCE` | Your Auth0 API identifier (same as `AUTH0_IDENTIFIER` in backend) |
 | `VITE_API_URL` | `http://127.0.0.1:8000` |
 | `VITE_CLOUDFRONT_URL` | CloudFront distribution URL for images (can be left empty locally) |
+| `VITE_PUBLIC_POSTHOG_PROJECT_TOKEN` | PostHog project API key. Can be left empty locally — PostHog only initializes when `VITE_ENVIRONMENT=production` or `VITE_POSTHOG_DEBUG=true`. |
+| `VITE_PUBLIC_POSTHOG_HOST` | PostHog API host (e.g. `https://us.posthog.com`). Same "left empty locally" note as above. |
+| `VITE_ENVIRONMENT` | `development` locally. Deploys override to `production`. Tags every captured event with an `environment` super-property so the shared free-tier PostHog project can separate prod from non-prod. |
+| `VITE_POSTHOG_DEBUG` | Leave empty. Set to `true` on a preview deploy when you want to smoke-test PostHog instrumentation. |
 
 ## Running the Development Servers
 
