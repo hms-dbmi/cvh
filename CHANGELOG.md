@@ -22,3 +22,6 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 - The "Data Type" label on the locked file-type field in the Add and Edit dialogs is now "File Type" to match the field's actual meaning — "Data Type" is now a distinct, editable field for Vitessce datasets.
 - Vitessce dataset `data_type` is now optional on the create-dataset API. The Add Dataset wizard still requires the user to pick a value, but non-wizard paths (a future cfdb → Vitessce import, direct API callers) can omit it and let the user fill it in via the Edit dialog later. Persisted as an empty string when absent.
 
+### Fixed
+- Homepage Featured Visualizations grid no longer silently truncates the `featured.json` list to the first five entries. The first two still render as half-width hero tiles, and any additional entries flow into rows of three third-width tiles below, so new items added to `featured.json` show up on the homepage as expected.
+
