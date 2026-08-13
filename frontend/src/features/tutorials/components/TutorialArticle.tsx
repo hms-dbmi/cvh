@@ -59,6 +59,33 @@ const componentsMap = {
       </Typography>
     );
   },
+  // Subsection heading within an H2. Sized between H2 and body, and
+  // slugged the same way so `#track-templates` anchors work — the
+  // right-rail TOC lists H2s only, so these are link targets rather
+  // than TOC entries.
+  h3: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const id = typeof children === "string" ? slugify(children) : undefined;
+    return (
+      <Typography
+        id={id}
+        component="h3"
+        sx={{
+          fontSize: 16.5,
+          fontWeight: 700,
+          lineHeight: "24px",
+          letterSpacing: 0,
+          textTransform: "none",
+          color: "#111827",
+          pt: 2.5,
+          pb: 1,
+          scrollMarginTop: 16,
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    );
+  },
   p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
     <Typography
       component="p"
@@ -106,6 +133,27 @@ const componentsMap = {
   ),
   strong: (props: React.HTMLAttributes<HTMLElement>) => (
     <Box component="strong" sx={{ fontWeight: 700 }} {...props} />
+  ),
+  // Inline monospace for spec identifiers and values (`mark`, `rect`,
+  // `viridis`). UI labels stay bold — the distinction is "something you
+  // type or read in a spec" vs "something you click". No `pre` handler
+  // yet, so this styles inline code only; fenced blocks would need one.
+  code: (props: React.HTMLAttributes<HTMLElement>) => (
+    <Box
+      component="code"
+      sx={{
+        fontFamily:
+          'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+        fontSize: "0.875em",
+        bgcolor: "#F1F4F6",
+        border: "1px solid #E5E7EB",
+        borderRadius: "3px",
+        px: 0.5,
+        py: "1px",
+        color: "#111827",
+      }}
+      {...props}
+    />
   ),
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     // Screenshots are docs assets — full width, border, subtle

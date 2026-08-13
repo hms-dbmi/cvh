@@ -2,16 +2,26 @@
 // build time — no runtime fetch. Adding a new tutorial is: drop a .md
 // file in ./content/, import it here, add an entry to TUTORIALS.
 import addingData from "./content/adding-data.md?raw";
+import buildingACustomGenomeBrowser from "./content/building-a-custom-genome-browser.md?raw";
+import creatingAMultiViewVisualization from "./content/creating-a-multi-view-visualization.md?raw";
 import gettingStarted from "./content/getting-started.md?raw";
+import loadingAVitessceConfig from "./content/loading-a-vitessce-config.md?raw";
+import reusingAnExistingGoslingSpec from "./content/reusing-an-existing-gosling-spec.md?raw";
+import yourFirstVisualization from "./content/your-first-visualization.md?raw";
 
 export interface Tutorial {
   slug: string;
   title: string;
   markdown: string;
+  // Sidebar group label. Entries without one sit at the top of the
+  // sidebar, above the first group heading.
+  section?: string;
 }
 
 // Order here is the order shown in the sidebar. First entry is the
 // default landing when a user visits /tutorials without a slug.
+// Entries sharing a `section` must be contiguous — the sidebar emits a
+// group heading each time the value changes.
 export const TUTORIALS: readonly Tutorial[] = [
   {
     slug: "getting-started",
@@ -22,6 +32,36 @@ export const TUTORIALS: readonly Tutorial[] = [
     slug: "adding-data",
     title: "Adding Data",
     markdown: addingData,
+  },
+  {
+    slug: "your-first-visualization",
+    title: "Your first visualization",
+    markdown: yourFirstVisualization,
+    section: "Gosling",
+  },
+  {
+    slug: "creating-a-multi-view-visualization",
+    title: "Creating a multi-view visualization",
+    markdown: creatingAMultiViewVisualization,
+    section: "Gosling",
+  },
+  {
+    slug: "building-a-custom-genome-browser",
+    title: "Building a custom genome browser",
+    markdown: buildingACustomGenomeBrowser,
+    section: "Gosling",
+  },
+  {
+    slug: "reusing-an-existing-gosling-spec",
+    title: "Reusing an existing Gosling spec",
+    markdown: reusingAnExistingGoslingSpec,
+    section: "Gosling",
+  },
+  {
+    slug: "loading-a-vitessce-config",
+    title: "Loading a Vitessce config",
+    markdown: loadingAVitessceConfig,
+    section: "Vitessce",
   },
 ] as const;
 
@@ -66,7 +106,8 @@ export interface Heading {
 /**
  * Extract H2 headings from a tutorial markdown string so the right-rail
  * TOC can render them as anchor links. Only H2s — H1 is the article
- * title (rendered once at the top) and we have no H3s.
+ * title (rendered once at the top), and H3s are deliberately left out
+ * to keep the rail one level deep.
  */
 export function extractHeadings(markdown: string): Heading[] {
   const headings: Heading[] = [];
