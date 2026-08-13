@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import TabContext from "@mui/lab/TabContext";
-import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import Box from "@mui/material/Box";
 import Button, { type ButtonProps } from "@mui/material/Button";
@@ -11,12 +10,14 @@ import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid2";
 import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
+import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
-import Tab from "@mui/material/Tab";
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -36,10 +37,19 @@ import {
 import { z } from "zod";
 import DialogButton from "@/components/DialogButton";
 import { useCreateDataset } from "../api/useDatasets";
+import {
+  VITESSCE_DATA_TYPE_DESCRIPTIONS,
+  VITESSCE_DATA_TYPE_LABELS,
+  VITESSCE_DATA_TYPE_TO_FILE_TYPES,
+  VITESSCE_DATA_TYPES,
+  VITESSCE_FILE_TYPES,
+  type VitessceDataType,
+  type VitessceFileType,
+} from "../vitessceDataTypes";
 
 const text = {
-  button: "Add Data Source",
-  title: "Add Data Source",
+  button: "Link Data Source",
+  title: "Link Data Source",
 };
 
 interface BaseValues {
@@ -94,13 +104,29 @@ interface CSV extends BaseValues {
   data_column: DataColumn;
 }
 
+// Vitessce datasets don't carry a genome assembly (spatial multi-omics
+// is coordinate-based, not chromosome-based). Only carries what
+// Vitessce configs actually reference: URL + labels + the data-type /
+// file-type pair chosen in the wizard. `data_type` is constrained to
+// Vitessce's abstract data-type set (matrix, embedding, image, etc.);
+// `file_type` is the concrete on-disk schema and must appear under the
+// selected data type in `VITESSCE_DATA_TYPE_TO_FILE_TYPES`.
+interface VitessceValues {
+  name: string;
+  description: string;
+  source_url: string;
+  data_type: VitessceDataType;
+  file_type: VitessceFileType;
+}
+
 export type FormValues =
   | Simple
   | Bam
   | MultiVec
   | IndexAndColumn
   | ColumnOnly
-  | CSV;
+  | CSV
+  | VitessceValues;
 export type { DataColumn };
 
 function FormTextField({
@@ -334,6 +360,35 @@ const csv = base.extend({
     .min(1, { message: "Data column headers cannot be empty" }),
 });
 
+// Vitessce variants share no fields with Gosling — no assembly, no
+// index sidecar, no data columns. Just name + URL.
+const vitessce = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name cannot be empty" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  description: z
+    .string()
+    .max(300, { message: "Description must be less than 300 characters" }),
+  source_url: z
+    .string()
+    .refine(
+      (value) =>
+        /^(https?):\/\/(?=.*\.[a-z]{2,})[^\s$.?#].[^\s]*$/i.test(value),
+      { message: "Must be a valid HTTPS URL." },
+    ),
+  // `data_type` is the abstract Vitessce category (matrix, embedding,
+  // image, …). `file_type` is the concrete on-disk schema; consistency
+  // between the two is enforced by the wizard UI (the File Type
+  // dropdown only shows file types listed under the selected Data Type
+  // in `VITESSCE_DATA_TYPE_TO_FILE_TYPES`), so we don't cross-check
+  // here — a `.superRefine` would break the parent discriminated union
+  // by turning this branch into `ZodEffects`.
+  data_type: z.enum(VITESSCE_DATA_TYPES),
+  file_type: z.enum(VITESSCE_FILE_TYPES),
+});
+
 export const datasetFormSchema = z.discriminatedUnion("file_type", [
   simple,
   multiVec,
@@ -341,6 +396,7 @@ export const datasetFormSchema = z.discriminatedUnion("file_type", [
   indexAndColumn,
   columnOnly,
   csv,
+  vitessce,
 ]);
 
 const schema = datasetFormSchema;
@@ -361,6 +417,22 @@ const tooltips: Record<string, string> = {
     "Two-dimensional quantitative values, one axis for genomic coordinate and the other for different samples, can be converted into HiGlass multivector format data.",
   vector:
     "One-dimensional quantitative values along genomic position (e.g., bigwig) can be converted into HiGlass vector format data.",
+  "image.ome-tiff":
+    "OME-TIFF is a multi-page bitmap image format for microscopy with rich metadata for channels, resolutions, and stains.",
+  "image.ome-zarr":
+    "OME-Zarr (NGFF) is a cloud-optimized chunked-array format for multi-resolution bitmap microscopy.",
+  "image.ome-zarr.zip":
+    "OME-Zarr packaged as a single Zip file — convenient when you can't serve a directory but still want OME-Zarr's chunked layout.",
+  "anndata.zarr":
+    "AnnData in Zarr — the standard single-cell expression matrix format with observations, variables, and derived embeddings.",
+  "anndata.zarr.zip":
+    "AnnData Zarr packaged as a single Zip file.",
+  "anndata.h5ad":
+    "AnnData in HDF5 — the h5ad flavor of AnnData; a single-file alternative to the Zarr variants.",
+  "spatialdata.zarr":
+    "SpatialData in Zarr — coordinated tables, shapes, and images for spatial multi-omics.",
+  "spatialdata.zarr.zip":
+    "SpatialData Zarr packaged as a single Zip file.",
 };
 
 const TooltipIcon = forwardRef<SVGSVGElement, IconProps>(
@@ -426,15 +498,341 @@ function DatasetSelectionButton({
   );
 }
 
+function WizardStepper({
+  steps,
+  current,
+  onChange,
+}: {
+  steps: Array<{ value: number; label: string; disabled?: boolean }>;
+  current: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={2}
+      sx={{
+        borderTop: "1px solid #CAD5DA",
+        borderBottom: "1px solid #CAD5DA",
+        px: 3.5,
+        py: 2,
+      }}
+    >
+      {steps.map((step, i) => {
+        const active = step.value === current;
+        return (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+            key={step.value}
+          >
+            <Box
+              component="button"
+              type="button"
+              disabled={step.disabled}
+              onClick={() => onChange(step.value)}
+              sx={{
+                background: "none",
+                border: "none",
+                p: 0,
+                cursor: step.disabled ? "not-allowed" : "pointer",
+                fontSize: 14,
+                letterSpacing: "0.25px",
+                lineHeight: "20px",
+                fontWeight: active ? 500 : 400,
+                color: active ? "#000000" : "#657681",
+                opacity: step.disabled ? 0.5 : 1,
+                fontFamily: "inherit",
+              }}
+            >
+              {step.value}. {step.label}
+            </Box>
+            {i < steps.length - 1 && (
+              <Box
+                aria-hidden
+                sx={{ width: 48, height: "1px", bgcolor: "#CAD5DA" }}
+              />
+            )}
+          </Stack>
+        );
+      })}
+    </Stack>
+  );
+}
+
+function SelectTool({
+  value,
+  onChange,
+}: {
+  value: "gosling" | "vitessce";
+  onChange: (next: "gosling" | "vitessce") => void;
+}) {
+  const options: Array<{
+    id: "gosling" | "vitessce";
+    title: string;
+    description: string;
+    supports: string;
+    logo: string;
+    // Brand color used as the card background when selected.
+    selectedBg: string;
+  }> = [
+    {
+      id: "gosling",
+      title: "Gosling",
+      description:
+        "Grammar-based toolkit for scalable and interactive genomics visualizations",
+      supports:
+        "BAM, BED, BigWig, CSV, GFF, VCF, BEDDB, Cooler, MultiVec, Vector",
+      logo: "/gosling.svg",
+      selectedBg: "#E18240",
+    },
+    {
+      id: "vitessce",
+      title: "Vitessce",
+      description:
+        "Framework for interactive, integrative visualization of multi-omics data across spatial and dissociated single-cell experiments.",
+      supports: "OME-TIFF, OME-Zarr, AnnData Zarr, SpatialData Zarr",
+      logo: "/vitessce_logo.svg",
+      selectedBg: "#3E6A76",
+    },
+  ];
+
+  return (
+    <Stack spacing={1}>
+      <Typography component="p" variant="h6">
+        Select Visualization Tool
+      </Typography>
+      <Typography>
+        Choose the visualization framework you will be visualizing your data in.
+      </Typography>
+      <Grid container spacing={2} alignItems="stretch">
+        {options.map(
+          ({ id, title, description, supports, logo, selectedBg }) => {
+            const selected = value === id;
+            return (
+              <Grid key={id} size={6} sx={{ display: "flex" }}>
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => onChange(id)}
+                  sx={{
+                    width: "100%",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    background: selected ? selectedBg : "white",
+                    border: "1px solid #CAD5DA",
+                    borderRadius: "4px",
+                    p: 1.5,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2.5,
+                    "&:hover": {
+                      borderColor: selected ? "#CAD5DA" : "#010101",
+                    },
+                  }}
+                >
+                  {/* Brand logo lives in a white rounded plate so it
+                      stays crisp on the colored bg when selected. */}
+                  <Box
+                    sx={{
+                      bgcolor: "white",
+                      borderRadius: "4px",
+                      width: 48,
+                      height: 48,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={logo}
+                      alt={`${title} logo`}
+                      sx={{
+                        maxWidth: "80%",
+                        maxHeight: "80%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </Box>
+                  <Stack spacing={0.75} sx={{ width: "100%" }}>
+                    <Typography
+                      sx={{
+                        fontSize: 16,
+                        fontWeight: 500,
+                        lineHeight: "24px",
+                        letterSpacing: "0.15px",
+                        color: selected ? "white" : "#010101",
+                      }}
+                    >
+                      {title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        lineHeight: "20px",
+                        letterSpacing: "0.25px",
+                        color: selected ? "white" : "#4E5A63",
+                      }}
+                    >
+                      {description}
+                    </Typography>
+                    {/* Push the "Supports" line to the bottom so cards
+                        with shorter descriptions still line up at the
+                        footer. */}
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        lineHeight: "20px",
+                        letterSpacing: "0.25px",
+                        color: selected ? "#EFF3F5" : "#657681",
+                        mt: "auto",
+                        pt: 1,
+                      }}
+                    >
+                      Supports: {supports}
+                    </Typography>
+                  </Stack>
+                </Box>
+              </Grid>
+            );
+          },
+        )}
+      </Grid>
+    </Stack>
+  );
+}
+
+// Vitessce step-2 UI: two dependent dropdowns (Data Type → File Type).
+// Data Type is the abstract category (matrix, embedding, image, …);
+// File Type only shows the concrete formats that can carry the chosen
+// data type. Changing Data Type clears File Type since the previously-
+// selected file type may not appear under the new data type. See
+// `vitessceDataTypes.ts` for the mapping.
+function SelectVitessceType({
+  control,
+}: {
+  control: UseControllerProps<FormValues>["control"];
+}) {
+  const dataTypeField = useController({
+    name: "data_type",
+    control,
+    rules: { required: true },
+  }).field;
+  const fileTypeField = useController({
+    name: "file_type",
+    control,
+    rules: { required: true },
+  }).field;
+
+  // Form defaults set `data_type` to "" (empty string) rather than
+  // undefined, and MUI's TabPanel mounts every panel eagerly, so this
+  // component runs at dialog open — before any Data Type is chosen.
+  // Guard against the empty case AND against any value that isn't a
+  // known Vitessce data type before indexing into the mapping.
+  const rawDataType = dataTypeField.value as string | undefined;
+  const isKnown = (v: string): v is VitessceDataType =>
+    (VITESSCE_DATA_TYPES as readonly string[]).includes(v);
+  const dataType: VitessceDataType | undefined =
+    rawDataType && isKnown(rawDataType) ? rawDataType : undefined;
+  const fileTypeOptions: readonly VitessceFileType[] =
+    dataType !== undefined ? VITESSCE_DATA_TYPE_TO_FILE_TYPES[dataType] : [];
+
+  return (
+    <Stack spacing={2}>
+      <Stack spacing={0.5}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+          Data Type
+        </Typography>
+        <Typography variant="body2">
+          Vitessce supports several data types which denote in an abstract sense
+          the type of observations contained in a file (e.g., matrix, dataframe,
+          image).
+        </Typography>
+      </Stack>
+      <FormControl fullWidth>
+        <InputLabel id="vitessce-data-type-label">Data Type</InputLabel>
+        <Select
+          labelId="vitessce-data-type-label"
+          label="Data Type"
+          value={(dataTypeField.value as string | undefined) ?? ""}
+          onChange={(event) => {
+            dataTypeField.onChange(event.target.value);
+            // Selecting a new data type invalidates the current file
+            // type (it may not appear under the new data type).
+            fileTypeField.onChange("");
+          }}
+        >
+          {VITESSCE_DATA_TYPES.map((dt) => (
+            <MenuItem key={dt} value={dt}>
+              <Stack>
+                <span>{VITESSCE_DATA_TYPE_LABELS[dt]}</span>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary", whiteSpace: "normal" }}
+                >
+                  {VITESSCE_DATA_TYPE_DESCRIPTIONS[dt]}
+                </Typography>
+              </Stack>
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <Stack spacing={0.5}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+          File Type
+        </Typography>
+        <Typography variant="body2">
+          Vitessce may support multiple file types (
+          <Link
+            href="https://vitessce.io/docs/view-config-json/#files"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            datasets[].files[].fileType
+          </Link>
+          ) which denote specific schemas and file formats that Vitessce knows
+          how to read.
+        </Typography>
+      </Stack>
+      <FormControl fullWidth disabled={!dataType}>
+        <InputLabel id="vitessce-file-type-label">File Type</InputLabel>
+        <Select
+          labelId="vitessce-file-type-label"
+          label="File Type"
+          value={(fileTypeField.value as string | undefined) ?? ""}
+          onChange={(event) => fileTypeField.onChange(event.target.value)}
+        >
+          {fileTypeOptions.map((ft) => (
+            <MenuItem key={ft} value={ft}>
+              {ft}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Stack>
+  );
+}
+
 function SelectDataType({
   name,
   control,
-}: UseControllerProps<FormValues> & Partial<TextFieldProps>) {
+  tool = "gosling",
+}: UseControllerProps<FormValues> &
+  Partial<TextFieldProps> & { tool?: "gosling" | "vitessce" }) {
   const { field } = useController({
     name,
     control,
     rules: { required: true },
   });
+
+  if (tool === "vitessce") {
+    return <SelectVitessceType control={control} />;
+  }
 
   return (
     <FormControl>
@@ -559,13 +957,16 @@ export function BasicFields({
     control,
     rules: { required: true },
   });
+  const isVitessceFileType = (
+    VITESSCE_FILE_TYPES as readonly string[]
+  ).includes(String(field?.value ?? ""));
   return (
     <Stack spacing={3}>
       <Stack spacing={1}>
         <Typography>Data Metadata</Typography>
         <FormTextField
           name="file_type"
-          label="Data Type"
+          label="File Type"
           control={control}
           value={field.value}
           disabled
@@ -590,7 +991,11 @@ export function BasicFields({
         />
         {field?.value === "csv" && <CSVFields control={control} />}
       </Stack>
-      <AssemblySelect name="assembly" control={control} />
+      {/* Vitessce data is coordinate-based, not chromosome-based; no
+          assembly to attach. */}
+      {!isVitessceFileType && (
+        <AssemblySelect name="assembly" control={control} />
+      )}
     </Stack>
   );
 }
@@ -695,7 +1100,7 @@ export default function AddDatasetButton({
 }) {
   const [open, setOpen] = useState(false);
 
-  const { handleSubmit, control, watch, reset, formState } = useForm({
+  const { handleSubmit, control, watch, reset, resetField, formState } = useForm({
     defaultValues: {
       name: "",
       description: "",
@@ -709,6 +1114,31 @@ export default function AddDatasetButton({
   const { mutate } = useCreateDataset();
 
   const fileType = watch("file_type");
+  const dataType = watch("data_type");
+
+  // Wizard step 1 lets the user pick a tool independently of the
+  // workspace's currently-selected visualization. Always default to
+  // Gosling — it's the more common upload path, and forcing an
+  // explicit click on the Vitessce card makes the switch intentional
+  // rather than a surprise coming out of the workspace's current viz.
+  // The `tool` prop is still accepted for callers that want to bias
+  // the initial value later without breaking their signatures.
+  const [wizardTool, setWizardTool] = useState<"gosling" | "vitessce">(
+    "gosling",
+  );
+
+  const handleToolChange = useCallback(
+    (next: "gosling" | "vitessce") => {
+      setWizardTool(next);
+      // Gosling and Vitessce file types are disjoint — a stale
+      // file_type from the other tool would fail zod validation on
+      // submit. Also clear data_type since Vitessce uses it as a
+      // constrained enum while Gosling leaves it free-form.
+      resetField("file_type");
+      resetField("data_type");
+    },
+    [resetField],
+  );
 
   const [tab, setTab] = useState(1);
 
@@ -716,6 +1146,11 @@ export default function AddDatasetButton({
     reset();
     setOpen(false);
     setTab(1);
+    // Restore to the same Gosling default the wizard opens with. If we
+    // restored to `tool` (the workspace's current-viz tool), a Vitessce
+    // workspace would re-open the wizard on Vitessce every time — even
+    // after the user explicitly picked Gosling the previous time.
+    setWizardTool("gosling");
   }, [reset]);
 
   const onSubmit = useCallback(
@@ -742,6 +1177,7 @@ export default function AddDatasetButton({
             body: {
               dataset: { ...formData, ...{ data_column } },
               workspace_uuid: projectId,
+              tool: wizardTool,
             },
           });
         } else if (
@@ -754,6 +1190,7 @@ export default function AddDatasetButton({
             body: {
               dataset: { ...formData, data_column: undefined },
               workspace_uuid: projectId,
+              tool: wizardTool,
             },
           });
         } else if (
@@ -767,6 +1204,7 @@ export default function AddDatasetButton({
             body: {
               dataset: { ...formData, ...{ row_names } },
               workspace_uuid: projectId,
+              tool: wizardTool,
             },
           });
         } else if (
@@ -779,6 +1217,32 @@ export default function AddDatasetButton({
             body: {
               dataset: formData,
               workspace_uuid: projectId,
+              tool: wizardTool,
+            },
+          });
+        } else if (
+          (VITESSCE_FILE_TYPES as readonly string[]).includes(
+            String(formData?.file_type),
+          )
+        ) {
+          // Vitessce forms don't carry the Gosling-side fields
+          // (assembly, index_url, data_column). Send only what the
+          // Vitessce variant schema expects — extra keys would be
+          // dropped by pydantic anyway, but stripping keeps the wire
+          // payload clean.
+          const { name, description, source_url, data_type, file_type } =
+            formData as VitessceValues;
+          mutate({
+            body: {
+              dataset: {
+                name,
+                description,
+                source_url,
+                data_type,
+                file_type,
+              },
+              workspace_uuid: projectId,
+              tool: wizardTool,
             },
           });
         }
@@ -786,12 +1250,9 @@ export default function AddDatasetButton({
         return;
       }
     },
-    [mutate, projectId, handleReset],
+    [mutate, projectId, wizardTool, handleReset],
   );
 
-  const handleChange = (_event: React.SyntheticEvent, newTab: number) => {
-    setTab(newTab);
-  };
 
   return (
     <DialogButton
@@ -806,7 +1267,19 @@ export default function AddDatasetButton({
       }}
       actionButtons={
         tab === 1 ? (
-          <Button onClick={() => setTab(2)} disabled={!fileType?.length}>
+          // Tool always has a value (defaults from the workspace's
+          // current viz), so Next is always enabled here.
+          <Button onClick={() => setTab(2)}>Next</Button>
+        ) : tab === 2 ? (
+          // For Vitessce, both dropdowns must be set. For Gosling, only
+          // file type — data_type is a free-form label filled later.
+          <Button
+            onClick={() => setTab(3)}
+            disabled={
+              !fileType?.length ||
+              (wizardTool === "vitessce" && !dataType?.length)
+            }
+          >
             Next
           </Button>
         ) : undefined
@@ -814,25 +1287,33 @@ export default function AddDatasetButton({
       onClose={handleReset}
     >
       <TabContext value={tab}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <TabList onChange={handleChange}>
-            <Tab label="1. File Type" value={1} />
-            <Tab
-              label="2. Data Source"
-              value={2}
-              disabled={!fileType?.length}
-            />
-          </TabList>
-        </Box>
-        <Stack spacing={1} mt={2}></Stack>
+        <WizardStepper
+          steps={[
+            { value: 1, label: "Tool" },
+            { value: 2, label: "File Type" },
+            {
+              value: 3,
+              label: "Data Source",
+              disabled:
+                !fileType?.length ||
+                (wizardTool === "vitessce" && !dataType?.length),
+            },
+          ]}
+          current={tab}
+          onChange={setTab}
+        />
         <TabPanel value={1}>
+          <SelectTool value={wizardTool} onChange={handleToolChange} />
+        </TabPanel>
+        <TabPanel value={2}>
           <SelectDataType
             name="file_type"
             label="File Type"
             control={control}
+            tool={wizardTool}
           />
         </TabPanel>
-        <TabPanel value={2}>
+        <TabPanel value={3}>
           <Stack spacing={3}>
             <BasicFields control={control} />
             {fileType === "multivec" && (

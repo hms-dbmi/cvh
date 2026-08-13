@@ -17,8 +17,8 @@ import {
 import { type ComponentProps, memo, useCallback, useMemo, useRef } from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { useGetPaginatedProjectDatasets } from "@/features/datasets/api/useDatasets";
-import { toGoslingAssembly } from "@/features/datasets/assemblies";
 import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore.ts";
+import { toGoslingDataset } from "@/features/datasets/toGoslingDataset";
 import type { components } from "@/types/schema";
 import { useUpdateVisualization } from "../api/useVisualizations";
 import formatVisualization from "../utils/formatVisualization.ts";
@@ -35,28 +35,8 @@ interface GoslingVizShellProps {
   sidebar: React.ReactNode;
 }
 
-const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]): GDData[] => {
-  return datasets.map((dataset) => ({
-    type: dataset.file_type,
-    name: dataset.name,
-    id: dataset.uuid,
-    metadata: {},
-    url: dataset.source_url,
-    // Translate cfdb's raw assembly value to something Gosling can render:
-    // a known assembly string, an alias, or inline ChromSizes. See
-    // assemblies.ts for the mapping.
-    assembly: toGoslingAssembly(dataset?.assembly),
-    indexURL: dataset?.index_url ?? undefined,
-    header: dataset?.headers ?? undefined,
-    separator: dataset?.separator ?? undefined,
-    note: dataset?.description ?? undefined,
-    rowNames: dataset?.row_names ?? undefined,
-    ...(dataset.file_type === "csv"
-      ? { fields: dataset?.data_column ?? undefined }
-      : { optionalFields: dataset?.data_column ?? undefined }),
-    tags: dataset.tags.map((t) => [t.key, t.tag]),
-  })) as GDData[];
-};
+const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]): GDData[] =>
+  datasets.map(toGoslingDataset);
 
 function DndWrapper({ children }: { children: React.ReactNode }) {
   const { collisionDetection, onDragStart, onDragEnd, dragOverlay } =

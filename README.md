@@ -4,9 +4,31 @@ A platform for creating, sharing, and collaborating on genomic and single-cell v
 
 **Live instance:** [visualizationhub.org](https://visualizationhub.org)
 
+**Changelog:** [`CHANGELOG.md`](./CHANGELOG.md) tracks what's merged to `main` (running on dev) vs. what's shipped to prod. The `[Unreleased]` section is dev-but-not-yet-prod. Release process lives in [`docs/release.md`](./docs/release.md).
+
+**Architecture:** See [docs/architecture.md](./docs/architecture.md) for a high-level runtime topology diagram.
+
 ## Contributing
 
 Bug reports, feature requests, and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started. Licensed under [MIT](./LICENSE).
+
+## Common commands
+
+Each package is developed in its own subdirectory. Run these from inside the package (`cd backend`, `cd frontend`, or `cd python-client`).
+
+| Task | Backend (`backend/`) | Frontend (`frontend/`) | Python client (`python-client/`) |
+|---|---|---|---|
+| Install deps | `uv sync` | `npm install` | `uv sync` |
+| Dev server | `python core/manage.py runserver` | `npm run dev` | — (library) |
+| Unit tests | `python core/manage.py test` | `npm test` (or `npx vitest run`) | `uv run pytest` |
+| E2E tests | — | `npm run e2e` | — |
+| Lint | `uv run ruff check .` | `npm run lint` | `uv run ruff check src/ tests/` |
+| Lint (auto-fix) | `uv run ruff check --fix .` | `npm run lint:fix` | `uv run ruff check --fix src/ tests/` |
+| Format | `uv run ruff format .` | `npm run format` | `uv run ruff format src/ tests/` |
+| Build (prod bundle) | — (Docker builds via `Dockerfile`) | `npm run build` | `uv build` |
+| Regen OpenAPI types | — | `npm run gen-api-types` (backend must be running) | — (client is hand-written) |
+
+Full setup instructions and environment configuration are below.
 
 ## Prerequisites
 

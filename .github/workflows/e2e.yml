@@ -1,12 +1,22 @@
 name: E2E
 
+# `paths:` filters this workflow to run only when frontend code or the
+# workflow itself changes. Backend-only PRs skip this — see the note
+# in test-frontend.yml about keeping the schema.d.ts in sync.
+
 on:
   push:
     branches:
       - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/e2e.yml"
   pull_request:
     branches:
       - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/e2e.yml"
 
 jobs:
   e2e:
