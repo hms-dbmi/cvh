@@ -28,10 +28,7 @@ const componentsMap = {
       {...props}
     />
   ),
-  h2: ({
-    children,
-    ...props
-  }: React.HTMLAttributes<HTMLHeadingElement>) => {
+  h2: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
     // Stamp the same slug the right-rail TOC generates so anchor
     // links (`#creating-a-workspace`) scroll to the matching H2.
     // `scroll-margin-top` matches the sticky rails' top offset so
@@ -179,10 +176,7 @@ const componentsMap = {
 export default function TutorialArticle({ tutorial }: { tutorial: Tutorial }) {
   return (
     <Box sx={{ maxWidth: 720 }}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={componentsMap}
-      >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={componentsMap}>
         {resolveTutorialMarkdown(tutorial.markdown)}
       </ReactMarkdown>
     </Box>

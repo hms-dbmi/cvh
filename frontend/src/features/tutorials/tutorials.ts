@@ -2,10 +2,8 @@
 // build time — no runtime fetch. Adding a new tutorial is: drop a .md
 // file in ./content/, import it here, add an entry to TUTORIALS.
 import addingData from "./content/adding-data.md?raw";
-import buildingACustomGenomeBrowser from "./content/building-a-custom-genome-browser.md?raw";
 import creatingAMultiViewVisualization from "./content/creating-a-multi-view-visualization.md?raw";
 import gettingStarted from "./content/getting-started.md?raw";
-import loadingAVitessceConfig from "./content/loading-a-vitessce-config.md?raw";
 import reusingAnExistingGoslingSpec from "./content/reusing-an-existing-gosling-spec.md?raw";
 import yourFirstVisualization from "./content/your-first-visualization.md?raw";
 
@@ -46,29 +44,22 @@ export const TUTORIALS: readonly Tutorial[] = [
     section: "Gosling",
   },
   {
-    slug: "building-a-custom-genome-browser",
-    title: "Building a custom genome browser",
-    markdown: buildingACustomGenomeBrowser,
-    section: "Gosling",
-  },
-  {
     slug: "reusing-an-existing-gosling-spec",
     title: "Reusing an existing Gosling spec",
     markdown: reusingAnExistingGoslingSpec,
     section: "Gosling",
   },
-  {
-    slug: "loading-a-vitessce-config",
-    title: "Loading a Vitessce config",
-    markdown: loadingAVitessceConfig,
-    section: "Vitessce",
-  },
 ] as const;
 
+// The two Vitessce tutorials — `loading-a-vitessce-config` and
+// `copying-a-spec-from-hubmap` — are written but still placeholder content,
+// so they are left out of TUTORIALS rather than shipped half-finished. Their
+// .md files live in ./content/. To list them, re-add the `?raw` imports and
+// an entry each with `section: "Vitessce"` (entries sharing a section must
+// stay contiguous).
+
 export function getTutorialBySlug(slug: string | undefined): Tutorial {
-  return (
-    TUTORIALS.find((t) => t.slug === slug) ?? TUTORIALS[0]
-  );
+  return TUTORIALS.find((t) => t.slug === slug) ?? TUTORIALS[0];
 }
 
 /**
