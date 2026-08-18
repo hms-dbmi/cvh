@@ -1,10 +1,15 @@
 import Box from "@mui/material/Box";
 import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Tutorial } from "../tutorials";
-import { resolveTutorialMarkdown, slugify } from "../tutorials";
+import {
+  resolveTutorialImageSrc,
+  resolveTutorialMarkdown,
+  slugify,
+} from "../tutorials";
 
 const HEADING_COLOR = "#111827";
 const BODY_COLOR = "#374151";
@@ -139,13 +144,20 @@ const componentsMap = {
       {...props}
     />
   ),
-  img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    // Screenshots are docs assets — full width, border, subtle
-    // background so lighter-toned UI captures don't blend into the
-    // page background.
+};
+
+// Screenshots are docs assets — full width, border, subtle background
+// so lighter-toned UI captures don't blend into the page background.
+// The handler is a factory closed over the tutorial slug so bare
+// relative markdown paths (`example-data-sources.webp`) resolve against
+// the tutorial's own asset directory in CloudFront — see
+// `resolveTutorialImageSrc`.
+const makeImg =
+  (slug: string) =>
+  ({ src, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <Box
       component="img"
-      alt={props.alt}
+      src={resolveTutorialImageSrc(src, slug)}
       loading="lazy"
       sx={{
         display: "block",
@@ -157,13 +169,16 @@ const componentsMap = {
       }}
       {...props}
     />
-  ),
-};
+  );
 
 export default function TutorialArticle({ tutorial }: { tutorial: Tutorial }) {
+  const components = useMemo(
+    () => ({ ...componentsMap, img: makeImg(tutorial.slug) }),
+    [tutorial.slug],
+  );
   return (
     <Box sx={{ maxWidth: 720 }}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={componentsMap}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {resolveTutorialMarkdown(tutorial.markdown)}
       </ReactMarkdown>
     </Box>
