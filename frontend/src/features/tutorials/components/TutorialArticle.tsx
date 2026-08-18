@@ -1,9 +1,58 @@
 import Box from "@mui/material/Box";
+import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Tutorial } from "../tutorials";
 import { resolveTutorialMarkdown, slugify } from "../tutorials";
+
+const HEADING_COLOR = "#111827";
+const BODY_COLOR = "#374151";
+const MONO_FONT_STACK =
+  'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace';
+
+// Body text tokens shared by <p> and <ul>. <li> inherits font/color/
+// line-height via CSS from its <ul> parent, so it needs no handler.
+const BODY_SX = {
+  fontSize: 15,
+  lineHeight: "26.25px",
+  color: BODY_COLOR,
+} as const;
+
+// Common heading defaults: `letterSpacing: 0` and `textTransform: "none"`
+// guard against MUI Typography's default body1 leaking in (0.5px, none)
+// and any inherited uppercase from ancestors. `scrollMarginTop` offsets
+// linked H2/H3 anchors so they land below the sticky rail top.
+const HEADING_COMMON_SX = {
+  letterSpacing: 0,
+  textTransform: "none",
+  color: HEADING_COLOR,
+  scrollMarginTop: 16,
+} as const;
+
+const slugFromChildren = (children: React.ReactNode): string | undefined =>
+  typeof children === "string" ? slugify(children) : undefined;
+
+// Slugged heading factory used by H2 and H3 — both derive an anchor id
+// from their text (`#track-templates` deep links) and only differ in
+// visual sx. H1 doesn't use this: it's the article title, not a link
+// target, and the right-rail TOC lists H2s only.
+const makeHeading = (level: "h2" | "h3", sx: SxProps<Theme>) => {
+  const Heading = ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <Typography
+      id={slugFromChildren(children)}
+      component={level}
+      sx={{ ...HEADING_COMMON_SX, ...sx }}
+      {...props}
+    >
+      {children}
+    </Typography>
+  );
+  return Heading;
+};
 
 // react-markdown lets us swap each HTML element it emits for a custom
 // component. Doing this here (rather than styling via a CSS file) keeps
@@ -12,108 +61,36 @@ const componentsMap = {
   h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
     <Typography
       component="h1"
-      // Explicit letterSpacing/textTransform so nothing leaks in from
-      // body1 (0.5px) or a browser default. Bold weight matches the
-      // Figma docs H1 spec.
       sx={{
+        ...HEADING_COMMON_SX,
         fontSize: 32,
         fontWeight: 700,
         lineHeight: "40px",
-        letterSpacing: 0,
-        textTransform: "none",
-        color: "#111827",
         pt: 3,
         pb: 2,
       }}
       {...props}
     />
   ),
-  h2: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-    // Stamp the same slug the right-rail TOC generates so anchor
-    // links (`#creating-a-workspace`) scroll to the matching H2.
-    // `scroll-margin-top` matches the sticky rails' top offset so
-    // the H2 lands cleanly below the top of the viewport instead of
-    // getting flush with the edge.
-    const id = typeof children === "string" ? slugify(children) : undefined;
-    return (
-      <Typography
-        id={id}
-        component="h2"
-        sx={{
-          fontSize: 21.6,
-          fontWeight: 700,
-          lineHeight: "29.7px",
-          letterSpacing: 0,
-          textTransform: "none",
-          color: "#111827",
-          pt: 4,
-          pb: 1.5,
-          scrollMarginTop: 16,
-        }}
-        {...props}
-      >
-        {children}
-      </Typography>
-    );
-  },
-  // Subsection heading within an H2. Sized between H2 and body, and
-  // slugged the same way so `#track-templates` anchors work — the
-  // right-rail TOC lists H2s only, so these are link targets rather
-  // than TOC entries.
-  h3: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-    const id = typeof children === "string" ? slugify(children) : undefined;
-    return (
-      <Typography
-        id={id}
-        component="h3"
-        sx={{
-          fontSize: 16.5,
-          fontWeight: 700,
-          lineHeight: "24px",
-          letterSpacing: 0,
-          textTransform: "none",
-          color: "#111827",
-          pt: 2.5,
-          pb: 1,
-          scrollMarginTop: 16,
-        }}
-        {...props}
-      >
-        {children}
-      </Typography>
-    );
-  },
+  h2: makeHeading("h2", {
+    fontSize: 21.6,
+    fontWeight: 700,
+    lineHeight: "29.7px",
+    pt: 4,
+    pb: 1.5,
+  }),
+  h3: makeHeading("h3", {
+    fontSize: 16.5,
+    fontWeight: 700,
+    lineHeight: "24px",
+    pt: 2.5,
+    pb: 1,
+  }),
   p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <Typography
-      component="p"
-      sx={{
-        fontSize: 15,
-        lineHeight: "26.25px",
-        color: "#374151",
-        py: 0.5,
-      }}
-      {...props}
-    />
+    <Typography component="p" sx={{ ...BODY_SX, py: 0.5 }} {...props} />
   ),
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
-    <Box
-      component="ul"
-      sx={{
-        pl: 3,
-        my: 1,
-        fontSize: 15,
-        lineHeight: "26.25px",
-        color: "#374151",
-      }}
-      {...props}
-    />
-  ),
-  li: (props: React.HTMLAttributes<HTMLLIElement>) => (
-    <Box
-      component="li"
-      sx={{ fontSize: 15, lineHeight: "26.25px", color: "#374151" }}
-      {...props}
-    />
+    <Box component="ul" sx={{ ...BODY_SX, pl: 3, my: 1 }} {...props} />
   ),
   a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <Box
@@ -121,7 +98,7 @@ const componentsMap = {
       target="_blank"
       rel="noopener noreferrer"
       sx={{
-        color: "#374151",
+        color: BODY_COLOR,
         textDecoration: "underline",
         "&:hover": { color: "#010101" },
       }}
@@ -139,15 +116,14 @@ const componentsMap = {
     <Box
       component="code"
       sx={{
-        fontFamily:
-          'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+        fontFamily: MONO_FONT_STACK,
         fontSize: "0.875em",
         bgcolor: "#F1F4F6",
         border: "1px solid #E5E7EB",
         borderRadius: "3px",
         px: 0.5,
         py: "1px",
-        color: "#111827",
+        color: HEADING_COLOR,
       }}
       {...props}
     />

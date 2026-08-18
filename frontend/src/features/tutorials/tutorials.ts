@@ -58,6 +58,29 @@ export const TUTORIALS: readonly Tutorial[] = [
 // an entry each with `section: "Vitessce"` (entries sharing a section must
 // stay contiguous).
 
+export interface TutorialSection {
+  // `undefined` for entries without a group label — those sit at the top
+  // of the sidebar above the first named section.
+  name: string | undefined;
+  tutorials: Tutorial[];
+}
+
+// Groups contiguous same-`section` entries together, so the sidebar can
+// render sections → tutorials in a nested loop instead of detecting
+// section transitions mid-render. Contiguity of same-section entries in
+// TUTORIALS is what makes this correct — see the comment above.
+export const TUTORIAL_SECTIONS: readonly TutorialSection[] = TUTORIALS.reduce<
+  TutorialSection[]
+>((sections, tutorial) => {
+  const last = sections[sections.length - 1];
+  if (last && last.name === tutorial.section) {
+    last.tutorials.push(tutorial);
+  } else {
+    sections.push({ name: tutorial.section, tutorials: [tutorial] });
+  }
+  return sections;
+}, []);
+
 export function getTutorialBySlug(slug: string | undefined): Tutorial {
   return TUTORIALS.find((t) => t.slug === slug) ?? TUTORIALS[0];
 }
