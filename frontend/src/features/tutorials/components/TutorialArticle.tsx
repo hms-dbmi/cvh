@@ -89,8 +89,19 @@ const componentsMap = {
   p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
     <Typography component="p" sx={{ ...BODY_SX, py: 0.5 }} {...props} />
   ),
+  // Tailwind Preflight (loaded globally via ./tailwind.css → main.tsx)
+  // resets `ol, ul, menu { list-style: none; }`, so browser-default
+  // bullets don't render anywhere. Force `listStyleType: "disc"` back
+  // on for tutorial lists specifically.
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
-    <Box component="ul" sx={{ ...BODY_SX, pl: 3, my: 1 }} {...props} />
+    <Box
+      component="ul"
+      sx={{ ...BODY_SX, pl: 3, my: 1, listStyleType: "disc" }}
+      {...props}
+    />
+  ),
+  li: (props: React.HTMLAttributes<HTMLLIElement>) => (
+    <Box component="li" sx={BODY_SX} {...props} />
   ),
   a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <Box
