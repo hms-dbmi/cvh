@@ -16,8 +16,10 @@ function HubBlurb() {
       sx={{
         width: "100%",
         backgroundColor: "#F5F7FA",
+        // Top border only — Features (rendered directly below) owns the
+        // shared boundary via its own borderTop, so a bottom border here
+        // would render a doubled 2px seam between the two banded sections.
         borderTop: "1px solid #CAD5DA",
-        borderBottom: "1px solid #CAD5DA",
         py: { xs: 6, md: 8 },
         px: { xs: 3, md: 4 },
       }}
