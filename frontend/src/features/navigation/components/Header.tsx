@@ -16,6 +16,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import {
+  ArrowBendUpLeft,
   CaretDown,
   CaretUp,
   GlobeSimple,
@@ -209,7 +210,23 @@ function ProjectsBar() {
   if (router.location.pathname === "/" && isAuthenticated) {
     return (
       <Box flexGrow={1} ml={2}>
-        <Link to="/project/{-$projectId}">Return to Workspaces</Link>
+        <Link
+          to="/project/{-$projectId}"
+          underline="none"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.75,
+            color: "#4E5A63",
+            fontSize: 16,
+            fontWeight: 400,
+            lineHeight: "24px",
+            letterSpacing: "0.15px",
+          }}
+        >
+          <ArrowBendUpLeft color="#4E5A63" size={20} />
+          Return to Workspaces
+        </Link>
       </Box>
     );
   }
