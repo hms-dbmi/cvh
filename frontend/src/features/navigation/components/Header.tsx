@@ -3,6 +3,7 @@ import AppBar from "@mui/material/AppBar";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -398,6 +399,32 @@ export default function Header() {
                 Community Visualization Hub
               </Typography>
             </Link>
+            <Chip
+              // Wrapping the label in a `subtitle1` Typography matches the
+              // weight/size used by the tag chips in PublishedVizCard —
+              // the "Beta" text reads a touch bolder than Chip's default
+              // body2 label. Default (medium) chip size gives roomier
+              // padding than `size="small"`.
+              label={
+                <Typography variant="subtitle1" component="span">
+                  Beta
+                </Typography>
+              }
+              variant="outlined"
+              // Non-interactive tag next to the wordmark — signals the
+              // product is still in beta. Matches the app's existing
+              // divider color for a quiet, unobtrusive treatment.
+              // `borderRadius` overrides MUI's pill default (half the
+              // chip height) with a rounded-rectangle to match the mock.
+              sx={{
+                borderColor: "#CAD5DA",
+                color: "#010101",
+                borderRadius: "6px",
+                // Extra horizontal padding on the label — bumps the chip
+                // a few pixels wider than MUI's default (12px each side).
+                "& .MuiChip-label": { px: 2 },
+              }}
+            />
           </Stack>
           <ProjectsBar />
           <Stack direction="row" spacing={1.5} alignItems="center">
