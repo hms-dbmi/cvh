@@ -71,6 +71,10 @@ jobs:
         # CHANGELOG.md's `[Unreleased]` section after a successful deploy.
         run: |
           set -euo pipefail
+          # Annotated tags need a committer identity; the runner has none by
+          # default, so use the github-actions bot.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           DATE=$(date -u +%Y-%m-%d)
           SHA=$(git rev-parse --short HEAD)
           TAG="prod-frontend-${DATE}-${SHA}"
