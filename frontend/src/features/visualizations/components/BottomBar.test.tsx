@@ -42,4 +42,36 @@ describe("BottomBar", () => {
     await userEvent.click(screen.getByText("Exploring"));
     expect(onModeChange).toHaveBeenCalledWith("exploring");
   });
+
+  it("hides the Save button when onSave is not provided", () => {
+    render(<BottomBar mode="exploring" onModeChange={() => {}} />);
+    expect(screen.queryByText("Save")).not.toBeInTheDocument();
+  });
+
+  it("calls onSave when Save is clicked", async () => {
+    const onSave = vi.fn();
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        onSave={onSave}
+        hasUnsavedChanges
+      />,
+    );
+    await userEvent.click(screen.getByText("Save"));
+    expect(onSave).toHaveBeenCalled();
+  });
+
+  it("disables Save when hasUnsavedChanges is false", () => {
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        onSave={() => {}}
+        hasUnsavedChanges={false}
+      />,
+    );
+    // MUI Button propagates `disabled` to the underlying <button>.
+    expect(screen.getByText("Save").closest("button")).toBeDisabled();
+  });
 });
