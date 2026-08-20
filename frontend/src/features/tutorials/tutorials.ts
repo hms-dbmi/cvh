@@ -58,21 +58,70 @@ export const TUTORIALS: readonly Tutorial[] = [
 // an entry each with `section: "Vitessce"` (entries sharing a section must
 // stay contiguous).
 
+export interface TutorialSection {
+  // `undefined` for entries without a group label — those sit at the top
+  // of the sidebar above the first named section.
+  name: string | undefined;
+  tutorials: Tutorial[];
+}
+
+// Groups contiguous same-`section` entries together, so the sidebar can
+// render sections → tutorials in a nested loop instead of detecting
+// section transitions mid-render. Contiguity of same-section entries in
+// TUTORIALS is what makes this correct — see the comment above.
+export const TUTORIAL_SECTIONS: readonly TutorialSection[] = TUTORIALS.reduce<
+  TutorialSection[]
+>((sections, tutorial) => {
+  const last = sections[sections.length - 1];
+  if (last && last.name === tutorial.section) {
+    last.tutorials.push(tutorial);
+  } else {
+    sections.push({ name: tutorial.section, tutorials: [tutorial] });
+  }
+  return sections;
+}, []);
+
 export function getTutorialBySlug(slug: string | undefined): Tutorial {
   return TUTORIALS.find((t) => t.slug === slug) ?? TUTORIALS[0];
 }
 
 /**
- * Tutorial markdown uses `%CLOUDFRONT_URL%/tutorials/...` placeholders
- * for images so a single env var swap re-points every screenshot.
- * Rewrite them at render time using the same VITE_CLOUDFRONT_URL the
- * rest of the app uses for featured images.
+ * Rewrites the legacy `%CLOUDFRONT_URL%` placeholder still used by
+ * tutorials that reference images at flat `tutorials/xxx.png` paths
+ * (getting-started, adding-data). Tutorials converted to per-slug
+ * asset directories use bare relative filenames instead — those go
+ * through `resolveTutorialImageSrc` at render time.
  */
 export function resolveTutorialMarkdown(markdown: string): string {
   const cloudfrontUrl = import.meta.env.VITE_CLOUDFRONT_URL ?? "";
   // `String.replaceAll` is ES2021; tsconfig.app.json targets ES2020,
   // so use the split/join form to stay lib-compat.
   return markdown.split("%CLOUDFRONT_URL%").join(cloudfrontUrl);
+}
+
+/**
+ * Resolves a tutorial image's `src` from the react-markdown img handler.
+ * The convention for new tutorials is bare relative filenames
+ * (`example-data-sources.webp`) — this prepends the tutorial's asset
+ * directory (`${CLOUDFRONT_URL}/tutorials/${slug}/`) at render time so
+ * the markdown doesn't have to repeat the slug and CDN URL for every
+ * image, and moving a tutorial to a different slug touches zero image
+ * references.
+ *
+ * Passthrough for absolute URLs (`http://`, `https://`) and for
+ * already-resolved CloudFront URLs coming out of `resolveTutorialMarkdown`
+ * — that keeps the legacy `%CLOUDFRONT_URL%/tutorials/xxx.png` pattern
+ * working for the tutorials that haven't been migrated.
+ */
+export function resolveTutorialImageSrc(
+  src: string | undefined,
+  slug: string,
+): string | undefined {
+  if (!src) return src;
+  if (/^https?:\/\//i.test(src)) return src;
+  if (src.startsWith("/")) return src;
+  const cloudfrontUrl = import.meta.env.VITE_CLOUDFRONT_URL ?? "";
+  return `${cloudfrontUrl}/tutorials/${slug}/${src}`;
 }
 
 /**
