@@ -2,14 +2,23 @@ import { HttpResponse, http } from "msw";
 import type { components } from "@/types/schema";
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
-const cfdbApiUrl =
-  import.meta.env.VITE_CFDB_API_URL ?? "http://127.0.0.1:9100";
+const cfdbApiUrl = import.meta.env.VITE_CFDB_API_URL ?? "http://127.0.0.1:9100";
 
 const user: components["schemas"]["UserOut"] = {
   username: "e2e-user",
   email: "e2e@example.com",
   first_name: "E2E",
   last_name: "User",
+};
+
+// Reused across the workspace fixtures so the created_by fields stay
+// in sync with the mock `user`. The E2E user "owns" the private
+// workspace (renders under Personal in the switcher); the public one
+// is owned by someone else (renders under Shared / public list).
+const createdByE2E = {
+  username: user.username,
+  first_name: user.first_name,
+  last_name: user.last_name,
 };
 
 const workspace: components["schemas"]["WorkspaceOutWithMembersCount"] = {
@@ -21,6 +30,7 @@ const workspace: components["schemas"]["WorkspaceOutWithMembersCount"] = {
   datasets_count: 0,
   visualizations_count: 1,
   workspace_members_count: 1,
+  created_by: createdByE2E,
   created_timestamp: "2026-01-01T00:00:00Z",
   modified_timestamp: "2026-01-01T00:00:00Z",
   last_viewed_timestamp: "2026-01-01T00:00:00Z",
@@ -34,6 +44,11 @@ const publicWorkspace: components["schemas"]["WorkspaceOut"] = {
   private: false,
   datasets_count: 0,
   visualizations_count: 1,
+  created_by: {
+    username: "other-user",
+    first_name: "Other",
+    last_name: "User",
+  },
   created_timestamp: "2026-01-01T00:00:00Z",
   modified_timestamp: "2026-01-01T00:00:00Z",
   last_viewed_timestamp: "2026-01-01T00:00:00Z",
@@ -187,11 +202,7 @@ export const handlers = [
   http.put(
     `${apiUrl}/api/visualizations/:uuid`,
     async ({ request, params }) => {
-      await recordRequest(
-        "PUT",
-        `/api/visualizations/${params.uuid}`,
-        request,
-      );
+      await recordRequest("PUT", `/api/visualizations/${params.uuid}`, request);
       return HttpResponse.json({ success: true });
     },
   ),
@@ -210,17 +221,10 @@ export const handlers = [
     await recordRequest("PUT", `/api/datasets/${params.uuid}`, request);
     return HttpResponse.json({ success: true });
   }),
-  http.put(
-    `${apiUrl}/api/datasets/:uuid/tags`,
-    async ({ request, params }) => {
-      await recordRequest(
-        "PUT",
-        `/api/datasets/${params.uuid}/tags`,
-        request,
-      );
-      return HttpResponse.json({ success: true });
-    },
-  ),
+  http.put(`${apiUrl}/api/datasets/:uuid/tags`, async ({ request, params }) => {
+    await recordRequest("PUT", `/api/datasets/${params.uuid}/tags`, request);
+    return HttpResponse.json({ success: true });
+  }),
   http.put(`${apiUrl}/api/user`, async ({ request }) => {
     await recordRequest("PUT", "/api/user", request);
     return HttpResponse.json({ success: true });
@@ -330,9 +334,7 @@ function cfdbResolve(
     // `$fields` variable (it inlines `fields: ["dcc.dcc_name"]`).
     if (fields.length === 0) {
       return {
-        distinctValues: [
-          { field: "dcc.dcc_name", values: [cfdbDcc.dccName] },
-        ],
+        distinctValues: [{ field: "dcc.dcc_name", values: [cfdbDcc.dccName] }],
       };
     }
 
