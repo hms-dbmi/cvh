@@ -43,11 +43,16 @@ function WorkspaceListItem({
     ? { onClick: undefined }
     : { component: "a", href: `/project/${project.uuid}` };
 
-  const sharedByName =
-    showSharedBy && project.created_by
-      ? `${project.created_by.first_name} ${project.created_by.last_name}`.trim() ||
-        project.created_by.username
-      : null;
+  // Prefer "First Last"; fall back to username; then to null if the
+  // whole created_by payload collapses to empty (defensive — Django
+  // users always have a non-empty username in practice, but the
+  // fallback keeps a broken row from rendering "Shared By: " with a
+  // trailing colon and nothing after).
+  const sharedByName = (() => {
+    if (!showSharedBy || !project.created_by) return null;
+    const fullName = `${project.created_by.first_name} ${project.created_by.last_name}`.trim();
+    return fullName || project.created_by.username || null;
+  })();
 
   const collabCount = project.workspace_members_count;
   // Solo workspaces show the single-user icon; anything with more than
@@ -57,8 +62,10 @@ function WorkspaceListItem({
   const collabLabel = `${collabCount} collaborator${collabCount === 1 ? "" : "s"}`;
   const updatedLabel = `updated ${formatRelative(project.modified_timestamp, new Date())}`;
   // Metadata line above the timestamp. Shared tiles lead with the
-  // creator's name; personal (and current) tiles just show the collab
-  // count. The `updated …` string always renders on its own row below.
+  // creator's name; personal (and current) tiles — and shared tiles
+  // where the whole created_by collapsed to empty — just show the
+  // collab count. The `updated …` string always renders on its own
+  // row below.
   const primaryMeta = sharedByName
     ? `Shared By: ${sharedByName} · ${collabLabel}`
     : collabLabel;
@@ -95,14 +102,29 @@ function WorkspaceListItem({
             <CollabIcon size={20} color="white" weight="regular" />
           </Avatar>
         </Box>
-        <Stack sx={{ justifyContent: "center" }}>
-          <Typography variant="subtitle1" component="p" sx={{ mb: 0.25 }}>
+        {/* `minWidth: 0` lets the flex child shrink below its content's
+            intrinsic width, which is what makes `text-overflow: ellipsis`
+            actually clip long strings. Without it, the Typography lines
+            would stretch the Stack past the tile and wrap. */}
+        <Stack sx={{ justifyContent: "center", minWidth: 0, flex: 1 }}>
+          <Typography
+            variant="subtitle1"
+            component="p"
+            title={project.name}
+            noWrap
+            sx={{ mb: 0.25 }}
+          >
             {project.name}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            title={primaryMeta}
+            noWrap
+          >
             {primaryMeta}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" noWrap>
             {updatedLabel}
           </Typography>
         </Stack>
