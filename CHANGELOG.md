@@ -10,6 +10,9 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+### Added
+- Hidden `/changelog` page renders `CHANGELOG.md` for users who navigate to the URL directly. Prod hides the `[Unreleased]` section (dev and local dev show both released and unreleased entries alongside each other). Not linked from any UI; discoverable by typing the URL.
+
 ## [2026-08-20] (prod, d1d891f)
 
 ### Added
