@@ -225,6 +225,12 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
             fullWidth
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            // MUI Menu's built-in type-ahead intercepts keydowns to jump
+            // focus to a MenuItem whose label matches the character. That
+            // steals keystrokes from this input (typing "m" would focus
+            // "My Workspace" instead of appearing in the search field).
+            // Stopping propagation keeps the character in the input.
+            onKeyDown={(e) => e.stopPropagation()}
             placeholder="Search"
             startAdornment={
               <InputAdornment position="start">
