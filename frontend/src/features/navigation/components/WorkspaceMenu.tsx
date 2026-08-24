@@ -68,12 +68,16 @@ function WorkspaceListItem({
       {...selectedProps}
       sx={{
         borderRadius: "8px",
-        boxShadow: isSelected
-          ? "-2px -2px 14.3px 0 rgba(14, 207, 255, 0.15), 4px 4px 20px 0 rgba(160, 246, 136, 0.15)"
-          : "none",
-        border: isSelected ? "2px solid black" : "none",
         marginBottom: 1,
         cursor: isSelected ? "default" : "pointer",
+        // Selected tile: soft gray fill in place of the previous
+        // border/box-shadow (green/cyan glow) treatment. Pin the same
+        // color on hover so hovering the current workspace doesn't
+        // flicker. Non-selected tiles leave `backgroundColor` and
+        // `:hover` alone so MUI's default MenuItem hover still kicks in.
+        ...(isSelected
+          ? { backgroundColor: "#E2E9EC", "&:hover": { backgroundColor: "#E2E9EC" } }
+          : {}),
       }}
     >
       <Stack direction="row" spacing={2}>
