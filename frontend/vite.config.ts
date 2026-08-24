@@ -28,4 +28,12 @@ export default defineConfig({
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
   },
+  server: {
+    fs: {
+      // Allow reads one level above the frontend workspace so
+      // `src/routes/changelog.tsx` can `?raw`-import the monorepo-root
+      // `CHANGELOG.md`. Vite's default `strict: true` would reject this.
+      allow: [path.resolve(__dirname, "..")],
+    },
+  },
 });
