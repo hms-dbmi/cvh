@@ -14,6 +14,7 @@ import {
   CaretUp,
   MagnifyingGlass,
   User,
+  Users,
 } from "@phosphor-icons/react";
 import { formatRelative } from "date-fns";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -38,9 +39,6 @@ function WorkspaceListItem({
   // rows without an attributed creator).
   showSharedBy?: boolean;
 }) {
-  const firstLetter = project.name?.length
-    ? project.name[0].toUpperCase()
-    : null;
   const selectedProps = isSelected
     ? { onClick: undefined }
     : { component: "a", href: `/project/${project.uuid}` };
@@ -52,6 +50,10 @@ function WorkspaceListItem({
       : null;
 
   const collabCount = project.workspace_members_count;
+  // Solo workspaces show the single-user icon; anything with more than
+  // one collaborator uses the multi-user icon. Signals "shared" at a
+  // glance without reading the tile's secondary text.
+  const CollabIcon = collabCount > 1 ? Users : User;
   const collabLabel = `${collabCount} collaborator${collabCount === 1 ? "" : "s"}`;
   const updatedLabel = `updated ${formatRelative(project.modified_timestamp, new Date())}`;
   // Metadata line above the timestamp. Shared tiles lead with the
@@ -75,22 +77,20 @@ function WorkspaceListItem({
       }}
     >
       <Stack direction="row" spacing={2}>
-        {firstLetter && (
-          <Box sx={{ alignSelf: "center" }}>
-            <Avatar
-              sx={{
-                backgroundColor: generateAvatarColor(project.name),
-                width: 65,
-                height: 65,
-                marginRight: 1,
-                borderRadius: "8px",
-              }}
-              variant="square"
-            >
-              {firstLetter}
-            </Avatar>
-          </Box>
-        )}
+        <Box sx={{ alignSelf: "center" }}>
+          <Avatar
+            sx={{
+              backgroundColor: generateAvatarColor(project.name),
+              width: 65,
+              height: 65,
+              marginRight: 1,
+              borderRadius: "8px",
+            }}
+            variant="square"
+          >
+            <CollabIcon size={20} color="white" weight="regular" />
+          </Avatar>
+        </Box>
         <Stack sx={{ justifyContent: "center" }}>
           <Typography variant="subtitle1" component="p" sx={{ mb: 0.25 }}>
             {project.name}
