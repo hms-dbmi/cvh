@@ -10,6 +10,9 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+### Fixed
+- Vitessce visualization pages no longer freeze the browser tab while loading. The Vitessce runtime (~9 MB of JS, including three.js, higlass, and neuroglancer) is now downloaded and parsed only when the canvas is about to render — the code editor, drop zone, and bottom bar appear immediately, and a "Loading viewer…" placeholder occupies the canvas region while the runtime hydrates. In editing mode the Vitessce runtime doesn't load at all unless the user switches to exploring or saves.
+
 ## [2026-08-20] (prod, d1d891f)
 
 ### Added
