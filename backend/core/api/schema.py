@@ -49,6 +49,17 @@ class UserOut(Schema):
     email: EmailStr
 
 
+class CreatedByOut(Schema):
+    """Public "who created this record" surface. Deliberately omits
+    `email` so anonymous readers of public workspaces / datasets can't
+    harvest the creator's inbox.
+    """
+
+    username: str
+    first_name: str
+    last_name: str
+
+
 class UserIn(OptionalSchema):
     first_name: str
     last_name: str
@@ -70,10 +81,26 @@ class WorkspaceOut(ModelSchema):
     datasets_count: int
     visualizations_count: int
     permissions: int | None = None
+    # `user_key` on Project is the creator FK; surface it as `created_by`
+    # so consumers don't have to know the ORM field name. Nullable
+    # because `user_key` itself is nullable (legacy rows without an
+    # attributed creator).
+    created_by: CreatedByOut | None = None
 
     class Meta:
         model = Project
         fields = ["private", *shared_output_fields]
+
+    @staticmethod
+    def resolve_created_by(obj: Project) -> dict | None:
+        user = obj.user_key
+        if user is None:
+            return None
+        return {
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        }
 
 
 class WorkspaceOutWithMembersCount(WorkspaceOut):

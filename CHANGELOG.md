@@ -14,6 +14,12 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 - Vitessce visualization pages no longer freeze the browser tab while loading. The Vitessce runtime (~9 MB of JS, including three.js, higlass, and neuroglancer) is now downloaded and parsed only when the canvas is about to render — the code editor, drop zone, and bottom bar appear immediately, and a "Loading viewer…" placeholder occupies the canvas region while the runtime hydrates. In editing mode the Vitessce runtime doesn't load at all unless the user switches to exploring or saves.
 ### Added
 - Hidden `/changelog` page renders `CHANGELOG.md` for users who navigate to the URL directly. Prod hides the `[Unreleased]` section (dev and local dev show both released and unreleased entries alongside each other). Not linked from any UI; discoverable by typing the URL.
+- Workspace switcher splits the workspaces list into **Current Workspace**, **Personal Workspaces** (created by you), and **Shared Workspaces** (created by someone else and shared with you). Each shared tile now includes a `Shared By: <name>` line so the user knows who invited them. A search input filters by workspace name and a "From Me" filter chip (shown only when you actually have shared workspaces) hides the shared section.
+- Workspace API responses now include a `created_by: { username, first_name, last_name }` field on each workspace, sourced from the workspace's creator (`Project.user_key`). Nullable for legacy rows created before the field was tracked.
+
+### Changed
+- Collaborator counts across the app now represent "collaborators besides you." The workspace switcher's per-workspace count subtracts the viewer (so a workspace you created and haven't shared shows no collaborator line at all instead of "1 collaborator"), and the "N Collaborators" button in the workspace sharing dialog uses the same rule (showing `0 Collaborators` on a solo workspace so the button keeps stable width).
+- Workspace tiles in the switcher now show a Phosphor `User` icon (1 total member) or `Users` icon (>1) inside the colored avatar square instead of the workspace's initial letter. The trigger button that opens the switcher uses the same icon for consistency with the tiles it opens.
 
 ## [2026-08-20] (prod, d1d891f)
 

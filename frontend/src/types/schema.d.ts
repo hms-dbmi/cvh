@@ -586,6 +586,20 @@ export interface components {
              */
             offset: number;
         };
+        /**
+         * CreatedByOut
+         * @description Public "who created this record" surface. Deliberately omits
+         *     `email` so anonymous readers of public workspaces / datasets can't
+         *     harvest the creator's inbox.
+         */
+        CreatedByOut: {
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+        };
         /** PagedWorkspaceOutWithMembersCount */
         PagedWorkspaceOutWithMembersCount: {
             /** Items */
@@ -601,6 +615,7 @@ export interface components {
             visualizations_count: number;
             /** Permissions */
             permissions?: number | null;
+            created_by?: components["schemas"]["CreatedByOut"] | null;
             /**
              * Private
              * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
@@ -652,6 +667,7 @@ export interface components {
             visualizations_count: number;
             /** Permissions */
             permissions?: number | null;
+            created_by?: components["schemas"]["CreatedByOut"] | null;
             /**
              * Private
              * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
@@ -951,11 +967,8 @@ export interface components {
              * @enum {string}
              */
             file_type: "anndata.h5ad" | "anndata.zarr" | "anndata.zarr.zip" | "featureLabels.csv" | "image.ome-tiff" | "image.ome-zarr" | "image.ome-zarr.zip" | "obsEmbedding.csv" | "obsFeatureMatrix.csv" | "obsLabels.csv" | "obsLocations.csv" | "obsPoints.csv" | "obsSegmentations.json" | "obsSegmentations.ome-zarr" | "obsSegmentations.ome-zarr.zip" | "obsSets.csv" | "obsSets.json" | "obsSpots.csv" | "sampleSets.csv" | "spatialdata.zarr" | "spatialdata.zarr.zip";
-            /**
-             * Data Type
-             * @enum {string|null}
-             */
-            data_type?: "featureLabels" | "image" | "obsEmbedding" | "obsFeatureMatrix" | "obsLabels" | "obsLocations" | "obsPoints" | "obsSegmentations" | "obsSets" | "obsSpots" | "sampleSets" | null;
+            /** Data Type */
+            data_type?: ("image" | "obsFeatureMatrix" | "obsEmbedding" | "obsSets" | "obsLocations" | "obsSpots" | "obsPoints" | "obsSegmentations" | "obsLabels" | "featureLabels" | "sampleSets") | null;
             /**
              * Name
              * @description Human-readable name shown in the UI.

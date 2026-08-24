@@ -11,7 +11,6 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
@@ -241,25 +240,19 @@ function VisualizationListItem({
             <Box>
               <VisualizationThumbnail nTracks={v.n_tracks} />
             </Box>
-            <ListItemText
-              slotProps={{
-                primary: { variant: "subtitle1", component: "p" },
-              }}
-              primary={v.name}
-              secondary={[
-                ...(v.tool !== "vitessce"
-                  ? [
-                      `${v.n_tracks} track${v.n_tracks === 1 ? "" : "s"}`,
-                      <> &middot; </>,
-                      `${v.n_datasets} active data source${
-                        v.n_datasets === 1 ? "" : "s"
-                      }`,
-                      <> &middot; </>,
-                    ]
-                  : []),
-                `updated ${formatRelative(v.modified_timestamp, new Date())}`,
-              ]}
-            />
+            <Stack sx={{ justifyContent: "center" }}>
+              <Typography variant="subtitle1" component="p" sx={{ mb: 0.25 }}>
+                {v.name}
+              </Typography>
+              {v.tool !== "vitessce" && (
+                <Typography variant="body2" color="text.secondary">
+                  {`${v.n_tracks} track${v.n_tracks === 1 ? "" : "s"} · ${v.n_datasets} active data source${v.n_datasets === 1 ? "" : "s"}`}
+                </Typography>
+              )}
+              <Typography variant="body2" color="text.secondary">
+                {`updated ${formatRelative(v.modified_timestamp, new Date())}`}
+              </Typography>
+            </Stack>
           </Stack>
           <Stack
             direction="row"

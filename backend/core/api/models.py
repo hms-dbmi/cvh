@@ -63,6 +63,10 @@ class ProjectsManager(models.Manager):
         return (
             super()
             .get_queryset()
+            # `select_related("user_key")` prefetches the creator so the
+            # `created_by` field on WorkspaceOut can serialize without
+            # firing an N+1 query per workspace in the paged list.
+            .select_related("user_key")
             .annotate(
                 datasets_count=Count("dataset", distinct=True),
             )

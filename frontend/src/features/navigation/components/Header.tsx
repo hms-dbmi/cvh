@@ -2,12 +2,10 @@ import { useAuth0 } from "@auth0/auth0-react";
 import AppBar from "@mui/material/AppBar";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Skeleton from "@mui/material/Skeleton";
@@ -24,19 +22,16 @@ import {
   User,
 } from "@phosphor-icons/react";
 import { useParams, useRouterState } from "@tanstack/react-router";
-import { formatRelative } from "date-fns";
 import { useCallback, useState } from "react";
 import CVHLogo from "@/assets/cvh_logo.svg?react";
-import useGetProjects from "@/features/projects/api/useProjects";
-import AddProjectButton from "@/features/projects/components/AddProjectButton";
 import ProjectSettings from "@/features/projects/components/ProjectSettings";
 import PublishedVizModal from "@/features/visualizations/components/PublishedVizModal";
-import type { components } from "@/types/schema";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
 import { LoginButton } from "./AuthButtons";
 import EditProfileDialog from "./EditProfileDialog";
 import { Link } from "./Links";
+import WorkspaceMenu from "./WorkspaceMenu";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
   return <ProjectSettings projectId={projectId} />;
@@ -55,149 +50,6 @@ function PublishedVisualizationsButton() {
         </IconButton>
       </Tooltip>
       <PublishedVizModal open={open} onClose={() => setOpen(false)} />
-    </>
-  );
-}
-
-type WorkspaceOut = components["schemas"]["WorkspaceOutWithMembersCount"];
-
-function WorkspaceListItem({
-  project,
-  isSelected,
-}: {
-  project: WorkspaceOut;
-  isSelected: boolean;
-}) {
-  const firstLetter = project.name?.length
-    ? project.name[0].toUpperCase()
-    : null;
-  const selectedProps = isSelected
-    ? { onClick: undefined }
-    : { component: "a", href: `/project/${project.uuid}` };
-
-  return (
-    <MenuItem
-      {...selectedProps}
-      sx={{
-        borderRadius: "8px",
-        boxShadow: isSelected
-          ? "-2px -2px 14.3px 0 rgba(14, 207, 255, 0.15), 4px 4px 20px 0 rgba(160, 246, 136, 0.15)"
-          : "none",
-        border: isSelected ? "2px solid black" : "none",
-        marginBottom: 1,
-        cursor: isSelected ? "default" : "pointer",
-      }}
-    >
-      <Stack direction="row" spacing={2}>
-        {firstLetter && (
-          <Box sx={{ alignSelf: "center" }}>
-            <Avatar
-              sx={{
-                backgroundColor: generateAvatarColor(project.name),
-                width: 65,
-                height: 65,
-                marginRight: 1,
-                borderRadius: "8px",
-              }}
-              variant="square"
-            >
-              {firstLetter}
-            </Avatar>
-          </Box>
-        )}
-        <Stack>
-          <ListItemText
-            slotProps={{
-              primary: { variant: "subtitle1", component: "p" },
-            }}
-            primary={project.name}
-            secondary={[
-              `${project.workspace_members_count} collaborator${project?.workspace_members_count === 1 ? "" : "s"}`,
-              <> &middot; </>,
-              `updated ${formatRelative(project.modified_timestamp, new Date())}`,
-            ]}
-          />
-        </Stack>
-      </Stack>
-    </MenuItem>
-  );
-}
-
-function WorkspaceMenu({ projectId }: { projectId: string }) {
-  const { data: projectsData } = useGetProjects();
-
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const currentProject = projectsData?.items.find((p) => p.uuid === projectId);
-
-  if (!currentProject) {
-    return;
-  }
-
-  const name = currentProject?.name;
-  const firstLetter = name?.length ? name[0].toUpperCase() : null;
-
-  return (
-    <>
-      <Button
-        id="workspaces-button"
-        aria-controls={open ? "workspaces-menu" : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? "true" : undefined}
-        variant="outlined"
-        sx={{ borderColor: "#C8CCCE", padding: "8px 16px" }}
-        onClick={handleClick}
-        endIcon={open ? <CaretDown size={16} /> : <CaretUp size={16} />}
-      >
-        {firstLetter && (
-          <Avatar
-            sx={{
-              backgroundColor: generateAvatarColor(currentProject.name),
-              width: 24,
-              height: 24,
-              marginRight: 1.75,
-              borderRadius: "4px",
-            }}
-            variant="square"
-          >
-            {firstLetter}
-          </Avatar>
-        )}
-        {name}
-      </Button>
-      <Menu
-        id="workspaces-menu"
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        slotProps={{
-          list: {
-            "aria-labelledby": "workspaces-button",
-          },
-          paper: {
-            sx: { paddingRight: 1, paddingLeft: 1, maxHeight: 450 },
-          },
-        }}
-      >
-        <Box p={2}>
-          <AddProjectButton />
-        </Box>
-        {projectsData?.items.map((p) => (
-          <WorkspaceListItem
-            key={p.uuid}
-            project={p}
-            isSelected={p.uuid === projectId}
-          />
-        ))}
-      </Menu>
     </>
   );
 }
