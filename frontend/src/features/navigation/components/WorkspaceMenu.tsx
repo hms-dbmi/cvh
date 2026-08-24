@@ -50,7 +50,8 @@ function WorkspaceListItem({
   // trailing colon and nothing after).
   const sharedByName = (() => {
     if (!showSharedBy || !project.created_by) return null;
-    const fullName = `${project.created_by.first_name} ${project.created_by.last_name}`.trim();
+    const fullName =
+      `${project.created_by.first_name} ${project.created_by.last_name}`.trim();
     return fullName || project.created_by.username || null;
   })();
 
@@ -94,7 +95,10 @@ function WorkspaceListItem({
         // flicker. Non-selected tiles leave `backgroundColor` and
         // `:hover` alone so MUI's default MenuItem hover still kicks in.
         ...(isSelected
-          ? { backgroundColor: "#E2E9EC", "&:hover": { backgroundColor: "#E2E9EC" } }
+          ? {
+              backgroundColor: "#E2E9EC",
+              "&:hover": { backgroundColor: "#E2E9EC" },
+            }
           : {}),
       }}
     >
@@ -219,7 +223,10 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
   }
 
   const name = currentProject?.name;
-  const firstLetter = name?.length ? name[0].toUpperCase() : null;
+  // Same icon logic as the dropdown tiles: solo → single-user, multi
+  // → multi-user. Keeps the trigger button visually consistent with
+  // the menu it opens.
+  const TriggerIcon = currentProject.workspace_members_count > 1 ? Users : User;
 
   return (
     <>
@@ -233,20 +240,18 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
         onClick={handleClick}
         endIcon={open ? <CaretDown size={16} /> : <CaretUp size={16} />}
       >
-        {firstLetter && (
-          <Avatar
-            sx={{
-              backgroundColor: generateAvatarColor(currentProject.name),
-              width: 24,
-              height: 24,
-              marginRight: 1.75,
-              borderRadius: "4px",
-            }}
-            variant="square"
-          >
-            {firstLetter}
-          </Avatar>
-        )}
+        <Avatar
+          sx={{
+            backgroundColor: generateAvatarColor(currentProject.name),
+            width: 24,
+            height: 24,
+            marginRight: 1.75,
+            borderRadius: "4px",
+          }}
+          variant="square"
+        >
+          <TriggerIcon size={14} color="white" weight="regular" />
+        </Avatar>
         {name}
       </Button>
       <Menu
@@ -261,7 +266,12 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
             // once the workspace list exceeds `maxHeight`) breathing
             // room from the content instead of butting right up against
             // the tile edges.
-            sx: { paddingLeft: 1, paddingRight: 1.5, maxHeight: 600, width: 500 },
+            sx: {
+              paddingLeft: 1,
+              paddingRight: 1.5,
+              maxHeight: 600,
+              width: 500,
+            },
           },
         }}
       >
@@ -308,7 +318,17 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
         )}
         <Divider sx={{ mx: 2, my: 1 }} />
         <Typography sx={SECTION_HEADING_SX}>Current Workspace</Typography>
-        <WorkspaceListItem project={currentProject} isSelected />
+        <WorkspaceListItem
+          project={currentProject}
+          isSelected
+          // Show "Shared By:" on the current tile when the active
+          // workspace wasn't created by the viewer. Mirrors the
+          // partition rule below (unknown creator → treat as shared).
+          showSharedBy={
+            !currentUser?.username ||
+            currentProject.created_by?.username !== currentUser.username
+          }
+        />
         {personalWorkspaces.length > 0 && (
           <>
             <Divider sx={{ mx: 2, my: 1 }} />
