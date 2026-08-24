@@ -34,8 +34,6 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Fixed
 - Browse Library rendered an empty DCC file listing after cfdb wrapped its `files(...)` responses in a `FileList { totalCount, items }` object and capped `pageSize` at 500. The frontend now tolerates both the new and pre-refactor response shapes and requests pages within the enforced cap.
-
-### Fixed
 - Homepage Featured Visualizations grid no longer silently truncates the `featured.json` list to the first five entries. The first two still render as half-width hero tiles, and any additional entries flow into rows of three third-width tiles below, so new items added to `featured.json` show up on the homepage as expected.
 - Bullet lists in tutorials render with visible markers again. The global Tailwind Preflight reset had been stripping `list-style` from every `<ul>` on the site, which silently hid the tutorial article's list bullets; the tutorial renderer now sets `listStyleType: disc` explicitly on its lists.
 
