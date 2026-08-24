@@ -54,21 +54,32 @@ function WorkspaceListItem({
     return fullName || project.created_by.username || null;
   })();
 
-  const collabCount = project.workspace_members_count;
+  const totalMemberCount = project.workspace_members_count;
   // Solo workspaces show the single-user icon; anything with more than
   // one collaborator uses the multi-user icon. Signals "shared" at a
   // glance without reading the tile's secondary text.
-  const CollabIcon = collabCount > 1 ? Users : User;
-  const collabLabel = `${collabCount} collaborator${collabCount === 1 ? "" : "s"}`;
+  const CollabIcon = totalMemberCount > 1 ? Users : User;
+  // The count in the UI represents "collaborators besides you." You
+  // always appear in `workspace_members_count` (this menu only lists
+  // workspaces you're a member of), so subtracting one gives the number
+  // that reads naturally in "N collaborators." Clamped at zero to
+  // avoid `-1` if a data glitch ever produces a zero-member workspace.
+  const otherCount = Math.max(totalMemberCount - 1, 0);
+  const collabLabel = `${otherCount} collaborator${otherCount === 1 ? "" : "s"}`;
   const updatedLabel = `updated ${formatRelative(project.modified_timestamp, new Date())}`;
   // Metadata line above the timestamp. Shared tiles lead with the
-  // creator's name; personal (and current) tiles — and shared tiles
-  // where the whole created_by collapsed to empty — just show the
-  // collab count. The `updated …` string always renders on its own
-  // row below.
-  const primaryMeta = sharedByName
-    ? `Shared By: ${sharedByName} · ${collabLabel}`
-    : collabLabel;
+  // creator's name; personal (and current) tiles show just the
+  // "N collaborators" count. When the workspace has no other members
+  // (`otherCount === 0`), suppress the line entirely so the tile
+  // doesn't render an awkward "0 collaborators."
+  let primaryMeta: string | null;
+  if (sharedByName) {
+    primaryMeta = `Shared By: ${sharedByName} · ${collabLabel}`;
+  } else if (otherCount === 0) {
+    primaryMeta = null;
+  } else {
+    primaryMeta = collabLabel;
+  }
 
   return (
     <MenuItem
@@ -116,14 +127,16 @@ function WorkspaceListItem({
           >
             {project.name}
           </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            title={primaryMeta}
-            noWrap
-          >
-            {primaryMeta}
-          </Typography>
+          {primaryMeta && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              title={primaryMeta}
+              noWrap
+            >
+              {primaryMeta}
+            </Typography>
+          )}
           <Typography variant="body2" color="text.secondary" noWrap>
             {updatedLabel}
           </Typography>

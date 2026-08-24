@@ -279,15 +279,24 @@ function ProjectSettings({ projectId }: { projectId: string }) {
       open={open}
       setOpen={setOpen}
       text={{
-        button: (
-          <>
-            <Users size={20} />
-            <Box sx={{ marginLeft: "4px" }} component="span">
-              {data?.length} Collaborator
-              {data?.length === 1 ? "" : "s"}
-            </Box>
-          </>
-        ),
+        button: (() => {
+          // Current user is always in `data` for workspaces they can
+          // reach, so subtracting one yields "collaborators besides
+          // you" — the number that reads naturally in "N collaborators."
+          // Unlike the workspace-switcher tiles (which hide the line
+          // when N === 0), the button always renders a number so it
+          // has stable width and layout, even on solo workspaces.
+          const otherCount = Math.max((data?.length ?? 1) - 1, 0);
+          return (
+            <>
+              <Users size={20} />
+              <Box sx={{ marginLeft: "4px" }} component="span">
+                {otherCount} Collaborator
+                {otherCount === 1 ? "" : "s"}
+              </Box>
+            </>
+          );
+        })(),
         title: "Workspace Sharing",
       }}
       buttonProps={{
