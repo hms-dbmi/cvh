@@ -113,8 +113,12 @@ function WorkspaceListItem({
 
 const SECTION_HEADING_SX = {
   px: 2,
-  pt: 2,
-  pb: 0.5,
+  // `pt: 1` (8px) instead of 2 so the total gap between the divider
+  // above and the heading (divider's `my: 1` + this `pt: 1` = 16px)
+  // matches the gap between the last tile in a section and its
+  // trailing divider (tile's `mb: 1` + divider's `my: 1` = 16px).
+  pt: 1,
+  pb: 0.75,
   fontSize: 12,
   fontWeight: 600,
   letterSpacing: "0.4px",
@@ -218,7 +222,11 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
         slotProps={{
           list: { "aria-labelledby": "workspaces-button" },
           paper: {
-            sx: { paddingRight: 1, paddingLeft: 1, maxHeight: 600, width: 500 },
+            // Extra `paddingRight` gives the vertical scrollbar (visible
+            // once the workspace list exceeds `maxHeight`) breathing
+            // room from the content instead of butting right up against
+            // the tile edges.
+            sx: { paddingLeft: 1, paddingRight: 1.5, maxHeight: 600, width: 500 },
           },
         }}
       >
