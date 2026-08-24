@@ -51,11 +51,15 @@ def create_workspace(request, workspace: WorkspaceIn):
 )
 @paginate
 def get_workspaces(request):
+    # No `.values()` in the chain: it flattens the queryset to dicts,
+    # which drops the `user_key` FK-instance access the WorkspaceOut
+    # `created_by` resolver depends on (dicts only carry the raw
+    # `user_key_id` column). Model instances preserve `select_related`
+    # so `obj.user_key` reads through without extra queries.
     workspaces = (
         Project.objects.get_read_projects(user=request.auth)
         .filter(private=True)
         .order_by("-modified_timestamp")
-        .values()
         .annotate(
             workspace_members_count=Count(
                 "projectmember", distinct=True
