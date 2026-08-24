@@ -99,10 +99,12 @@ def delete_workspace(request, workspace_uuid: UUID):
 )
 @paginate
 def get_public_workspaces(request):
+    # Keep model instances (no `.values()`): the WorkspaceOut schema's
+    # `created_by` resolver reads `obj.user_key` as an FK-resolved User,
+    # which dicts don't expose. See the matching note on `get_workspaces`.
     workspaces = (
         Project.objects.filter(private=False)
         .order_by("-modified_timestamp")
-        .values()
     )
     return workspaces
 
@@ -128,18 +130,13 @@ def get_workspace(request, workspace_uuid: UUID):
         permissions = ProjectMember.objects.get(
             project_key=project, user_key=request.auth
         ).permissions
-    return {
-        "uuid": project.uuid,
-        "name": project.name,
-        "description": project.description,
-        "created_timestamp": project.created_timestamp,
-        "modified_timestamp": project.modified_timestamp,
-        "last_viewed_timestamp": project.last_viewed_timestamp,
-        "private": project.private,
-        "datasets_count": project.datasets_count,
-        "visualizations_count": project.visualizations_count,
-        "permissions": permissions,
-    }
+    # Attach `permissions` to the model instance so it lands in the
+    # schema output alongside every field WorkspaceOut declares
+    # (including `created_by`, resolved by the schema from user_key).
+    # Returning the instance instead of a hand-built dict avoids the
+    # trap of forgetting to plumb new fields into two places.
+    project.permissions = permissions
+    return project
 
 
 @router.put(
