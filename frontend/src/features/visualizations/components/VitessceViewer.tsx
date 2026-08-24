@@ -11,9 +11,16 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Code } from "@phosphor-icons/react";
-import { upgradeAndParse } from "@vitessce/schemas";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { generateConfig, Vitessce } from "vitessce";
+import {
+  lazy,
+  memo,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "react-grid-layout/css/styles.css";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import {
@@ -21,6 +28,21 @@ import {
   useUpdateVisualization,
 } from "../api/useVisualizations";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
+
+// The `vitessce` package + its transitives (three.js, higlass, neuroglancer,
+// zarr, …) parse to multiple MB of JS. Loading them at module scope would
+// freeze the main thread while V8 parses/executes on every entry into this
+// viewer. We defer them three ways:
+//
+//   * `Vitessce` component → React.lazy so the runtime chunk downloads
+//     and parses only when we're about to render the canvas, not while
+//     the code editor is on screen.
+//   * `generateConfig` → dynamic import inside the drop-generate handler.
+//   * `@vitessce/schemas` `upgradeAndParse` → dynamic import inside the
+//     editor-save validator.
+const Vitessce = lazy(() =>
+  import("vitessce").then((m) => ({ default: m.Vitessce })),
+);
 
 const DROP_ZONE_ID = "vitessce-drop-zone";
 
@@ -200,7 +222,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   );
 
   const saveEditorValue = useCallback(
-    (value: string) => {
+    async (value: string) => {
       if (!selectedVizId || !hasWritePermissions) return;
       if (editorSaveTimeoutRef.current) {
         clearTimeout(editorSaveTimeoutRef.current);
@@ -215,6 +237,10 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
       }
       if (data?.tool === "vitessce") {
         try {
+          // Dynamic import so the `@vitessce/schemas` bundle only downloads
+          // on save (typically after the code editor is already visible),
+          // not at module load. See the top-of-file note on the lazy split.
+          const { upgradeAndParse } = await import("@vitessce/schemas");
           upgradeAndParse(parsed);
         } catch (e) {
           const message =
@@ -242,6 +268,10 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     async (payload: VitessceDragPayload) => {
       if (!selectedVizId || !hasWritePermissions) return;
       try {
+        // Dynamic import — this is invoked from a drag-drop, so the
+        // vitessce chunk can safely download at gesture time rather than
+        // at module load. See the top-of-file note on the lazy split.
+        const { generateConfig } = await import("vitessce");
         const generated = await generateConfig([payload.url]);
         updateViz({
           params: { path: { visualization_uuid: selectedVizId } },
@@ -360,12 +390,28 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           </Stack>
         )}
         {mode === "exploring" && vitessceConfig && (
-          <Vitessce
-            config={vitessceConfig}
-            height={900}
-            theme="light"
-            onConfigChange={hasWritePermissions ? saveViz : undefined}
-          />
+          <Suspense
+            fallback={
+              <Stack
+                sx={{
+                  height: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Loading viewer…
+                </Typography>
+              </Stack>
+            }
+          >
+            <Vitessce
+              config={vitessceConfig}
+              height={900}
+              theme="light"
+              onConfigChange={hasWritePermissions ? saveViz : undefined}
+            />
+          </Suspense>
         )}
         {mode === "editing" && selectedVizId && (
           <CodeEditor
