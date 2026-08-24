@@ -50,14 +50,19 @@ class UserOut(Schema):
 
 
 class CreatedByOut(Schema):
-    """Public "who created this record" surface. Deliberately omits
-    `email` so anonymous readers of public workspaces / datasets can't
-    harvest the creator's inbox.
+    """"Who created this record" surface. Includes `email` because both
+    endpoints that carry this schema are already authenticated, and the
+    `/api/workspaces/:uuid/members` endpoint exposes each workspace
+    member's email anyway — matching it here keeps the surface aligned
+    while giving the UI a human-readable fallback when a creator hasn't
+    filled in `first_name`/`last_name` (Auth0-first sign-in leaves those
+    empty until the user edits their profile).
     """
 
     username: str
     first_name: str
     last_name: str
+    email: EmailStr
 
 
 class UserIn(OptionalSchema):
@@ -100,6 +105,7 @@ class WorkspaceOut(ModelSchema):
             "username": user.username,
             "first_name": user.first_name,
             "last_name": user.last_name,
+            "email": user.email,
         }
 
 
