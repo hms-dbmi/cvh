@@ -29,7 +29,11 @@ const workspace: components["schemas"]["WorkspaceOutWithMembersCount"] = {
   private: true,
   datasets_count: 0,
   visualizations_count: 1,
-  workspace_members_count: 1,
+  // Two members: the E2E user (creator/admin) and one additional
+  // "member" (see the `member` fixture below). Keeps the switcher's
+  // collaborator count aligned with what the `/members` endpoint
+  // returns for this workspace.
+  workspace_members_count: 2,
   created_by: createdByE2E,
   created_timestamp: "2026-01-01T00:00:00Z",
   modified_timestamp: "2026-01-01T00:00:00Z",
@@ -107,6 +111,18 @@ const member: components["schemas"]["WorkspaceMemberOut"] = {
   first_name: "Member",
   last_name: "User",
   permissions: 2,
+};
+
+// The real /members endpoint returns every workspace member including
+// the viewer. The sharing-button label subtracts one (the viewer) to
+// show "collaborators besides you", so the mock must include `user`
+// alongside `member` for the button to render "1 Collaborator".
+const selfMember: components["schemas"]["WorkspaceMemberOut"] = {
+  email: user.email,
+  username: user.username,
+  first_name: user.first_name,
+  last_name: user.last_name,
+  permissions: 3,
 };
 
 const dataset = {
@@ -189,7 +205,7 @@ export const handlers = [
   http.get(`${apiUrl}/api/workspaces/:uuid/members`, () =>
     flag("__e2eEmptyMembers")
       ? HttpResponse.json([])
-      : HttpResponse.json([member]),
+      : HttpResponse.json([selfMember, member]),
   ),
 
   // Visualizations
