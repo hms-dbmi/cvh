@@ -43,16 +43,15 @@ function WorkspaceListItem({
     ? { onClick: undefined }
     : { component: "a", href: `/project/${project.uuid}` };
 
-  // Prefer "First Last"; fall back to username; then to null if the
-  // whole created_by payload collapses to empty (defensive — Django
-  // users always have a non-empty username in practice, but the
-  // fallback keeps a broken row from rendering "Shared By: " with a
-  // trailing colon and nothing after).
+  // Prefer "First Last"; fall back to email (readable) instead of
+  // username (Auth0's opaque `auth0_<hex>` for users who haven't
+  // edited their profile). Null when both are empty so the "Shared
+  // By: " line drops entirely rather than trailing an empty value.
   const sharedByName = (() => {
     if (!showSharedBy || !project.created_by) return null;
     const fullName =
       `${project.created_by.first_name} ${project.created_by.last_name}`.trim();
-    return fullName || project.created_by.username || null;
+    return fullName || project.created_by.email || null;
   })();
 
   const totalMemberCount = project.workspace_members_count;
