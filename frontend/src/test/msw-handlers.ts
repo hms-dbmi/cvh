@@ -19,6 +19,7 @@ const createdByE2E = {
   username: user.username,
   first_name: user.first_name,
   last_name: user.last_name,
+  email: user.email,
 };
 
 const workspace: components["schemas"]["WorkspaceOutWithMembersCount"] = {
@@ -52,6 +53,7 @@ const publicWorkspace: components["schemas"]["WorkspaceOut"] = {
     username: "other-user",
     first_name: "Other",
     last_name: "User",
+    email: "other@example.com",
   },
   created_timestamp: "2026-01-01T00:00:00Z",
   modified_timestamp: "2026-01-01T00:00:00Z",

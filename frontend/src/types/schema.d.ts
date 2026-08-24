@@ -588,9 +588,13 @@ export interface components {
         };
         /**
          * CreatedByOut
-         * @description Public "who created this record" surface. Deliberately omits
-         *     `email` so anonymous readers of public workspaces / datasets can't
-         *     harvest the creator's inbox.
+         * @description "Who created this record" surface. Includes `email` because both
+         *     endpoints that carry this schema are already authenticated, and the
+         *     `/api/workspaces/:uuid/members` endpoint exposes each workspace
+         *     member's email anyway — matching it here keeps the surface aligned
+         *     while giving the UI a human-readable fallback when a creator hasn't
+         *     filled in `first_name`/`last_name` (Auth0-first sign-in leaves those
+         *     empty until the user edits their profile).
          */
         CreatedByOut: {
             /** Username */
@@ -599,6 +603,11 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
         };
         /** PagedWorkspaceOutWithMembersCount */
         PagedWorkspaceOutWithMembersCount: {
