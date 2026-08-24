@@ -10,6 +10,8 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+### Fixed
+- Vitessce visualization pages no longer freeze the browser tab while loading. The Vitessce runtime (~9 MB of JS, including three.js, higlass, and neuroglancer) is now downloaded and parsed only when the canvas is about to render — the code editor, drop zone, and bottom bar appear immediately, and a "Loading viewer…" placeholder occupies the canvas region while the runtime hydrates. In editing mode the Vitessce runtime doesn't load at all unless the user switches to exploring or saves.
 ### Added
 - Hidden `/changelog` page renders `CHANGELOG.md` for users who navigate to the URL directly. Prod hides the `[Unreleased]` section (dev and local dev show both released and unreleased entries alongside each other). Not linked from any UI; discoverable by typing the URL.
 - Workspace switcher splits the workspaces list into **Current Workspace**, **Personal Workspaces** (created by you), and **Shared Workspaces** (created by someone else and shared with you). Each shared tile now includes a `Shared By: <name>` line so the user knows who invited them. A search input filters by workspace name and a "From Me" filter chip (shown only when you actually have shared workspaces) hides the shared section.
