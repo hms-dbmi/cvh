@@ -146,29 +146,34 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
 
   const currentProject = projectsData?.items.find((p) => p.uuid === projectId);
 
-  const { personalWorkspaces, sharedWorkspaces } = useMemo(() => {
-    const projects = projectsData?.items ?? [];
-    const search = deferredSearch.trim().toLowerCase();
-    const notCurrent = projects.filter((p) => p.uuid !== projectId);
-    const bySearch = search
-      ? notCurrent.filter((p) => p.name.toLowerCase().includes(search))
-      : notCurrent;
-    // A workspace is "personal" (created by the current user) when the
-    // creator's username matches the logged-in user's. Legacy rows
-    // without an attributed creator (`created_by == null`) fall into
-    // the shared bucket — better than falsely claiming ownership.
-    const meUsername = currentUser?.username;
-    const isPersonal = (p: WorkspaceOut) =>
-      !!meUsername && p.created_by?.username === meUsername;
-    return {
-      personalWorkspaces: bySearch.filter(isPersonal),
-      // "From Me" toggle hides shared workspaces so the user sees only
-      // what they authored.
-      sharedWorkspaces: fromMeOnly
-        ? []
-        : bySearch.filter((p) => !isPersonal(p)),
-    };
-  }, [projectsData, currentUser, deferredSearch, fromMeOnly, projectId]);
+  const { personalWorkspaces, sharedWorkspaces, hasAnySharedWorkspaces } =
+    useMemo(() => {
+      const projects = projectsData?.items ?? [];
+      const search = deferredSearch.trim().toLowerCase();
+      const notCurrent = projects.filter((p) => p.uuid !== projectId);
+      const bySearch = search
+        ? notCurrent.filter((p) => p.name.toLowerCase().includes(search))
+        : notCurrent;
+      // A workspace is "personal" (created by the current user) when the
+      // creator's username matches the logged-in user's. Legacy rows
+      // without an attributed creator (`created_by == null`) fall into
+      // the shared bucket — better than falsely claiming ownership.
+      const meUsername = currentUser?.username;
+      const isPersonal = (p: WorkspaceOut) =>
+        !!meUsername && p.created_by?.username === meUsername;
+      return {
+        personalWorkspaces: bySearch.filter(isPersonal),
+        // "From Me" toggle hides shared workspaces so the user sees only
+        // what they authored.
+        sharedWorkspaces: fromMeOnly
+          ? []
+          : bySearch.filter((p) => !isPersonal(p)),
+        // Data-level, unfiltered — ignores both `deferredSearch` and
+        // `fromMeOnly` so activating the filter doesn't cause the chip
+        // to disappear underneath the user's own toggle.
+        hasAnySharedWorkspaces: notCurrent.some((p) => !isPersonal(p)),
+      };
+    }, [projectsData, currentUser, deferredSearch, fromMeOnly, projectId]);
 
   if (!currentProject) {
     return;
@@ -246,16 +251,18 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
             }}
           />
         </Box>
-        <Box sx={{ px: 2, pb: 1 }}>
-          <Chip
-            label="From Me"
-            variant={fromMeOnly ? "filled" : "outlined"}
-            color={fromMeOnly ? "primary" : "default"}
-            onClick={() => setFromMeOnly((v) => !v)}
-            icon={<User size={16} />}
-            sx={{ borderColor: "#C8CCCE", borderRadius: "6px" }}
-          />
-        </Box>
+        {hasAnySharedWorkspaces && (
+          <Box sx={{ px: 2, pb: 1 }}>
+            <Chip
+              label="From Me"
+              variant={fromMeOnly ? "filled" : "outlined"}
+              color={fromMeOnly ? "primary" : "default"}
+              onClick={() => setFromMeOnly((v) => !v)}
+              icon={<User size={16} />}
+              sx={{ borderColor: "#C8CCCE", borderRadius: "6px" }}
+            />
+          </Box>
+        )}
         <Divider sx={{ mx: 2, my: 1 }} />
         <Typography sx={SECTION_HEADING_SX}>Current Workspace</Typography>
         <WorkspaceListItem project={currentProject} isSelected />
