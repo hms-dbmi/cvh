@@ -12,6 +12,8 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Fixed
 - Vitessce visualization pages no longer freeze the browser tab while loading. The Vitessce runtime (~9 MB of JS, including three.js, higlass, and neuroglancer) is now downloaded and parsed only when the canvas is about to render — the code editor, drop zone, and bottom bar appear immediately, and a "Loading viewer…" placeholder occupies the canvas region while the runtime hydrates. In editing mode the Vitessce runtime doesn't load at all unless the user switches to exploring or saves.
+### Added
+- Hidden `/changelog` page renders `CHANGELOG.md` for users who navigate to the URL directly. Prod hides the `[Unreleased]` section (dev and local dev show both released and unreleased entries alongside each other). Not linked from any UI; discoverable by typing the URL.
 
 ## [2026-08-20] (prod, d1d891f)
 
@@ -37,8 +39,6 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Fixed
 - Browse Library rendered an empty DCC file listing after cfdb wrapped its `files(...)` responses in a `FileList { totalCount, items }` object and capped `pageSize` at 500. The frontend now tolerates both the new and pre-refactor response shapes and requests pages within the enforced cap.
-
-### Fixed
 - Homepage Featured Visualizations grid no longer silently truncates the `featured.json` list to the first five entries. The first two still render as half-width hero tiles, and any additional entries flow into rows of three third-width tiles below, so new items added to `featured.json` show up on the homepage as expected.
 - Bullet lists in tutorials render with visible markers again. The global Tailwind Preflight reset had been stripping `list-style` from every `<ul>` on the site, which silently hid the tutorial article's list bullets; the tutorial renderer now sets `listStyleType: disc` explicitly on its lists.
 

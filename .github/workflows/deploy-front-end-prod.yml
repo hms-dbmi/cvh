@@ -47,6 +47,10 @@ jobs:
           VITE_CLOUDFRONT_URL: ${{ secrets.VITE_CLOUDFRONT_URL }}
           VITE_CFDB_API_URL: ${{ secrets.VITE_CFDB_API_URL }}
           VITE_FEATURED_PATH: featured/prod-featured.json
+          # Consumed by the /changelog page to hide the [Unreleased] section
+          # on prod. Unset in the dev deploy + local dev, so those environments
+          # show unreleased entries alongside released ones.
+          VITE_ENVIRONMENT: production
         run: npm run build
 
       - name: Configure AWS Credentials
