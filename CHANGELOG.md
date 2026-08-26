@@ -10,6 +10,8 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+## [2026-08-26] (prod, df5601f)
+
 ### Fixed
 - Vitessce visualization pages no longer freeze the browser tab while loading. The Vitessce runtime (~9 MB of JS, including three.js, higlass, and neuroglancer) is now downloaded and parsed only when the canvas is about to render — the code editor, drop zone, and bottom bar appear immediately, and a "Loading viewer…" placeholder occupies the canvas region while the runtime hydrates. In editing mode the Vitessce runtime doesn't load at all unless the user switches to exploring or saves.
 - Frontend deploys now propagate on the next page load instead of only after a hard-refresh. The dev and prod deploy workflows set `Cache-Control` at upload time (`no-cache, must-revalidate` on `index.html`; long-lived `immutable` on Vite's content-hashed asset chunks), so the browser stops using heuristic caching and reliably picks up the new bundle after each deploy.
