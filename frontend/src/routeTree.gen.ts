@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VisualizationsVisualizationIdRouteImport } from './routes/visualizations.$visualizationId'
 import { Route as TutorialsChar123SlugChar125RouteImport } from './routes/tutorials.{-$slug}'
@@ -19,6 +20,11 @@ import { Route as ProjectVitessceChar123ProjectIdChar125RouteImport } from './ro
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +59,7 @@ const ProjectVitessceChar123ProjectIdChar125Route =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/changelog': typeof ChangelogRoute
   '/profile': typeof ProfileRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/changelog': typeof ChangelogRoute
   '/profile': typeof ProfileRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
@@ -70,6 +78,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/changelog': typeof ChangelogRoute
   '/profile': typeof ProfileRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/changelog'
     | '/profile'
     | '/project/{-$projectId}'
     | '/tutorials/{-$slug}'
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/changelog'
     | '/profile'
     | '/project/{-$projectId}'
     | '/tutorials/{-$slug}'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/changelog'
     | '/profile'
     | '/project/{-$projectId}'
     | '/tutorials/{-$slug}'
@@ -105,6 +117,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChangelogRoute: typeof ChangelogRoute
   ProfileRoute: typeof ProfileRoute
   ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
   TutorialsChar123SlugChar125Route: typeof TutorialsChar123SlugChar125Route
@@ -119,6 +132,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -161,6 +181,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChangelogRoute: ChangelogRoute,
   ProfileRoute: ProfileRoute,
   ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
   TutorialsChar123SlugChar125Route: TutorialsChar123SlugChar125Route,

@@ -49,6 +49,22 @@ class UserOut(Schema):
     email: EmailStr
 
 
+class CreatedByOut(Schema):
+    """"Who created this record" surface. Includes `email` because both
+    endpoints that carry this schema are already authenticated, and the
+    `/api/workspaces/:uuid/members` endpoint exposes each workspace
+    member's email anyway — matching it here keeps the surface aligned
+    while giving the UI a human-readable fallback when a creator hasn't
+    filled in `first_name`/`last_name` (Auth0-first sign-in leaves those
+    empty until the user edits their profile).
+    """
+
+    username: str
+    first_name: str
+    last_name: str
+    email: EmailStr
+
+
 class UserIn(OptionalSchema):
     first_name: str
     last_name: str
@@ -70,10 +86,27 @@ class WorkspaceOut(ModelSchema):
     datasets_count: int
     visualizations_count: int
     permissions: int | None = None
+    # `user_key` on Project is the creator FK; surface it as `created_by`
+    # so consumers don't have to know the ORM field name. Nullable
+    # because `user_key` itself is nullable (legacy rows without an
+    # attributed creator).
+    created_by: CreatedByOut | None = None
 
     class Meta:
         model = Project
         fields = ["private", *shared_output_fields]
+
+    @staticmethod
+    def resolve_created_by(obj: Project) -> dict | None:
+        user = obj.user_key
+        if user is None:
+            return None
+        return {
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+        }
 
 
 class WorkspaceOutWithMembersCount(WorkspaceOut):

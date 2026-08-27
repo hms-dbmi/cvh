@@ -10,6 +10,22 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+## [2026-08-26] (prod, df5601f)
+
+### Fixed
+- Vitessce visualization pages no longer freeze the browser tab while loading. The Vitessce runtime (~9 MB of JS, including three.js, higlass, and neuroglancer) is now downloaded and parsed only when the canvas is about to render — the code editor, drop zone, and bottom bar appear immediately, and a "Loading viewer…" placeholder occupies the canvas region while the runtime hydrates. In editing mode the Vitessce runtime doesn't load at all unless the user switches to exploring or saves.
+- Frontend deploys now propagate on the next page load instead of only after a hard-refresh. The dev and prod deploy workflows set `Cache-Control` at upload time (`no-cache, must-revalidate` on `index.html`; long-lived `immutable` on Vite's content-hashed asset chunks), so the browser stops using heuristic caching and reliably picks up the new bundle after each deploy.
+### Added
+- Hidden `/changelog` page renders `CHANGELOG.md` for users who navigate to the URL directly. Prod hides the `[Unreleased]` section (dev and local dev show both released and unreleased entries alongside each other). Not linked from any UI; discoverable by typing the URL.
+- Workspace switcher splits the workspaces list into **Current Workspace**, **Personal Workspaces** (created by you), and **Shared Workspaces** (created by someone else and shared with you). Each shared tile — including the Current Workspace tile when the active workspace was created by someone else — includes a `Shared By: <name>` line so the user knows who invited them. The name falls back to the creator's email when they haven't set a first/last name yet (so users who signed in via Auth0 without editing their profile show as `Shared By: user@example.com` rather than an opaque `auth0_<hex>` id). A search input filters by workspace name and a "From Me" filter chip (shown only when you actually have shared workspaces) hides the shared section.
+- Workspace API responses now include a `created_by: { username, first_name, last_name, email }` field on each workspace, sourced from the workspace's creator (`Project.user_key`). Nullable for legacy rows created before the field was tracked.
+
+### Changed
+- Collaborator counts across the app now represent "collaborators besides you." The workspace switcher's per-workspace count subtracts the viewer (so a workspace you created and haven't shared shows no collaborator line at all instead of "1 collaborator"), and the "N Collaborators" button in the workspace sharing dialog uses the same rule (showing `0 Collaborators` on a solo workspace so the button keeps stable width).
+- Workspace tiles in the switcher now show a Phosphor `User` icon (1 total member) or `Users` icon (>1) inside the colored avatar square instead of the workspace's initial letter. The trigger button that opens the switcher uses the same icon for consistency with the tiles it opens.
+
+## [2026-08-20] (prod, d1d891f)
+
 ### Added
 - Vitessce visualizations can now use CVH datasets. Upload Vitessce-native formats — OME-TIFF, OME-Zarr (plus its zipped variant), AnnData in Zarr (plus zipped and h5ad variants), and SpatialData in Zarr (plus zipped) — the same way you upload Gosling datasets. Each dataset is tagged with the viewer it belongs to, and the two don't mix inside a single visualization.
 - The Add Dataset wizard now starts by asking whether you're adding data for Gosling or Vitessce, and then shows only the file types that viewer supports. For Vitessce, the file-type step is a two-step picker — choose a Data Type (matrix, embedding, image, …) first and the File Type dropdown narrows to just the formats that can carry it (per vitessce.io/docs/data-types-file-types).
@@ -32,8 +48,6 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Fixed
 - Browse Library rendered an empty DCC file listing after cfdb wrapped its `files(...)` responses in a `FileList { totalCount, items }` object and capped `pageSize` at 500. The frontend now tolerates both the new and pre-refactor response shapes and requests pages within the enforced cap.
-
-### Fixed
 - Homepage Featured Visualizations grid no longer silently truncates the `featured.json` list to the first five entries. The first two still render as half-width hero tiles, and any additional entries flow into rows of three third-width tiles below, so new items added to `featured.json` show up on the homepage as expected.
 - Bullet lists in tutorials render with visible markers again. The global Tailwind Preflight reset had been stripping `list-style` from every `<ul>` on the site, which silently hid the tutorial article's list bullets; the tutorial renderer now sets `listStyleType: disc` explicitly on its lists.
 

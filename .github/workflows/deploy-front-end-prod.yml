@@ -47,6 +47,10 @@ jobs:
           VITE_CLOUDFRONT_URL: ${{ secrets.VITE_CLOUDFRONT_URL }}
           VITE_CFDB_API_URL: ${{ secrets.VITE_CFDB_API_URL }}
           VITE_FEATURED_PATH: featured/prod-featured.json
+          # Consumed by the /changelog page to hide the [Unreleased] section
+          # on prod. Unset in the dev deploy + local dev, so those environments
+          # show unreleased entries alongside released ones.
+          VITE_ENVIRONMENT: production
         run: npm run build
 
       - name: Configure AWS Credentials
@@ -56,7 +60,22 @@ jobs:
           aws-region: us-east-1
 
       - name: Upload to S3
-        run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }}
+        # Hashed assets (Vite writes content-hashed filenames under
+        # `assets/`) can be cached forever — a rebuild produces a new
+        # filename, so there's no risk of the browser reusing stale
+        # bytes. `immutable` tells modern browsers to skip revalidation
+        # entirely.
+        #
+        # `index.html` names the current asset bundle by hash. It must
+        # revalidate on every load so a fresh deploy is picked up on the
+        # next visit (not just on hard-refresh). CloudFront invalidation
+        # below handles the edge; `no-cache` here handles the browser.
+        run: |
+          aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }} \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp ./dist/index.html s3://${{ secrets.S3_BUCKET }}/index.html \
+            --cache-control "public, max-age=0, must-revalidate"
 
       - name: Invalidate CloudFront cache
         run: |
@@ -71,6 +90,10 @@ jobs:
         # CHANGELOG.md's `[Unreleased]` section after a successful deploy.
         run: |
           set -euo pipefail
+          # Annotated tags need a committer identity; the runner has none by
+          # default, so use the github-actions bot.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           DATE=$(date -u +%Y-%m-%d)
           SHA=$(git rev-parse --short HEAD)
           TAG="prod-frontend-${DATE}-${SHA}"
