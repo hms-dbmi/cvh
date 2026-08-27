@@ -14,7 +14,15 @@ import {
   type GDData,
   useGoslingDndHandlers,
 } from "gosling-designer-vec";
-import { type ComponentProps, memo, useCallback, useMemo, useRef } from "react";
+import {
+  type ComponentProps,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { useGetPaginatedProjectDatasets } from "@/features/datasets/api/useDatasets";
 import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore.ts";
@@ -105,27 +113,85 @@ function GoslingVizShell({
 
   const hasWritePermissions = permissions >= 2;
 
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Manual-save state, driven by the designer lib's callbacks.
+  // `hasUnsavedChanges` toggles the Save button's enabled state.
+  // `latestChangeRef` stashes the most recent onChange payload so
+  // `onSave` can persist it without recomputing the counts.
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const latestChangeRef = useRef<Parameters<
+    NonNullable<ComponentProps<typeof AppStateProvider>["onChange"]>
+  >[0] | null>(null);
 
-  const onChange = useMemo<ComponentProps<typeof AppStateProvider>["onChange"]>(
-    () => {
-      const DEBOUNCE_MS = 5000;
-      return ({ vis, nTracks, nDatasets }) => {
-        const conf = vis?.spec;
-        if (!selectedVizId || !hasWritePermissions) return;
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-        }
-        saveTimeoutRef.current = setTimeout(() => {
-          updateViz({
-            body: { conf, n_tracks: nTracks, n_datasets: nDatasets },
-            params: { path: { visualization_uuid: selectedVizId } },
-          });
-        }, DEBOUNCE_MS);
-      };
+  // Reset dirty state whenever we switch to a different visualization —
+  // the incoming viz starts clean regardless of what the previous
+  // session had accumulated.
+  useEffect(() => {
+    setHasUnsavedChanges(false);
+    latestChangeRef.current = null;
+  }, [selectedVizId]);
+
+  const onChange = useCallback<
+    NonNullable<ComponentProps<typeof AppStateProvider>["onChange"]>
+  >(
+    (payload) => {
+      if (!selectedVizId || !hasWritePermissions) return;
+      // Stash the latest change so `onSave` has fresh material without
+      // needing to walk the current-visualization ref itself. Also flip
+      // dirty so the Save button lights up.
+      latestChangeRef.current = payload;
+      setHasUnsavedChanges(true);
+    },
+    [selectedVizId, hasWritePermissions],
+  );
+
+  const onCodeEditorChange = useCallback<
+    NonNullable<
+      ComponentProps<typeof AppStateProvider>["onCodeEditorChange"]
+    >
+  >(
+    ({ vis, nTracks, nDatasets }) => {
+      if (!selectedVizId || !hasWritePermissions) return;
+      // Code-editor commits autosave immediately — matches the Vitessce
+      // Monaco editor's UX in `VitessceViewer.tsx`. The lib fires this
+      // only for newly-appended `targetUi: 'code-editor'` provenance
+      // entries, so undo/redo back to a code-editor state doesn't
+      // re-fire it.
+      updateViz({
+        body: {
+          conf: vis?.spec,
+          n_tracks: nTracks,
+          n_datasets: nDatasets,
+        },
+        params: { path: { visualization_uuid: selectedVizId } },
+      });
+      // The commit that fired this call also fires onChange (which sets
+      // dirty true just above). We follow it here to reset the flag,
+      // since we've just persisted the same change. Setter order is
+      // preserved by React's batching: onChange runs first, then this.
+      setHasUnsavedChanges(false);
     },
     [updateViz, selectedVizId, hasWritePermissions],
   );
+
+  const onSave = useCallback(() => {
+    if (!selectedVizId || !hasWritePermissions) return;
+    const payload = latestChangeRef.current;
+    if (!payload) return;
+    try {
+      updateViz({
+        body: {
+          conf: payload.vis?.spec,
+          n_tracks: payload.nTracks,
+          n_datasets: payload.nDatasets,
+        },
+        params: { path: { visualization_uuid: selectedVizId } },
+      });
+      setHasUnsavedChanges(false);
+    } catch (e) {
+      toastError("Error saving visualization");
+      console.error(e);
+    }
+  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
   const onPublish = useCallback(() => {
     try {
@@ -146,6 +212,9 @@ function GoslingVizShell({
       data={formattedDatasets}
       visualization={formattedVisualization}
       onChange={onChange}
+      onCodeEditorChange={onCodeEditorChange}
+      onSave={onSave}
+      hasUnsavedChanges={hasUnsavedChanges}
       onPublish={onPublish}
       userMode={
         (
