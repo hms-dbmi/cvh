@@ -158,6 +158,10 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     const serverVal = data?.conf ? JSON.stringify(data.conf, null, 2) : "";
     lastServerValueRef.current = serverVal;
     setEditorValue(serverVal);
+    // Server payload just landed — the live config ref and dirty flag
+    // are stale from whatever the user was doing on the previous viz.
+    latestConfigRef.current = null;
+    setHasUnsavedChanges(false);
   }, [data?.conf]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
@@ -169,32 +173,33 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     return { ...(data.conf as object), uid: selectedVizId };
   }, [data?.conf, selectedVizId]);
 
-  // Auto-save for Vitessce viewer (exploring mode)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Exploring-mode changes (config edits from Vitessce's own UI:
+  // brushes, view toggles, etc.) are held in a ref and only persisted
+  // when the user clicks Save in the BottomBar — no more debounced
+  // autosave. `hasUnsavedChanges` drives the Save button's enabled
+  // state.
+  const latestConfigRef = useRef<object | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const saveViz = useMemo(() => {
-    const DEBOUNCE_MS = 5000;
-    return (config: object) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        try {
-          if (!selectedVizId || !hasWritePermissions) {
-            return;
-          }
-          updateViz({
-            body: { conf: config as Record<string, never> },
-            params: {
-              path: { visualization_uuid: selectedVizId },
-            },
-          });
-        } catch (e) {
-          toastError("Error saving visualization");
-          console.error(e);
-        }
-      }, DEBOUNCE_MS);
-    };
+  const handleConfigChange = useCallback((config: object) => {
+    latestConfigRef.current = config;
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const saveViz = useCallback(() => {
+    if (!selectedVizId || !hasWritePermissions) return;
+    const config = latestConfigRef.current;
+    if (!config) return;
+    try {
+      updateViz({
+        body: { conf: config as Record<string, never> },
+        params: { path: { visualization_uuid: selectedVizId } },
+      });
+      setHasUnsavedChanges(false);
+    } catch (e) {
+      toastError("Error saving visualization");
+      console.error(e);
+    }
   }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
 
   const publishViz = useCallback(() => {
@@ -409,7 +414,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
               config={vitessceConfig}
               height={900}
               theme="light"
-              onConfigChange={hasWritePermissions ? saveViz : undefined}
+              onConfigChange={hasWritePermissions ? handleConfigChange : undefined}
             />
           </Suspense>
         )}
@@ -462,6 +467,13 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             published={data?.published}
             visualizationID={selectedVizId}
             onPublish={hasWritePermissions ? publishViz : undefined}
+            // Save is only meaningful in exploring mode — the code editor
+            // path autosaves on a 2.5s debounce, so a Save button there
+            // would fire redundantly. Hide it when editing.
+            onSave={
+              hasWritePermissions && mode === "exploring" ? saveViz : undefined
+            }
+            hasUnsavedChanges={hasUnsavedChanges}
             hasWritePermissions={hasWritePermissions}
           />
         </Box>

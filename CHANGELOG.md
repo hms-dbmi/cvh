@@ -10,6 +10,18 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+### Added
+- Vitessce visualizations have a Save button in the bottom bar (exploring mode). Edits made through Vitessce's own UI — brushes, layout toggles, selection changes — are tracked as unsaved and persisted only when you click Save. The button disables once there's nothing left to save.
+
+### Changed
+- Gosling visualizations now use a manual Save workflow instead of the previous 5-second debounced autosave. Panel edits, drags, template drops, and other in-canvas changes all light up the Save button; click Save to persist. Pasting a spec into the code editor still autosaves immediately, since that's already an explicit user action.
+
+### Fixed
+- Editing a Gosling visualization no longer intermittently reverts the canvas back to the last saved state on the first change after each save.
+- Undo history in the Gosling designer is preserved across save cycles. Previously the first edit after each save wiped the undo stack.
+- Hovering over a track template thumbnail or a Visual Mapping mark icon no longer triggers a full canvas re-render on every mouse-enter, keeping the panels responsive on large visualizations. Panel highlight outlines (green for the newly-selected mark, orange for the deselected mark) still work as before.
+- Pasting a spec into the Gosling code editor no longer leaves stale canvas state from the previous spec when the pasted spec has a different track or view structure.
+
 ## [2026-08-26] (prod, df5601f)
 
 ### Fixed
