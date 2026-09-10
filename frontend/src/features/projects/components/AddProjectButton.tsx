@@ -10,6 +10,7 @@ import {
 import { z } from "zod";
 
 import DialogButton from "@/components/DialogButton";
+import posthog from "@/posthog";
 import { useCreateProject } from "../api/useProjects";
 
 const text = {
@@ -81,6 +82,9 @@ export default function AddProjectButton() {
 
   const onSubmit = useCallback(
     ({ name, description }: FormValues) => {
+      posthog.capture("workspace_creation_submitted", {
+        is_private: true,
+      });
       mutate({ body: { name, description, private: true } });
       handleReset();
     },

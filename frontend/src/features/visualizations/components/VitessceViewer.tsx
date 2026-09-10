@@ -23,6 +23,7 @@ import {
 } from "react";
 import "react-grid-layout/css/styles.css";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
+import posthog from "@/posthog";
 import {
   useGetVisualization,
   useUpdateVisualization,
@@ -191,6 +192,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     const config = latestConfigRef.current;
     if (!config) return;
     try {
+      posthog.capture("visualization_saved", { viewer: "vitessce" });
       updateViz({
         body: { conf: config as Record<string, never> },
         params: { path: { visualization_uuid: selectedVizId } },

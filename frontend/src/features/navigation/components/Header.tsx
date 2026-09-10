@@ -26,6 +26,7 @@ import { useCallback, useState } from "react";
 import CVHLogo from "@/assets/cvh_logo.svg?react";
 import ProjectSettings from "@/features/projects/components/ProjectSettings";
 import PublishedVizModal from "@/features/visualizations/components/PublishedVizModal";
+import posthog from "@/posthog";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
 import { LoginButton } from "./AuthButtons";
@@ -131,6 +132,7 @@ function ProfileMenu() {
   }, []);
 
   const handleLogOut = useCallback(() => {
+    posthog.reset();
     logout({ logoutParams: { returnTo: window.location.origin } });
   }, [logout]);
 

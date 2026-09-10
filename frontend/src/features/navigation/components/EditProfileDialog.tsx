@@ -9,6 +9,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
+import posthog from "@/posthog";
 import { useUpdateUser } from "../api/useUser.ts";
 
 interface FormValues {
@@ -78,6 +79,7 @@ export default function EditProfileDialog({
 
   const onSubmit = useCallback(
     ({ firstName, lastName }: FormValues) => {
+      posthog.capture("profile_update_submitted");
       mutate({
         body: {
           first_name: firstName,

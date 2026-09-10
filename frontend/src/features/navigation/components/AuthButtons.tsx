@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import Button, { type ButtonProps } from "@mui/material/Button";
+import posthog from "@/posthog";
 
 const LoginButton = (props: Partial<ButtonProps>) => {
   const { loginWithRedirect } = useAuth0();
@@ -16,9 +17,10 @@ const LogoutButton = (props: Partial<ButtonProps>) => {
 
   return (
     <Button
-      onClick={() =>
-        logout({ logoutParams: { returnTo: window.location.origin } })
-      }
+      onClick={() => {
+        posthog.reset();
+        logout({ logoutParams: { returnTo: window.location.origin } });
+      }}
       {...props}
     >
       Log Out

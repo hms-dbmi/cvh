@@ -3,6 +3,7 @@
 import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import Provider from "./Provider";
+import "./posthog";
 import { router } from "./router";
 import "./tailwind.css";
 

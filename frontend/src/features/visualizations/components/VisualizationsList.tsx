@@ -32,6 +32,7 @@ import { useCallback, useState } from "react";
 import DialogButtonCopy from "@/components/DialogButtonCopy";
 import DatasetTagsSelect from "@/features/datasets/components/DatasetTagsSelect";
 import { useVisualizationFiltersStore } from "@/features/visualizations/hooks/useVisualizationFiltersStore";
+import posthog from "@/posthog";
 import type { components } from "@/types/schema";
 import {
   useDeleteVisualization,
@@ -80,6 +81,7 @@ function ActionsMenu({
 
   const submitDelete = useCallback(() => {
     if (visualizationId) {
+      posthog.capture("visualization_deleted");
       deleteViz({
         params: {
           path: { visualization_uuid: visualizationId },

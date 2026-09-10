@@ -41,6 +41,13 @@ jobs:
         VITE_CLOUDFRONT_URL: ${{secrets.VITE_CLOUDFRONT_URL}}
         VITE_CFDB_API_URL: ${{secrets.VITE_CFDB_API_URL}}
         VITE_FEATURED_PATH: featured/dev-featured.json
+        VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{secrets.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}}
+        VITE_PUBLIC_POSTHOG_HOST: ${{secrets.VITE_PUBLIC_POSTHOG_HOST}}
+        # Dev deploy — PostHog is initialized *only* if
+        # VITE_POSTHOG_DEBUG=true is set (see src/posthog.ts). This env
+        # var still tags any events that do land, so debug traffic on
+        # this deploy stays out of prod dashboards.
+        VITE_ENVIRONMENT: development
       run: npm run build
 
     - name: Configure AWS Credentials

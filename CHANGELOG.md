@@ -12,6 +12,7 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Added
 - Vitessce visualizations have a Save button in the bottom bar (exploring mode). Edits made through Vitessce's own UI — brushes, layout toggles, selection changes — are tracked as unsaved and persisted only when you click Save. The button disables once there's nothing left to save.
+- PostHog product analytics wired up with prod-vs-dev isolation on the free-tier single-project constraint. The SDK only initializes when `VITE_ENVIRONMENT=production` (or the explicit `VITE_POSTHOG_DEBUG=true` escape hatch for preview deploys), and every captured event carries an `environment` super-property so any non-prod traffic that does land can be filtered out at the project level. Session-replay input capture is now masked by default (`maskAllInputs`) so form fields — including the Vitessce/Gosling code editor and Quick Dataset ID Lookup — don't stream verbatim into recordings. Events fired inside a workspace context also tag the current workspace via `posthog.group("workspace", ...)`, so analytics can be sliced per-workspace.
 
 ### Changed
 - Gosling visualizations now use a manual Save workflow instead of the previous 5-second debounced autosave. Panel edits, drags, template drops, and other in-canvas changes all light up the Save button; click Save to persist. Pasting a spec into the code editor still autosaves immediately, since that's already an explicit user action.
