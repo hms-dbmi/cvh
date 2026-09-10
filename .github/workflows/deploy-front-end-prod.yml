@@ -56,6 +56,10 @@ jobs:
           # on prod. Unset in the dev deploy + local dev, so those environments
           # show unreleased entries alongside released ones.
           VITE_ENVIRONMENT: production
+          # CFDE-required Google Analytics (gtag.js). Prod property. The
+          # `inject-google-analytics` plugin in vite.config.ts injects
+          # the standard snippet only when this var is set.
+          VITE_GA_MEASUREMENT_ID: G-7W89V43ZRS
         run: npm run build
 
       - name: Configure AWS Credentials

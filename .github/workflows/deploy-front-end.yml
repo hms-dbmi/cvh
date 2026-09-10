@@ -48,6 +48,11 @@ jobs:
         # var still tags any events that do land, so debug traffic on
         # this deploy stays out of prod dashboards.
         VITE_ENVIRONMENT: development
+        # CFDE-required Google Analytics (gtag.js). Dev property. The
+        # `inject-google-analytics` plugin in vite.config.ts injects the
+        # standard snippet only when this var is set, so local `npm run
+        # dev` stays free of GA traffic.
+        VITE_GA_MEASUREMENT_ID: G-Q1JQBM62BM
       run: npm run build
 
     - name: Configure AWS Credentials
