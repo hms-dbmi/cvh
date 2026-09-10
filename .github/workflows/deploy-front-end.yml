@@ -60,7 +60,21 @@ jobs:
     - name: Upload to S3
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
       run: |
-        aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }}
+        # Hashed assets (Vite writes content-hashed filenames under
+        # `assets/`) can be cached forever — a rebuild produces a new
+        # filename, so there's no risk of the browser reusing stale
+        # bytes. `immutable` tells modern browsers to skip revalidation
+        # entirely.
+        aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }} \
+          --exclude "index.html" \
+          --cache-control "public, max-age=31536000, immutable"
+
+        # `index.html` names the current asset bundle by hash. It must
+        # revalidate on every load so a fresh deploy is picked up on the
+        # next visit (not just on hard-refresh). CloudFront invalidation
+        # below handles the edge; `no-cache` here handles the browser.
+        aws s3 cp ./dist/index.html s3://${{ secrets.S3_BUCKET }}/index.html \
+          --cache-control "public, max-age=0, must-revalidate"
     
     - name: Invalidate Cache
       if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}

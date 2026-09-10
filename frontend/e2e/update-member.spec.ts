@@ -8,13 +8,19 @@ test("changing a member's role fires PUT /api/workspaces/<uuid>/members", async 
 }) => {
   await page.goto(`/project/${PROJECT_ID}`);
 
-  // The mock workspace has one member, so the header button reads
-  // "1 Collaborator".
+  // The mock workspace has two members (the current user + one other),
+  // so the header button reads "1 Collaborator" — the count subtracts
+  // the viewer.
   await page.getByRole("button", { name: "1 Collaborator" }).click();
 
-  // The Role select shows the current permission ("Editor" for the mock
-  // member with permissions: 2). Change it to Admin.
-  await page.getByRole("combobox", { name: "Role" }).click();
+  // The dialog lists every member, so there are two Role selects — the
+  // viewer's row (disabled, "Admin") and the target member's row. Scope
+  // to the member's list item so the click targets only that row's
+  // dropdown.
+  const memberRow = page
+    .getByRole("listitem")
+    .filter({ hasText: "member@example.com" });
+  await memberRow.getByRole("combobox", { name: "Role" }).click();
   await page.getByRole("option", { name: "Admin" }).click();
 
   await expect.poll(() => readRequests(page)).toContainEqual({

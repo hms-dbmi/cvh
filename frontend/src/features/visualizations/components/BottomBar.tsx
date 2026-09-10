@@ -3,7 +3,12 @@ import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
-import { Code, GlobeSimple, PresentationChart } from "@phosphor-icons/react";
+import {
+  Code,
+  FloppyDisk,
+  GlobeSimple,
+  PresentationChart,
+} from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
 import posthog from "@/posthog";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
@@ -16,6 +21,8 @@ export function BottomBar({
   published,
   visualizationID,
   onPublish,
+  onSave,
+  hasUnsavedChanges,
   hasWritePermissions,
 }: {
   mode: Mode;
@@ -23,6 +30,13 @@ export function BottomBar({
   published?: boolean;
   visualizationID?: string;
   onPublish?: () => void;
+  // Manual save handler. When omitted the Save button is hidden, so the
+  // same BottomBar can be rendered for read-only users or for viewers
+  // that autosave everything.
+  onSave?: () => void;
+  // Disables the Save button when there's nothing to save. Optional —
+  // callers that don't track dirty state can leave it enabled.
+  hasUnsavedChanges?: boolean;
   hasWritePermissions?: boolean;
 }) {
   const editorMode = hasWritePermissions ? "editing" : "configuration";
@@ -100,6 +114,32 @@ export function BottomBar({
           Exploring
         </Button>
       </Stack>
+      {onSave && (
+        <>
+          <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+          <Button
+            onClick={onSave}
+            // Disable when the caller signals no dirty state; if the flag
+            // isn't provided at all, keep Save clickable so callers that
+            // don't track dirtiness still get a working button.
+            disabled={hasUnsavedChanges === false}
+            startIcon={<FloppyDisk size={24} />}
+            sx={{
+              color: "#4E5A63",
+              textTransform: "none",
+              fontWeight: 500,
+              fontSize: 14,
+              letterSpacing: "0.28px",
+              px: 1.5,
+              py: 1,
+              borderRadius: 2,
+              "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+            }}
+          >
+            Save
+          </Button>
+        </>
+      )}
       {onPublish && (
         <>
           <Divider orientation="vertical" flexItem sx={{ my: 1 }} />

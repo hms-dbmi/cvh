@@ -586,6 +586,29 @@ export interface components {
              */
             offset: number;
         };
+        /**
+         * CreatedByOut
+         * @description "Who created this record" surface. Includes `email` because both
+         *     endpoints that carry this schema are already authenticated, and the
+         *     `/api/workspaces/:uuid/members` endpoint exposes each workspace
+         *     member's email anyway — matching it here keeps the surface aligned
+         *     while giving the UI a human-readable fallback when a creator hasn't
+         *     filled in `first_name`/`last_name` (Auth0-first sign-in leaves those
+         *     empty until the user edits their profile).
+         */
+        CreatedByOut: {
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
         /** PagedWorkspaceOutWithMembersCount */
         PagedWorkspaceOutWithMembersCount: {
             /** Items */
@@ -601,6 +624,7 @@ export interface components {
             visualizations_count: number;
             /** Permissions */
             permissions?: number | null;
+            created_by?: components["schemas"]["CreatedByOut"] | null;
             /**
              * Private
              * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
@@ -652,6 +676,7 @@ export interface components {
             visualizations_count: number;
             /** Permissions */
             permissions?: number | null;
+            created_by?: components["schemas"]["CreatedByOut"] | null;
             /**
              * Private
              * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
@@ -951,11 +976,8 @@ export interface components {
              * @enum {string}
              */
             file_type: "anndata.h5ad" | "anndata.zarr" | "anndata.zarr.zip" | "featureLabels.csv" | "image.ome-tiff" | "image.ome-zarr" | "image.ome-zarr.zip" | "obsEmbedding.csv" | "obsFeatureMatrix.csv" | "obsLabels.csv" | "obsLocations.csv" | "obsPoints.csv" | "obsSegmentations.json" | "obsSegmentations.ome-zarr" | "obsSegmentations.ome-zarr.zip" | "obsSets.csv" | "obsSets.json" | "obsSpots.csv" | "sampleSets.csv" | "spatialdata.zarr" | "spatialdata.zarr.zip";
-            /**
-             * Data Type
-             * @enum {string|null}
-             */
-            data_type?: "featureLabels" | "image" | "obsEmbedding" | "obsFeatureMatrix" | "obsLabels" | "obsLocations" | "obsPoints" | "obsSegmentations" | "obsSets" | "obsSpots" | "sampleSets" | null;
+            /** Data Type */
+            data_type?: ("image" | "obsFeatureMatrix" | "obsEmbedding" | "obsSets" | "obsLocations" | "obsSpots" | "obsPoints" | "obsSegmentations" | "obsLabels" | "featureLabels" | "sampleSets") | null;
             /**
              * Name
              * @description Human-readable name shown in the UI.

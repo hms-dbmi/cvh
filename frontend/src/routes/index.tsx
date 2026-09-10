@@ -7,6 +7,7 @@ import UpperGridSVG from "../assets/homepage/background-grid-upper.svg";
 import Features from "../features/landing/components/Features";
 import Footer from "../features/landing/components/Footer";
 import HeroImages from "../features/landing/components/HeroImages";
+import HubBlurb from "../features/landing/components/HubBlurb";
 import LandingPageBackground from "../features/landing/components/LandingPageBackground";
 import { LoginButton } from "../features/navigation/components/AuthButtons";
 import FeaturedVisualizationsGrid from "../features/visualizations/components/FeaturedVisualizationsGrid";
@@ -47,7 +48,8 @@ function RouteComponent() {
                 maxWidth: "60ch",
               }}
             >
-              Create and Share Interactive Visualization for Genomics, Spatial, and Single-Cell Data
+              Create and Share Interactive Visualization for Genomics, Spatial,
+              and Single-Cell Data
             </Typography>
             <Typography
               component="p"
@@ -69,6 +71,7 @@ function RouteComponent() {
             <HeroImages />
           </Box>
         </Stack>
+        <HubBlurb />
         <Features />
         <Stack
           spacing={8}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { DccType, DistinctFieldType } from "../../cfdb-types";
 
 const CFDB_API_URL = import.meta.env.VITE_CFDB_API_URL;
@@ -10,7 +10,26 @@ const DISTINCT_DCC_NAMES_QUERY = `{
   }
 }`;
 
-const DCC_DETAILS_QUERY = `query DccDetails($input: [FileMetadataInput!]) {
+// cfdb wrapped the `files(...)` return in a `FileList { totalCount, items }`
+// object in a recent breaking change. We try the new shape first, and if
+// the deployed cfdb rejects it (schema error), we fall back to the pre-
+// FileList shape below. `_OLD` variants can be removed once every cfdb
+// deployment we hit has migrated.
+const DCC_DETAILS_QUERY_NEW = `query DccDetails($input: [FileMetadataInput!]) {
+  files(input: $input, pageSize: 1) {
+    items {
+      dcc {
+        id
+        dccName
+        dccDescription
+        dccAbbreviation
+        dccUrl
+      }
+    }
+  }
+}`;
+
+const DCC_DETAILS_QUERY_OLD = `query DccDetails($input: [FileMetadataInput!]) {
   files(input: $input, pageSize: 1) {
     dcc {
       id
@@ -47,6 +66,41 @@ async function fetchGraphQL(
   return json.data;
 }
 
+/**
+ * Read the `files(...)` payload from either shape.
+ * New: `{ files: { items: [...] } }` (post FileList refactor).
+ * Old: `{ files: [...] }` (pre-refactor).
+ * Callers pass whichever query variant returned, and this normalizes
+ * the extraction so downstream parsing doesn't have to branch.
+ */
+function readFilesItems<T = unknown>(data: unknown): T[] {
+  const files = (data as { files?: unknown } | null | undefined)?.files;
+  if (!files) return [];
+  if (Array.isArray(files)) return files as T[];
+  const items = (files as { items?: unknown }).items;
+  return Array.isArray(items) ? (items as T[]) : [];
+}
+
+/**
+ * Run a `files(...)` query with graceful fallback across the FileList
+ * refactor. Sends the new-shape query first; on any error (schema
+ * mismatch, network, etc.) retries with the old-shape query. Both
+ * responses normalize through `readFilesItems`.
+ */
+async function fetchFilesWithFallback<T = unknown>(
+  queryNew: string,
+  queryOld: string,
+  variables: Record<string, unknown>,
+): Promise<T[]> {
+  try {
+    const data = await fetchGraphQL(queryNew, variables);
+    return readFilesItems<T>(data);
+  } catch {
+    const data = await fetchGraphQL(queryOld, variables);
+    return readFilesItems<T>(data);
+  }
+}
+
 async function fetchDccs(): Promise<DccType[]> {
   const data = await fetchGraphQL(DISTINCT_DCC_NAMES_QUERY);
 
@@ -58,11 +112,12 @@ async function fetchDccs(): Promise<DccType[]> {
   const dccs = await Promise.all(
     dccNames.map(async (name) => {
       try {
-        const details = await fetchGraphQL(DCC_DETAILS_QUERY, {
-          input: [{ dcc: [{ dccName: [name] }] }],
-        });
-        const file = details?.files?.[0];
-        return file?.dcc as DccType;
+        const items = await fetchFilesWithFallback<{ dcc?: DccType }>(
+          DCC_DETAILS_QUERY_NEW,
+          DCC_DETAILS_QUERY_OLD,
+          { input: [{ dcc: [{ dccName: [name] }] }] },
+        );
+        return (items[0]?.dcc ?? null) as DccType | null;
       } catch {
         // Some DCCs have malformed data; skip them
         return null;
@@ -81,10 +136,47 @@ export function useCfdbDccs() {
   });
 }
 
-const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize: Int) {
-  files(input: $input, pageSize: $pageSize) {
+const DCC_FILES_QUERY_NEW = `query DccFiles($input: [FileMetadataInput!], $page: Int, $pageSize: Int) {
+  files(input: $input, page: $page, pageSize: $pageSize) {
+    totalCount
+    items {
+      localId
+      filename
+      accessionId
+      accessUrl
+      persistentId
+      genomeAssembly
+      fileFormat {
+        id
+        name
+      }
+      assayType {
+        id
+        name
+      }
+      collections {
+        localId
+        accessionId
+        name
+        abbreviation
+        description
+        experimentTarget
+        persistentId
+      }
+      dcc {
+        id
+        dccName
+        dccAbbreviation
+      }
+    }
+  }
+}`;
+
+const DCC_FILES_QUERY_OLD = `query DccFiles($input: [FileMetadataInput!], $page: Int, $pageSize: Int) {
+  files(input: $input, page: $page, pageSize: $pageSize) {
     localId
     filename
+    accessionId
     accessUrl
     persistentId
     genomeAssembly
@@ -98,6 +190,7 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
     }
     collections {
       localId
+      accessionId
       name
       abbreviation
       description
@@ -112,12 +205,16 @@ const DCC_FILES_QUERY = `query DccFiles($input: [FileMetadataInput!], $pageSize:
   }
 }`;
 
-// Large enough to cover any DCC's full file set in one request — until we
-// add real pagination to the Browse Library UI.
-const DCC_FILES_PAGE_SIZE = 10000;
+// cfdb caps `pageSize` at 500 (returns a schema error otherwise) and
+// exposes `page` (0-indexed) for pagination. Some DCCs are much larger
+// than one page — ENCODE alone is ~230k files — so the Browse Library
+// pages through them via `useCfdbDccFiles` (infinite query) rather than
+// asking for a single mega-page.
+const DCC_FILES_PAGE_SIZE = 500;
 
 export type CfdbCollection = {
   localId: string;
+  accessionId?: string | null;
   name: string;
   abbreviation?: string | null;
   description?: string | null;
@@ -130,6 +227,7 @@ export type CfdbCollection = {
 export type CfdbFile = {
   localId: string;
   filename: string;
+  accessionId?: string | null;
   accessUrl?: string | null;
   // Resolvable URL pointing at the file's landing page on the DCC's own
   // portal (e.g. `https://www.encodeproject.org/files/ENCFF684QMZ/`).
@@ -161,14 +259,13 @@ export function firstCollectionWithField<K extends keyof CfdbCollection>(
 }
 
 /**
- * The DCC-facing accession for a file. TEMPORARY: cfdb doesn't expose
- * a dedicated accession field, so we parse the last path segment of
- * `persistentId` — which contains the accession for the DCCs we ship
- * (ENCODE, 4DN). Falls back to `localId` when persistentId is missing
- * or unparseable. Remove this helper once cfdb surfaces the accession
- * directly.
+ * The DCC-facing accession for a file. Prefers cfdb's dedicated
+ * `accessionId` field; falls back to parsing the last path segment of
+ * `persistentId` (still populated for older cfdb responses that pre-date
+ * the `accessionId` rollout), then finally to `localId`.
  */
 export function getFileAccession(file: CfdbFile): string {
+  if (file.accessionId) return file.accessionId;
   if (file.persistentId) {
     try {
       const path = new URL(file.persistentId).pathname.replace(/\/+$/, "");
@@ -192,6 +289,26 @@ export function getDccShortName(dcc: {
 }): string {
   const abbrev = (dcc.dccAbbreviation ?? "").replace(/_DCIC$/i, "");
   return abbrev || dcc.dccName;
+}
+
+/**
+ * Sample file/experiment accession IDs for a DCC, used to hint the
+ * expected format in the Quick Dataset ID Lookup placeholder. Returns
+ * `null` for DCCs we haven't catalogued yet — callers should fall back
+ * to a generic placeholder in that case.
+ */
+export function getDccAccessionExample(dcc: {
+  dccAbbreviation?: string | null;
+  dccName: string;
+}): { file: string; collection: string } | null {
+  const short = getDccShortName(dcc).toUpperCase();
+  if (short === "ENCODE") {
+    return { file: "ENCFF525XQX", collection: "ENCSR918ZSJ" };
+  }
+  if (short === "4DN") {
+    return { file: "4DNFIILS2P5P", collection: "4DNEXYB8YD4K" };
+  }
+  return null;
 }
 
 /**
@@ -362,19 +479,49 @@ function buildFileInput(
   return [input];
 }
 
-async function fetchDccFiles(
+export type CfdbDccFilesPage = {
+  items: CfdbFile[];
+  // Only populated when the deployed cfdb speaks the new FileList shape
+  // (see `DCC_FILES_QUERY_NEW`). Older cfdb returns `files: [items]`
+  // directly, with no way to know the total up front — in that case we
+  // rely on a short final page to stop paging.
+  totalCount: number | null;
+};
+
+async function fetchDccFilesPage(
   dccName: string,
-  filters?: CfdbFileFilters,
-): Promise<CfdbFile[]> {
+  filters: CfdbFileFilters | undefined,
+  page: number,
+): Promise<CfdbDccFilesPage> {
+  const variables = {
+    input: buildFileInput(dccName, filters),
+    page,
+    pageSize: DCC_FILES_PAGE_SIZE,
+  };
   try {
-    const data = await fetchGraphQL(DCC_FILES_QUERY, {
-      input: buildFileInput(dccName, filters),
-      pageSize: DCC_FILES_PAGE_SIZE,
-    });
-    return data?.files ?? [];
+    const data = await fetchGraphQL(DCC_FILES_QUERY_NEW, variables);
+    const files = (data as { files?: unknown } | null | undefined)?.files;
+    if (files && !Array.isArray(files)) {
+      const wrapper = files as {
+        items?: CfdbFile[];
+        totalCount?: number | null;
+      };
+      return {
+        items: wrapper.items ?? [],
+        totalCount:
+          typeof wrapper.totalCount === "number" ? wrapper.totalCount : null,
+      };
+    }
+    // Fall through: cfdb accepted the query but returned the old shape.
   } catch {
-    // Some DCCs have malformed data that causes server-side validation errors
-    return [];
+    // Fall through to the OLD query variant on schema mismatch.
+  }
+  try {
+    const data = await fetchGraphQL(DCC_FILES_QUERY_OLD, variables);
+    return { items: readFilesItems<CfdbFile>(data), totalCount: null };
+  } catch {
+    // Some DCCs have malformed data that causes server-side validation errors.
+    return { items: [], totalCount: null };
   }
 }
 
@@ -383,14 +530,60 @@ async function fetchCfdbFilesByLocalIds(
 ): Promise<CfdbFile[]> {
   if (localIds.length === 0) return [];
   try {
-    const data = await fetchGraphQL(DCC_FILES_QUERY, {
-      input: [{ localId: localIds }],
-      pageSize: DCC_FILES_PAGE_SIZE,
-    });
-    return data?.files ?? [];
+    return await fetchFilesWithFallback<CfdbFile>(
+      DCC_FILES_QUERY_NEW,
+      DCC_FILES_QUERY_OLD,
+      { input: [{ localId: localIds }], pageSize: DCC_FILES_PAGE_SIZE },
+    );
   } catch {
     return [];
   }
+}
+
+/**
+ * Server-side exact-match lookup for the Browse Library's Quick Dataset
+ * ID Lookup input. Sends two ORed input entries so the same query hits
+ * whether the user pastes a file accession (matches `accessionId`, e.g.
+ * `ENCFF525XQX`) or a collection accession (matches any file whose
+ * `collections[].accessionId` equals the query, e.g. `ENCSR918ZSJ`).
+ * Scoped to the DCC the user is currently browsing.
+ *
+ * Required because the DCC file listing is now capped at 500 items by
+ * cfdb (see `DCC_FILES_PAGE_SIZE`), so client-side filtering against
+ * that list can't find IDs outside the first page.
+ */
+async function fetchCfdbFileLookup(
+  dccName: string,
+  query: string,
+): Promise<CfdbFile[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const dccFilter = { dccName: [dccName] };
+  const input = [
+    { dcc: [dccFilter], accessionId: [trimmed] },
+    { dcc: [dccFilter], collections: [{ accessionId: [trimmed] }] },
+  ];
+  try {
+    return await fetchFilesWithFallback<CfdbFile>(
+      DCC_FILES_QUERY_NEW,
+      DCC_FILES_QUERY_OLD,
+      { input, pageSize: DCC_FILES_PAGE_SIZE },
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function useCfdbFileLookup(dccName: string | undefined, query: string) {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: ["cfdb", "file-lookup", dccName, trimmed],
+    queryFn: () => fetchCfdbFileLookup(dccName!, trimmed),
+    // Skip while the input is empty — no need to fetch, and the caller
+    // falls back to the paginated DCC listing in that case.
+    enabled: !!dccName && trimmed.length > 0,
+    staleTime: 1000 * 60 * 10,
+  });
 }
 
 /**
@@ -403,13 +596,35 @@ export function fetchCfdbSelectedFiles(localIds: string[]) {
   return fetchCfdbFilesByLocalIds(localIds);
 }
 
+/**
+ * Infinite query over a DCC's file list. Pages through cfdb's `files`
+ * query 500 rows at a time (the enforced `pageSize` cap); the Browse
+ * Library scrolls into new pages as the user reaches the bottom of the
+ * virtualized table.
+ *
+ * `getNextPageParam` stops paging when either the last page returned
+ * fewer rows than `DCC_FILES_PAGE_SIZE` (definitive end-of-list) or —
+ * when the new-shape response includes `totalCount` — the accumulated
+ * item count reaches the total. The two-signal approach lets us keep
+ * working against older cfdb deployments that don't populate
+ * `totalCount`.
+ */
 export function useCfdbDccFiles(
   dccName: string | undefined,
   filters?: CfdbFileFilters,
 ) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["cfdb", "dcc-files", dccName, filters],
-    queryFn: () => fetchDccFiles(dccName!, filters),
+    queryFn: ({ pageParam }) => fetchDccFilesPage(dccName!, filters, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < DCC_FILES_PAGE_SIZE) return undefined;
+      if (lastPage.totalCount != null) {
+        const loaded = allPages.reduce((n, p) => n + p.items.length, 0);
+        if (loaded >= lastPage.totalCount) return undefined;
+      }
+      return allPages.length;
+    },
     enabled: !!dccName,
     staleTime: 1000 * 60 * 10,
   });
