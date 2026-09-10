@@ -27,6 +27,7 @@ import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { useGetPaginatedProjectDatasets } from "@/features/datasets/api/useDatasets";
 import { useDatasetFiltersStore } from "@/features/datasets/hooks/useDatasetFiltersStore.ts";
 import { toGoslingDataset } from "@/features/datasets/toGoslingDataset";
+import posthog from "@/posthog";
 import type { components } from "@/types/schema";
 import { useUpdateVisualization } from "../api/useVisualizations";
 import formatVisualization from "../utils/formatVisualization.ts";
@@ -178,6 +179,7 @@ function GoslingVizShell({
     const payload = latestChangeRef.current;
     if (!payload) return;
     try {
+      posthog.capture("visualization_saved", { viewer: "gosling" });
       updateViz({
         body: {
           conf: payload.vis?.spec,
