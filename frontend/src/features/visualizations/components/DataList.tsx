@@ -514,9 +514,11 @@ function DataList({
       />
       <Stack direction="row" spacing={1}>
         {hasWritePermissions && (
-          <AddDatasetButton projectId={projectId} />
+          <>
+            <AddDatasetButton projectId={projectId} />
+            <BrowseLibraryButton />
+          </>
         )}
-        <BrowseLibraryButton />
       </Stack>
       <DataSelects projectId={projectId} />
       <List>
@@ -594,22 +596,20 @@ function DataAccordion({
           ) : (
             <Stack spacing={1}>
               <NoDataSVG />
-              <AddExamplesDatasets
-                workspace_uuid={projectId}
-                buttonProps={{
-                  disabled: !hasWritePermissions,
-                }}
-              />
-              <Stack direction="row" spacing={1}>
-                <AddDatasetButton
-                  projectId={projectId}
-                  buttonProps={{
-                    variant: "contained",
-                    disabled: !hasWritePermissions,
-                  }}
-                />
-                <BrowseLibraryButton buttonProps={{ variant: "contained" }} />
-              </Stack>
+              {hasWritePermissions && (
+                <>
+                  <AddExamplesDatasets workspace_uuid={projectId} />
+                  <Stack direction="row" spacing={1}>
+                    <AddDatasetButton
+                      projectId={projectId}
+                      buttonProps={{ variant: "contained" }}
+                    />
+                    <BrowseLibraryButton
+                      buttonProps={{ variant: "contained" }}
+                    />
+                  </Stack>
+                </>
+              )}
             </Stack>
           )}
         </Box>
