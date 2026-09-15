@@ -17,6 +17,7 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Changed
 - Gosling visualizations now use a manual Save workflow instead of the previous 5-second debounced autosave. Panel edits, drags, template drops, and other in-canvas changes all light up the Save button; click Save to persist. Pasting a spec into the code editor still autosaves immediately, since that's already an explicit user action.
+- The data source panel now hides the Add Dataset, Add Example Datasets, and Browse Library buttons for users without write access to a workspace, instead of showing them in a disabled state. Applies to both the panel toolbar and the empty-state placeholder on visualizations with no datasets yet.
 
 ### Fixed
 - Editing a Gosling visualization no longer intermittently reverts the canvas back to the last saved state on the first change after each save.
