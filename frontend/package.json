@@ -33,7 +33,7 @@
     "@tanstack/react-virtual": "^3.13.4",
     "@tanstack/router-generator": "1.99.8",
     "date-fns": "^4.1.0",
-    "gosling-designer-vec": "0.0.74",
+    "gosling-designer-vec": "0.0.75",
     "openapi-fetch": "^0.13.4",
     "openapi-react-query": "^0.3.0",
     "posthog-js": "^1.416.0",
