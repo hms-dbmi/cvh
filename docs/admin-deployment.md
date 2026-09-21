@@ -139,7 +139,7 @@ Deployment lives in `cloudformation/admin-back-end.yml`, wired into the parent t
 4. **Update the Auth0 application's Allowed Callback URLs** to include the admin domain:
 
    ```
-   http://localhost:8000/oidc/callback/, https://admin.dev.vis-api.link/oidc/callback/, https://admin.vis-api.link/oidc/callback/
+   http://localhost:8000/oidc/callback/, https://dev.admin.visualizationhub.org/oidc/callback/, https://admin.visualizationhub.org/oidc/callback/
    ```
 
 #### Updating the IP allowlist (no redeploy)
