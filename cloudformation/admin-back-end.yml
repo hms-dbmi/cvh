@@ -68,15 +68,17 @@ Parameters:
     Default: /cvh/admin/dev/allowed-prefix-list-id
   HostedZoneName:
     Type: String
-    Default: vis-api.link
+    Default: visualizationhub.org
   HostedZoneId:
     Type: String
+    # TODO: update to the visualizationhub.org hosted-zone ID before
+    # relying on this default for a dev deploy.
     Default: Z09477406JQAR0KB7G87
   RootDomainName:
     Description: >
-      Prod admin domain (e.g. admin.vis-api.link). Non-prod environments
-      get prefixed with the environment name (e.g. dev.admin.vis-api.link).
-    Default: admin.vis-api.link
+      Prod admin domain (e.g. admin.visualizationhub.org). Non-prod environments
+      get prefixed with the environment name (e.g. dev.admin.visualizationhub.org).
+    Default: admin.visualizationhub.org
     Type: String
   Environment:
     Type: String
