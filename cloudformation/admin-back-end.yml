@@ -71,9 +71,7 @@ Parameters:
     Default: visualizationhub.org
   HostedZoneId:
     Type: String
-    # TODO: update to the visualizationhub.org hosted-zone ID before
-    # relying on this default for a dev deploy.
-    Default: Z09477406JQAR0KB7G87
+    Default: Z02332581YW11QLMXBXY4
   ServiceSubdomain:
     Description: >
       Service label for the admin host. Non-prod environments insert the
