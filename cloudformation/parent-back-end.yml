@@ -23,20 +23,26 @@ Parameters:
   # dev. Every prod deploy must override each of these.
   HostedZoneName:
     Type: String
-    Default: vis-api.link
+    Default: visualizationhub.org
   HostedZoneId:
     Type: String
-    Default: Z09477406JQAR0KB7G87
-  BackendRootDomainName:
+    Default: Z02332581YW11QLMXBXY4
+  ApexDomainName:
     Type: String
     Description: >
-      Root domain for the API. In prod this is served as-is; in dev the
-      environment prefix (e.g. `dev.`) is prepended by the back-end stack.
-    Default: api.vis-api.link
-  AdminRootDomainName:
+      Apex domain every service host is built under. Prod hosts are
+      `<service>.${ApexDomainName}`; non-prod hosts insert the environment
+      between the two (`<service>.dev.visualizationhub.org`) so the whole
+      environment lives in one delegable, wildcard-certifiable subtree.
+    Default: visualizationhub.org
+  BackendServiceSubdomain:
     Type: String
-    Description: Root domain for the admin service. Same prod/dev rules as BackendRootDomainName.
-    Default: admin.vis-api.link
+    Description: Service label for the API host.
+    Default: api
+  AdminServiceSubdomain:
+    Type: String
+    Description: Service label for the admin host.
+    Default: admin
   ImageURI:
     Type: String
     Description: >
@@ -100,7 +106,8 @@ Resources:
         DBName: !GetAtt Database.Outputs.DBName
         HostedZoneName: !Ref HostedZoneName
         HostedZoneId: !Ref HostedZoneId
-        RootDomainName: !Ref BackendRootDomainName
+        ServiceSubdomain: !Ref BackendServiceSubdomain
+        ApexDomainName: !Ref ApexDomainName
         ImageURI: !Ref ImageURI
         TaskEnvFile: !Ref BackendTaskEnvFile
     DependsOn:
@@ -123,7 +130,8 @@ Resources:
         DBName: !GetAtt Database.Outputs.DBName
         HostedZoneName: !Ref HostedZoneName
         HostedZoneId: !Ref HostedZoneId
-        RootDomainName: !Ref AdminRootDomainName
+        ServiceSubdomain: !Ref AdminServiceSubdomain
+        ApexDomainName: !Ref ApexDomainName
         ImageURI: !Ref ImageURI
         TaskEnvFile: !Ref AdminTaskEnvFile
         # Per-env SSM path holding the prefix list ID for the admin IP

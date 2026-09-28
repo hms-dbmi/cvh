@@ -68,15 +68,26 @@ Parameters:
     Default: /cvh/admin/dev/allowed-prefix-list-id
   HostedZoneName:
     Type: String
-    Default: vis-api.link
+    Default: visualizationhub.org
   HostedZoneId:
     Type: String
-    Default: Z09477406JQAR0KB7G87
-  RootDomainName:
+    Default: Z02332581YW11QLMXBXY4
+  ServiceSubdomain:
     Description: >
-      Prod admin domain (e.g. admin.vis-api.link). Non-prod environments
-      get prefixed with the environment name (e.g. dev.admin.vis-api.link).
-    Default: admin.vis-api.link
+      Service label for the admin host. Non-prod environments insert the
+      environment name *between* the service label and the apex, so prod is
+      admin.visualizationhub.org and dev is admin.dev.visualizationhub.org.
+      Keeping every non-prod host under one `${Environment}.${ApexDomainName}`
+      subtree lets a single wildcard certificate cover the environment and
+      lets the subtree be delegated to its own hosted zone later.
+    Default: admin
+    Type: String
+  ApexDomainName:
+    Description: >
+      Apex domain the service host is built under. Kept separate from
+      HostedZoneName so the non-prod subtree can be delegated to its own
+      hosted zone without changing any host name.
+    Default: visualizationhub.org
     Type: String
   Environment:
     Type: String
@@ -93,16 +104,21 @@ Resources:
       DomainName:
         !If [
           IsProd,
-          !Ref RootDomainName,
-          !Sub "${Environment}.${RootDomainName}",
+          !Sub "${ServiceSubdomain}.${ApexDomainName}",
+          !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
         ]
       ValidationMethod: DNS
       DomainValidationOptions: !If [
           IsProd,
-          [{ DomainName: !Ref RootDomainName, HostedZoneId: !Ref HostedZoneId }],
           [
             {
-              DomainName: !Sub "${Environment}.${RootDomainName}",
+              DomainName: !Sub "${ServiceSubdomain}.${ApexDomainName}",
+              HostedZoneId: !Ref HostedZoneId,
+            },
+          ],
+          [
+            {
+              DomainName: !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
               HostedZoneId: !Ref HostedZoneId,
             },
           ],
@@ -186,8 +202,8 @@ Resources:
         - Name:
             !If [
               IsProd,
-              !Ref RootDomainName,
-              !Sub "${Environment}.${RootDomainName}",
+              !Sub "${ServiceSubdomain}.${ApexDomainName}",
+              !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
             ]
           Type: A
           AliasTarget:
@@ -481,6 +497,6 @@ Outputs:
     Value:
       !If [
         IsProd,
-        !Ref RootDomainName,
-        !Sub "${Environment}.${RootDomainName}",
+        !Sub "${ServiceSubdomain}.${ApexDomainName}",
+        !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
       ]

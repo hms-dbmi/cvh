@@ -4,15 +4,15 @@ Parameters:
     RootDomainName:
         Description: Domain name for the website
         Type: String
-        Default: vis-api.link
+        Default: visualizationhub.org
     HostedZoneId:
         Description: Hosted Zone ID
         Type: String
-        Default: Z09477406JQAR0KB7G87
+        Default: Z02332581YW11QLMXBXY4
     HostedZoneName:
         Description: Hosted Zone Name
         Type: String
-        Default: vis-api.link
+        Default: visualizationhub.org
     Environment:
         Type: String
         Default: dev

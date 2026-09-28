@@ -42,7 +42,7 @@ body:
       label: Where did this happen?
       options:
         - visualizationhub.org (production)
-        - dev.vis-api.link (development)
+        - dev.visualizationhub.org (development)
         - Local dev environment
         - Other (please describe below)
     validations:

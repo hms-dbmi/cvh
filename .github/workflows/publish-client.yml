@@ -106,7 +106,7 @@ jobs:
           # TestPyPI publishes always smoke against dev. If we add a
           # real-PyPI publish workflow later, it should smoke against
           # api.visualizationhub.org instead.
-          CVH_SMOKE_BASE_URL: https://dev.api.vis-api.link
+          CVH_SMOKE_BASE_URL: https://api.dev.visualizationhub.org
         run: |
           sleep 30  # Wait for TestPyPI to update
           uv venv test-env
