@@ -71,9 +71,22 @@ Parameters:
     # TODO: update to the visualizationhub.org hosted-zone ID before
     # relying on this default for a dev deploy.
     Default: Z09477406JQAR0KB7G87
-  RootDomainName:
-    Description: Domain name for the website
-    Default: api.visualizationhub.org
+  ServiceSubdomain:
+    Description: >
+      Service label for the API host. Non-prod environments insert the
+      environment name *between* the service label and the apex, so prod is
+      api.visualizationhub.org and dev is api.dev.visualizationhub.org.
+      Keeping every non-prod host under one `${Environment}.${ApexDomainName}`
+      subtree lets a single wildcard certificate cover the environment and
+      lets the subtree be delegated to its own hosted zone later.
+    Default: api
+    Type: String
+  ApexDomainName:
+    Description: >
+      Apex domain the service host is built under. Kept separate from
+      HostedZoneName so the non-prod subtree can be delegated to its own
+      hosted zone without changing any host name.
+    Default: visualizationhub.org
     Type: String
   Environment:
     Type: String
@@ -91,15 +104,15 @@ Resources:
       DomainName:
         !If [
           IsProd,
-          !Ref RootDomainName,
-          !Sub "${Environment}.${RootDomainName}",
+          !Sub "${ServiceSubdomain}.${ApexDomainName}",
+          !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
         ]
       # add www to certificate
       SubjectAlternativeNames:
         - !If [
             IsProd,
-            !Sub "www.${RootDomainName}",
-            !Sub "www.${Environment}.${RootDomainName}",
+            !Sub "www.${ServiceSubdomain}.${ApexDomainName}",
+            !Sub "www.${ServiceSubdomain}.${Environment}.${ApexDomainName}",
           ]
 
       ValidationMethod: DNS
@@ -108,22 +121,22 @@ Resources:
           [
             # DNS record for the naked domain
             {
-              DomainName: !Ref RootDomainName,
+              DomainName: !Sub "${ServiceSubdomain}.${ApexDomainName}",
               HostedZoneId: !Ref HostedZoneId,
             },
             # DNS record for the www domain
             {
-              DomainName: !Sub "www.${RootDomainName}",
+              DomainName: !Sub "www.${ServiceSubdomain}.${ApexDomainName}",
               HostedZoneId: !Ref HostedZoneId,
             },
           ],
           [
             {
-              DomainName: !Sub "${Environment}.${RootDomainName}",
+              DomainName: !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
               HostedZoneId: !Ref HostedZoneId,
             },
             {
-              DomainName: !Sub "www.${Environment}.${RootDomainName}",
+              DomainName: !Sub "www.${ServiceSubdomain}.${Environment}.${ApexDomainName}",
               HostedZoneId: !Ref HostedZoneId,
             },
           ],
@@ -175,8 +188,8 @@ Resources:
         - Name:
             !If [
               IsProd,
-              !Ref RootDomainName,
-              !Sub "${Environment}.${RootDomainName}",
+              !Sub "${ServiceSubdomain}.${ApexDomainName}",
+              !Sub "${ServiceSubdomain}.${Environment}.${ApexDomainName}",
             ]
           Type: A
           AliasTarget:
@@ -186,8 +199,8 @@ Resources:
         - Name:
             !If [
               IsProd,
-              !Sub "www.${RootDomainName}",
-              !Sub "www.${Environment}.${RootDomainName}",
+              !Sub "www.${ServiceSubdomain}.${ApexDomainName}",
+              !Sub "www.${ServiceSubdomain}.${Environment}.${ApexDomainName}",
             ]
           Type: A
           AliasTarget:
