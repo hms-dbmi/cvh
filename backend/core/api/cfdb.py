@@ -73,19 +73,13 @@ def dispatch_artifact(
                 location = response.headers.get("Location", "")
                 job_id = _parse_job_id(location)
                 if not job_id:
-                    raise CfdbError(
-                        f"cfdb 202 with unparseable Location: {location!r}"
-                    )
+                    raise CfdbError(f"cfdb 202 with unparseable Location: {location!r}")
                 return CfdbDispatchResult(status_code=202, job_id=job_id)
             if response.status_code in (200, 206):
                 # Race: status said not-ready but artifact landed between
                 # then and now. Treat as cache hit.
-                return CfdbDispatchResult(
-                    status_code=response.status_code, job_id=None
-                )
-            raise CfdbError(
-                f"cfdb unexpected status {response.status_code} for {url}"
-            )
+                return CfdbDispatchResult(status_code=response.status_code, job_id=None)
+            raise CfdbError(f"cfdb unexpected status {response.status_code} for {url}")
     except requests.RequestException as exc:
         raise CfdbError(f"cfdb {kind} request failed: {exc}") from exc
 

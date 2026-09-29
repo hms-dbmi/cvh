@@ -99,14 +99,9 @@ def get_workspace_visualizations(
     auth=Authorized(),
     response=list[TagOut],
     summary="Get visualization tags",
-    description=(
-        "Returns all distinct tags used by visualizations"
-        " in a workspace."
-    ),
+    description=("Returns all distinct tags used by visualizations in a workspace."),
 )
-def get_workspace_visualizations_tags(
-    request, workspace_uuid: UUID
-):
+def get_workspace_visualizations_tags(request, workspace_uuid: UUID):
     project = Project.objects.get_read_project(
         user=request.auth, project_uuid=workspace_uuid
     )
@@ -126,9 +121,7 @@ def get_workspace_visualizations_tags(
 )
 def get_visualization(request, visualization_uuid: UUID):
     try:
-        visualization = get_object_or_404(
-            VisualizationConf, uuid=visualization_uuid
-        )
+        visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
         Project.objects.get_read_project(
             project_uuid=visualization.project_key.uuid,
             user=request.auth,
@@ -145,8 +138,7 @@ def get_visualization(request, visualization_uuid: UUID):
     response=VisualizationOut,
     summary="Get a public visualization",
     description=(
-        "Returns a single published visualization by UUID."
-        " No authentication required."
+        "Returns a single published visualization by UUID. No authentication required."
     ),
 )
 def get_public_visualization(request, visualization_uuid: UUID):
@@ -167,9 +159,7 @@ def get_public_visualization(request, visualization_uuid: UUID):
     ),
 )
 def delete_visualization(request, visualization_uuid: UUID):
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid
-    )
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
         Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid,
@@ -199,9 +189,7 @@ def update_visualization(
     payload: VisualizationUpdate,
 ):
     payload_dict = payload.dict(exclude_unset=True)
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid
-    )
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
         Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid,
@@ -229,12 +217,8 @@ def update_visualization(
         " Requires write access."
     ),
 )
-def tag_visualization(
-    request, visualization_uuid: UUID, payload: TagsIn
-):
-    visualization = get_object_or_404(
-        VisualizationConf, uuid=visualization_uuid
-    )
+def tag_visualization(request, visualization_uuid: UUID, payload: TagsIn):
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
     try:
         project = Project.objects.get_write_project(
             project_uuid=visualization.project_key.uuid,
@@ -268,7 +252,5 @@ def create_visualization(request, visualization: VisualizationIn):
         )
     except Project.DoesNotExist:
         raise Http404("Failed to create visualization.") from None
-    viz = VisualizationConf.objects.create(
-        **visualization_dict, project_key=project
-    )
+    viz = VisualizationConf.objects.create(**visualization_dict, project_key=project)
     return viz

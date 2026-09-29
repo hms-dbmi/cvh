@@ -10,6 +10,18 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+### Changed
+- Backend dependencies upgraded: Django 5.1.7 → 5.2.17, django-ninja 1.3.0 → 1.7.1, django-health-check 3.20 → 4.6.1, environs 14.1 → 15.2, gunicorn 23.0 → 26.2, psycopg 3.2.6 → 3.3.6, pydantic 2.10.6 → 2.13.5, plus boto3, pyarrow and pyjwt. Those starting versions are what production was actually running: the Docker image installs from `requirements.txt`, which had drifted well behind `uv.lock` (local dev was already on Django 5.2.16). Both files now resolve to the same 37 packages. Regenerate with `uv pip compile pyproject.toml -o requirements.txt --upgrade` — without `--upgrade` uv keeps whatever pins already satisfy the constraints, which is how the drift accumulated. Django stays on the 5.2 LTS line rather than moving to 6.x because mozilla-django-oidc's latest release (5.0.2) declares support only through 5.2, and it backs the admin service's Auth0 login.
+- The `/health/` page now reports real results. django-health-check 4 moved check registration from `INSTALLED_APPS` onto the view itself; CVH installed only the base `health_check` app and none of the check sub-apps, so the endpoint previously ran no checks at all and was green by construction. It now runs the cache and database checks and returns 500 when either fails. The load balancer's probe is a different path (`/health`, answered by middleware) and is unchanged, as is its behaviour.
+
+## [2026-09-23] (prod, 4af043f)
+
+### Changed
+- Vitessce upgraded from 4.0.1 to 4.0.8.
+- `gosling-designer-vec` upgraded from 0.0.74 to 0.0.75.
+
+## [2026-09-15] (prod, aa273c1)
+
 ### Added
 - Vitessce visualizations have a Save button in the bottom bar (exploring mode). Edits made through Vitessce's own UI — brushes, layout toggles, selection changes — are tracked as unsaved and persisted only when you click Save. The button disables once there's nothing left to save.
 - PostHog product analytics wired up with prod-vs-dev isolation on the free-tier single-project constraint. The SDK only initializes when `VITE_ENVIRONMENT=production` (or the explicit `VITE_POSTHOG_DEBUG=true` escape hatch for preview deploys), and every captured event carries an `environment` super-property so any non-prod traffic that does land can be filtered out at the project level. Session-replay input capture is now masked by default (`maskAllInputs`) so form fields — including the Vitessce/Gosling code editor and Quick Dataset ID Lookup — don't stream verbatim into recordings. Events fired inside a workspace context also tag the current workspace via `posthog.group("workspace", ...)`, so analytics can be sliced per-workspace.
@@ -65,4 +77,3 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 - Browse Library rendered an empty DCC file listing after cfdb wrapped its `files(...)` responses in a `FileList { totalCount, items }` object and capped `pageSize` at 500. The frontend now tolerates both the new and pre-refactor response shapes and requests pages within the enforced cap.
 - Homepage Featured Visualizations grid no longer silently truncates the `featured.json` list to the first five entries. The first two still render as half-width hero tiles, and any additional entries flow into rows of three third-width tiles below, so new items added to `featured.json` show up on the homepage as expected.
 - Bullet lists in tutorials render with visible markers again. The global Tailwind Preflight reset had been stripping `list-style` from every `<ul>` on the site, which silently hid the tutorial article's list bullets; the tutorial renderer now sets `listStyleType: disc` explicitly on its lists.
-

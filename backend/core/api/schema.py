@@ -50,7 +50,7 @@ class UserOut(Schema):
 
 
 class CreatedByOut(Schema):
-    """"Who created this record" surface. Includes `email` because both
+    """ "Who created this record" surface. Includes `email` because both
     endpoints that carry this schema are already authenticated, and the
     `/api/workspaces/:uuid/members` endpoint exposes each workspace
     member's email anyway — matching it here keeps the surface aligned
@@ -157,8 +157,7 @@ def _validate_url_or_cfdb_source(values: Any) -> Any:
         getattr(values, "index_url", None)
     )
     has_cfdb = bool(
-        getattr(values, "cfdb_dcc", None)
-        and getattr(values, "cfdb_id", None)
+        getattr(values, "cfdb_dcc", None) and getattr(values, "cfdb_id", None)
     )
     if has_user_urls == has_cfdb:
         raise ValueError(
@@ -198,9 +197,7 @@ class GoslingDesignerDataColumn(Schema):
     ) = None
 
 
-class GoslingDesignerIndex(
-    GoslingDataCommon, GoslingDesignerDataColumn, CfdbSourced
-):
+class GoslingDesignerIndex(GoslingDataCommon, GoslingDesignerDataColumn, CfdbSourced):
     file_type: Literal["vcf", "bed", "gff"]
     # Optional at the schema layer — the cfdb path derives source_url
     # server-side. Validated by `_check_source` below.
@@ -212,9 +209,7 @@ class GoslingDesignerIndex(
         return _validate_url_or_cfdb_source(self)
 
 
-class GoslingDesignerBEDB(
-    GoslingDataCommon, GoslingDesignerDataColumn
-):
+class GoslingDesignerBEDB(GoslingDataCommon, GoslingDesignerDataColumn):
     file_type: Literal["beddb"]
 
 

@@ -50,9 +50,11 @@ def is_token_expired(token: str, leeway: int = 30) -> bool:
     Returns:
         True if the token is expired (or has no exp claim), False otherwise.
     """
+    # Any decode failure (malformed token, bad base64, missing payload)
+    # means the token can't be trusted, so treat it as expired and re-auth.
     try:
         payload = decode_token_payload(token)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return True
     exp = payload.get("exp")
     if exp is None:

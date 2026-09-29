@@ -25,8 +25,7 @@ def get_user_info(request):
     response=SuccessOut,
     summary="Update current user",
     description=(
-        "Updates profile fields (first name, last name)"
-        " for the authenticated user."
+        "Updates profile fields (first name, last name) for the authenticated user."
     ),
 )
 def update_user_info(request, user_in: UserIn):

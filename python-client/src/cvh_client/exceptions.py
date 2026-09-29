@@ -54,9 +54,12 @@ class CVHAPIError(CVHError):
         self.status_code = response.status_code
         self.method = response.request.method
         self.url = str(response.request.url)
+        # The body may be empty, HTML, or truncated. Fall back to raw text:
+        # this runs inside an exception constructor, so raising here would
+        # mask the API error we're trying to report.
         try:
             self.detail = response.json()
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.detail = response.text
 
         message = f"{self.method} {self.url} returned {self.status_code}"

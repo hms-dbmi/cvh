@@ -29,16 +29,12 @@ router = Router(tags=["Workspace Members"])
         " Requires admin access to the workspace."
     ),
 )
-def add_workspace_member(
-    request, workspace_uuid: UUID, member: WorkspaceMemberIn
-):
+def add_workspace_member(request, workspace_uuid: UUID, member: WorkspaceMemberIn):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=workspace_uuid
     )
     user = get_object_or_404(User, email=member.email)
-    ProjectMember.objects.create(
-        project_key=project, user_key=user, permissions=1
-    )
+    ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
 
@@ -86,9 +82,7 @@ def update_workspace_member(
         " Requires admin access. Cannot remove yourself."
     ),
 )
-def delete_workspace_member(
-    request, workspace_uuid: UUID, member: WorkspaceMemberIn
-):
+def delete_workspace_member(request, workspace_uuid: UUID, member: WorkspaceMemberIn):
     try:
         project = Project.objects.get_admin_project(
             user=request.auth,
@@ -126,9 +120,7 @@ def get_workspace_members(request, workspace_uuid: UUID):
         )
     except Project.DoesNotExist:
         raise Http404("Failed to get workspace members.") from None
-    members = ProjectMember.objects.filter(
-        project_key=project
-    ).values(
+    members = ProjectMember.objects.filter(project_key=project).values(
         "permissions",
         username=F("user_key__username"),
         email=F("user_key__email"),

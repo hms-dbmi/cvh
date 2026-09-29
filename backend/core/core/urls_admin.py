@@ -15,6 +15,8 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import include, path, reverse
 
+from core.health import CvhHealthCheckView
+
 
 def _redirect_to_oidc(request):
     # Forward the `next` query param so mozilla-django-oidc can redirect
@@ -30,5 +32,5 @@ urlpatterns = [
     path("admin/login/", _redirect_to_oidc),
     path("admin/", admin.site.urls),
     path("oidc/", include("mozilla_django_oidc.urls")),
-    path("health/", include("health_check.urls")),
+    path("health/", CvhHealthCheckView.as_view(), name="health_check"),
 ]

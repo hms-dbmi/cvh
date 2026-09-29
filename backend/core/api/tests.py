@@ -40,9 +40,7 @@ class DatasetProcessingStatusTests(TestCase):
     def test_library_sourced_processable_starts_needed(self):
         for ft in ("bam", "sam", "vcf", "gff", "gtf", "bed", "bigbed"):
             with self.subTest(file_type=ft):
-                dataset = self._create(
-                    ft, cfdb_dcc="encode", cfdb_id="ENCFF123"
-                )
+                dataset = self._create(ft, cfdb_dcc="encode", cfdb_id="ENCFF123")
                 self.assertEqual(
                     dataset.processing_status,
                     Dataset.ProcessingStatus.NEEDED,
@@ -141,17 +139,23 @@ class DispatchProcessingTests(TestCase):
     def test_unexpected_status_raises(self):
         from .cfdb import dispatch_artifact
 
-        with patch(
-            "api.cfdb.requests.get",
-            return_value=self._mock_response(500),
-        ), self.assertRaises(CfdbError):
+        with (
+            patch(
+                "api.cfdb.requests.get",
+                return_value=self._mock_response(500),
+            ),
+            self.assertRaises(CfdbError),
+        ):
             dispatch_artifact("encode", "ENCFF1", kind="data")
 
     def test_202_without_location_raises(self):
         from .cfdb import dispatch_artifact
 
-        with patch(
-            "api.cfdb.requests.get",
-            return_value=self._mock_response(202),
-        ), self.assertRaises(CfdbError):
+        with (
+            patch(
+                "api.cfdb.requests.get",
+                return_value=self._mock_response(202),
+            ),
+            self.assertRaises(CfdbError),
+        ):
             dispatch_artifact("encode", "ENCFF1", kind="data")
