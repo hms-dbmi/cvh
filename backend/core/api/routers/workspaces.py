@@ -32,9 +32,7 @@ router = Router(tags=["Workspaces"])
 def create_workspace(request, workspace: WorkspaceIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**workspace.dict(), **user_key)
-    ProjectMember.objects.create(
-        project_key=p, user_key=request.auth, permissions=3
-    )
+    ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
     VisualizationConf.objects.create(project_key=p, name="Visualization 1")
     return p
 
@@ -60,11 +58,7 @@ def get_workspaces(request):
         Project.objects.get_read_projects(user=request.auth)
         .filter(private=True)
         .order_by("-modified_timestamp")
-        .annotate(
-            workspace_members_count=Count(
-                "projectmember", distinct=True
-            )
-        )
+        .annotate(workspace_members_count=Count("projectmember", distinct=True))
     )
     return workspaces
 
@@ -92,20 +86,14 @@ def delete_workspace(request, workspace_uuid: UUID):
     auth=Authorized(),
     response=list[WorkspaceOut],
     summary="List public workspaces",
-    description=(
-        "Returns all public workspaces, ordered by last"
-        " modified. Paginated."
-    ),
+    description=("Returns all public workspaces, ordered by last modified. Paginated."),
 )
 @paginate
 def get_public_workspaces(request):
     # Keep model instances (no `.values()`): the WorkspaceOut schema's
     # `created_by` resolver reads `obj.user_key` as an FK-resolved User,
     # which dicts don't expose. See the matching note on `get_workspaces`.
-    workspaces = (
-        Project.objects.filter(private=False)
-        .order_by("-modified_timestamp")
-    )
+    workspaces = Project.objects.filter(private=False).order_by("-modified_timestamp")
     return workspaces
 
 
@@ -149,9 +137,7 @@ def get_workspace(request, workspace_uuid: UUID):
         " or visibility. Requires admin access."
     ),
 )
-def update_workspace(
-    request, workspace_uuid: UUID, payload: WorkspaceUpdate
-):
+def update_workspace(request, workspace_uuid: UUID, payload: WorkspaceUpdate):
     payload_dict = payload.dict(exclude_unset=True)
     project = Project.objects.get_admin_project(
         project_uuid=workspace_uuid, user=request.auth

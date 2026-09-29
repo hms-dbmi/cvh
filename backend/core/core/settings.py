@@ -135,9 +135,7 @@ if SERVICE_VARIANT not in {"api", "admin"}:
         f"SERVICE_VARIANT must be 'api' or 'admin', got {SERVICE_VARIANT!r}"
     )
 
-ROOT_URLCONF = (
-    "core.urls_admin" if SERVICE_VARIANT == "admin" else "core.urls"
-)
+ROOT_URLCONF = "core.urls_admin" if SERVICE_VARIANT == "admin" else "core.urls"
 
 TEMPLATES = [
     {
@@ -317,9 +315,7 @@ AUTH0_ADMIN_CLIENT_SECRET = env.str("AUTH0_ADMIN_CLIENT_SECRET", default="")
 # `AUTH0_DOMAIN` is shared with `api/auth.py`, which expects the full URL
 # form `https://<tenant>/` (used as a JWT issuer). Strip protocol and
 # trailing slash here so the OIDC endpoint URLs come out clean.
-_auth0_host = (
-    AUTH0_DOMAIN.removeprefix("https://").removeprefix("http://").rstrip("/")
-)
+_auth0_host = AUTH0_DOMAIN.removeprefix("https://").removeprefix("http://").rstrip("/")
 OIDC_RP_CLIENT_ID = AUTH0_ADMIN_CLIENT_ID
 OIDC_RP_CLIENT_SECRET = AUTH0_ADMIN_CLIENT_SECRET
 OIDC_RP_SIGN_ALGO = "RS256"
@@ -330,9 +326,7 @@ OIDC_OP_USER_ENDPOINT = f"https://{_auth0_host}/userinfo"
 OIDC_OP_JWKS_ENDPOINT = f"https://{_auth0_host}/.well-known/jwks.json"
 
 # Read by core.oidc_backend.Auth0AdminOIDCBackend.
-OIDC_ADMIN_ROLE_CLAIM = env.str(
-    "OIDC_ADMIN_ROLE_CLAIM", default="https://cvh/roles"
-)
+OIDC_ADMIN_ROLE_CLAIM = env.str("OIDC_ADMIN_ROLE_CLAIM", default="https://cvh/roles")
 OIDC_ADMIN_ROLE_NAME = env.str("OIDC_ADMIN_ROLE_NAME", default="cvh_admin")
 
 if SERVICE_VARIANT == "admin":

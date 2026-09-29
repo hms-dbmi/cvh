@@ -58,9 +58,7 @@ class ApiUsageMiddleware:
         # in dashboard tables. Falls back to the raw path for unresolved
         # requests (404s, malformed URLs).
         resolver_match = getattr(request, "resolver_match", None)
-        endpoint = (
-            resolver_match.route if resolver_match is not None else request.path
-        )
+        endpoint = resolver_match.route if resolver_match is not None else request.path
 
         payload = {
             "_aws": {

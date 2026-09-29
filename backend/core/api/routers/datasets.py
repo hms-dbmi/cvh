@@ -165,9 +165,7 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
         " write access to the parent workspace."
     ),
 )
-def update_dataset(
-    request, dataset_uuid: UUID, payload: DatasetUpdate
-):
+def update_dataset(request, dataset_uuid: UUID, payload: DatasetUpdate):
     dataset = get_object_or_404(Dataset, uuid=dataset_uuid)
     try:
         Project.objects.get_write_project(
@@ -301,10 +299,7 @@ def get_workspace_datasets_field_values(
     auth=Authorized(),
     response=list[TagOut],
     summary="Get dataset tags",
-    description=(
-        "Returns all distinct tags used by datasets"
-        " in a workspace."
-    ),
+    description=("Returns all distinct tags used by datasets in a workspace."),
 )
 def get_workspace_datasets_tags(request, workspace_uuid: UUID):
     project = Project.objects.get_read_project(
@@ -342,8 +337,7 @@ def get_dataset(request, dataset_uuid: UUID):
     response=SuccessOut,
     summary="Delete a dataset",
     description=(
-        "Permanently deletes a dataset."
-        " Requires write access to the parent workspace."
+        "Permanently deletes a dataset. Requires write access to the parent workspace."
     ),
 )
 def delete_dataset(request, dataset_uuid: UUID):
@@ -428,9 +422,7 @@ def _advance_processing(dataset: Dataset) -> None:
             dataset.cfdb_dcc, dataset.cfdb_id, kind="data"
         )
         index_ready = (
-            check_artifact_ready(
-                dataset.cfdb_dcc, dataset.cfdb_id, kind="index"
-            )
+            check_artifact_ready(dataset.cfdb_dcc, dataset.cfdb_id, kind="index")
             if needs_index
             else True
         )
@@ -467,9 +459,7 @@ def _advance_processing(dataset: Dataset) -> None:
     next_kind = "data" if not data_ready else "index"
 
     try:
-        result = dispatch_artifact(
-            dataset.cfdb_dcc, dataset.cfdb_id, kind=next_kind
-        )
+        result = dispatch_artifact(dataset.cfdb_dcc, dataset.cfdb_id, kind=next_kind)
     except CfdbError as exc:
         dataset.processing_status = Dataset.ProcessingStatus.FAILED
         dataset.processing_error = str(exc)
