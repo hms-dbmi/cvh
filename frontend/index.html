@@ -6,6 +6,34 @@
     <link rel="stylesheet" href="https://unpkg.com/higlass@[1.12]/dist/hglib.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Community Visualization Hub</title>
+    <meta
+      name="description"
+      content="Create and share interactive visualization for genomics, spatial, and single-cell data"
+    />
+
+    <!--
+      Link previews (Slack, Teams, Bluesky, iMessage, …). These crawlers fetch the
+      raw HTML and do not run JavaScript, so the tags have to be served statically
+      here — anything the SPA sets at runtime is never seen.
+
+      The URL is hard-coded to the canonical production origin rather than derived
+      from an env var: dev deploys aren't shared publicly, and a relative og:url is
+      ignored by every unfurler.
+
+      The og:image tags are not here: `ogImagePlugin` in vite.config.ts injects
+      them at build time from VITE_CLOUDFRONT_URL, so each environment advertises
+      its own images distribution. The card is a raster on that distribution beside
+      the tutorial screenshots — unfurlers will not render the SVG logo, and the
+      repo tracks no raster images.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Community Visualization Hub" />
+    <meta property="og:title" content="Community Visualization Hub" />
+    <meta
+      property="og:description"
+      content="Create and share interactive visualization for genomics, spatial, and single-cell data"
+    />
+    <meta property="og:url" content="https://visualizationhub.org/" />
   </head>
   <body style="height: 100%">
     <div id="root" style="height: 100%"></div>
