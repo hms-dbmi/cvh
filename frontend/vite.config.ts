@@ -53,7 +53,7 @@ const ogImagePlugin = (): Plugin => ({
   transformIndexHtml() {
     const base = process.env.VITE_CLOUDFRONT_URL?.replace(/\/$/, "");
     if (!base) return;
-    const url = `${base}/social/og-image.png`;
+    const url = `${base}/social/og-logo.png`;
     const meta = (attrs: Record<string, string>) => ({
       tag: "meta",
       attrs,
@@ -62,14 +62,13 @@ const ogImagePlugin = (): Plugin => ({
     return [
       meta({ property: "og:image", content: url }),
       meta({ property: "og:image:width", content: "1200" }),
-      meta({ property: "og:image:height", content: "630" }),
+      meta({ property: "og:image:height", content: "1200" }),
       meta({
         property: "og:image:alt",
-        content:
-          "Community Visualization Hub — create and share interactive visualization for genomics, spatial, and single-cell data",
+        content: "The Community Visualization Hub logo",
       }),
       meta({ name: "twitter:image", content: url }),
-      meta({ name: "twitter:card", content: "summary_large_image" }),
+      meta({ name: "twitter:card", content: "summary" }),
     ];
   },
 });
