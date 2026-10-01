@@ -69,6 +69,7 @@ const ogImagePlugin = (): Plugin => ({
           "Community Visualization Hub — create and share interactive visualization for genomics, spatial, and single-cell data",
       }),
       meta({ name: "twitter:image", content: url }),
+      meta({ name: "twitter:card", content: "summary_large_image" }),
     ];
   },
 });
