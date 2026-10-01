@@ -10,6 +10,11 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ## [Unreleased]
 
+### Added
+- Links to the site now unfurl as a card in Slack, Teams, iMessage and other clients, showing the product name, a one-line description and a branded image instead of a bare URL. The tags are emitted into `index.html` at build time because link crawlers read the raw HTML and never run the SPA's JavaScript, so anything the app sets at runtime is invisible to them. The card image lives on the images CloudFront distribution alongside the tutorial screenshots rather than in the repo, which tracks no raster images; `ogImagePlugin` in `vite.config.ts` builds its URL from `VITE_CLOUDFRONT_URL`, so each environment points at its own distribution and local builds omit the image tags entirely.
+
+## [2026-09-29] (prod, 1229698)
+
 ### Changed
 - Backend dependencies upgraded: Django 5.1.7 → 5.2.17, django-ninja 1.3.0 → 1.7.1, django-health-check 3.20 → 4.6.1, environs 14.1 → 15.2, gunicorn 23.0 → 26.2, psycopg 3.2.6 → 3.3.6, pydantic 2.10.6 → 2.13.5, plus boto3, pyarrow and pyjwt. Those starting versions are what production was actually running: the Docker image installs from `requirements.txt`, which had drifted well behind `uv.lock` (local dev was already on Django 5.2.16). Both files now resolve to the same 37 packages. Regenerate with `uv pip compile pyproject.toml -o requirements.txt --upgrade` — without `--upgrade` uv keeps whatever pins already satisfy the constraints, which is how the drift accumulated. Django stays on the 5.2 LTS line rather than moving to 6.x because mozilla-django-oidc's latest release (5.0.2) declares support only through 5.2, and it backs the admin service's Auth0 login.
 - The `/health/` page now reports real results. django-health-check 4 moved check registration from `INSTALLED_APPS` onto the view itself; CVH installed only the base `health_check` app and none of the check sub-apps, so the endpoint previously ran no checks at all and was green by construction. It now runs the cache and database checks and returns 500 when either fails. The load balancer's probe is a different path (`/health`, answered by middleware) and is unchanged, as is its behaviour.

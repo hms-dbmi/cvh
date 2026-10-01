@@ -40,6 +40,39 @@ gtag('config', '${id}');`,
   },
 });
 
+// Injects the link-preview image tags into the built HTML. Unfurlers
+// (Slack, Teams, iMessage, Bluesky) read this file as static HTML and run
+// no JavaScript, so the URL has to be a literal in the output — but it is
+// built here from `VITE_CLOUDFRONT_URL` rather than hard-coded, so dev and
+// prod each advertise their own images distribution. The card itself lives
+// on that distribution beside the tutorial screenshots; the repo tracks no
+// raster images. Unset locally, so `npm run dev` emits no image tags and
+// the text-only preview still works.
+const ogImagePlugin = (): Plugin => ({
+  name: "inject-og-image",
+  transformIndexHtml() {
+    const base = process.env.VITE_CLOUDFRONT_URL?.replace(/\/$/, "");
+    if (!base) return;
+    const url = `${base}/social/og-image.png`;
+    const meta = (attrs: Record<string, string>) => ({
+      tag: "meta",
+      attrs,
+      injectTo: "head" as const,
+    });
+    return [
+      meta({ property: "og:image", content: url }),
+      meta({ property: "og:image:width", content: "1200" }),
+      meta({ property: "og:image:height", content: "630" }),
+      meta({
+        property: "og:image:alt",
+        content:
+          "Community Visualization Hub — create and share interactive visualization for genomics, spatial, and single-cell data",
+      }),
+      meta({ name: "twitter:image", content: url }),
+    ];
+  },
+});
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -48,6 +81,7 @@ export default defineConfig({
     svgr(),
     tailwindcss(),
     gaTagPlugin(),
+    ogImagePlugin(),
   ],
   test: {
     globals: true,
