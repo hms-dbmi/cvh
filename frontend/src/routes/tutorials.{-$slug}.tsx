@@ -3,6 +3,8 @@ import TutorialsPage from "../features/tutorials/components/TutorialsPage";
 import { TUTORIALS } from "../features/tutorials/tutorials";
 
 export const Route = createFileRoute("/tutorials/{-$slug}")({
+  // Sidebar + table of contents run to the viewport edges.
+  staticData: { fullBleed: true },
   // Canonicalize /tutorials → /tutorials/<first-slug> so the URL
   // always matches what's rendered and the sidebar's active-state
   // logic (which is slug-driven) has something to highlight.
