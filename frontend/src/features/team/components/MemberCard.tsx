@@ -58,7 +58,7 @@ export default function MemberCard({ member }: { member: TeamMember }) {
         <Box
           component="img"
           src={memberPhotoUrl(member)}
-          alt=""
+          alt={member.alt ?? ""}
           loading="lazy"
           sx={{
             width: "100%",

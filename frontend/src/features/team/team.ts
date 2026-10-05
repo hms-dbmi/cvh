@@ -20,6 +20,15 @@ export interface TeamMember {
    * card falls back to the shared avatar.
    */
   photo?: string;
+  /**
+   * Description of the photo, copied verbatim from the member's entry in
+   * hms-dbmi/gehlenborglab-website `_members/`. Omitted where the lab site
+   * has none: these describe a real person's appearance, so they belong to
+   * whoever wrote them rather than being invented here. The card renders an
+   * empty alt in that case, which is correct — the name sits beside it in
+   * text, so the image is decorative.
+   */
+  alt?: string;
 }
 
 export interface TeamSection {
@@ -82,6 +91,7 @@ export const TEAM_SECTIONS: TeamSection[] = [
         role: "Principal Investigator",
         href: "https://hidivelab.org/team/members/nils-gehlenborg/",
         photo: "nils-gehlenborg.png",
+        alt: "Headshot of a smiling middle-aged white man with a shaved head and round glasses with brown frames. He is wearing a black button down shirt in front of a solid light-colored background.",
       },
       {
         name: "Nezar Abdennur",
@@ -110,18 +120,21 @@ export const TEAM_SECTIONS: TeamSection[] = [
         role: "Senior UI/UX Designer",
         href: "https://hidivelab.org/team/members/tiffany-liaw/",
         photo: "tiffany-liaw.jpg",
+        alt: "Headshot of a young Asian female with long, straight black hair and is smiling with an open smile. She is wearing a navy blue long-sleeve shirt, and is posing amongst marble columns inside a building.",
       },
       {
         name: "Astrid van den Brandt",
         role: "Research Fellow",
         href: "https://hidivelab.org/team/members/astrid-vandenbrandt/",
         photo: "astrid-vandenbrandt.jpg",
+        alt: "Professional headshot of a young white woman with middle long blonde hair, wearing a dark gray blouse. She’s standing outside in front of a building, the background is blurred.",
       },
       {
         name: "Lisa Choy",
         role: "Director of Software Engineering",
         href: "https://hidivelab.org/team/members/lisa-choy/",
         photo: "lisa-choy.jpg",
+        alt: "A waist-up professional portrait of an Asian woman looking at the camera with a gentle smile against a softly blurred background. She has shoulder-length black hair, thin tortoiseshell glasses, and is wearing a deep purple cable-knit crewneck sweater.",
       },
     ],
   },
@@ -133,6 +146,7 @@ export const TEAM_SECTIONS: TeamSection[] = [
         role: "Director of Scientific Operations",
         href: "https://hidivelab.org/team/members/morgan-turner/",
         photo: "morgan-turner.jpg",
+        alt: "Headshot of a young white woman with a full smile and long, curly brown hair. She is wearing round browline glasses and a white button-up, standing in front of a blue glass background.",
       },
       {
         name: "Vedat Yilmaz",
