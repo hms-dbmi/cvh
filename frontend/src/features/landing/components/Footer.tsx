@@ -213,7 +213,9 @@ function Footer() {
             <Category key={category.title} category={category} />
           ))}
         </Stack>
-        <Divider />
+        {/* Extra room above the copyright rule; the Stack's gap alone
+            left it crowded against the columns. */}
+        <Divider sx={{ mt: 4 }} />
         <Typography component="p" variant="caption" textAlign="center">
           Copyright © {new Date().getFullYear()}{" "}
           <MUILink

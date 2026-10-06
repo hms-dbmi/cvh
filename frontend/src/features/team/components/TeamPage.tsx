@@ -57,7 +57,10 @@ function Section({
 export default function TeamPage() {
   return (
     <Stack spacing={4} alignItems="flex-start" sx={{ pt: 4 }}>
-      <Stack spacing={2} alignItems="flex-start" width="100%">
+      {/* Doubled from the default rhythm: the title, the description and the
+          lab logos each need more air than a run of body copy, and `pb` adds
+          to the outer gap before the first divider. */}
+      <Stack spacing={4} alignItems="flex-start" width="100%" sx={{ pb: 2 }}>
         <Typography variant="h1">Team</Typography>
         <Typography variant="body1">{TEAM_INTRO}</Typography>
         <Stack
