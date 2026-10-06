@@ -26,3 +26,35 @@ test("inviting a collaborator fires POST /api/workspaces/<uuid>/members", async 
     body: { email: "invitee@example.com" },
   });
 });
+
+test("inviting an email with no account explains how to proceed", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2eEmptyMembers = true;
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2eMemberNotFound = true;
+  });
+  await page.goto(`/project/${PROJECT_ID}`);
+
+  await page.getByRole("button", { name: "0 Collaborators" }).click();
+
+  const dialog = page.getByRole("dialog");
+  const emailField = dialog.getByLabel("E-mail Address");
+  await emailField.fill("nobody@example.com");
+  await dialog.getByRole("button", { name: "Invite" }).click();
+
+  await expect(
+    page.getByText("No account found for nobody@example.com.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText(
+      "No account found for nobody@example.com. Ask them to sign up, then invite them again.",
+    ),
+  ).toBeVisible();
+
+  // Editing the email clears the stale helper text.
+  await emailField.fill("someone@example.com");
+  await expect(dialog.getByText(/Ask them to sign up/)).toBeHidden();
+});
