@@ -16,6 +16,7 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Changed
 - Page content now sits within a shared horizontal boundary — capped at 1400px and centred, with 32px gutters — instead of each page setting its own width. On a 1440px screen that is the same 1376px of content the designs are drawn at; above roughly 1464px the content stops widening and the extra space goes to the margins, rather than stretching across a large monitor. The workspace, the visualization viewer and the landing page's full-width bands are unaffected.
+- Inviting an email that has no CVH account now says so, instead of showing the generic "Failed to share workspace." The toast reads "No account found for {email}.", and the text under the email field adds "Ask them to sign up, then invite them again." The text under the field clears once you edit the email. To make this case detectable, `POST /api/workspaces/{workspace_uuid}/members` now answers with `{"code": "user_not_found", "detail": ...}` (a new `ErrorOut` schema, declared as the endpoint's 404 response) rather than Ninja's generic `{"detail": "Not Found"}`, so the frontend checks a stable `code` instead of matching on message text.
 
 ## [2026-10-01] (prod, a1f5e37)
 
