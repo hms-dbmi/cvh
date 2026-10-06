@@ -482,6 +482,14 @@ class SuccessOut(Schema):
     success: bool
 
 
+class ErrorOut(Schema):
+    """Error body with a stable machine-readable `code` alongside the
+    human-readable `detail`, so clients can branch on specific failures."""
+
+    code: str
+    detail: str
+
+
 class ProcessingStatusUpdate(Schema):
     """Client-reported terminal state for a processing job. The frontend
     polls cfdb's `/jobs/{id}` directly and PUTs the result here so that

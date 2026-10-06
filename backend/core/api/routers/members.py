@@ -10,6 +10,7 @@ from ninja import Router
 from ..auth import Authorized
 from ..models import Project, ProjectMember
 from ..schema import (
+    ErrorOut,
     SuccessOut,
     WorkspaceMemberIn,
     WorkspaceMemberOut,
@@ -22,18 +23,25 @@ router = Router(tags=["Workspace Members"])
 @router.post(
     "/workspaces/{workspace_uuid}/members",
     auth=Authorized(),
-    response=SuccessOut,
+    response={200: SuccessOut, 404: ErrorOut},
     summary="Add a workspace member",
     description=(
         "Adds a user to a workspace with read permissions."
         " Requires admin access to the workspace."
+        " Returns 404 with code `user_not_found` if no account exists"
+        " for the email."
     ),
 )
 def add_workspace_member(request, workspace_uuid: UUID, member: WorkspaceMemberIn):
     project = Project.objects.get_admin_project(
         user=request.auth, project_uuid=workspace_uuid
     )
-    user = get_object_or_404(User, email=member.email)
+    user = User.objects.filter(email=member.email).first()
+    if user is None:
+        return 404, {
+            "code": "user_not_found",
+            "detail": "No account found for that email.",
+        }
     ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
     return {"success": True}
 
