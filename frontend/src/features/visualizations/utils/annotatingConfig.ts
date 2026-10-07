@@ -7,9 +7,13 @@ export type AnnotationUtils = Pick<
   | "enableAnnotationEditing"
 >;
 
+const NUM_GRID_COLUMNS = 12;
+
 interface LayoutView {
   uid?: string;
   component: string;
+  x: number;
+  w: number;
   y: number;
   h: number;
   props?: Record<string, unknown>;
@@ -21,6 +25,32 @@ function getLayout(config: object): LayoutView[] {
 
 function countRows(layout: LayoutView[]) {
   return Math.max(0, ...layout.map((view) => view.y + view.h));
+}
+
+export function hasAnnotationPanel(config: object) {
+  return getLayout(config).some(
+    (view) => view.component === "annotationController",
+  );
+}
+
+// Vitessce doesn't reflow the grid when a view is closed, so closing the
+// annotation panel leaves its columns empty, and `addAnnotationControllerView`
+// then narrows the views again from their already-narrowed widths. Stretch
+// the views across all 12 columns, rounding each view's edges (as Vitessce
+// does) so adjacent views stay adjacent.
+export function fillColumns(config: object) {
+  const layout = getLayout(config);
+  const columns = Math.max(0, ...layout.map((view) => view.x + view.w));
+  if (columns === 0 || columns >= NUM_GRID_COLUMNS) return config;
+  const scale = (value: number) =>
+    Math.round((value * NUM_GRID_COLUMNS) / columns);
+  return {
+    ...config,
+    layout: layout.map((view) => {
+      const x = scale(view.x);
+      return { ...view, x, w: Math.max(scale(view.x + view.w) - x, 1) };
+    }),
+  };
 }
 
 // `addAnnotationControllerView` always makes the panel 12 rows tall, but
@@ -44,13 +74,10 @@ function fitAddedViewToRows(before: object, after: object) {
 // unwanted panel can be closed. Applies to every annotation panel in the
 // layout, including ones saved before this was tracked.
 export function setAnnotationCloseButton(config: object, visible: boolean) {
-  const layout = getLayout(config);
-  if (!layout.some((view) => view.component === "annotationController")) {
-    return config;
-  }
+  if (!hasAnnotationPanel(config)) return config;
   return {
     ...config,
-    layout: layout.map((view) =>
+    layout: getLayout(config).map((view) =>
       view.component === "annotationController"
         ? { ...view, props: { ...view.props, closeButtonVisible: visible } }
         : view,
@@ -60,9 +87,10 @@ export function setAnnotationCloseButton(config: object, visible: boolean) {
 
 // Annotating mode shows the annotation panel with editing turned on.
 export function toAnnotatingConfig(config: object, utils: AnnotationUtils) {
+  const filled = fillColumns(config);
   const withController = utils.hasAnnotationControllerView(config)
     ? config
-    : fitAddedViewToRows(config, utils.addAnnotationControllerView(config));
+    : fitAddedViewToRows(filled, utils.addAnnotationControllerView(filled));
   return setAnnotationCloseButton(
     utils.enableAnnotationEditing(withController),
     false,

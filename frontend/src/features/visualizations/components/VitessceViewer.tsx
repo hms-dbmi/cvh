@@ -30,6 +30,8 @@ import {
 } from "../api/useVisualizations";
 import {
   type AnnotationUtils,
+  fillColumns,
+  hasAnnotationPanel,
   setAnnotationCloseButton,
   toAnnotatingConfig,
 } from "../utils/annotatingConfig.ts";
@@ -229,10 +231,28 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const latestConfigRef = useRef<object | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const handleConfigChange = useCallback((config: object) => {
-    latestConfigRef.current = config;
-    setHasUnsavedChanges(true);
-  }, []);
+  const shownWithAnnotationPanel = useMemo(
+    () => !!vitessceConfig && hasAnnotationPanel(vitessceConfig),
+    [vitessceConfig],
+  );
+
+  const handleConfigChange = useCallback(
+    (config: object) => {
+      // The user closed the annotation panel (possible in Exploring mode).
+      // Vitessce leaves its columns empty, so reload the viewer with the
+      // remaining views stretched back across the full width.
+      if (shownWithAnnotationPanel && !hasAnnotationPanel(config)) {
+        const filled = fillColumns(config);
+        latestConfigRef.current = filled;
+        setModeBaseConfig(filled);
+        setModeRevision((revision) => revision + 1);
+      } else {
+        latestConfigRef.current = config;
+      }
+      setHasUnsavedChanges(true);
+    },
+    [shownWithAnnotationPanel],
+  );
 
   const saveViz = useCallback(async () => {
     if (!selectedVizId || !hasWritePermissions) return;
