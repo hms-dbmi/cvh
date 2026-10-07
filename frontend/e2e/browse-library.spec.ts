@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 const CFDB_API_URL = "http://127.0.0.1:9100";
@@ -10,7 +10,7 @@ const EXPECTED_SOURCE_URL = `${CFDB_API_URL}/data/4dn/${BIGWIG_LOCAL_ID}`;
 test("adding a bigwig from the data library posts /api/datasets with the CFDB source url", async ({
   page,
 }) => {
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   const browse = page.getByRole("button", { name: "Browse Library" });
   await browse.click();

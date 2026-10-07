@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 
@@ -13,7 +13,7 @@ test("adding example datasets fires POST /api/examples with the workspace uuid",
     // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
     (window as any).__e2eEmptyDatasets = true;
   });
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   await page.getByRole("button", { name: "Example Data Sources" }).click();
 

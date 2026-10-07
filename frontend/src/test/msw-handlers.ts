@@ -107,6 +107,31 @@ const workspaceViz: components["schemas"]["VisualizationOut"] = {
   published_timestamp: null,
 };
 
+// Opt-in variants for the annotation and sidebar specs, selected with the
+// window flags below so the default fixtures stay as they are.
+const twoViewVitessceConf = {
+  ...minimalVitessceConf,
+  layout: [
+    { component: "description", x: 0, y: 0, w: 7, h: 2 },
+    { component: "status", x: 7, y: 0, w: 5, h: 2 },
+  ],
+} as unknown as Record<string, never>;
+
+const annotatedVitessceConf = {
+  ...minimalVitessceConf,
+  layout: [{ component: "annotationController", x: 0, y: 0, w: 12, h: 2 }],
+} as unknown as Record<string, never>;
+
+function getWorkspaceViz(): components["schemas"]["VisualizationOut"] {
+  if (flag("__e2eGoslingWorkspace")) {
+    return { ...workspaceViz, tool: "gosling", conf: {} };
+  }
+  if (flag("__e2eTwoViewVitessce")) {
+    return { ...workspaceViz, conf: twoViewVitessceConf };
+  }
+  return workspaceViz;
+}
+
 const member: components["schemas"]["WorkspaceMemberOut"] = {
   email: "member@example.com",
   username: "member",
@@ -213,7 +238,7 @@ export const handlers = [
   // Visualizations
   http.get(`${apiUrl}/api/visualizations/:uuid`, ({ params }) => {
     if (params.uuid === workspaceViz.uuid) {
-      return HttpResponse.json(workspaceViz);
+      return HttpResponse.json(getWorkspaceViz());
     }
     return HttpResponse.json(publishedGoslingViz);
   }),
@@ -309,7 +334,11 @@ export const handlers = [
   // Public visualization detail (handles both Gosling and Vitessce by uuid)
   http.get(`${apiUrl}/api/public/visualizations/:uuid`, ({ params }) => {
     if (params.uuid === publishedVitessceViz.uuid) {
-      return HttpResponse.json(publishedVitessceViz);
+      return HttpResponse.json(
+        flag("__e2eAnnotatedPublicViz")
+          ? { ...publishedVitessceViz, conf: annotatedVitessceConf }
+          : publishedVitessceViz,
+      );
     }
     return HttpResponse.json(publishedGoslingViz);
   }),

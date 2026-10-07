@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 
 test("changing a member's role fires PUT /api/workspaces/<uuid>/members", async ({
   page,
 }) => {
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   // The mock workspace has two members (the current user + one other),
   // so the header button reads "1 Collaborator" — the count subtracts

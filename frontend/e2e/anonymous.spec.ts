@@ -24,3 +24,19 @@ test("public Vitessce visualization route renders the side panel", async ({
     page.getByRole("heading", { name: "E2E Public Vitessce", level: 1 }),
   ).toBeVisible();
 });
+
+test("public visitors see annotations without edit controls", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2eAnnotatedPublicViz = true;
+  });
+  await page.goto("/visualizations/00000000-0000-0000-0000-000000000101");
+  await expect(
+    page.getByRole("heading", { name: "Annotation", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /create a story/i }),
+  ).toHaveCount(0);
+});

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 const VIZ_ID = "00000000-0000-0000-0000-000000000200";
@@ -7,7 +7,7 @@ const VIZ_ID = "00000000-0000-0000-0000-000000000200";
 test("tagging a visualization fires PUT /api/visualizations/<uuid>/tags", async ({
   page,
 }) => {
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   // Open the kebab menu on the viz row, then "Edit Tags".
   const vizRow = page
