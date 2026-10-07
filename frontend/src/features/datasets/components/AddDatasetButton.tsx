@@ -413,7 +413,7 @@ const tooltips: Record<string, string> = {
   gff: "General Feature Format (GFF) describes genomic features and their coordinates. Must have an accompanying index file.",
   beddb:
     "BED Database (BEDDB) is a database-optimized format derived from BED for scalable data exploration.",
-  csv: "Any small enough tabular data files, such as tsv, csv, BED, BEDPE, and GFF, can be loaded using csv data specification",
+  csv: "Any small enough tabular data files, such as tsv, csv, BED, BEDPE, and GFF, can be loaded using csv data specification.",
   multivec:
     "Two-dimensional quantitative values, one axis for genomic coordinate and the other for different samples, can be converted into HiGlass multivector format data.",
   vector:
