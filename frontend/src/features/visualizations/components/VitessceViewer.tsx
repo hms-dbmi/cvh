@@ -75,6 +75,8 @@ function isVitessceDragPayload(data: unknown): data is VitessceDragPayload {
 interface VitessceViewerProps {
   permissions: number;
   selectedVizId?: string;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
 function CodeEditor({
@@ -135,7 +137,12 @@ function CodeEditor({
   );
 }
 
-function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
+function VitessceViewer({
+  permissions,
+  selectedVizId,
+  isSidebarOpen,
+  onToggleSidebar,
+}: VitessceViewerProps) {
   const [mode, setMode] = useState<Mode>("exploring");
   // Loaded on the first switch into Annotating mode; see toAnnotatingConfig.
   const [annotationUtils, setAnnotationUtils] =
@@ -557,6 +564,8 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             }
             hasUnsavedChanges={hasUnsavedChanges}
             hasWritePermissions={hasWritePermissions}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={onToggleSidebar}
           />
         </Box>
       )}

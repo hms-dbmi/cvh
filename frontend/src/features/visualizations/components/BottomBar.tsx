@@ -1,5 +1,6 @@
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import Paper from "@mui/material/Paper";
 import ToggleButton from "@mui/material/ToggleButton";
@@ -11,6 +12,7 @@ import {
   GlobeSimple,
   MarkerCircle,
   PresentationChart,
+  SidebarSimple,
 } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
 import posthog from "@/posthog";
@@ -50,6 +52,8 @@ export function BottomBar({
   onSave,
   hasUnsavedChanges,
   hasWritePermissions,
+  isSidebarOpen,
+  onToggleSidebar,
 }: {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
@@ -64,6 +68,10 @@ export function BottomBar({
   // callers that don't track dirty state can leave it enabled.
   hasUnsavedChanges?: boolean;
   hasWritePermissions?: boolean;
+  // Shows/hides the workspace's left sidebar. The button is hidden when
+  // no handler is passed.
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }) {
   const editorMode = hasWritePermissions ? "editing" : "configuration";
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -157,31 +165,41 @@ export function BottomBar({
           </ToggleButton>
         </Tooltip>
       </ToggleButtonGroup>
+      {(onSave || onToggleSidebar) && (
+        <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+      )}
       {onSave && (
-        <>
-          <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
-          <Button
-            onClick={onSave}
-            // Disable when the caller signals no dirty state; if the flag
-            // isn't provided at all, keep Save clickable so callers that
-            // don't track dirtiness still get a working button.
-            disabled={hasUnsavedChanges === false}
-            startIcon={<FloppyDisk size={24} />}
-            sx={{
-              color: "#4E5A63",
-              textTransform: "none",
-              fontWeight: 500,
-              fontSize: 14,
-              letterSpacing: "0.28px",
-              px: 1.5,
-              py: 1,
-              borderRadius: 2,
-              "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
-            }}
+        <Tooltip title="Save" describeChild slotProps={tooltipSlotProps}>
+          {/* Disabled buttons fire no pointer events, so the tooltip
+              listens on a wrapper instead. */}
+          <span>
+            <IconButton
+              aria-label="Save"
+              onClick={onSave}
+              // Disable when the caller signals no dirty state; if the flag
+              // isn't provided at all, keep Save clickable so callers that
+              // don't track dirtiness still get a working button.
+              disabled={hasUnsavedChanges === false}
+              sx={{ color: "#4E5A63", borderRadius: 2 }}
+            >
+              <FloppyDisk size={24} />
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
+      {onToggleSidebar && (
+        <Tooltip
+          title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          slotProps={tooltipSlotProps}
+        >
+          <IconButton
+            onClick={onToggleSidebar}
+            aria-pressed={!isSidebarOpen}
+            sx={{ color: "#4E5A63", borderRadius: 2 }}
           >
-            Save
-          </Button>
-        </>
+            <SidebarSimple size={24} />
+          </IconButton>
+        </Tooltip>
       )}
       {onPublish && (
         <>

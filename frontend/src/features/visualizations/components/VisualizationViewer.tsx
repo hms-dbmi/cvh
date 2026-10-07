@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useVisualizationFiltersStore } from "@/features/visualizations/hooks/useVisualizationFiltersStore";
 import {
   useGetProjectVisualizations,
@@ -21,6 +21,16 @@ function VisualizationViewer({
   const [selectedVizId, setSelectedVizId] = useState<string | undefined>(
     undefined,
   );
+  // Lives here rather than in a shell so it survives switching between
+  // Gosling and Vitessce visualizations.
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((open) => !open);
+    // Vitessce's grid (react-grid-layout's WidthProvider) only re-measures on
+    // window resize, not when its container widens. Nudge it once the new
+    // layout has rendered.
+    requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+  }, []);
 
   const vizNameSubstring = useVisualizationFiltersStore(
     (state) => state.nameSubstring,
@@ -69,6 +79,8 @@ function VisualizationViewer({
       permissions={permissions}
       selectedVizId={selectedVizId}
       sidebar={sidebar}
+      isSidebarOpen={isSidebarOpen}
+      onToggleSidebar={toggleSidebar}
     />
   ) : (
     <GoslingVizShell
@@ -77,6 +89,7 @@ function VisualizationViewer({
       selectedVizId={selectedVizId}
       selectedViz={selectedViz}
       sidebar={sidebar}
+      isSidebarOpen={isSidebarOpen}
     />
   );
 }
