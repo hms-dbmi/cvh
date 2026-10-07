@@ -32,6 +32,7 @@ import {
   type AnnotationUtils,
   fillColumns,
   hasAnnotationPanel,
+  hasAnnotationStory,
   setAnnotationCloseButton,
   toAnnotatingConfig,
 } from "../utils/annotatingConfig.ts";
@@ -223,11 +224,17 @@ function VitessceViewer({
           return;
         }
       }
+      if (next === "annotating") {
+        const base = latestConfigRef.current ?? (data?.conf as object | null);
+        posthog.capture("annotation_mode_entered", {
+          added_panel: !base || !hasAnnotationPanel(base),
+        });
+      }
       setModeBaseConfig(latestConfigRef.current);
       setModeRevision((revision) => revision + 1);
       setMode(next);
     },
-    [annotationUtils, toastError],
+    [annotationUtils, toastError, data?.conf],
   );
 
   // Exploring-mode changes (config edits from Vitessce's own UI:
@@ -245,6 +252,15 @@ function VitessceViewer({
 
   const handleConfigChange = useCallback(
     (config: object) => {
+      const previous = latestConfigRef.current ?? vitessceConfig;
+      if (
+        mode === "annotating" &&
+        previous &&
+        !hasAnnotationStory(previous) &&
+        hasAnnotationStory(config)
+      ) {
+        posthog.capture("annotation_story_created");
+      }
       // The user closed the annotation panel (possible in Exploring mode).
       // Vitessce leaves its columns empty, so reload the viewer with the
       // remaining views stretched back across the full width.
@@ -258,7 +274,7 @@ function VitessceViewer({
       }
       setHasUnsavedChanges(true);
     },
-    [shownWithAnnotationPanel],
+    [shownWithAnnotationPanel, mode, vitessceConfig],
   );
 
   const saveViz = useCallback(async () => {
@@ -275,7 +291,10 @@ function VitessceViewer({
       const config = hasAnnotationControllerView(latest)
         ? setAnnotationCloseButton(disableAnnotationEditing(latest), true)
         : latest;
-      posthog.capture("visualization_saved", { viewer: "vitessce" });
+      posthog.capture("visualization_saved", {
+        viewer: "vitessce",
+        has_annotation_story: hasAnnotationStory(config),
+      });
       updateViz({
         body: { conf: config as Record<string, never> },
         params: { path: { visualization_uuid: selectedVizId } },

@@ -2,6 +2,7 @@ import {
   type AnnotationUtils,
   fillColumns,
   hasAnnotationPanel,
+  hasAnnotationStory,
   setAnnotationCloseButton,
   toAnnotatingConfig,
 } from "./annotatingConfig";
@@ -158,5 +159,21 @@ describe("hasAnnotationPanel", () => {
       hasAnnotationPanel(toAnnotatingConfig({ layout: [spatial] }, utils)),
     ).toBe(true);
     expect(hasAnnotationPanel({})).toBe(false);
+  });
+});
+
+describe("hasAnnotationStory", () => {
+  it("is false until a story is created", () => {
+    expect(hasAnnotationStory({ layout: [] })).toBe(false);
+    expect(
+      hasAnnotationStory({
+        coordinationSpace: { annotationStory: { A: null } },
+      }),
+    ).toBe(false);
+    expect(
+      hasAnnotationStory({
+        coordinationSpace: { annotationStory: { A: { frames: [] } } },
+      }),
+    ).toBe(true);
   });
 });
