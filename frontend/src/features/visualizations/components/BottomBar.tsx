@@ -2,18 +2,44 @@ import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Tooltip from "@mui/material/Tooltip";
 import {
   Code,
   FloppyDisk,
   GlobeSimple,
+  MarkerCircle,
   PresentationChart,
 } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
 import posthog from "@/posthog";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
 
-export type Mode = "editing" | "exploring";
+export type Mode = "editing" | "annotating" | "exploring";
+
+const MODE_TOOLTIPS: Record<Mode, string> = {
+  editing:
+    "Modify the visualization, add new data, and configure views. Make changes using the Right Side Panel or the built-in Text Editor.",
+  annotating:
+    "Mark regions with shapes, add notes, and save them as frames that viewers can step through.",
+  exploring:
+    "Preview the visualization as collaborators or public viewers see it.",
+};
+
+// Used with `describeChild` so the tooltip text becomes the button's
+// description rather than replacing its accessible name.
+const tooltipSlotProps = {
+  tooltip: {
+    sx: {
+      bgcolor: "#3A4247",
+      borderRadius: 2,
+      p: 1,
+      maxWidth: 350,
+      typography: "caption",
+    },
+  },
+};
 
 export function BottomBar({
   mode,
@@ -40,7 +66,6 @@ export function BottomBar({
   hasWritePermissions?: boolean;
 }) {
   const editorMode = hasWritePermissions ? "editing" : "configuration";
-  const isEditorActive = mode === "editing";
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const closeMenu = useCallback(() => setMenuAnchor(null), []);
   const handlePublishClick = useCallback(
@@ -69,51 +94,69 @@ export function BottomBar({
         height: 64,
       }}
     >
-      <Stack direction="row" spacing={1}>
-        <Button
-          onClick={() => onModeChange("editing")}
-          startIcon={<Code size={24} />}
-          sx={{
-            bgcolor: isEditorActive ? "black" : "white",
-            color: isEditorActive ? "white" : "black",
-            border: isEditorActive ? "1px solid black" : "1px solid #C8CCCE",
-            borderRadius: 2,
+      <ToggleButtonGroup
+        exclusive
+        value={mode}
+        // Clicking the active segment reports `null`; keep the current mode.
+        onChange={(_, next: Mode | null) => next && onModeChange(next)}
+        aria-label="Visualization mode"
+        sx={{
+          "& .MuiToggleButton-root": {
+            gap: 1,
             px: 1.5,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 500,
-            fontSize: 14,
-            letterSpacing: "0.28px",
-            "&:hover": {
-              bgcolor: isEditorActive ? "#333" : "#f5f5f5",
+            py: 1.25,
+            color: "text.primary",
+            borderColor: "#E0E0E0",
+            typography: "button",
+            "&.Mui-selected, &.Mui-selected:hover": {
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
             },
-          }}
+          },
+          // Round only the outer ends; the group squares the inner corners.
+          "& .MuiToggleButtonGroup-firstButton": {
+            borderTopLeftRadius: 8,
+            borderBottomLeftRadius: 8,
+          },
+          "& .MuiToggleButtonGroup-lastButton": {
+            borderTopRightRadius: 8,
+            borderBottomRightRadius: 8,
+          },
+        }}
+      >
+        <Tooltip
+          title={hasWritePermissions ? MODE_TOOLTIPS.editing : ""}
+          describeChild
+          slotProps={tooltipSlotProps}
         >
-          {editorMode === "editing" ? "Editing" : "Configuration"}
-        </Button>
-        <Button
-          onClick={() => onModeChange("exploring")}
-          startIcon={<PresentationChart size={24} />}
-          sx={{
-            bgcolor: mode === "exploring" ? "black" : "white",
-            color: mode === "exploring" ? "white" : "black",
-            border:
-              mode === "exploring" ? "1px solid black" : "1px solid #C8CCCE",
-            borderRadius: 2,
-            px: 1.5,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 500,
-            fontSize: 14,
-            letterSpacing: "0.28px",
-            "&:hover": {
-              bgcolor: mode === "exploring" ? "#333" : "#f5f5f5",
-            },
-          }}
+          <ToggleButton value="editing">
+            <Code size={18} />
+            {editorMode === "editing" ? "Editing" : "Configuration"}
+          </ToggleButton>
+        </Tooltip>
+        {hasWritePermissions && (
+          <Tooltip
+            title={MODE_TOOLTIPS.annotating}
+            describeChild
+            slotProps={tooltipSlotProps}
+          >
+            <ToggleButton value="annotating">
+              <MarkerCircle size={18} />
+              Annotating
+            </ToggleButton>
+          </Tooltip>
+        )}
+        <Tooltip
+          title={MODE_TOOLTIPS.exploring}
+          describeChild
+          slotProps={tooltipSlotProps}
         >
-          Exploring
-        </Button>
-      </Stack>
+          <ToggleButton value="exploring">
+            <PresentationChart size={18} />
+            Exploring
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
       {onSave && (
         <>
           <Divider orientation="vertical" flexItem sx={{ my: 1 }} />

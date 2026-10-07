@@ -28,6 +28,11 @@ import {
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
+import {
+  type AnnotationUtils,
+  setAnnotationCloseButton,
+  toAnnotatingConfig,
+} from "../utils/annotatingConfig.ts";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
 
 // The `vitessce` package + its transitives (three.js, higlass, neuroglancer,
@@ -39,6 +44,8 @@ import { BottomBar, type Mode } from "./BottomBar.tsx";
 //     and parses only when we're about to render the canvas, not while
 //     the code editor is on screen.
 //   * `generateConfig` → dynamic import inside the drop-generate handler.
+//   * Annotation helpers (`addAnnotationControllerView`, …) → dynamic import
+//     on the switch into Annotating mode and on save.
 //   * `@vitessce/schemas` `upgradeAndParse` → dynamic import inside the
 //     editor-save validator.
 const Vitessce = lazy(() =>
@@ -128,6 +135,15 @@ function CodeEditor({
 
 function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const [mode, setMode] = useState<Mode>("exploring");
+  // Loaded on the first switch into Annotating mode; see toAnnotatingConfig.
+  const [annotationUtils, setAnnotationUtils] =
+    useState<AnnotationUtils | null>(null);
+  // The viewer's config at the last mode switch, so unsaved changes carry
+  // between Exploring and Annotating. Null means use the server config.
+  const [modeBaseConfig, setModeBaseConfig] = useState<object | null>(null);
+  // Vitessce only re-reads `config` when `config.uid` changes, so each mode
+  // switch bumps this to remount the viewer with the new config.
+  const [modeRevision, setModeRevision] = useState(0);
   const [editorValue, setEditorValue] = useState("");
   // Held while a dropped dataset is waiting on user confirmation to
   // overwrite the current config. Cleared after apply or cancel.
@@ -163,6 +179,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     // are stale from whatever the user was doing on the previous viz.
     latestConfigRef.current = null;
     setHasUnsavedChanges(false);
+    setModeBaseConfig(null);
   }, [data?.conf]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
@@ -170,9 +187,39 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   // viewer state. Stamp the visualization's UUID onto the config so each
   // viz produces a distinct identity.
   const vitessceConfig = useMemo(() => {
-    if (!data?.conf || !selectedVizId) return null;
-    return { ...(data.conf as object), uid: selectedVizId };
-  }, [data?.conf, selectedVizId]);
+    const base = modeBaseConfig ?? (data?.conf as object | undefined);
+    if (!base || !selectedVizId) return null;
+    const config =
+      mode === "annotating" && annotationUtils
+        ? toAnnotatingConfig(base, annotationUtils)
+        : setAnnotationCloseButton(base, true);
+    return { ...config, uid: `${selectedVizId}-${modeRevision}` };
+  }, [
+    data?.conf,
+    selectedVizId,
+    mode,
+    modeBaseConfig,
+    modeRevision,
+    annotationUtils,
+  ]);
+
+  const handleModeChange = useCallback(
+    async (next: Mode) => {
+      if (next === "annotating" && !annotationUtils) {
+        try {
+          setAnnotationUtils(await import("vitessce"));
+        } catch (e) {
+          toastError("Could not load annotation tools.");
+          console.error(e);
+          return;
+        }
+      }
+      setModeBaseConfig(latestConfigRef.current);
+      setModeRevision((revision) => revision + 1);
+      setMode(next);
+    },
+    [annotationUtils, toastError],
+  );
 
   // Exploring-mode changes (config edits from Vitessce's own UI:
   // brushes, view toggles, etc.) are held in a ref and only persisted
@@ -187,11 +234,20 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     setHasUnsavedChanges(true);
   }, []);
 
-  const saveViz = useCallback(() => {
+  const saveViz = useCallback(async () => {
     if (!selectedVizId || !hasWritePermissions) return;
-    const config = latestConfigRef.current;
-    if (!config) return;
+    const latest = latestConfigRef.current;
+    if (!latest) return;
     try {
+      // Annotation editing is a viewer mode, not part of the visualization:
+      // save it switched off, with the panel's close button shown, so
+      // collaborators and public viewers get read-only annotations they
+      // can dismiss.
+      const { hasAnnotationControllerView, disableAnnotationEditing } =
+        await import("vitessce");
+      const config = hasAnnotationControllerView(latest)
+        ? setAnnotationCloseButton(disableAnnotationEditing(latest), true)
+        : latest;
       posthog.capture("visualization_saved", { viewer: "vitessce" });
       updateViz({
         body: { conf: config as Record<string, never> },
@@ -362,7 +418,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           transition: "outline-color 120ms ease",
         }}
       >
-        {mode === "exploring" && !vitessceConfig && selectedVizId && (
+        {mode !== "editing" && !vitessceConfig && selectedVizId && (
           <Stack
             sx={{
               // 100% of Paper minus the 16px margins on each axis so the
@@ -396,7 +452,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             </Typography>
           </Stack>
         )}
-        {mode === "exploring" && vitessceConfig && (
+        {mode !== "editing" && vitessceConfig && (
           <Suspense
             fallback={
               <Stack
@@ -417,6 +473,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
               height={900}
               theme="light"
               onConfigChange={hasWritePermissions ? handleConfigChange : undefined}
+              areAnnotationsEditable={mode === "annotating"}
             />
           </Suspense>
         )}
@@ -460,20 +517,23 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             bottom: 16,
             left: "50%",
             transform: "translateX(-50%)",
+            // `left: 50%` caps the shrink-to-fit width at half the panel,
+            // which would wrap the bar's labels.
+            width: "max-content",
             zIndex: 10,
           }}
         >
           <BottomBar
             mode={mode}
-            onModeChange={setMode}
+            onModeChange={handleModeChange}
             published={data?.published}
             visualizationID={selectedVizId}
             onPublish={hasWritePermissions ? publishViz : undefined}
-            // Save is only meaningful in exploring mode — the code editor
+            // Save is only meaningful outside editing mode — the code editor
             // path autosaves on a 2.5s debounce, so a Save button there
             // would fire redundantly. Hide it when editing.
             onSave={
-              hasWritePermissions && mode === "exploring" ? saveViz : undefined
+              hasWritePermissions && mode !== "editing" ? saveViz : undefined
             }
             hasUnsavedChanges={hasUnsavedChanges}
             hasWritePermissions={hasWritePermissions}

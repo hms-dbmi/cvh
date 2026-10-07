@@ -43,6 +43,66 @@ describe("BottomBar", () => {
     expect(onModeChange).toHaveBeenCalledWith("exploring");
   });
 
+  it("shows Annotating only to users who can write", () => {
+    const { rerender } = render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        hasWritePermissions
+      />,
+    );
+    expect(screen.getByText("Annotating")).toBeInTheDocument();
+
+    rerender(<BottomBar mode="exploring" onModeChange={() => {}} />);
+    expect(screen.queryByText("Annotating")).not.toBeInTheDocument();
+  });
+
+  it("calls onModeChange with 'annotating' when Annotating is clicked", async () => {
+    const onModeChange = vi.fn();
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={onModeChange}
+        hasWritePermissions
+      />,
+    );
+
+    await userEvent.click(screen.getByText("Annotating"));
+    expect(onModeChange).toHaveBeenCalledWith("annotating");
+  });
+
+  it("marks the current mode as pressed", () => {
+    render(
+      <BottomBar
+        mode="annotating"
+        onModeChange={() => {}}
+        hasWritePermissions
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Annotating" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Exploring" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("does not call onModeChange when the current mode is clicked", async () => {
+    const onModeChange = vi.fn();
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={onModeChange}
+        hasWritePermissions
+      />,
+    );
+
+    await userEvent.click(screen.getByText("Exploring"));
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
   it("hides the Save button when onSave is not provided", () => {
     render(<BottomBar mode="exploring" onModeChange={() => {}} />);
     expect(screen.queryByText("Save")).not.toBeInTheDocument();
