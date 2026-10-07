@@ -155,7 +155,13 @@ function RouteComponent() {
         <Box sx={{ flex: 1, minWidth: 0, height: "100%" }}>
           {data.conf && (
             <Suspense fallback={<ViewerFallback />}>
-              <Vitessce config={data.conf} height={900} theme="light" />
+              <Vitessce
+                config={data.conf}
+                height={900}
+                theme="light"
+                // Defaults to true; public visitors view annotations only.
+                areAnnotationsEditable={false}
+              />
             </Suspense>
           )}
         </Box>
