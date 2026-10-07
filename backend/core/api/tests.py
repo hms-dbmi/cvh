@@ -159,3 +159,59 @@ class DispatchProcessingTests(TestCase):
             self.assertRaises(CfdbError),
         ):
             dispatch_artifact("encode", "ENCFF1", kind="data")
+
+
+class AddWorkspaceMemberTests(TestCase):
+    """POST /api/workspaces/<uuid>/members. The frontend branches on the
+    `user_not_found` code to tell the inviter the email has no account, so
+    that contract is asserted exactly.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember
+
+        self.admin = User.objects.create(username="admin", email="admin@example.com")
+        self.project = Project.objects.create(name="Shared", user_key=self.admin)
+        ProjectMember.objects.create(
+            project_key=self.project, user_key=self.admin, permissions=3
+        )
+
+        # Skip Auth0 JWT verification; authenticate every request as the admin.
+        auth_patch = patch("api.auth.Authorized.authenticate", return_value=self.admin)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+
+    def _invite(self, email: str):
+        return self.client.post(
+            f"/api/workspaces/{self.project.uuid}/members",
+            data={"email": email},
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+
+    def test_unknown_email_returns_user_not_found(self):
+        from .models import ProjectMember
+
+        response = self._invite("nobody@example.com")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], "user_not_found")
+        self.assertEqual(
+            ProjectMember.objects.filter(project_key=self.project).count(), 1
+        )
+
+    def test_known_email_adds_read_member(self):
+        from django.contrib.auth.models import User
+
+        from .models import ProjectMember
+
+        invitee = User.objects.create(username="invitee", email="invitee@example.com")
+
+        response = self._invite("invitee@example.com")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success": True})
+        member = ProjectMember.objects.get(project_key=self.project, user_key=invitee)
+        self.assertEqual(member.permissions, 1)

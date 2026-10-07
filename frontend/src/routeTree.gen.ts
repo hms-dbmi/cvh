@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as TutorialsChar123SlugChar125RouteImport } from './routes/tutori
 import { Route as ProjectChar123ProjectIdChar125RouteImport } from './routes/project.{-$projectId}'
 import { Route as ProjectVitessceChar123ProjectIdChar125RouteImport } from './routes/project.vitessce.{-$projectId}'
 
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/changelog': typeof ChangelogRoute
   '/profile': typeof ProfileRoute
+  '/team': typeof TeamRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/changelog': typeof ChangelogRoute
   '/profile': typeof ProfileRoute
+  '/team': typeof TeamRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/changelog': typeof ChangelogRoute
   '/profile': typeof ProfileRoute
+  '/team': typeof TeamRoute
   '/project/{-$projectId}': typeof ProjectChar123ProjectIdChar125Route
   '/tutorials/{-$slug}': typeof TutorialsChar123SlugChar125Route
   '/visualizations/$visualizationId': typeof VisualizationsVisualizationIdRoute
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/'
     | '/changelog'
     | '/profile'
+    | '/team'
     | '/project/{-$projectId}'
     | '/tutorials/{-$slug}'
     | '/visualizations/$visualizationId'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/'
     | '/changelog'
     | '/profile'
+    | '/team'
     | '/project/{-$projectId}'
     | '/tutorials/{-$slug}'
     | '/visualizations/$visualizationId'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/'
     | '/changelog'
     | '/profile'
+    | '/team'
     | '/project/{-$projectId}'
     | '/tutorials/{-$slug}'
     | '/visualizations/$visualizationId'
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChangelogRoute: typeof ChangelogRoute
   ProfileRoute: typeof ProfileRoute
+  TeamRoute: typeof TeamRoute
   ProjectChar123ProjectIdChar125Route: typeof ProjectChar123ProjectIdChar125Route
   TutorialsChar123SlugChar125Route: typeof TutorialsChar123SlugChar125Route
   VisualizationsVisualizationIdRoute: typeof VisualizationsVisualizationIdRoute
@@ -127,6 +140,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChangelogRoute: ChangelogRoute,
   ProfileRoute: ProfileRoute,
+  TeamRoute: TeamRoute,
   ProjectChar123ProjectIdChar125Route: ProjectChar123ProjectIdChar125Route,
   TutorialsChar123SlugChar125Route: TutorialsChar123SlugChar125Route,
   VisualizationsVisualizationIdRoute: VisualizationsVisualizationIdRoute,

@@ -7,6 +7,8 @@ import VisualizationViewer from "../features/visualizations/components/Visualiza
 import posthog from "../posthog";
 
 export const Route = createFileRoute("/project/{-$projectId}")({
+  // The workspace is an app surface, not a page.
+  staticData: { fullBleed: true, hideFooter: true },
   component: RouteComponent,
 });
 

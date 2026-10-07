@@ -23,6 +23,8 @@ const Vitessce = lazy(() =>
 );
 
 export const Route = createFileRoute("/visualizations/$visualizationId")({
+  // The Gosling/Vitessce canvas wants the full width.
+  staticData: { fullBleed: true, hideFooter: true },
   component: RouteComponent,
 });
 

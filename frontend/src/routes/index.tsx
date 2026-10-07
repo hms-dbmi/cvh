@@ -4,8 +4,8 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { createFileRoute } from "@tanstack/react-router";
 import UpperGridSVG from "../assets/homepage/background-grid-upper.svg";
+import PageContainer, { PAGE_MAX_WIDTH } from "../components/PageContainer";
 import Features from "../features/landing/components/Features";
-import Footer from "../features/landing/components/Footer";
 import HeroImages from "../features/landing/components/HeroImages";
 import HubBlurb from "../features/landing/components/HubBlurb";
 import LandingPageBackground from "../features/landing/components/LandingPageBackground";
@@ -13,6 +13,9 @@ import { LoginButton } from "../features/navigation/components/AuthButtons";
 import FeaturedVisualizationsGrid from "../features/visualizations/components/FeaturedVisualizationsGrid";
 
 export const Route = createFileRoute("/")({
+  // Manages its own full-bleed background bands; the sections inside
+  // apply PageContainer themselves.
+  staticData: { fullBleed: true },
   component: RouteComponent,
 });
 
@@ -67,9 +70,9 @@ function RouteComponent() {
               visualize and collaborate on complex datasets.
             </Typography>
           </Stack>
-          <Box width="90%">
+          <PageContainer>
             <HeroImages />
-          </Box>
+          </PageContainer>
         </Stack>
         <HubBlurb />
         <Features />
@@ -84,16 +87,17 @@ function RouteComponent() {
             backgroundPosition: `center ${LOWER_GRID_TOP_OFFSET_PX}px`,
           }}
         >
-          <Box width="90%">
+          <PageContainer>
             <FeaturedVisualizationsGrid />
-          </Box>
+          </PageContainer>
           {!isAuthenticated && !isLoading && (
             <Stack
               sx={{
                 backgroundColor: "black",
                 px: { xs: 4, md: 8 },
                 py: { xs: 5, md: 7 },
-                width: "90%",
+                width: "100%",
+                maxWidth: PAGE_MAX_WIDTH,
                 borderRadius: "16px",
                 boxShadow: "0px 4px 24.4px 2px rgba(17, 72, 0, 0.1)",
               }}
@@ -146,9 +150,6 @@ function RouteComponent() {
             </Stack>
           )}
         </Stack>
-        <Box sx={{ width: "100%" }}>
-          <Footer />
-        </Box>
       </Stack>
     </LandingPageBackground>
   );

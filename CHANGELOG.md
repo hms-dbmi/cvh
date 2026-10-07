@@ -11,6 +11,16 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 ## [Unreleased]
 
 ### Added
+- A Team page at `/team`, linked from the footer. Lists the people behind CVH across Leadership, Development, Research & Design, and Operations, each card linking out to that person's lab profile, followed by former members and the project's funding award. Members without a photo fall back to a shared avatar, and photo descriptions for HIDIVE members are taken from the lab site so screen readers get the same text there and here. Photos live on the images CloudFront distribution alongside the tutorial screenshots.
+- The footer is rebuilt to the new design: About, Built With, Funding and Contact Us columns, a full-width rule above it, and a "Get Started" call to action that only appears when you're signed out. It now appears on every page except the workspace and the published-visualization viewer, where a footer below the fold would get in the way.
+
+### Changed
+- Page content now sits within a shared horizontal boundary — capped at 1400px and centred, with 32px gutters — instead of each page setting its own width. On a 1440px screen that is the same 1376px of content the designs are drawn at; above roughly 1464px the content stops widening and the extra space goes to the margins, rather than stretching across a large monitor. The workspace, the visualization viewer and the landing page's full-width bands are unaffected.
+- Inviting an email that has no CVH account now says so, instead of showing the generic "Failed to share workspace." The toast reads "No account found for {email}.", and the text under the email field adds "Ask them to sign up, then invite them again." The text under the field clears once you edit the email. To make this case detectable, `POST /api/workspaces/{workspace_uuid}/members` now answers with `{"code": "user_not_found", "detail": ...}` (a new `ErrorOut` schema, declared as the endpoint's 404 response) rather than Ninja's generic `{"detail": "Not Found"}`, so the frontend checks a stable `code` instead of matching on message text.
+
+## [2026-10-01] (prod, a1f5e37)
+
+### Added
 - Links to the site now unfurl as a card in Slack, Teams, iMessage and other clients, showing the product name, a one-line description and a branded image instead of a bare URL. The tags are emitted into `index.html` at build time because link crawlers read the raw HTML and never run the SPA's JavaScript, so anything the app sets at runtime is invisible to them. The card image lives on the images CloudFront distribution alongside the tutorial screenshots rather than in the repo, which tracks no raster images; `ogImagePlugin` in `vite.config.ts` builds its URL from `VITE_CLOUDFRONT_URL`, so each environment points at its own distribution and local builds omit the image tags entirely.
 
 ## [2026-09-29] (prod, 1229698)
