@@ -90,6 +90,7 @@ function VisualizationViewer({
       selectedViz={selectedViz}
       sidebar={sidebar}
       isSidebarOpen={isSidebarOpen}
+      onToggleSidebar={toggleSidebar}
     />
   );
 }

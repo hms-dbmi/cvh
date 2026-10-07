@@ -2,11 +2,14 @@ import Box from "@mui/material/Box";
 import { GoslingDesignerVEC, useToggleSetting } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
 import { memo, useCallback } from "react";
+import { SidebarToggleButton } from "./BottomBar.tsx";
 import { DatasetActionsMenu } from "./DataList.tsx";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
 
 interface GoslingViewerProps {
   permissions: number;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
 function GoslingPublishedVizMenu({
@@ -29,7 +32,11 @@ function GoslingPublishedVizMenu({
   );
 }
 
-function GoslingViewer({ permissions }: GoslingViewerProps) {
+function GoslingViewer({
+  permissions,
+  isSidebarOpen,
+  onToggleSidebar,
+}: GoslingViewerProps) {
   const hasWritePermissions = permissions >= 2;
 
   return (
@@ -39,6 +46,12 @@ function GoslingViewer({ permissions }: GoslingViewerProps) {
         DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
         PublishMenu={GoslingPublishedVizMenu}
         isLeftPanelOpen={false}
+        modeWidgetActions={
+          <SidebarToggleButton
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={onToggleSidebar}
+          />
+        }
         externalDndContext
         classNames={{
           modeWidget: hasWritePermissions

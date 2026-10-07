@@ -7,10 +7,10 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import {
-  Code,
   FloppyDisk,
   GlobeSimple,
   MarkerCircle,
+  PencilRuler,
   PresentationChart,
   SidebarSimple,
 } from "@phosphor-icons/react";
@@ -42,6 +42,33 @@ const tooltipSlotProps = {
     },
   },
 };
+
+// Shared with the Gosling viewer, whose bottom bar comes from
+// gosling-designer-vec and takes it via `modeWidgetActions`.
+export function SidebarToggleButton({
+  isSidebarOpen,
+  onToggleSidebar,
+}: {
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}) {
+  return (
+    <Tooltip
+      title={isSidebarOpen ? "Hide sidebar." : "Show sidebar."}
+      describeChild
+      slotProps={tooltipSlotProps}
+    >
+      <IconButton
+        aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        onClick={onToggleSidebar}
+        aria-pressed={!isSidebarOpen}
+        sx={{ color: "#4E5A63", borderRadius: 2 }}
+      >
+        <SidebarSimple size={20} />
+      </IconButton>
+    </Tooltip>
+  );
+}
 
 export function BottomBar({
   mode,
@@ -138,7 +165,7 @@ export function BottomBar({
           slotProps={tooltipSlotProps}
         >
           <ToggleButton value="editing">
-            <Code size={18} />
+            <PencilRuler size={18} />
             {editorMode === "editing" ? "Editing" : "Configuration"}
           </ToggleButton>
         </Tooltip>
@@ -169,7 +196,7 @@ export function BottomBar({
         <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
       )}
       {onSave && (
-        <Tooltip title="Save" describeChild slotProps={tooltipSlotProps}>
+        <Tooltip title="Save." describeChild slotProps={tooltipSlotProps}>
           {/* Disabled buttons fire no pointer events, so the tooltip
               listens on a wrapper instead. */}
           <span>
@@ -182,24 +209,16 @@ export function BottomBar({
               disabled={hasUnsavedChanges === false}
               sx={{ color: "#4E5A63", borderRadius: 2 }}
             >
-              <FloppyDisk size={24} />
+              <FloppyDisk size={20} />
             </IconButton>
           </span>
         </Tooltip>
       )}
       {onToggleSidebar && (
-        <Tooltip
-          title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
-          slotProps={tooltipSlotProps}
-        >
-          <IconButton
-            onClick={onToggleSidebar}
-            aria-pressed={!isSidebarOpen}
-            sx={{ color: "#4E5A63", borderRadius: 2 }}
-          >
-            <SidebarSimple size={24} />
-          </IconButton>
-        </Tooltip>
+        <SidebarToggleButton
+          isSidebarOpen={!!isSidebarOpen}
+          onToggleSidebar={onToggleSidebar}
+        />
       )}
       {onPublish && (
         <>
