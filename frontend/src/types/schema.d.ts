@@ -47,7 +47,7 @@ export interface paths {
         put: operations["api_routers_members_update_workspace_member"];
         /**
          * Add a workspace member
-         * @description Adds a user to a workspace with read permissions. Requires admin access to the workspace.
+         * @description Adds a user to a workspace with read permissions. Requires admin access to the workspace. Returns 404 with code `user_not_found` if no account exists for the email.
          */
         post: operations["api_routers_members_add_workspace_member"];
         /**
@@ -521,6 +521,17 @@ export interface components {
             first_name?: string;
             /** Last Name */
             last_name?: string;
+        };
+        /**
+         * ErrorOut
+         * @description Error body with a stable machine-readable `code` alongside the
+         *     human-readable `detail`, so clients can branch on specific failures.
+         */
+        ErrorOut: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
         };
         /** WorkspaceMemberIn */
         WorkspaceMemberIn: {
@@ -1775,6 +1786,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

@@ -66,6 +66,15 @@ function useGetProject(projectId: string) {
   });
 }
 
+function isMemberNotFoundError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "user_not_found"
+  );
+}
+
 function useAddProjectMember() {
   const { toastError, toastSuccess } = useSnackbarActions();
   const queryClient = useQueryClient();
@@ -76,7 +85,11 @@ function useAddProjectMember() {
 
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
-    onError: () => {
+    onError: (error, { body }) => {
+      if (isMemberNotFoundError(error)) {
+        toastError(`No account found for ${body.email}.`);
+        return;
+      }
       toastError("Failed to share workspace.");
     },
   });
@@ -152,6 +165,7 @@ function useGetProjectMembers(projectId: string) {
 }
 
 export {
+  isMemberNotFoundError,
   useAddProjectMember,
   useCreateProject,
   useDeleteProject,

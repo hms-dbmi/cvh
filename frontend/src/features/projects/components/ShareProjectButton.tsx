@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 
 import posthog from "@/posthog";
-import { useAddProjectMember } from "../api/useProjects";
+import { isMemberNotFoundError, useAddProjectMember } from "../api/useProjects";
 
 interface FormValues {
   email: string;
@@ -57,7 +57,7 @@ export default function ShareProjectButton({
 }: {
   projectId: string;
 }) {
-  const { handleSubmit, control, formState } = useForm({
+  const { handleSubmit, control, formState, setError } = useForm({
     defaultValues: {
       email: "",
     },
@@ -70,12 +70,23 @@ export default function ShareProjectButton({
   const onSubmit = useCallback(
     ({ email }: FormValues) => {
       posthog.capture("workspace_member_invitation_submitted");
-      mutate({
-        params: { path: { workspace_uuid: projectId } },
-        body: { email },
-      });
+      mutate(
+        {
+          params: { path: { workspace_uuid: projectId } },
+          body: { email },
+        },
+        {
+          onError: (error) => {
+            if (isMemberNotFoundError(error)) {
+              setError("email", {
+                message: `No account found for ${email}. Ask them to sign up, then invite them again.`,
+              });
+            }
+          },
+        },
+      );
     },
-    [mutate, projectId],
+    [mutate, projectId, setError],
   );
 
   return (

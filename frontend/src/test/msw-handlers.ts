@@ -150,7 +150,7 @@ const dataset = {
 // because MSW intercepts at the service-worker layer, before the browser
 // network where page.route is wired up.
 async function recordRequest(method: string, path: string, request: Request) {
-  let body: unknown = undefined;
+  let body: unknown;
   try {
     body = await request.clone().json();
   } catch {
@@ -289,6 +289,15 @@ export const handlers = [
         `/api/workspaces/${params.uuid}/members`,
         request,
       );
+      if (flag("__e2eMemberNotFound")) {
+        return HttpResponse.json(
+          {
+            code: "user_not_found",
+            detail: "No account found for that email.",
+          },
+          { status: 404 },
+        );
+      }
       return HttpResponse.json({ success: true }, { status: 201 });
     },
   ),
