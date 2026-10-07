@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 
@@ -7,7 +7,7 @@ async function fillNewVizDialog(
   page: import("@playwright/test").Page,
   { name, tool }: { name: string; tool: "gosling" | "vitessce" },
 ) {
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
   await page.getByRole("button", { name: "New Visualization" }).click();
 
   // Gate on the dialog being present before filling fields — cold CI

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 const DATASET_ID = "00000000-0000-0000-0000-000000000400";
@@ -7,7 +7,7 @@ const DATASET_ID = "00000000-0000-0000-0000-000000000400";
 test("tagging a dataset fires PUT /api/datasets/<uuid>/tags", async ({
   page,
 }) => {
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   const datasetRow = page
     .getByRole("listitem")

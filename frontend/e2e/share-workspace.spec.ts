@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readRequests } from "./_helpers";
+import { gotoWorkspace, readRequests } from "./_helpers";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000010";
 
@@ -12,7 +12,7 @@ test("inviting a collaborator fires POST /api/workspaces/<uuid>/members", async 
     // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
     (window as any).__e2eEmptyMembers = true;
   });
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   await page.getByRole("button", { name: "0 Collaborators" }).click();
 
@@ -36,7 +36,7 @@ test("inviting an email with no account explains how to proceed", async ({
     // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
     (window as any).__e2eMemberNotFound = true;
   });
-  await page.goto(`/project/${PROJECT_ID}`);
+  await gotoWorkspace(page, PROJECT_ID);
 
   await page.getByRole("button", { name: "0 Collaborators" }).click();
 

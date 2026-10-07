@@ -99,7 +99,7 @@ function PublishedVizCard({ visualization, maxTags }: PublishedVizCardProps) {
             gap={0.5}
             sx={{ flexShrink: 0, position: "relative", zIndex: 1 }}
           >
-            <Tooltip title="Copy link">
+            <Tooltip title="Copy link.">
               <IconButton
                 aria-label="Copy visualization link"
                 onClick={handleCopyLink}

@@ -164,7 +164,7 @@ function ProcessingStateRow({
 
   // status === "failed"
   return (
-    <Tooltip title={errorMessage ?? "Processing failed"}>
+    <Tooltip title={errorMessage ?? "Processing failed."}>
       <Box
         component={hasWritePermissions ? "button" : "div"}
         onClick={hasWritePermissions ? () => setModalOpen(true) : undefined}

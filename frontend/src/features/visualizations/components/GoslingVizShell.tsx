@@ -42,6 +42,8 @@ interface GoslingVizShellProps {
   selectedVizId?: string;
   selectedViz?: Visualization;
   sidebar: React.ReactNode;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
 const formatCvhDatasetsAsGoslingDatasets = (datasets: Dataset[]): GDData[] =>
@@ -77,6 +79,8 @@ function GoslingVizShell({
   selectedVizId,
   selectedViz,
   sidebar,
+  isSidebarOpen,
+  onToggleSidebar,
 }: GoslingVizShellProps) {
   const selectedAssemblies = useDatasetFiltersStore(
     (state) => state.selectedAssemblies,
@@ -234,11 +238,25 @@ function GoslingVizShell({
       <DndWrapper>
         <Box sx={{ height: "100%", position: "relative" }}>
           <Stack direction="row" sx={{ height: "100%" }}>
-            <Box sx={{ width: 400, flexShrink: 0, overflowY: "auto", p: 2 }}>
+            {/* Hidden rather than unmounted so list filters and scroll
+                position survive toggling. */}
+            <Box
+              sx={{
+                display: isSidebarOpen ? "block" : "none",
+                width: 400,
+                flexShrink: 0,
+                overflowY: "auto",
+                p: 2,
+              }}
+            >
               {sidebar}
             </Box>
             <Box sx={{ flex: 1, minWidth: 0, height: "100%" }}>
-              <GoslingViewer permissions={permissions} />
+              <GoslingViewer
+                permissions={permissions}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={onToggleSidebar}
+              />
             </Box>
           </Stack>
         </Box>

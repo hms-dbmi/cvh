@@ -28,6 +28,16 @@ import {
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
+import {
+  type AnnotationUtils,
+  annotationStoriesDiffer,
+  fillColumns,
+  hasAnnotationPanel,
+  hasAnnotationStory,
+  setAnnotationCloseButton,
+  toAnnotatingConfig,
+} from "../utils/annotatingConfig.ts";
+import { useUnsavedAnnotationsStore } from "../hooks/useUnsavedAnnotationsStore";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
 
 // The `vitessce` package + its transitives (three.js, higlass, neuroglancer,
@@ -39,6 +49,8 @@ import { BottomBar, type Mode } from "./BottomBar.tsx";
 //     and parses only when we're about to render the canvas, not while
 //     the code editor is on screen.
 //   * `generateConfig` → dynamic import inside the drop-generate handler.
+//   * Annotation helpers (`addAnnotationControllerView`, …) → dynamic import
+//     on the switch into Annotating mode and on save.
 //   * `@vitessce/schemas` `upgradeAndParse` → dynamic import inside the
 //     editor-save validator.
 const Vitessce = lazy(() =>
@@ -66,6 +78,8 @@ function isVitessceDragPayload(data: unknown): data is VitessceDragPayload {
 interface VitessceViewerProps {
   permissions: number;
   selectedVizId?: string;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
 function CodeEditor({
@@ -126,8 +140,22 @@ function CodeEditor({
   );
 }
 
-function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
+function VitessceViewer({
+  permissions,
+  selectedVizId,
+  isSidebarOpen,
+  onToggleSidebar,
+}: VitessceViewerProps) {
   const [mode, setMode] = useState<Mode>("exploring");
+  // Loaded on the first switch into Annotating mode; see toAnnotatingConfig.
+  const [annotationUtils, setAnnotationUtils] =
+    useState<AnnotationUtils | null>(null);
+  // The viewer's config at the last mode switch, so unsaved changes carry
+  // between Exploring and Annotating. Null means use the server config.
+  const [modeBaseConfig, setModeBaseConfig] = useState<object | null>(null);
+  // Vitessce only re-reads `config` when `config.uid` changes, so each mode
+  // switch bumps this to remount the viewer with the new config.
+  const [modeRevision, setModeRevision] = useState(0);
   const [editorValue, setEditorValue] = useState("");
   // Held while a dropped dataset is waiting on user confirmation to
   // overwrite the current config. Cleared after apply or cancel.
@@ -138,7 +166,8 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
 
-  const { mutate: updateViz } = useUpdateVisualization();
+  const { mutate: updateViz, mutateAsync: updateVizAsync } =
+    useUpdateVisualization();
   const { toastError, toastSuccess } = useSnackbarActions();
 
   const hasWritePermissions = permissions >= 2;
@@ -163,6 +192,8 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
     // are stale from whatever the user was doing on the previous viz.
     latestConfigRef.current = null;
     setHasUnsavedChanges(false);
+    setModeBaseConfig(null);
+    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
   }, [data?.conf]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
@@ -170,9 +201,60 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   // viewer state. Stamp the visualization's UUID onto the config so each
   // viz produces a distinct identity.
   const vitessceConfig = useMemo(() => {
-    if (!data?.conf || !selectedVizId) return null;
-    return { ...(data.conf as object), uid: selectedVizId };
-  }, [data?.conf, selectedVizId]);
+    const base = modeBaseConfig ?? (data?.conf as object | undefined);
+    if (!base || !selectedVizId) return null;
+    const config =
+      mode === "annotating" && annotationUtils
+        ? toAnnotatingConfig(base, annotationUtils)
+        : setAnnotationCloseButton(base, true);
+    return { ...config, uid: `${selectedVizId}-${modeRevision}` };
+  }, [
+    data?.conf,
+    selectedVizId,
+    mode,
+    modeBaseConfig,
+    modeRevision,
+    annotationUtils,
+  ]);
+
+  const switchMode = useCallback(
+    async (next: Mode) => {
+      if (next === "annotating" && !annotationUtils) {
+        try {
+          setAnnotationUtils(await import("vitessce"));
+        } catch (e) {
+          toastError("Could not load annotation tools.");
+          console.error(e);
+          return;
+        }
+      }
+      if (next === "annotating") {
+        const base = latestConfigRef.current ?? (data?.conf as object | null);
+        posthog.capture("annotation_mode_entered", {
+          added_panel: !base || !hasAnnotationPanel(base),
+        });
+      }
+      setModeBaseConfig(latestConfigRef.current);
+      setModeRevision((revision) => revision + 1);
+      setMode(next);
+    },
+    [annotationUtils, toastError, data?.conf],
+  );
+
+  const handleModeChange = useCallback(
+    (next: Mode) => {
+      if (next === "editing") {
+        // The code editor shows the saved config, so unsaved annotations
+        // would seem to vanish there (and its autosave could overwrite them).
+        useUnsavedAnnotationsStore
+          .getState()
+          .confirmLeave(() => void switchMode(next));
+      } else {
+        void switchMode(next);
+      }
+    },
+    [switchMode],
+  );
 
   // Exploring-mode changes (config edits from Vitessce's own UI:
   // brushes, view toggles, etc.) are held in a ref and only persisted
@@ -182,27 +264,105 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
   const latestConfigRef = useRef<object | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const handleConfigChange = useCallback((config: object) => {
-    latestConfigRef.current = config;
-    setHasUnsavedChanges(true);
-  }, []);
+  const shownWithAnnotationPanel = useMemo(
+    () => !!vitessceConfig && hasAnnotationPanel(vitessceConfig),
+    [vitessceConfig],
+  );
 
-  const saveViz = useCallback(() => {
-    if (!selectedVizId || !hasWritePermissions) return;
-    const config = latestConfigRef.current;
-    if (!config) return;
+  const handleConfigChange = useCallback(
+    (config: object) => {
+      const previous = latestConfigRef.current ?? vitessceConfig;
+      if (
+        mode === "annotating" &&
+        previous &&
+        !hasAnnotationStory(previous) &&
+        hasAnnotationStory(config)
+      ) {
+        posthog.capture("annotation_story_created");
+      }
+      // The user closed the annotation panel (possible in Exploring mode).
+      // Vitessce leaves its columns empty, so reload the viewer with the
+      // remaining views stretched back across the full width.
+      if (shownWithAnnotationPanel && !hasAnnotationPanel(config)) {
+        const filled = fillColumns(config);
+        latestConfigRef.current = filled;
+        setModeBaseConfig(filled);
+        setModeRevision((revision) => revision + 1);
+      } else {
+        latestConfigRef.current = config;
+      }
+      setHasUnsavedChanges(true);
+      useUnsavedAnnotationsStore
+        .getState()
+        .setHasUnsavedAnnotations(
+          annotationStoriesDiffer(
+            latestConfigRef.current,
+            (data?.conf as object | undefined) ?? {},
+          ),
+        );
+    },
+    [shownWithAnnotationPanel, mode, vitessceConfig, data?.conf],
+  );
+
+  // Resolves to whether the save succeeded, so "Save" in the
+  // unsaved-annotations dialog only leaves once the changes are stored.
+  const saveViz = useCallback(async () => {
+    if (!selectedVizId || !hasWritePermissions) return false;
+    const latest = latestConfigRef.current;
+    if (!latest) return true;
+    let config: object;
     try {
-      posthog.capture("visualization_saved", { viewer: "vitessce" });
-      updateViz({
-        body: { conf: config as Record<string, never> },
-        params: { path: { visualization_uuid: selectedVizId } },
-      });
-      setHasUnsavedChanges(false);
+      // Annotation editing is a viewer mode, not part of the visualization:
+      // save it switched off, with the panel's close button shown, so
+      // collaborators and public viewers get read-only annotations they
+      // can dismiss.
+      const { hasAnnotationControllerView, disableAnnotationEditing } =
+        await import("vitessce");
+      config = hasAnnotationControllerView(latest)
+        ? setAnnotationCloseButton(disableAnnotationEditing(latest), true)
+        : latest;
     } catch (e) {
       toastError("Error saving visualization");
       console.error(e);
+      return false;
     }
-  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
+    posthog.capture("visualization_saved", {
+      viewer: "vitessce",
+      has_annotation_story: hasAnnotationStory(config),
+    });
+    try {
+      await updateVizAsync({
+        body: { conf: config as Record<string, never> },
+        params: { path: { visualization_uuid: selectedVizId } },
+      });
+    } catch (e) {
+      // useUpdateVisualization already shows the error toast.
+      console.error(e);
+      return false;
+    }
+    setHasUnsavedChanges(false);
+    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
+    return true;
+  }, [updateVizAsync, toastError, selectedVizId, hasWritePermissions]);
+
+  // Drops unsaved changes, for "Discard" in the unsaved-annotations dialog.
+  // The viewer is about to unmount or switch to the code editor, so there's
+  // no need to remount it here.
+  const discardChanges = useCallback(() => {
+    latestConfigRef.current = null;
+    setHasUnsavedChanges(false);
+    setModeBaseConfig(null);
+    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
+  }, []);
+
+  // Hand the dialog this viewer's save/discard; clear it all on unmount so a
+  // Gosling visualization never inherits a Vitessce warning.
+  useEffect(() => {
+    useUnsavedAnnotationsStore
+      .getState()
+      .register({ save: saveViz, discard: discardChanges });
+  }, [saveViz, discardChanges]);
+  useEffect(() => () => useUnsavedAnnotationsStore.getState().reset(), []);
 
   const publishViz = useCallback(() => {
     try {
@@ -362,7 +522,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
           transition: "outline-color 120ms ease",
         }}
       >
-        {mode === "exploring" && !vitessceConfig && selectedVizId && (
+        {mode !== "editing" && !vitessceConfig && selectedVizId && (
           <Stack
             sx={{
               // 100% of Paper minus the 16px margins on each axis so the
@@ -396,7 +556,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             </Typography>
           </Stack>
         )}
-        {mode === "exploring" && vitessceConfig && (
+        {mode !== "editing" && vitessceConfig && (
           <Suspense
             fallback={
               <Stack
@@ -417,6 +577,7 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
               height={900}
               theme="light"
               onConfigChange={hasWritePermissions ? handleConfigChange : undefined}
+              areAnnotationsEditable={mode === "annotating"}
             />
           </Suspense>
         )}
@@ -460,23 +621,28 @@ function VitessceViewer({ permissions, selectedVizId }: VitessceViewerProps) {
             bottom: 16,
             left: "50%",
             transform: "translateX(-50%)",
+            // `left: 50%` caps the shrink-to-fit width at half the panel,
+            // which would wrap the bar's labels.
+            width: "max-content",
             zIndex: 10,
           }}
         >
           <BottomBar
             mode={mode}
-            onModeChange={setMode}
+            onModeChange={handleModeChange}
             published={data?.published}
             visualizationID={selectedVizId}
             onPublish={hasWritePermissions ? publishViz : undefined}
-            // Save is only meaningful in exploring mode — the code editor
+            // Save is only meaningful outside editing mode — the code editor
             // path autosaves on a 2.5s debounce, so a Save button there
             // would fire redundantly. Hide it when editing.
             onSave={
-              hasWritePermissions && mode === "exploring" ? saveViz : undefined
+              hasWritePermissions && mode !== "editing" ? saveViz : undefined
             }
             hasUnsavedChanges={hasUnsavedChanges}
             hasWritePermissions={hasWritePermissions}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={onToggleSidebar}
           />
         </Box>
       )}

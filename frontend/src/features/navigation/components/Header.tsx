@@ -42,7 +42,7 @@ function PublishedVisualizationsButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Tooltip title="Browse your published visualizations">
+      <Tooltip title="Browse your published visualizations.">
         <IconButton
           aria-label="Browse your published visualizations"
           onClick={() => setOpen(true)}
