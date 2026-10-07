@@ -29,13 +29,23 @@ function countRows(layout: LayoutView[]) {
 
 // "Create a story" sets the panel's `annotationStory` coordination value,
 // which is null until then.
-export function hasAnnotationStory(config: object) {
+function getStories(config: object) {
   const stories = (
     config as {
       coordinationSpace?: { annotationStory?: Record<string, unknown> };
     }
   ).coordinationSpace?.annotationStory;
-  return Object.values(stories ?? {}).some((story) => story != null);
+  return Object.values(stories ?? {}).filter((story) => story != null);
+}
+
+export function hasAnnotationStory(config: object) {
+  return getStories(config).length > 0;
+}
+
+// Whether the annotation stories in two configs differ, ignoring which
+// coordination scope each story sits in.
+export function annotationStoriesDiffer(a: object, b: object) {
+  return JSON.stringify(getStories(a)) !== JSON.stringify(getStories(b));
 }
 
 export function hasAnnotationPanel(config: object) {

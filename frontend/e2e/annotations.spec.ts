@@ -12,7 +12,10 @@ type View = {
 };
 type SavedConf = {
   layout: View[];
-  coordinationSpace: { annotationEditable?: Record<string, boolean> };
+  coordinationSpace: {
+    annotationEditable?: Record<string, boolean>;
+    annotationStory?: Record<string, unknown>;
+  };
 };
 
 async function savedConfs(page: Page) {
@@ -80,4 +83,36 @@ test("annotating adds an editable panel that is saved read-only and can be close
     ["description", 7],
     ["status", 5],
   ]);
+});
+
+test("leaving with unsaved annotations asks first, and Save stores them before leaving", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2eTwoViewVitessce = true;
+  });
+  await gotoWorkspace(page, PROJECT_ID);
+  const dialog = page.getByRole("dialog", { name: "Unsaved annotations" });
+  const workspaceUrl = page.url();
+
+  await page.getByRole("button", { name: "Annotating" }).click();
+  await page.getByRole("button", { name: /create a story/i }).click();
+
+  // Keep editing stays put.
+  await page.getByRole("link", { name: "Tutorials" }).click();
+  await dialog.getByRole("button", { name: "Keep editing" }).click();
+  await expect(dialog).toBeHidden();
+  expect(page.url()).toBe(workspaceUrl);
+
+  // Save stores the story, then continues to where the user was going.
+  await page.getByRole("link", { name: "Tutorials" }).click();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await page.waitForURL(/\/tutorials/);
+  const [saved] = await savedConfs(page);
+  expect(
+    Object.values(saved.coordinationSpace.annotationStory ?? {}).filter(
+      Boolean,
+    ),
+  ).toHaveLength(1);
 });

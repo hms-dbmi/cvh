@@ -1,11 +1,14 @@
+import { useBlocker } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useVisualizationFiltersStore } from "@/features/visualizations/hooks/useVisualizationFiltersStore";
 import {
   useGetProjectVisualizations,
   useGetVisualization,
 } from "../api/useVisualizations";
+import { useUnsavedAnnotationsStore } from "../hooks/useUnsavedAnnotationsStore";
 import DataList from "./DataList.tsx";
 import GoslingVizShell from "./GoslingVizShell.tsx";
+import UnsavedAnnotationsDialog from "./UnsavedAnnotationsDialog.tsx";
 import VisualizationsList from "./VisualizationsList.tsx";
 import VitessceVizShell from "./VitessceVizShell.tsx";
 
@@ -31,6 +34,29 @@ function VisualizationViewer({
     // layout has rendered.
     requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
   }, []);
+
+  // Switching visualizations from the sidebar isn't a navigation, so the
+  // blocker below doesn't see it; ask here instead.
+  const selectViz = useCallback((id?: string) => {
+    useUnsavedAnnotationsStore
+      .getState()
+      .confirmLeave(() => setSelectedVizId(id));
+  }, []);
+
+  // Leaving the workspace (another workspace, another page) waits on the
+  // unsaved-annotations dialog; closing or reloading the tab gets the
+  // browser's own prompt.
+  useBlocker({
+    shouldBlockFn: () =>
+      new Promise<boolean>((resolve) =>
+        useUnsavedAnnotationsStore.getState().confirmLeave(
+          () => resolve(false),
+          () => resolve(true),
+        ),
+      ),
+    enableBeforeUnload: () =>
+      useUnsavedAnnotationsStore.getState().hasUnsavedAnnotations,
+  });
 
   const vizNameSubstring = useVisualizationFiltersStore(
     (state) => state.nameSubstring,
@@ -64,34 +90,39 @@ function VisualizationViewer({
       <>
         <VisualizationsList
           projectId={projectId}
-          setSelectedVizId={setSelectedVizId}
+          setSelectedVizId={selectViz}
           selectedVizId={selectedVizId}
           permissions={permissions}
         />
         <DataList showVitessceWarning={isVitessce} showActions tool={tool} />
       </>
     ),
-    [projectId, selectedVizId, permissions, isVitessce],
+    [projectId, selectedVizId, permissions, isVitessce, selectViz],
   );
 
-  return isVitessce ? (
-    <VitessceVizShell
-      permissions={permissions}
-      selectedVizId={selectedVizId}
-      sidebar={sidebar}
-      isSidebarOpen={isSidebarOpen}
-      onToggleSidebar={toggleSidebar}
-    />
-  ) : (
-    <GoslingVizShell
-      projectId={projectId}
-      permissions={permissions}
-      selectedVizId={selectedVizId}
-      selectedViz={selectedViz}
-      sidebar={sidebar}
-      isSidebarOpen={isSidebarOpen}
-      onToggleSidebar={toggleSidebar}
-    />
+  return (
+    <>
+      {isVitessce ? (
+        <VitessceVizShell
+          permissions={permissions}
+          selectedVizId={selectedVizId}
+          sidebar={sidebar}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={toggleSidebar}
+        />
+      ) : (
+        <GoslingVizShell
+          projectId={projectId}
+          permissions={permissions}
+          selectedVizId={selectedVizId}
+          selectedViz={selectedViz}
+          sidebar={sidebar}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={toggleSidebar}
+        />
+      )}
+      <UnsavedAnnotationsDialog />
+    </>
   );
 }
 

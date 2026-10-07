@@ -30,12 +30,14 @@ import {
 } from "../api/useVisualizations";
 import {
   type AnnotationUtils,
+  annotationStoriesDiffer,
   fillColumns,
   hasAnnotationPanel,
   hasAnnotationStory,
   setAnnotationCloseButton,
   toAnnotatingConfig,
 } from "../utils/annotatingConfig.ts";
+import { useUnsavedAnnotationsStore } from "../hooks/useUnsavedAnnotationsStore";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
 
 // The `vitessce` package + its transitives (three.js, higlass, neuroglancer,
@@ -164,7 +166,8 @@ function VitessceViewer({
   // @ts-expect-error TODO: Remove ignore.
   const { data } = useGetVisualization(selectedVizId);
 
-  const { mutate: updateViz } = useUpdateVisualization();
+  const { mutate: updateViz, mutateAsync: updateVizAsync } =
+    useUpdateVisualization();
   const { toastError, toastSuccess } = useSnackbarActions();
 
   const hasWritePermissions = permissions >= 2;
@@ -190,6 +193,7 @@ function VitessceViewer({
     latestConfigRef.current = null;
     setHasUnsavedChanges(false);
     setModeBaseConfig(null);
+    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
   }, [data?.conf]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
@@ -213,7 +217,7 @@ function VitessceViewer({
     annotationUtils,
   ]);
 
-  const handleModeChange = useCallback(
+  const switchMode = useCallback(
     async (next: Mode) => {
       if (next === "annotating" && !annotationUtils) {
         try {
@@ -235,6 +239,21 @@ function VitessceViewer({
       setMode(next);
     },
     [annotationUtils, toastError, data?.conf],
+  );
+
+  const handleModeChange = useCallback(
+    (next: Mode) => {
+      if (next === "editing") {
+        // The code editor shows the saved config, so unsaved annotations
+        // would seem to vanish there (and its autosave could overwrite them).
+        useUnsavedAnnotationsStore
+          .getState()
+          .confirmLeave(() => void switchMode(next));
+      } else {
+        void switchMode(next);
+      }
+    },
+    [switchMode],
   );
 
   // Exploring-mode changes (config edits from Vitessce's own UI:
@@ -273,14 +292,25 @@ function VitessceViewer({
         latestConfigRef.current = config;
       }
       setHasUnsavedChanges(true);
+      useUnsavedAnnotationsStore
+        .getState()
+        .setHasUnsavedAnnotations(
+          annotationStoriesDiffer(
+            latestConfigRef.current,
+            (data?.conf as object | undefined) ?? {},
+          ),
+        );
     },
-    [shownWithAnnotationPanel, mode, vitessceConfig],
+    [shownWithAnnotationPanel, mode, vitessceConfig, data?.conf],
   );
 
+  // Resolves to whether the save succeeded, so "Save" in the
+  // unsaved-annotations dialog only leaves once the changes are stored.
   const saveViz = useCallback(async () => {
-    if (!selectedVizId || !hasWritePermissions) return;
+    if (!selectedVizId || !hasWritePermissions) return false;
     const latest = latestConfigRef.current;
-    if (!latest) return;
+    if (!latest) return true;
+    let config: object;
     try {
       // Annotation editing is a viewer mode, not part of the visualization:
       // save it switched off, with the panel's close button shown, so
@@ -288,23 +318,51 @@ function VitessceViewer({
       // can dismiss.
       const { hasAnnotationControllerView, disableAnnotationEditing } =
         await import("vitessce");
-      const config = hasAnnotationControllerView(latest)
+      config = hasAnnotationControllerView(latest)
         ? setAnnotationCloseButton(disableAnnotationEditing(latest), true)
         : latest;
-      posthog.capture("visualization_saved", {
-        viewer: "vitessce",
-        has_annotation_story: hasAnnotationStory(config),
-      });
-      updateViz({
-        body: { conf: config as Record<string, never> },
-        params: { path: { visualization_uuid: selectedVizId } },
-      });
-      setHasUnsavedChanges(false);
     } catch (e) {
       toastError("Error saving visualization");
       console.error(e);
+      return false;
     }
-  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
+    posthog.capture("visualization_saved", {
+      viewer: "vitessce",
+      has_annotation_story: hasAnnotationStory(config),
+    });
+    try {
+      await updateVizAsync({
+        body: { conf: config as Record<string, never> },
+        params: { path: { visualization_uuid: selectedVizId } },
+      });
+    } catch (e) {
+      // useUpdateVisualization already shows the error toast.
+      console.error(e);
+      return false;
+    }
+    setHasUnsavedChanges(false);
+    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
+    return true;
+  }, [updateVizAsync, toastError, selectedVizId, hasWritePermissions]);
+
+  // Drops unsaved changes, for "Discard" in the unsaved-annotations dialog.
+  // The viewer is about to unmount or switch to the code editor, so there's
+  // no need to remount it here.
+  const discardChanges = useCallback(() => {
+    latestConfigRef.current = null;
+    setHasUnsavedChanges(false);
+    setModeBaseConfig(null);
+    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
+  }, []);
+
+  // Hand the dialog this viewer's save/discard; clear it all on unmount so a
+  // Gosling visualization never inherits a Vitessce warning.
+  useEffect(() => {
+    useUnsavedAnnotationsStore
+      .getState()
+      .register({ save: saveViz, discard: discardChanges });
+  }, [saveViz, discardChanges]);
+  useEffect(() => () => useUnsavedAnnotationsStore.getState().reset(), []);
 
   const publishViz = useCallback(() => {
     try {
