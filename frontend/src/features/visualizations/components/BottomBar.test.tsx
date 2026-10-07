@@ -103,9 +103,45 @@ describe("BottomBar", () => {
     expect(onModeChange).not.toHaveBeenCalled();
   });
 
+  it("toggles the sidebar and labels the action by its state", async () => {
+    const onToggleSidebar = vi.fn();
+    const { rerender } = render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        isSidebarOpen
+        onToggleSidebar={onToggleSidebar}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Hide sidebar" }));
+    expect(onToggleSidebar).toHaveBeenCalled();
+
+    rerender(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        isSidebarOpen={false}
+        onToggleSidebar={onToggleSidebar}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Show sidebar" }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the sidebar button when onToggleSidebar is not provided", () => {
+    render(<BottomBar mode="exploring" onModeChange={() => {}} />);
+    expect(
+      screen.queryByRole("button", { name: /sidebar/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("hides the Save button when onSave is not provided", () => {
     render(<BottomBar mode="exploring" onModeChange={() => {}} />);
-    expect(screen.queryByText("Save")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Save" }),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onSave when Save is clicked", async () => {
@@ -118,7 +154,7 @@ describe("BottomBar", () => {
         hasUnsavedChanges
       />,
     );
-    await userEvent.click(screen.getByText("Save"));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalled();
   });
 
@@ -131,7 +167,6 @@ describe("BottomBar", () => {
         hasUnsavedChanges={false}
       />,
     );
-    // MUI Button propagates `disabled` to the underlying <button>.
-    expect(screen.getByText("Save").closest("button")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 });
