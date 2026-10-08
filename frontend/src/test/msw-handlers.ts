@@ -123,13 +123,16 @@ const annotatedVitessceConf = {
 } as unknown as Record<string, never>;
 
 function getWorkspaceViz(): components["schemas"]["VisualizationOut"] {
+  let viz = workspaceViz;
   if (flag("__e2eGoslingWorkspace")) {
-    return { ...workspaceViz, tool: "gosling", conf: {} };
+    viz = { ...viz, tool: "gosling", conf: {} };
+  } else if (flag("__e2eTwoViewVitessce")) {
+    viz = { ...viz, conf: twoViewVitessceConf };
   }
-  if (flag("__e2eTwoViewVitessce")) {
-    return { ...workspaceViz, conf: twoViewVitessceConf };
+  if (flag("__e2ePublishedWorkspaceViz")) {
+    viz = { ...viz, published: true };
   }
-  return workspaceViz;
+  return viz;
 }
 
 const member: components["schemas"]["WorkspaceMemberOut"] = {

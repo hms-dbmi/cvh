@@ -18,3 +18,27 @@ test("publishing a Vitessce viz fires PUT with published: true", async ({
     body: { published: true },
   });
 });
+
+test("the sharing menu downloads a QR code for the public link", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2ePublishedWorkspaceViz = true;
+  });
+  await gotoWorkspace(page, PROJECT_ID);
+  await page.getByRole("button", { name: "Published", exact: true }).click();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("menuitem", { name: "Download QR Code" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe(
+    "e2e-workspace-vitessce-qr-code.png",
+  );
+  // PNG signature: the file is a real image, not an error page.
+  const stream = await download.createReadStream();
+  const [firstChunk] = await stream.toArray();
+  expect(firstChunk.subarray(0, 4).toString("hex")).toBe("89504e47");
+  await expect(page.getByText("QR code downloaded.")).toBeVisible();
+});
