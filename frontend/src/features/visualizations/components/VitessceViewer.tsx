@@ -22,6 +22,7 @@ import {
   useState,
 } from "react";
 import "react-grid-layout/css/styles.css";
+import "../vitessce-overrides.css";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import posthog from "@/posthog";
 import {
