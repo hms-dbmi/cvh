@@ -248,6 +248,27 @@ export function BottomBar({
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={closeMenu}
+              // "Sharing Menu" in the CVH design system.
+              slotProps={{
+                paper: {
+                  sx: {
+                    width: 360,
+                    borderRadius: 4,
+                    border: "1px solid",
+                    borderColor: "divider",
+                  },
+                },
+                list: {
+                  sx: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.25,
+                    py: 0,
+                    // The flex gap spaces the divider; drop MUI's own margins.
+                    "& .MuiMenuItem-root + .MuiDivider-root": { my: 0 },
+                  },
+                },
+              }}
             >
               <PublishedVizMenu
                 visualizationID={visualizationID}
