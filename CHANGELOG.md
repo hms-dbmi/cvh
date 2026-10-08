@@ -23,6 +23,9 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 - Vitessce upgraded from 4.0.10 to 4.1.0, which adds the annotation APIs above.
 - `gosling-designer-vec` upgraded from 0.0.75 to 0.0.76, for the bottom-bar changes above.
 
+### Fixed
+- Dropdown text in Vitessce's layer controls was sometimes clipped in the workspace. Vitessce's container rule (`box-sizing: border-box`) and its components' `content-box` rules have equal specificity, and inside CVH the container rule is occasionally inserted again after the component rules. `src/features/visualizations/vitessce-overrides.css` restores `content-box` for the selects, sliders and accordion headings with a more specific selector, and can go once Vitessce fixes this upstream.
+
 ## [2026-10-01] (prod, a1f5e37)
 
 ### Added
