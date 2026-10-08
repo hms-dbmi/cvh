@@ -12,3 +12,12 @@
 :is(.MuiNativeSelect-select, .MuiSlider-root, .MuiAccordion-heading) {
   box-sizing: content-box;
 }
+
+/*
+ * Vitessce gives its container no height of its own; without a `height`
+ * prop it measures this element. Fill the surrounding paper so the grid fits
+ * it exactly instead of overflowing (and being clipped by) the panel.
+ */
+.vitessce-container {
+  height: 100%;
+}
