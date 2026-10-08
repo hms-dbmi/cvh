@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { createFileRoute } from "@tanstack/react-router";
@@ -153,18 +154,23 @@ function RouteComponent() {
         <Box sx={{ width: 400, flexShrink: 0, overflowY: "auto", p: 2 }}>
           <PublishedVisualizationPanel viz={data} />
         </Box>
-        <Box sx={{ flex: 1, minWidth: 0, height: "100%" }}>
-          {data.conf && (
-            <Suspense fallback={<ViewerFallback />}>
-              <Vitessce
-                config={data.conf}
-                height={900}
-                theme="light"
-                // Defaults to true; public visitors view annotations only.
-                areAnnotationsEditable={false}
-              />
-            </Suspense>
-          )}
+        {/* The same paper panel and 16px gutter as the workspace viewer
+            (VitessceViewer). */}
+        <Box sx={{ flex: 1, minWidth: 0, display: "flex", p: 2 }}>
+          <Paper sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+            {data.conf && (
+              <Suspense fallback={<ViewerFallback />}>
+                <Vitessce
+                  config={data.conf}
+                  // No fixed height: Vitessce fills the paper
+                  // (see vitessce-overrides.css).
+                  theme="light"
+                  // Defaults to true; public visitors view annotations only.
+                  areAnnotationsEditable={false}
+                />
+              </Suspense>
+            )}
+          </Paper>
         </Box>
       </Stack>
     );
