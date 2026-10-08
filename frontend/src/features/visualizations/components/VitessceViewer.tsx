@@ -505,14 +505,26 @@ function VitessceViewer({
   }, [editorValue, selectedVizId, hasWritePermissions, saveEditorValue]);
 
   return (
-    <Box sx={{ height: "100%", position: "relative" }}>
+    <Box
+      sx={{
+        height: "100%",
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        // A 16px gutter around the paper. The bottom also clears the bar:
+        // its 16px offset, its 64px height and a 16px gap. Padding, not a
+        // margin on the paper, which would collapse through this box and
+        // push it (and the bar) 16px down.
+        p: 2,
+        pb: "96px",
+      }}
+    >
       <Paper
         ref={setDropRef}
         sx={{
           flex: 1,
           minWidth: 0,
-          m: 2,
-          height: "calc(100% - 125px)",
+          minHeight: 0,
           overflow: "hidden",
           // Highlight the panel edge while a compatible dataset hovers over
           // it. `isOver` only becomes true for drops @dnd-kit considers
@@ -575,7 +587,8 @@ function VitessceViewer({
           >
             <Vitessce
               config={vitessceConfig}
-              height={900}
+              // No fixed height: Vitessce fills the paper
+              // (see vitessce-overrides.css).
               theme="light"
               onConfigChange={hasWritePermissions ? handleConfigChange : undefined}
               areAnnotationsEditable={mode === "annotating"}
