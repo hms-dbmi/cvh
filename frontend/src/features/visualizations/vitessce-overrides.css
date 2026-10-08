@@ -1,0 +1,14 @@
+/*
+ * Vitessce's grid sets `box-sizing: border-box` on everything inside
+ * `.vitessce-container`, and some of its MUI components set `content-box`
+ * at the same specificity, so whichever rule comes later wins. When
+ * Vitessce is mounted in the workspace, its styling cache sometimes inserts
+ * the container rule a second time, after the component rules. The
+ * components then lose their padding room: dropdown text is clipped and
+ * sliders and accordion headings shift. Restore `content-box` with a
+ * slightly more specific selector so the result no longer depends on order.
+ */
+.vitessce-container
+:is(.MuiNativeSelect-select, .MuiSlider-root, .MuiAccordion-heading) {
+  box-sizing: content-box;
+}

@@ -12,6 +12,7 @@ import formatVisualization from "../features/visualizations/utils/formatVisualiz
 import type { components } from "../types/schema";
 import "gosling-designer-vec/build/style.css";
 import "react-grid-layout/css/styles.css";
+import "../features/visualizations/vitessce-overrides.css";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
