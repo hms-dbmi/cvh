@@ -17,6 +17,7 @@ import {
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
+import { toFileSlug } from "../utils/toFileSlug";
 
 type Props = {
   visualizationID: string;
@@ -37,26 +38,25 @@ const menuItemSx: SxProps<Theme> = {
   "&:hover": { bgcolor: "rgba(138, 158, 168, 0.04)" },
 };
 
-// "My Viz: Kidney (v2)" -> "my-viz-kidney-v2"
-function toFileSlug(name: string) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
   const handleCopyClick = useHandleCopyClick();
   const path = `/visualizations/${visualizationID}`;
   const publicUrl = `${window.location.origin}${path}`;
   const { toastError, toastSuccess } = useSnackbarActions();
-  // Already cached by the viewer; only used to name the QR code file.
+  // Already cached by the viewer; names the QR code file and tags events.
   const { data: visualization } = useGetVisualization(visualizationID);
+  const viewer = visualization?.tool;
+
+  const handleOpenPublicView = useCallback(() => {
+    posthog.capture("visualization_public_view_opened", { viewer });
+    closeMenu();
+  }, [viewer, closeMenu]);
 
   const handleCopy = useCallback(() => {
+    posthog.capture("visualization_link_copied", { viewer });
     handleCopyClick(publicUrl);
     closeMenu();
-  }, [handleCopyClick, publicUrl, closeMenu]);
+  }, [handleCopyClick, publicUrl, closeMenu, viewer]);
 
   const handleDownloadQrCode = useCallback(async () => {
     closeMenu();
@@ -73,12 +73,20 @@ function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
       link.href = dataUrl;
       link.download = `${toFileSlug(visualization?.name ?? "") || "visualization"}-qr-code.png`;
       link.click();
+      posthog.capture("visualization_qr_code_downloaded", { viewer });
       toastSuccess("QR code downloaded.");
     } catch (e) {
       toastError("Could not create the QR code. Please try again.");
       console.error(e);
     }
-  }, [closeMenu, publicUrl, visualization?.name, toastSuccess, toastError]);
+  }, [
+    closeMenu,
+    publicUrl,
+    visualization?.name,
+    viewer,
+    toastSuccess,
+    toastError,
+  ]);
 
   const { mutate: updateViz } = useUpdateVisualization();
 
@@ -108,7 +116,7 @@ function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
         to={path}
         target="_blank"
         component="a"
-        onClick={closeMenu}
+        onClick={handleOpenPublicView}
         sx={menuItemSx}
       >
         <PresentationChart size={ICON_SIZE} />
