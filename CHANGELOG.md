@@ -23,6 +23,8 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 - Vitessce upgraded from 4.0.10 to 4.1.0, which adds the annotation APIs above.
 - `gosling-designer-vec` upgraded from 0.0.75 to 0.0.76, for the bottom-bar changes above.
 
+- Vitessce visualizations sit on the same paper panel on public pages as in the workspace, with a consistent 16px gutter around it on both. Vitessce now sizes itself to the panel (its fixed 900px height is removed, with `.vitessce-container` filling the paper in `vitessce-overrides.css`), so views are no longer cut off at the bottom and grow with the window. In the workspace the panel also ends 16px above the bottom bar, and the bar now sits 16px above the window's bottom edge: the panel's top margin had been collapsing through its container and pushing both down. The panels are laid out with padding instead.
+
 ### Fixed
 - Dropdown text in Vitessce's layer controls was sometimes clipped in the workspace. Vitessce's container rule (`box-sizing: border-box`) and its components' `content-box` rules have equal specificity, and inside CVH the container rule is occasionally inserted again after the component rules. `src/features/visualizations/vitessce-overrides.css` restores `content-box` for the selects, sliders and accordion headings with a more specific selector, and can go once Vitessce fixes this upstream.
 
