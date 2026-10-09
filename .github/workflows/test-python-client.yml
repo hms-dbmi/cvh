@@ -45,6 +45,31 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --all-extras
 
+      # Saved outputs bloat diffs and can leak local paths or tokens.
+      # Fails on any code cell with outputs or an execution count;
+      # cell ids and formatting are left alone.
+      - name: Check notebooks have no outputs
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          bad = []
+          for path in sorted(pathlib.Path("examples").glob("*.ipynb")):
+              cells = json.loads(path.read_text())["cells"]
+              n = sum(
+                  1
+                  for c in cells
+                  if c["cell_type"] == "code"
+                  and (c.get("outputs") or c.get("execution_count") is not None)
+              )
+              if n:
+                  bad.append(f"{path}: {n} code cell(s) with outputs")
+          if bad:
+              print("\n".join(bad))
+              print("Clear all outputs in these notebooks and commit again.")
+              sys.exit(1)
+          print("✅ notebooks have no outputs")
+          PY
+
       - name: Lint
         run: |
           uv run ruff check src/ tests/

@@ -1,6 +1,6 @@
 [project]
 name = "cvh-client"
-version = "0.4.0"
+version = "0.4.1"
 description = "Python API client for the Community Visualization Hub (CVH)"
 readme = "README.md"
 license = "MIT"
@@ -28,7 +28,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-vitessce = ["vitessce>=3.0"]
+# vitessce ships the Jupyter widget's runtime (anywidget) only in its
+# heavy `[all]` extra, so request it directly for `.widget()`.
+vitessce = ["vitessce>=3.0", "anywidget>=0.11"]
 
 [project.urls]
 Homepage = "https://visualizationhub.org"
@@ -42,6 +44,7 @@ dev = [
     "pytest-asyncio>=0.25",
     "jupyterlab>=4.0",
     "vitessce>=3.0",
+    "anywidget>=0.11",
 ]
 
 [build-system]
