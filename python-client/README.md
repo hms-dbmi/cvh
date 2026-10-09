@@ -45,8 +45,9 @@ visualizations = client.list_visualizations(ws.uuid)
 # Get a single visualization with its config
 viz = client.get_visualization(visualizations[0].uuid)
 
-# Update a visualization
+# Update a visualization, then publish it
 client.update_visualization(viz.uuid, name="New name", conf={...})
+client.publish_visualization(viz.uuid)
 ```
 
 Token expiration is handled automatically — if the client was created via `from_login()`, it will re-authenticate when the token expires.
@@ -57,25 +58,48 @@ Token expiration is handled automatically — if the client was created via `fro
 
 | Method | Description |
 |---|---|
+| `create_workspace(name, description, *, private)` | Create a workspace you administer |
 | `list_workspaces(limit, offset)` | List workspaces the user has access to |
 | `get_workspace(uuid)` | Get a single workspace |
+| `update_workspace(uuid, **fields)` | Update workspace metadata |
+| `delete_workspace(uuid)` | Delete a workspace |
 
 ### Datasets
 
 | Method | Description |
 |---|---|
-| `list_datasets(workspace_uuid, *, tags, assembly, file_type, name, page, page_size)` | List datasets in a workspace with optional filters |
+| `create_dataset(workspace_uuid, name, file_type, *, source_url, tool, description, **fields)` | Register a dataset by URL |
+| `list_datasets(workspace_uuid, *, tags, assembly, file_type, name, tool, page, page_size)` | List datasets in a workspace with optional filters |
 | `get_dataset(uuid)` | Get a single dataset |
 | `update_dataset(uuid, **fields)` | Update dataset metadata |
+| `set_dataset_tags(uuid, tags)` | Replace a dataset's tags |
+| `list_dataset_tags(workspace_uuid)` | List tags used by datasets in a workspace |
+| `list_dataset_field_values(workspace_uuid, field)` | List distinct `assembly` or `file_type` values |
+| `delete_dataset(uuid)` | Delete a dataset |
 
 ### Visualizations
 
 | Method | Description |
 |---|---|
 | `create_visualization(workspace_uuid, name, *, description, author, tool)` | Create a new visualization |
-| `list_visualizations(workspace_uuid, *, tags, name)` | List visualizations in a workspace |
+| `list_visualizations(workspace_uuid, *, tags, name, uuids)` | List visualizations in a workspace |
 | `get_visualization(uuid)` | Get a visualization with its full config |
 | `update_visualization(uuid, **fields)` | Update visualization metadata or config |
+| `publish_visualization(uuid)` | Make a visualization viewable by anyone |
+| `unpublish_visualization(uuid)` | Make a published visualization private again |
+| `set_visualization_tags(uuid, tags)` | Replace a visualization's tags |
+| `list_visualization_tags(workspace_uuid)` | List tags used by visualizations in a workspace |
+| `delete_visualization(uuid)` | Delete a visualization |
+
+### Public
+
+The visualization methods work without signing in, so `CVHClient(base_url="https://api.visualizationhub.org")` is enough. `list_public_workspaces` requires sign-in.
+
+| Method | Description |
+|---|---|
+| `list_public_visualizations(*, tags, uuids, limit, offset)` | List published visualizations |
+| `get_public_visualization(uuid)` | Get a published visualization with its config |
+| `list_public_workspaces(limit, offset)` | List public workspaces (requires sign-in) |
 
 All methods return typed Pydantic models (`Workspace`, `Dataset`, `Visualization`, etc.).
 

@@ -8,6 +8,22 @@ Categories: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Se
 
 ## [Unreleased]
 
+Version files are bumped to 0.4.0. Release only after the backend change below is on prod: `create_workspace` and `create_dataset` rely on it.
+
+### Added
+- `publish_visualization(uuid)` and `unpublish_visualization(uuid)` make a visualization public or private again, the same as the Publish and Make Private buttons in the app. Previously this was only possible by passing `published=True` to `update_visualization`.
+- `create_dataset(workspace_uuid, name, file_type, ...)` registers a dataset by URL and returns it, `uuid` included. Its docstring lists the extra fields each file type needs.
+- Tags: `set_dataset_tags` and `set_visualization_tags` replace an item's tags (accepting `Tag` objects or `{"key", "tag"}` dicts), and `list_dataset_tags` and `list_visualization_tags` list the tags in use in a workspace, whose UUIDs feed the `tags` filters. `list_dataset_field_values` lists the distinct assemblies or file types in a workspace.
+- Public endpoints: `list_public_visualizations` and `get_public_visualization` work without signing in; `list_public_workspaces` lists public workspaces.
+- `Workspace.created_by` (a new `CreatedBy` model with username, name and email), which the API already returned. `Tag` and `CreatedBy` are now importable from `cvh_client`.
+- The Vitessce example notebook ends by publishing the visualization and printing its public link.
+
+### Fixed
+- `create_workspace()` created the workspace, then raised a validation error because the API sent back only the name, description and privacy flag. The API now returns the full workspace.
+
+### Changed
+- The README's method tables now list every method.
+
 ## [0.3.0] - 2026-10-09
 
 The first release on [PyPI](https://pypi.org/project/cvh-client/): install with `pip install cvh-client`. Earlier versions (0.1.0, 0.2.0) were published only to TestPyPI.
