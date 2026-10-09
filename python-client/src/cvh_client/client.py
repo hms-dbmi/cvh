@@ -14,7 +14,9 @@ from cvh_client.exceptions import (
 from cvh_client.models import (
     Dataset,
     PagedDatasets,
+    PagedVisualizations,
     PagedWorkspaces,
+    Tag,
     Visualization,
     VisualizationSummary,
     Workspace,
@@ -44,11 +46,18 @@ class CVHClient:
 
         Workspaces:      create_workspace, list_workspaces,
                          get_workspace, update_workspace, delete_workspace
-        Datasets:        list_datasets, get_dataset, update_dataset,
+        Datasets:        create_dataset, list_datasets, get_dataset,
+                         update_dataset, set_dataset_tags,
+                         list_dataset_tags, list_dataset_field_values,
                          delete_dataset
         Visualizations:  create_visualization, list_visualizations,
                          get_visualization, update_visualization,
+                         publish_visualization, unpublish_visualization,
+                         set_visualization_tags, list_visualization_tags,
                          delete_visualization
+        Public:          list_public_workspaces,
+                         list_public_visualizations,
+                         get_public_visualization
 
     The client is a context manager — using `with CVHClient(...) as client:`
     ensures the underlying HTTP connection pool is closed.
@@ -192,6 +201,15 @@ class CVHClient:
             return None
         return response.json()
 
+    @staticmethod
+    def _tags_body(tags: list[Tag | dict[str, str]]) -> dict:
+        """Serialize tags for the replace-tags endpoints."""
+        return {
+            "tags": [
+                {"tag": t.tag, "key": t.key} if isinstance(t, Tag) else t for t in tags
+            ]
+        }
+
     # ── Workspaces ──────────────────────────────────────────────
 
     def create_workspace(
@@ -294,6 +312,71 @@ class CVHClient:
 
     # ── Datasets ────────────────────────────────────────────────
 
+    def create_dataset(
+        self,
+        workspace_uuid: str,
+        name: str,
+        file_type: str,
+        *,
+        source_url: str | None = None,
+        tool: Literal["gosling", "vitessce"] = "gosling",
+        description: str | None = None,
+        **fields,
+    ) -> Dataset:
+        """Register a dataset in a workspace.
+
+        CVH doesn't store the bytes; `source_url` must point at a file
+        the viewer can fetch (S3, HTTP host, etc.).
+
+        Which extra fields are required depends on `file_type`:
+
+        - Vitessce types (`"anndata.zarr"`, `"image.ome-tiff"`, ...):
+          only `source_url`. `data_type` (e.g. `"obsFeatureMatrix"`) is
+          optional.
+        - Gosling `"bigwig"`, `"vector"`, `"cooler"`, `"beddb"`:
+          `assembly` and `data_type`.
+        - Gosling `"multivec"`: also `row_names`.
+        - Gosling `"bam"`, `"vcf"`, `"bed"`, `"gff"`: also `index_url`.
+        - Gosling `"csv"`: also `separator`, `headers`, and
+          `data_column`.
+
+        Args:
+            workspace_uuid: UUID of the workspace to add it to.
+            name: Human-readable dataset name.
+            file_type: The file format; see `Dataset.file_type`.
+            source_url: URL the viewer fetches the data from.
+            tool: `"gosling"` (default) or `"vitessce"`, the viewer
+                whose data panel lists this dataset.
+            description: Free-text description.
+            **fields: The file-type-specific fields listed above.
+
+        Returns:
+            The created `Dataset`.
+
+        Raises:
+            AuthorizationError: User has read-only permission on the workspace.
+            CVHAPIError: A required field for `file_type` is missing (422).
+
+        Example:
+            >>> ds = client.create_dataset(
+            ...     ws.uuid,
+            ...     "Kidney cells",
+            ...     "anndata.zarr",
+            ...     source_url="https://example.org/kidney.adata.zarr",
+            ...     tool="vitessce",
+            ... )
+        """
+        dataset: dict[str, Any] = {"name": name, "file_type": file_type, **fields}
+        if source_url is not None:
+            dataset["source_url"] = source_url
+        if description is not None:
+            dataset["description"] = description
+        data = self.post(
+            "/api/datasets",
+            json={"workspace_uuid": workspace_uuid, "tool": tool, "dataset": dataset},
+        )
+        return Dataset.model_validate(data)
+
     def list_datasets(
         self,
         workspace_uuid: str,
@@ -388,6 +471,68 @@ class CVHClient:
             >>> client.update_dataset(ds.uuid, name="Renamed", assembly="hg38")
         """
         return self.put(f"/api/datasets/{dataset_uuid}", json=fields)
+
+    def set_dataset_tags(
+        self, dataset_uuid: str, tags: list[Tag | dict[str, str]]
+    ) -> dict:
+        """Replace all tags on a dataset.
+
+        Tags that don't exist in the workspace yet are created. Pass an
+        empty list to remove every tag.
+
+        Args:
+            dataset_uuid: UUID of the dataset.
+            tags: `Tag` objects or `{"key": ..., "tag": ...}` dicts.
+                Both `key` and `tag` are required.
+
+        Returns:
+            Raw JSON response body.
+
+        Raises:
+            AuthorizationError: User has read-only permission on the workspace.
+
+        Example:
+            >>> client.set_dataset_tags(
+            ...     ds.uuid, [{"key": "assay", "tag": "scRNA-seq"}]
+            ... )
+        """
+        return self.put(
+            f"/api/datasets/{dataset_uuid}/tags", json=self._tags_body(tags)
+        )
+
+    def list_dataset_tags(self, workspace_uuid: str) -> list[Tag]:
+        """List the distinct tags used by datasets in a workspace.
+
+        Use the returned `uuid`s with `list_datasets(tags=...)`.
+
+        Args:
+            workspace_uuid: UUID of the workspace.
+
+        Returns:
+            List of `Tag`.
+        """
+        data = self.get(f"/api/workspaces/{workspace_uuid}/datasets/tags")
+        return [Tag.model_validate(t) for t in data]
+
+    def list_dataset_field_values(
+        self, workspace_uuid: str, field: Literal["assembly", "file_type"]
+    ) -> list[str]:
+        """List the distinct values of a dataset field in a workspace.
+
+        Handy for discovering what to pass to `list_datasets(assembly=...)`
+        or `list_datasets(file_type=...)`.
+
+        Args:
+            workspace_uuid: UUID of the workspace.
+            field: `"assembly"` or `"file_type"`.
+
+        Returns:
+            The distinct values, e.g. `["hg38", "mm10"]`.
+        """
+        return self.get(
+            f"/api/workspaces/{workspace_uuid}/datasets/fields",
+            params={"field": field},
+        )
 
     def delete_dataset(self, dataset_uuid: str) -> None:
         """Delete a dataset from its workspace. Irreversible.
@@ -525,6 +670,84 @@ class CVHClient:
         """
         return self.put(f"/api/visualizations/{visualization_uuid}", json=fields)
 
+    def publish_visualization(self, visualization_uuid: str) -> dict:
+        """Publish a visualization so anyone can view it, signed in or not.
+
+        Published visualizations are listed on the public visualizations
+        page and viewable at `/visualizations/<uuid>` on the CVH site,
+        even when the parent workspace is private. Sets
+        `published_timestamp` to now.
+
+        Args:
+            visualization_uuid: UUID of the visualization.
+
+        Returns:
+            Raw JSON response body.
+
+        Raises:
+            AuthorizationError: User has read-only permission on the workspace.
+
+        Example:
+            >>> client.publish_visualization(viz.uuid)
+            >>> print(f"https://visualizationhub.org/visualizations/{viz.uuid}")
+        """
+        return self.update_visualization(visualization_uuid, published=True)
+
+    def unpublish_visualization(self, visualization_uuid: str) -> dict:
+        """Make a published visualization private again.
+
+        Only workspace members can view it afterward; its public link
+        stops working.
+
+        Args:
+            visualization_uuid: UUID of the visualization.
+
+        Returns:
+            Raw JSON response body.
+
+        Raises:
+            AuthorizationError: User has read-only permission on the workspace.
+        """
+        return self.update_visualization(visualization_uuid, published=False)
+
+    def set_visualization_tags(
+        self, visualization_uuid: str, tags: list[Tag | dict[str, str]]
+    ) -> dict:
+        """Replace all tags on a visualization.
+
+        Tags that don't exist in the workspace yet are created. Pass an
+        empty list to remove every tag.
+
+        Args:
+            visualization_uuid: UUID of the visualization.
+            tags: `Tag` objects or `{"key": ..., "tag": ...}` dicts.
+                Both `key` and `tag` are required.
+
+        Returns:
+            Raw JSON response body.
+
+        Raises:
+            AuthorizationError: User has read-only permission on the workspace.
+        """
+        return self.put(
+            f"/api/visualizations/{visualization_uuid}/tags",
+            json=self._tags_body(tags),
+        )
+
+    def list_visualization_tags(self, workspace_uuid: str) -> list[Tag]:
+        """List the distinct tags used by visualizations in a workspace.
+
+        Use the returned `uuid`s with `list_visualizations(tags=...)`.
+
+        Args:
+            workspace_uuid: UUID of the workspace.
+
+        Returns:
+            List of `Tag`.
+        """
+        data = self.get(f"/api/workspaces/{workspace_uuid}/visualizations/tags")
+        return [Tag.model_validate(t) for t in data]
+
     def delete_visualization(self, visualization_uuid: str) -> None:
         """Delete a visualization from its workspace. Irreversible.
 
@@ -535,6 +758,75 @@ class CVHClient:
             AuthorizationError: User has read-only permission on the workspace.
         """
         self.delete(f"/api/visualizations/{visualization_uuid}")
+
+    # ── Public ──────────────────────────────────────────────────
+
+    def list_public_workspaces(
+        self, limit: int = 100, offset: int = 0
+    ) -> PagedWorkspaces:
+        """List public workspaces, most recently modified first.
+
+        Requires a signed-in client.
+
+        Args:
+            limit: Max results per page.
+            offset: Zero-based offset for pagination.
+
+        Returns:
+            `PagedWorkspaces` — `.items: list[Workspace]` and `.count: int`.
+        """
+        data = self.get(
+            "/api/public/workspaces", params={"limit": limit, "offset": offset}
+        )
+        return PagedWorkspaces.model_validate(data)
+
+    def list_public_visualizations(
+        self,
+        *,
+        tags: list[str] | None = None,
+        uuids: list[str] | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> PagedVisualizations:
+        """List published visualizations, most recently modified first.
+
+        Works without signing in: `CVHClient(base_url=...)` is enough.
+
+        Args:
+            tags: Restrict to visualizations with any of these tag
+                labels (the `tag` text, not UUIDs).
+            uuids: Restrict to specific visualization UUIDs.
+            limit: Max results per page.
+            offset: Zero-based offset for pagination.
+
+        Returns:
+            `PagedVisualizations` — `.items: list[VisualizationSummary]`
+            and `.count: int`.
+        """
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if tags:
+            params["tags"] = tags
+        if uuids:
+            params["uuids"] = uuids
+        data = self.get("/api/public/visualizations", params=params)
+        return PagedVisualizations.model_validate(data)
+
+    def get_public_visualization(self, visualization_uuid: str) -> Visualization:
+        """Fetch a published visualization, including its config.
+
+        Works without signing in.
+
+        Args:
+            visualization_uuid: UUID of the visualization.
+
+        Returns:
+            The `Visualization`, with `.conf` populated.
+
+        Raises:
+            NotFoundError: No published visualization has this UUID.
+        """
+        data = self.get(f"/api/public/visualizations/{visualization_uuid}")
+        return Visualization.model_validate(data)
 
     def close(self):
         self._client.close()

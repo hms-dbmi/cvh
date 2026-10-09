@@ -575,28 +575,6 @@ export interface components {
              */
             permissions: number;
         };
-        /** WorkspaceIn */
-        WorkspaceIn: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Private */
-            private: boolean;
-        };
-        /** Input */
-        Input: {
-            /**
-             * Limit
-             * @default 100
-             */
-            limit: number;
-            /**
-             * Offset
-             * @default 0
-             */
-            offset: number;
-        };
         /**
          * CreatedByOut
          * @description "Who created this record" surface. Includes `email` because both
@@ -619,6 +597,78 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** WorkspaceOut */
+        WorkspaceOut: {
+            /** Datasets Count */
+            datasets_count: number;
+            /** Visualizations Count */
+            visualizations_count: number;
+            /** Permissions */
+            permissions?: number | null;
+            created_by?: components["schemas"]["CreatedByOut"] | null;
+            /**
+             * Private
+             * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
+             * @default true
+             */
+            private: boolean;
+            /**
+             * Uuid
+             * Format: uuid
+             * @description Unique identifier used in URLs and cross-references.
+             */
+            uuid?: string;
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
+            name: string;
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
+            description?: string | null;
+            /**
+             * Created Timestamp
+             * Format: date-time
+             * @description When the record was first created.
+             */
+            created_timestamp: string;
+            /**
+             * Modified Timestamp
+             * Format: date-time
+             * @description When any field last changed.
+             */
+            modified_timestamp: string;
+            /**
+             * Last Viewed Timestamp
+             * Format: date-time
+             * @description When the authenticated user last opened this record.
+             */
+            last_viewed_timestamp: string;
+        };
+        /** WorkspaceIn */
+        WorkspaceIn: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Private */
+            private: boolean;
+        };
+        /** Input */
+        Input: {
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
         };
         /** PagedWorkspaceOutWithMembersCount */
         PagedWorkspaceOutWithMembersCount: {
@@ -679,21 +729,120 @@ export interface components {
             /** Workspace Members Count */
             workspace_members_count: number;
         };
-        /** WorkspaceOut */
-        WorkspaceOut: {
-            /** Datasets Count */
-            datasets_count: number;
-            /** Visualizations Count */
-            visualizations_count: number;
-            /** Permissions */
-            permissions?: number | null;
-            created_by?: components["schemas"]["CreatedByOut"] | null;
+        /** WorkspaceUpdate */
+        WorkspaceUpdate: {
+            /**
+             * Name
+             * @description Human-readable name shown in the UI.
+             */
+            name?: string;
+            /**
+             * Description
+             * @description Free-text description shown alongside the record.
+             */
+            description?: string | null;
             /**
              * Private
              * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
-             * @default true
              */
-            private: boolean;
+            private?: boolean;
+        };
+        /** PagedWorkspaceOut */
+        PagedWorkspaceOut: {
+            /** Items */
+            items: components["schemas"]["WorkspaceOut"][];
+            /** Count */
+            count: number;
+        };
+        /** DatasetWithTagsOut */
+        DatasetWithTagsOut: {
+            /**
+             * Source Url
+             * @description URL from which the visualization tool fetches data bytes.
+             */
+            source_url: string;
+            /**
+             * File Type
+             * @description Data format. Recognized values: bigwig, cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb.
+             */
+            file_type: string;
+            /**
+             * Tool
+             * @default gosling
+             */
+            tool: string;
+            /**
+             * Data Type
+             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
+             */
+            data_type: string;
+            /**
+             * Assembly
+             * @description Genome assembly the data is aligned to — e.g. hg38, mm10, dm6, T2T-CHM13. Null for coordinate-free formats.
+             */
+            assembly?: string | null;
+            /**
+             * Data Column
+             * @description For tabular formats (CSV, BED, VCF, GFF): mapping of column names to their semantic type (nominal, quantitative, chromosome, genomic, key).
+             */
+            data_column?: Record<string, never> | null;
+            /**
+             * Row Names
+             * @description For multivec: names of the rows (samples/tracks).
+             */
+            row_names?: unknown[] | null;
+            /**
+             * Headers
+             * @description For CSV: whether the file has a header row.
+             * @default false
+             */
+            headers: boolean;
+            /**
+             * Index Url
+             * @description For indexed formats (BAM, VCF, BED, GFF): URL of the sidecar index file (.bai, .tbi, etc.).
+             */
+            index_url?: string | null;
+            /**
+             * Separator
+             * @description For CSV: field separator character (e.g. ',' or '\t').
+             */
+            separator?: string | null;
+            /**
+             * Cfdb Dcc
+             * @description cfdb Data Coordination Center slug (e.g. '4dn', 'encode'). Non-null for datasets added via the Browse Library flow.
+             */
+            cfdb_dcc?: string | null;
+            /**
+             * Cfdb Id
+             * @description cfdb-side identifier for the file. Paired with cfdb_dcc; source_url is derived from these at create time.
+             */
+            cfdb_id?: string | null;
+            /**
+             * Processing Status
+             * @description State machine for cfdb-backed datasets that need server-side processing (BAM/VCF/BED/GFF). Terminal states: PROCESSED (ready to render), FAILED (see processing_error).
+             * @default not_needed
+             */
+            processing_status: string;
+            /**
+             * Processing Job Id
+             * @description cfdb job identifier while processing is in flight.
+             */
+            processing_job_id?: string | null;
+            /**
+             * Processing Started At
+             * @description When cfdb processing began.
+             */
+            processing_started_at?: string | null;
+            /**
+             * Processing Completed At
+             * @description When cfdb processing reached a terminal state.
+             */
+            processing_completed_at?: string | null;
+            /**
+             * Processing Error
+             * @description Error message from cfdb if processing_status is FAILED.
+             */
+            processing_error?: string | null;
             /**
              * Uuid
              * Format: uuid
@@ -728,31 +877,27 @@ export interface components {
              * @description When the authenticated user last opened this record.
              */
             last_viewed_timestamp: string;
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
         };
-        /** WorkspaceUpdate */
-        WorkspaceUpdate: {
+        /** TagOut */
+        TagOut: {
             /**
-             * Name
-             * @description Human-readable name shown in the UI.
+             * Tag
+             * @description The tag's label value.
              */
-            name?: string;
+            tag: string;
             /**
-             * Description
-             * @description Free-text description shown alongside the record.
+             * Key
+             * @description Optional namespace/category the tag belongs to (e.g. 'assay').
              */
-            description?: string | null;
+            key?: string | null;
             /**
-             * Private
-             * @description If True, only workspace members can access the project. If False, listed on the public workspaces endpoint and readable by anyone.
+             * Uuid
+             * Format: uuid
+             * @description Unique tag identifier.
              */
-            private?: boolean;
-        };
-        /** PagedWorkspaceOut */
-        PagedWorkspaceOut: {
-            /** Items */
-            items: components["schemas"]["WorkspaceOut"][];
-            /** Count */
-            count: number;
+            uuid?: string;
         };
         /** DatasetIn */
         DatasetIn: {
@@ -1210,151 +1355,6 @@ export interface components {
              * @description For CSV: field separator character (e.g. ',' or '\t').
              */
             separator?: string | null;
-        };
-        /** DatasetWithTagsOut */
-        DatasetWithTagsOut: {
-            /**
-             * Source Url
-             * @description URL from which the visualization tool fetches data bytes.
-             */
-            source_url: string;
-            /**
-             * File Type
-             * @description Data format. Recognized values: bigwig, cooler, vector, bam, vcf, bed, gff, csv, multivec, beddb.
-             */
-            file_type: string;
-            /**
-             * Tool
-             * @default gosling
-             */
-            tool: string;
-            /**
-             * Data Type
-             * @description Free-form data-type label displayed alongside file_type (e.g. 'signal', 'annotation'). Frequently empty.
-             */
-            data_type: string;
-            /**
-             * Assembly
-             * @description Genome assembly the data is aligned to — e.g. hg38, mm10, dm6, T2T-CHM13. Null for coordinate-free formats.
-             */
-            assembly?: string | null;
-            /**
-             * Data Column
-             * @description For tabular formats (CSV, BED, VCF, GFF): mapping of column names to their semantic type (nominal, quantitative, chromosome, genomic, key).
-             */
-            data_column?: Record<string, never> | null;
-            /**
-             * Row Names
-             * @description For multivec: names of the rows (samples/tracks).
-             */
-            row_names?: unknown[] | null;
-            /**
-             * Headers
-             * @description For CSV: whether the file has a header row.
-             * @default false
-             */
-            headers: boolean;
-            /**
-             * Index Url
-             * @description For indexed formats (BAM, VCF, BED, GFF): URL of the sidecar index file (.bai, .tbi, etc.).
-             */
-            index_url?: string | null;
-            /**
-             * Separator
-             * @description For CSV: field separator character (e.g. ',' or '\t').
-             */
-            separator?: string | null;
-            /**
-             * Cfdb Dcc
-             * @description cfdb Data Coordination Center slug (e.g. '4dn', 'encode'). Non-null for datasets added via the Browse Library flow.
-             */
-            cfdb_dcc?: string | null;
-            /**
-             * Cfdb Id
-             * @description cfdb-side identifier for the file. Paired with cfdb_dcc; source_url is derived from these at create time.
-             */
-            cfdb_id?: string | null;
-            /**
-             * Processing Status
-             * @description State machine for cfdb-backed datasets that need server-side processing (BAM/VCF/BED/GFF). Terminal states: PROCESSED (ready to render), FAILED (see processing_error).
-             * @default not_needed
-             */
-            processing_status: string;
-            /**
-             * Processing Job Id
-             * @description cfdb job identifier while processing is in flight.
-             */
-            processing_job_id?: string | null;
-            /**
-             * Processing Started At
-             * @description When cfdb processing began.
-             */
-            processing_started_at?: string | null;
-            /**
-             * Processing Completed At
-             * @description When cfdb processing reached a terminal state.
-             */
-            processing_completed_at?: string | null;
-            /**
-             * Processing Error
-             * @description Error message from cfdb if processing_status is FAILED.
-             */
-            processing_error?: string | null;
-            /**
-             * Uuid
-             * Format: uuid
-             * @description Unique identifier used in URLs and cross-references.
-             */
-            uuid?: string;
-            /**
-             * Name
-             * @description Human-readable name shown in the UI.
-             */
-            name: string;
-            /**
-             * Description
-             * @description Free-text description shown alongside the record.
-             */
-            description?: string | null;
-            /**
-             * Created Timestamp
-             * Format: date-time
-             * @description When the record was first created.
-             */
-            created_timestamp: string;
-            /**
-             * Modified Timestamp
-             * Format: date-time
-             * @description When any field last changed.
-             */
-            modified_timestamp: string;
-            /**
-             * Last Viewed Timestamp
-             * Format: date-time
-             * @description When the authenticated user last opened this record.
-             */
-            last_viewed_timestamp: string;
-            /** Tags */
-            tags: components["schemas"]["TagOut"][];
-        };
-        /** TagOut */
-        TagOut: {
-            /**
-             * Tag
-             * @description The tag's label value.
-             */
-            tag: string;
-            /**
-             * Key
-             * @description Optional namespace/category the tag belongs to (e.g. 'assay').
-             */
-            key?: string | null;
-            /**
-             * Uuid
-             * Format: uuid
-             * @description Unique tag identifier.
-             */
-            uuid?: string;
         };
         /** TagIn */
         TagIn: {
@@ -1867,7 +1867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceIn"];
+                    "application/json": components["schemas"]["WorkspaceOut"];
                 };
             };
         };
@@ -2007,7 +2007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatasetIn"];
+                    "application/json": components["schemas"]["DatasetWithTagsOut"];
                 };
             };
         };

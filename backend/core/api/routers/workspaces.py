@@ -22,7 +22,7 @@ router = Router(tags=["Workspaces"])
 @router.post(
     "/workspaces",
     auth=Authorized(),
-    response={201: WorkspaceIn},
+    response={201: WorkspaceOut},
     summary="Create a workspace",
     description=(
         "Creates a new workspace. The authenticated user becomes"
@@ -34,7 +34,11 @@ def create_workspace(request, workspace: WorkspaceIn):
     p = Project.objects.create(**workspace.dict(), **user_key)
     ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
     VisualizationConf.objects.create(project_key=p, name="Visualization 1")
-    return p
+    # Re-read through the manager so the response carries the uuid,
+    # timestamps, and the count annotations WorkspaceOut declares.
+    project = Project.objects.get(pk=p.pk)
+    project.permissions = 3
+    return 201, project
 
 
 @router.get(

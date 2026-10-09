@@ -215,3 +215,72 @@ class AddWorkspaceMemberTests(TestCase):
         self.assertEqual(response.json(), {"success": True})
         member = ProjectMember.objects.get(project_key=self.project, user_key=invitee)
         self.assertEqual(member.permissions, 1)
+
+
+class CreateResponseTests(TestCase):
+    """POST /api/workspaces and POST /api/datasets return the created
+    record (uuid included), so API clients can act on it without a
+    follow-up lookup.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember
+
+        self.user = User.objects.create(username="owner", email="owner@example.com")
+        self.project = Project.objects.create(name="Mine", user_key=self.user)
+        ProjectMember.objects.create(
+            project_key=self.project, user_key=self.user, permissions=3
+        )
+
+        auth_patch = patch("api.auth.Authorized.authenticate", return_value=self.user)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+
+    def _post(self, path: str, data: dict):
+        return self.client.post(
+            path,
+            data=data,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+
+    def test_create_workspace_returns_workspace(self):
+        from .models import Project
+
+        response = self._post(
+            "/api/workspaces",
+            {"name": "New", "description": "", "private": True},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        body = response.json()
+        created = Project.objects.get(name="New")
+        self.assertEqual(body["uuid"], str(created.uuid))
+        self.assertEqual(body["permissions"], 3)
+        self.assertEqual(body["datasets_count"], 0)
+        # The backend seeds every new workspace with one visualization.
+        self.assertEqual(body["visualizations_count"], 1)
+        self.assertEqual(body["created_by"]["username"], "owner")
+
+    def test_create_dataset_returns_dataset(self):
+        response = self._post(
+            "/api/datasets",
+            {
+                "workspace_uuid": str(self.project.uuid),
+                "tool": "vitessce",
+                "dataset": {
+                    "name": "Cells",
+                    "source_url": "https://example.com/cells.h5ad",
+                    "file_type": "anndata.h5ad",
+                },
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        body = response.json()
+        created = Dataset.objects.get(name="Cells")
+        self.assertEqual(body["uuid"], str(created.uuid))
+        self.assertEqual(body["tool"], "vitessce")
+        self.assertEqual(body["tags"], [])

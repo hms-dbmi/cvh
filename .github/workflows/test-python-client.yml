@@ -52,3 +52,11 @@ jobs:
 
       - name: Tests
         run: uv run pytest -vv
+
+      # Lint and the main run use 3.13 (.python-version). Also run the
+      # suite on the oldest version `requires-python` allows, so code
+      # that needs a newer Python fails here rather than for users.
+      # Kept as a step, not a matrix, so the job's check name stays
+      # `test` for the ruleset's required status check.
+      - name: Tests (Python 3.10)
+        run: uv run --isolated --python 3.10 --no-dev --with pytest pytest -q

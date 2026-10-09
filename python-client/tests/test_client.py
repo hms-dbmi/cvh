@@ -10,7 +10,9 @@ from cvh_client.auth import TokenExpiredError
 from cvh_client.models import (
     Dataset,
     PagedDatasets,
+    PagedVisualizations,
     PagedWorkspaces,
+    Tag,
     Visualization,
     VisualizationSummary,
     Workspace,
@@ -177,7 +179,26 @@ class TestWorkspaces:
 
         assert result.name == "Test Workspace"
         assert result.datasets_count == 3
+        assert result.created_by is None
         mock_get.assert_called_once_with("/api/workspaces/ws-uuid-1")
+
+    @patch.object(CVHClient, "get")
+    def test_get_workspace_with_creator(self, mock_get):
+        mock_get.return_value = {
+            **WORKSPACE_DATA,
+            "created_by": {
+                "username": "jdoe",
+                "first_name": "Jane",
+                "last_name": "Doe",
+                "email": "jdoe@example.com",
+            },
+        }
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.get_workspace("ws-uuid-1")
+
+        assert result.created_by.username == "jdoe"
+        assert result.created_by.email == "jdoe@example.com"
 
     @patch.object(CVHClient, "put")
     def test_update_workspace(self, mock_put):
@@ -265,6 +286,104 @@ class TestDatasets:
         client.delete_dataset("ds-uuid-1")
 
         mock_delete.assert_called_once_with("/api/datasets/ds-uuid-1")
+
+
+class TestDatasetCreateAndTags:
+    @patch.object(CVHClient, "post")
+    def test_create_dataset(self, mock_post):
+        mock_post.return_value = DATASET_DATA
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.create_dataset(
+            "ws-uuid-1",
+            "Test Dataset",
+            "bigwig",
+            source_url="https://example.com/data.bigwig",
+            assembly="hg38",
+            data_type="quantitative",
+        )
+
+        assert isinstance(result, Dataset)
+        assert result.uuid == "ds-uuid-1"
+        mock_post.assert_called_once_with(
+            "/api/datasets",
+            json={
+                "workspace_uuid": "ws-uuid-1",
+                "tool": "gosling",
+                "dataset": {
+                    "name": "Test Dataset",
+                    "file_type": "bigwig",
+                    "assembly": "hg38",
+                    "data_type": "quantitative",
+                    "source_url": "https://example.com/data.bigwig",
+                },
+            },
+        )
+
+    @patch.object(CVHClient, "post")
+    def test_create_vitessce_dataset_with_description(self, mock_post):
+        mock_post.return_value = DATASET_DATA
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        client.create_dataset(
+            "ws-uuid-1",
+            "Cells",
+            "anndata.zarr",
+            source_url="https://example.com/cells.zarr",
+            tool="vitessce",
+            description="Kidney",
+        )
+
+        body = mock_post.call_args.kwargs["json"]
+        assert body["tool"] == "vitessce"
+        assert body["dataset"] == {
+            "name": "Cells",
+            "file_type": "anndata.zarr",
+            "source_url": "https://example.com/cells.zarr",
+            "description": "Kidney",
+        }
+
+    @patch.object(CVHClient, "put")
+    def test_set_dataset_tags_accepts_tags_and_dicts(self, mock_put):
+        mock_put.return_value = {"success": True}
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        client.set_dataset_tags(
+            "ds-uuid-1",
+            [Tag(tag="ChIP-seq", key="assay"), {"tag": "hg38", "key": "genome"}],
+        )
+
+        mock_put.assert_called_once_with(
+            "/api/datasets/ds-uuid-1/tags",
+            json={
+                "tags": [
+                    {"tag": "ChIP-seq", "key": "assay"},
+                    {"tag": "hg38", "key": "genome"},
+                ]
+            },
+        )
+
+    @patch.object(CVHClient, "get")
+    def test_list_dataset_tags(self, mock_get):
+        mock_get.return_value = [{"tag": "ChIP-seq", "key": "assay", "uuid": "t-1"}]
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.list_dataset_tags("ws-uuid-1")
+
+        assert result == [Tag(tag="ChIP-seq", key="assay", uuid="t-1")]
+        mock_get.assert_called_once_with("/api/workspaces/ws-uuid-1/datasets/tags")
+
+    @patch.object(CVHClient, "get")
+    def test_list_dataset_field_values(self, mock_get):
+        mock_get.return_value = ["hg38", "mm10"]
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.list_dataset_field_values("ws-uuid-1", "assembly")
+
+        assert result == ["hg38", "mm10"]
+        mock_get.assert_called_once_with(
+            "/api/workspaces/ws-uuid-1/datasets/fields", params={"field": "assembly"}
+        )
 
 
 class TestVisualizations:
@@ -355,6 +474,53 @@ class TestVisualizations:
             json={"name": "Updated", "conf": {"tracks": [{"type": "bar"}]}},
         )
 
+    @patch.object(CVHClient, "put")
+    def test_publish_visualization(self, mock_put):
+        mock_put.return_value = {"success": True}
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.publish_visualization("viz-uuid-1")
+
+        assert result["success"] is True
+        mock_put.assert_called_once_with(
+            "/api/visualizations/viz-uuid-1", json={"published": True}
+        )
+
+    @patch.object(CVHClient, "put")
+    def test_unpublish_visualization(self, mock_put):
+        mock_put.return_value = {"success": True}
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.unpublish_visualization("viz-uuid-1")
+
+        assert result["success"] is True
+        mock_put.assert_called_once_with(
+            "/api/visualizations/viz-uuid-1", json={"published": False}
+        )
+
+    @patch.object(CVHClient, "put")
+    def test_set_visualization_tags(self, mock_put):
+        mock_put.return_value = {"success": True}
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        client.set_visualization_tags("viz-uuid-1", [])
+
+        mock_put.assert_called_once_with(
+            "/api/visualizations/viz-uuid-1/tags", json={"tags": []}
+        )
+
+    @patch.object(CVHClient, "get")
+    def test_list_visualization_tags(self, mock_get):
+        mock_get.return_value = [{"tag": "atlas", "key": "type", "uuid": "t-2"}]
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.list_visualization_tags("ws-uuid-1")
+
+        assert result[0].tag == "atlas"
+        mock_get.assert_called_once_with(
+            "/api/workspaces/ws-uuid-1/visualizations/tags"
+        )
+
     @patch.object(CVHClient, "delete")
     def test_delete_visualization(self, mock_delete):
         mock_delete.return_value = None
@@ -363,3 +529,42 @@ class TestVisualizations:
         client.delete_visualization("viz-uuid-1")
 
         mock_delete.assert_called_once_with("/api/visualizations/viz-uuid-1")
+
+
+class TestPublic:
+    @patch.object(CVHClient, "get")
+    def test_list_public_workspaces(self, mock_get):
+        mock_get.return_value = {"items": [WORKSPACE_DATA], "count": 1}
+        client = CVHClient(base_url="https://example.com", token="fake")
+
+        result = client.list_public_workspaces(limit=10, offset=20)
+
+        assert isinstance(result, PagedWorkspaces)
+        assert result.items[0].uuid == "ws-uuid-1"
+        mock_get.assert_called_once_with(
+            "/api/public/workspaces", params={"limit": 10, "offset": 20}
+        )
+
+    @patch.object(CVHClient, "get")
+    def test_list_public_visualizations(self, mock_get):
+        mock_get.return_value = {"items": [VISUALIZATION_SUMMARY_DATA], "count": 1}
+        client = CVHClient(base_url="https://example.com")
+
+        result = client.list_public_visualizations(tags=["example"])
+
+        assert isinstance(result, PagedVisualizations)
+        assert result.count == 1
+        mock_get.assert_called_once_with(
+            "/api/public/visualizations",
+            params={"limit": 100, "offset": 0, "tags": ["example"]},
+        )
+
+    @patch.object(CVHClient, "get")
+    def test_get_public_visualization(self, mock_get):
+        mock_get.return_value = VISUALIZATION_DATA
+        client = CVHClient(base_url="https://example.com")
+
+        result = client.get_public_visualization("viz-uuid-1")
+
+        assert isinstance(result, Visualization)
+        mock_get.assert_called_once_with("/api/public/visualizations/viz-uuid-1")

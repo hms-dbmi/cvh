@@ -7,27 +7,31 @@ from cvh_client.exceptions import (
     NotFoundError,
 )
 from cvh_client.models import (
+    CreatedBy,
     Dataset,
     PagedDatasets,
     PagedVisualizations,
     PagedWorkspaces,
+    Tag,
     Visualization,
     VisualizationSummary,
     Workspace,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "AuthorizationError",
     "CVHAPIError",
     "CVHClient",
     "CVHError",
+    "CreatedBy",
     "Dataset",
     "NotFoundError",
     "PagedDatasets",
     "PagedVisualizations",
     "PagedWorkspaces",
+    "Tag",
     "TokenExpiredError",
     "Visualization",
     "VisualizationSummary",

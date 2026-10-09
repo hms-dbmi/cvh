@@ -40,7 +40,7 @@ router = Router(tags=["Datasets"])
 @router.post(
     "/datasets",
     auth=Authorized(),
-    response={201: DatasetIn},
+    response={201: DatasetWithTagsOut},
     summary="Create a dataset",
     description=(
         "Creates a new dataset. If workspace_uuid is provided,"
@@ -71,12 +71,10 @@ def create_dataset(request, dataset: DatasetIn):
             project = Project.objects.get_write_project(
                 user=request.auth, project_uuid=workspace_uuid
             )
-            Dataset.objects.create(**fields, project_key=project)
-            return dataset
         except Project.DoesNotExist:
             raise Http404("Failed to create dataset.") from None
-    Dataset.objects.create(**fields, user_key=request.auth)
-    return dataset
+        return 201, Dataset.objects.create(**fields, project_key=project)
+    return 201, Dataset.objects.create(**fields, user_key=request.auth)
 
 
 def _apply_cfdb_source(fields: dict) -> dict:

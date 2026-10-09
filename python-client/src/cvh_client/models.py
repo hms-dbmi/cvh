@@ -27,6 +27,15 @@ class Tag(BaseModel):
     )
 
 
+class CreatedBy(BaseModel):
+    """The user who created a workspace."""
+
+    username: str = Field(description="The creator's username.")
+    first_name: str = Field(description="First name; empty if never set.")
+    last_name: str = Field(description="Last name; empty if never set.")
+    email: str = Field(description="The creator's email address.")
+
+
 class Workspace(BaseModel):
     """A collaborative workspace containing datasets and visualizations.
 
@@ -63,6 +72,13 @@ class Workspace(BaseModel):
     )
     last_viewed_timestamp: datetime = Field(
         description="When the authenticated user last opened the workspace."
+    )
+    created_by: CreatedBy | None = Field(
+        default=None,
+        description=(
+            "Who created the workspace. None for older workspaces without"
+            " a recorded creator."
+        ),
     )
     workspace_members_count: int | None = Field(
         default=None,
