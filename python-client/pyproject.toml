@@ -1,6 +1,6 @@
 [project]
 name = "cvh-client"
-version = "0.4.0"
+version = "0.4.1"
 description = "Python API client for the Community Visualization Hub (CVH)"
 readme = "README.md"
 license = "MIT"

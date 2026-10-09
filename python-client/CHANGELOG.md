@@ -8,6 +8,8 @@ Categories: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Se
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-09
+
 ### Fixed
 - The sign-in example in the README, the `CVHClient` docstrings and both example notebooks used the wrong Auth0 `client_id` for the hosted CVH, so `from_login()` failed with `403 Forbidden` (`unauthorized_client`) from `/oauth/device/code`. They now use the CVH client app, `FKDEMc1rao9wVRnMIE9RznPsiLeHRXJS`.
 - `pip install "cvh-client[vitessce]"` now also installs `anywidget`, which Vitessce's notebook widget needs. Before, `VitessceConfig.widget()` (used in the Vitessce example notebook) failed with `ModuleNotFoundError: No module named 'anywidget'`.
