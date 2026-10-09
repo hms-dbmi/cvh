@@ -30,7 +30,7 @@ from cvh_client import CVHClient
 client = CVHClient.from_login(
     base_url="https://api.visualizationhub.org",
     domain="auth.visualizationhub.org",
-    client_id="BlOrQcABtV8FrluOQnIO3bWCG1MQU9bx",
+    client_id="FKDEMc1rao9wVRnMIE9RznPsiLeHRXJS",
     audience="cvh-api-prod-id",
 )
 
