@@ -123,18 +123,30 @@ jobs:
           packages-dir: python-client/dist
           repository-url: ${{ inputs.index == 'pypi' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}
           print-hash: true
+          # Let a TestPyPI rehearsal be re-run after a failure later in
+          # the job; a version can't be uploaded twice. Never skip on
+          # PyPI, where a duplicate should fail loudly.
+          skip-existing: ${{ inputs.index == 'testpypi' }}
 
       - name: Installation + live smoke test
         env:
           # TestPyPI releases smoke against dev; PyPI releases against prod.
           CVH_SMOKE_BASE_URL: ${{ inputs.index == 'pypi' && 'https://api.visualizationhub.org' || 'https://api.dev.visualizationhub.org' }}
-          # TestPyPI doesn't host the dependencies, so fall back to PyPI.
-          INSTALL_INDEX_ARGS: ${{ inputs.index == 'pypi' && '' || '--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/' }}
+          # Where to fetch cvh-client itself. Its dependencies always come
+          # from PyPI (TestPyPI doesn't reliably host them).
+          PACKAGE_INDEX_ARGS: ${{ inputs.index == 'pypi' && '' || '--index-url https://test.pypi.org/simple/' }}
         run: |
           sleep 30  # Wait for the index to update
           uv venv test-env
           source test-env/bin/activate
-          uv pip install $INSTALL_INDEX_ARGS cvh-client==${{ steps.read-version.outputs.version }}
+          # Two steps, because uv checks only the first index that has a
+          # package: with TestPyPI and PyPI both listed, it finds
+          # cvh-client on PyPI and never sees a TestPyPI-only version.
+          # So install cvh-client alone from the target index, then
+          # resolve its dependencies from PyPI (the installed cvh-client
+          # already satisfies the pin).
+          uv pip install --no-deps $PACKAGE_INDEX_ARGS cvh-client==${{ steps.read-version.outputs.version }}
+          uv pip install cvh-client==${{ steps.read-version.outputs.version }}
 
           # Install-time smoke: import works, and it's the version we published.
           python -c "import cvh_client; assert cvh_client.__version__ == '${{ steps.read-version.outputs.version }}', cvh_client.__version__; print('✅ ${{ inputs.index }} install verified')"
