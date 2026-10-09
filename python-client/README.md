@@ -9,13 +9,13 @@ Source lives in the CVH monorepo under [`python-client/`](https://github.com/hms
 Requires Python 3.13+.
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cvh-client
+pip install cvh-client
 ```
 
 With [Vitessce](https://vitessce.io/) widget support:
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cvh-client[vitessce]
+pip install "cvh-client[vitessce]"
 ```
 
 ## Quick start
@@ -117,14 +117,18 @@ uv run ruff format src/ tests/         # Format
 
 ## Releasing
 
-Currently published to [TestPyPI](https://test.pypi.org/project/cvh-client/) via manual GitHub Actions dispatch. To cut a release:
+Published to [PyPI](https://pypi.org/project/cvh-client/) via manual GitHub Actions dispatch. To cut a release:
 
-1. Bump the version in **both** `VERSION.txt` and `pyproject.toml` (they must match).
+1. Bump the version in `VERSION.txt`, `pyproject.toml` and `src/cvh_client/__init__.py` (the workflow refuses to publish if they differ), and move the `[Unreleased]` changelog entries under the new version.
 2. Merge to `main`.
-3. In the CVH repo's Actions tab → **Publish cvh-client to TestPyPI** → **Run workflow**, entering the same version string as confirmation.
+3. In the CVH repo's Actions tab → **Publish cvh-client** → **Run workflow**, entering the same version string as confirmation. Choose `testpypi` first to rehearse the release on [TestPyPI](https://test.pypi.org/project/cvh-client/), then run it again with `pypi`.
 
-The workflow uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) (OIDC — no long-lived token). Trust is configured on TestPyPI as:
+PyPI never accepts the same version twice, so a mistake can't be fixed by re-uploading; it needs a new version. That's what the TestPyPI rehearsal is for.
+
+After publishing, the workflow installs the new version and smoke-tests it against the matching backend (dev for TestPyPI, production for PyPI).
+
+The workflow uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) (OIDC — no long-lived token). Trust is configured on each index as:
 
 - **Repository**: `hms-dbmi/cvh`
 - **Workflow**: `publish-client.yml`
-- **Environment**: `testpypi`
+- **Environment**: `testpypi` on TestPyPI, `pypi` on PyPI

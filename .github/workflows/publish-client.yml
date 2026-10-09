@@ -1,17 +1,27 @@
-name: Publish cvh-client to TestPyPI
+name: Publish cvh-client
 
 # Manual dispatch — cutting a client release means:
-#   1. bump python-client/VERSION.txt (and pyproject.toml)
+#   1. bump the version in python-client/VERSION.txt, pyproject.toml and
+#      src/cvh_client/__init__.py (the workflow checks they match)
 #   2. commit + merge to main
-#   3. run this workflow with the new version string as confirmation
+#   3. run this workflow with the new version string as confirmation,
+#      choosing TestPyPI (a rehearsal) or PyPI (the real release)
 #
-# Trusted publishing (OIDC) — no long-lived PyPI token. The `testpypi`
-# environment on this repo is configured on TestPyPI to trust this
-# workflow file's OIDC identity.
+# Trusted publishing (OIDC) — no long-lived token. The `testpypi` and `pypi`
+# environments on this repo are configured on TestPyPI and PyPI
+# respectively to trust this workflow file's OIDC identity.
 
 on:
   workflow_dispatch:
     inputs:
+      index:
+        description: "Where to publish (TestPyPI is a rehearsal; PyPI is the real release)"
+        required: true
+        type: choice
+        options:
+          - testpypi
+          - pypi
+        default: testpypi
       confirm_version:
         description: "Confirm version to publish (must match python-client/VERSION.txt)"
         required: true
@@ -27,11 +37,11 @@ defaults:
 
 jobs:
   verify-and-publish:
-    name: Verify and Publish to TestPyPI
+    name: Verify and publish to ${{ inputs.index }}
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://test.pypi.org/project/cvh-client/${{ steps.read-version.outputs.version }}/
+      name: ${{ inputs.index }}
+      url: https://${{ inputs.index == 'pypi' && 'pypi.org' || 'test.pypi.org' }}/project/cvh-client/${{ steps.read-version.outputs.version }}/
 
     steps:
       - uses: actions/checkout@v5
@@ -62,6 +72,19 @@ jobs:
           fi
           echo "✅ Version confirmed: ${{ steps.read-version.outputs.version }}"
 
+      # PyPI never accepts the same version twice, so a mismatched release
+      # can't be fixed by re-uploading. Check every place the version lives.
+      - name: Verify version is consistent across files
+        run: |
+          VERSION="${{ steps.read-version.outputs.version }}"
+          PYPROJECT=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          DUNDER=$(grep -m1 '^__version__ = ' src/cvh_client/__init__.py | cut -d'"' -f2)
+          if [ "$PYPROJECT" != "$VERSION" ] || [ "$DUNDER" != "$VERSION" ]; then
+            echo "❌ ERROR: versions differ: VERSION.txt=$VERSION pyproject.toml=$PYPROJECT __init__.py=$DUNDER"
+            exit 1
+          fi
+          echo "✅ VERSION.txt, pyproject.toml and __init__.py all say $VERSION"
+
       - name: Install build dependencies
         run: uv sync --group dev
 
@@ -90,7 +113,7 @@ jobs:
           echo "📦 Built distributions:"
           ls -lh dist/
 
-      - name: Publish to TestPyPI
+      - name: Publish to ${{ inputs.index }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           # `pypa/gh-action-pypi-publish` doesn't honor the job-level
@@ -98,23 +121,23 @@ jobs:
           # paths relative to the checkout root), so point it at the
           # subdir explicitly.
           packages-dir: python-client/dist
-          repository-url: https://test.pypi.org/legacy/
+          repository-url: ${{ inputs.index == 'pypi' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}
           print-hash: true
 
       - name: Installation + live smoke test
         env:
-          # TestPyPI publishes always smoke against dev. If we add a
-          # real-PyPI publish workflow later, it should smoke against
-          # api.visualizationhub.org instead.
-          CVH_SMOKE_BASE_URL: https://api.dev.visualizationhub.org
+          # TestPyPI releases smoke against dev; PyPI releases against prod.
+          CVH_SMOKE_BASE_URL: ${{ inputs.index == 'pypi' && 'https://api.visualizationhub.org' || 'https://api.dev.visualizationhub.org' }}
+          # TestPyPI doesn't host the dependencies, so fall back to PyPI.
+          INSTALL_INDEX_ARGS: ${{ inputs.index == 'pypi' && '' || '--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/' }}
         run: |
-          sleep 30  # Wait for TestPyPI to update
+          sleep 30  # Wait for the index to update
           uv venv test-env
           source test-env/bin/activate
-          uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cvh-client==${{ steps.read-version.outputs.version }}
+          uv pip install $INSTALL_INDEX_ARGS cvh-client==${{ steps.read-version.outputs.version }}
 
-          # Install-time smoke: import works, package is on-disk.
-          python -c "from cvh_client import CVHClient; print('✅ TestPyPI install verified')"
+          # Install-time smoke: import works, and it's the version we published.
+          python -c "import cvh_client; assert cvh_client.__version__ == '${{ steps.read-version.outputs.version }}', cvh_client.__version__; print('✅ ${{ inputs.index }} install verified')"
 
           # Live smoke: exercise the transport + pydantic parse path
           # against a real backend using anonymous endpoints. This
