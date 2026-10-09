@@ -8,7 +8,13 @@ Categories: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Se
 
 ## [Unreleased]
 
-Version files are bumped to 0.4.0. Release only after the backend change below is on prod: `create_workspace` and `create_dataset` rely on it.
+### Fixed
+- The sign-in example in the README, the `CVHClient` docstrings and both example notebooks used the wrong Auth0 `client_id` for the hosted CVH, so `from_login()` failed with `403 Forbidden` (`unauthorized_client`) from `/oauth/device/code`. They now use the CVH client app, `FKDEMc1rao9wVRnMIE9RznPsiLeHRXJS`.
+- `pip install "cvh-client[vitessce]"` now also installs `anywidget`, which Vitessce's notebook widget needs. Before, `VitessceConfig.widget()` (used in the Vitessce example notebook) failed with `ModuleNotFoundError: No module named 'anywidget'`.
+
+## [0.4.0] - 2026-10-09
+
+Needs the CVH backend from 2026-10-09 or later: `create_workspace` and `create_dataset` rely on the create endpoints returning the new record.
 
 ### Added
 - `publish_visualization(uuid)` and `unpublish_visualization(uuid)` make a visualization public or private again, the same as the Publish and Make Private buttons in the app. Previously this was only possible by passing `published=True` to `update_visualization`.
