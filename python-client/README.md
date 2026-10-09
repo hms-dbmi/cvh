@@ -6,7 +6,7 @@ Source lives in the CVH monorepo under [`python-client/`](https://github.com/hms
 
 ## Installation
 
-Requires Python 3.13+.
+Requires Python 3.10+.
 
 ```bash
 pip install cvh-client

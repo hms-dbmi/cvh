@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-cvh-client is a Python API client library for CVH, designed for use in Jupyter notebooks. Python 3.13+ required.
+cvh-client is a Python API client library for CVH, designed for use in Jupyter notebooks. Python 3.10+ supported (developed on 3.13, see `.python-version`); CI also runs the tests on 3.10, so avoid syntax or stdlib APIs newer than 3.10.
 
 ## Tooling
 

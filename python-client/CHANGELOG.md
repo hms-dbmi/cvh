@@ -22,6 +22,7 @@ Version files are bumped to 0.4.0. Release only after the backend change below i
 - `create_workspace()` created the workspace, then raised a validation error because the API sent back only the name, description and privacy flag. The API now returns the full workspace.
 
 ### Changed
+- Supports Python 3.10 and newer, down from 3.13, so it installs in hosted notebook environments that run older Pythons. CI also runs the tests on 3.10.
 - The README's method tables now list every method.
 
 ## [0.3.0] - 2026-10-09
