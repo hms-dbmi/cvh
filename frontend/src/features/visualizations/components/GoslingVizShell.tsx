@@ -254,6 +254,10 @@ function GoslingVizShell({
             <Box sx={{ flex: 1, minWidth: 0, height: "100%" }}>
               <GoslingViewer
                 permissions={permissions}
+                visualizationID={selectedVizId}
+                published={selectedViz?.published}
+                onSave={onSave}
+                hasUnsavedChanges={hasUnsavedChanges}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={onToggleSidebar}
               />

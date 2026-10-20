@@ -14,8 +14,9 @@ import {
   PresentationChart,
   SidebarSimple,
 } from "@phosphor-icons/react";
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import posthog from "@/posthog";
+import type { ShareSource } from "../hooks/useShareVisualization";
 import PublishedVizMenu from "./PublishedVizMenu.tsx";
 
 export type Mode = "editing" | "annotating" | "exploring";
@@ -42,6 +43,37 @@ const tooltipSlotProps = {
     },
   },
 };
+
+// An icon-only bar button. Its label doubles as the tooltip (with a
+// period), and the tooltip still shows while the button is disabled.
+export function BarIconButton({
+  label,
+  icon,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  icon: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Tooltip title={`${label}.`} describeChild slotProps={tooltipSlotProps}>
+      {/* Disabled buttons fire no pointer events, so the tooltip listens on
+          a wrapper instead. */}
+      <span>
+        <IconButton
+          aria-label={label}
+          onClick={onClick}
+          disabled={disabled}
+          sx={{ color: "#4E5A63", borderRadius: 2 }}
+        >
+          {icon}
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+}
 
 // Shared with the Gosling viewer, whose bottom bar comes from
 // gosling-designer-vec and takes it via `modeWidgetActions`.
@@ -81,6 +113,14 @@ export function BottomBar({
   hasWritePermissions,
   isSidebarOpen,
   onToggleSidebar,
+  modes = hasWritePermissions
+    ? ["editing", "annotating", "exploring"]
+    : ["editing", "exploring"],
+  extraActions,
+  onUnpublish,
+  viewer,
+  shareSource,
+  showOpenPublicView,
 }: {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
@@ -99,8 +139,24 @@ export function BottomBar({
   // no handler is passed.
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
+  // The mode buttons to show. With a single mode there's nothing to switch,
+  // so the group is hidden.
+  modes?: Mode[];
+  // Viewer-specific buttons (e.g. Gosling's undo/redo), shown before Save.
+  extraActions?: ReactNode;
+  // Runs after the sharing menu makes the visualization private.
+  onUnpublish?: () => void;
+  // Passed through to the sharing menu (see PublishedVizMenu).
+  viewer?: string;
+  shareSource?: ShareSource;
+  showOpenPublicView?: boolean;
 }) {
   const editorMode = hasWritePermissions ? "editing" : "configuration";
+  const showModes = modes.length > 1;
+  const hasActions = Boolean(extraActions || onSave || onToggleSidebar);
+  // Read-only members can still share a published visualization; only
+  // people who can publish see "Make Public".
+  const showPublish = Boolean(published || onPublish);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const closeMenu = useCallback(() => setMenuAnchor(null), []);
   const handlePublishClick = useCallback(
@@ -129,90 +185,89 @@ export function BottomBar({
         height: 64,
       }}
     >
-      <ToggleButtonGroup
-        exclusive
-        value={mode}
-        // Clicking the active segment reports `null`; keep the current mode.
-        onChange={(_, next: Mode | null) => next && onModeChange(next)}
-        aria-label="Visualization mode"
-        sx={{
-          "& .MuiToggleButton-root": {
-            gap: 1,
-            px: 1.5,
-            py: 1.25,
-            color: "text.primary",
-            borderColor: "#E0E0E0",
-            typography: "button",
-            "&.Mui-selected, &.Mui-selected:hover": {
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
+      {showModes && (
+        <ToggleButtonGroup
+          exclusive
+          value={mode}
+          // Clicking the active segment reports `null`; keep the current mode.
+          onChange={(_, next: Mode | null) => next && onModeChange(next)}
+          aria-label="Visualization mode"
+          sx={{
+            "& .MuiToggleButton-root": {
+              gap: 1,
+              px: 1.5,
+              py: 1.25,
+              color: "text.primary",
+              borderColor: "#E0E0E0",
+              typography: "button",
+              "&.Mui-selected, &.Mui-selected:hover": {
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+              },
             },
-          },
-          // Round only the outer ends; the group squares the inner corners.
-          "& .MuiToggleButtonGroup-firstButton": {
-            borderTopLeftRadius: 8,
-            borderBottomLeftRadius: 8,
-          },
-          "& .MuiToggleButtonGroup-lastButton": {
-            borderTopRightRadius: 8,
-            borderBottomRightRadius: 8,
-          },
-        }}
-      >
-        <Tooltip
-          title={hasWritePermissions ? MODE_TOOLTIPS.editing : ""}
-          describeChild
-          slotProps={tooltipSlotProps}
+            // Round only the outer ends; the group squares the inner corners.
+            "& .MuiToggleButtonGroup-firstButton": {
+              borderTopLeftRadius: 8,
+              borderBottomLeftRadius: 8,
+            },
+            "& .MuiToggleButtonGroup-lastButton": {
+              borderTopRightRadius: 8,
+              borderBottomRightRadius: 8,
+            },
+          }}
         >
-          <ToggleButton value="editing">
-            <PencilRuler size={18} />
-            {editorMode === "editing" ? "Editing" : "Configuration"}
-          </ToggleButton>
-        </Tooltip>
-        {hasWritePermissions && (
-          <Tooltip
-            title={MODE_TOOLTIPS.annotating}
-            describeChild
-            slotProps={tooltipSlotProps}
-          >
-            <ToggleButton value="annotating">
-              <MarkerCircle size={18} />
-              Annotating
-            </ToggleButton>
-          </Tooltip>
-        )}
-        <Tooltip
-          title={MODE_TOOLTIPS.exploring}
-          describeChild
-          slotProps={tooltipSlotProps}
-        >
-          <ToggleButton value="exploring">
-            <PresentationChart size={18} />
-            Exploring
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
-      {(onSave || onToggleSidebar) && (
+          {modes.includes("editing") && (
+            <Tooltip
+              title={hasWritePermissions ? MODE_TOOLTIPS.editing : ""}
+              describeChild
+              slotProps={tooltipSlotProps}
+            >
+              <ToggleButton value="editing">
+                <PencilRuler size={18} />
+                {editorMode === "editing" ? "Editing" : "Configuration"}
+              </ToggleButton>
+            </Tooltip>
+          )}
+          {modes.includes("annotating") && (
+            <Tooltip
+              title={MODE_TOOLTIPS.annotating}
+              describeChild
+              slotProps={tooltipSlotProps}
+            >
+              <ToggleButton value="annotating">
+                <MarkerCircle size={18} />
+                Annotating
+              </ToggleButton>
+            </Tooltip>
+          )}
+          {modes.includes("exploring") && (
+            <Tooltip
+              title={MODE_TOOLTIPS.exploring}
+              describeChild
+              slotProps={tooltipSlotProps}
+            >
+              <ToggleButton value="exploring">
+                <PresentationChart size={18} />
+                Exploring
+              </ToggleButton>
+            </Tooltip>
+          )}
+        </ToggleButtonGroup>
+      )}
+      {showModes && hasActions && (
         <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
       )}
+      {extraActions}
       {onSave && (
-        <Tooltip title="Save." describeChild slotProps={tooltipSlotProps}>
-          {/* Disabled buttons fire no pointer events, so the tooltip
-              listens on a wrapper instead. */}
-          <span>
-            <IconButton
-              aria-label="Save"
-              onClick={onSave}
-              // Disable when the caller signals no dirty state; if the flag
-              // isn't provided at all, keep Save clickable so callers that
-              // don't track dirtiness still get a working button.
-              disabled={hasUnsavedChanges === false}
-              sx={{ color: "#4E5A63", borderRadius: 2 }}
-            >
-              <FloppyDisk size={20} />
-            </IconButton>
-          </span>
-        </Tooltip>
+        <BarIconButton
+          label="Save"
+          icon={<FloppyDisk size={20} />}
+          onClick={onSave}
+          // Disable when the caller signals no dirty state; if the flag
+          // isn't provided at all, keep Save clickable so callers that
+          // don't track dirtiness still get a working button.
+          disabled={hasUnsavedChanges === false}
+        />
       )}
       {onToggleSidebar && (
         <SidebarToggleButton
@@ -220,9 +275,11 @@ export function BottomBar({
           onToggleSidebar={onToggleSidebar}
         />
       )}
-      {onPublish && (
+      {showPublish && (
         <>
-          <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+          {(showModes || hasActions) && (
+            <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+          )}
           <Button
             onClick={handlePublishClick}
             startIcon={<GlobeSimple size={24} />}
@@ -248,10 +305,40 @@ export function BottomBar({
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={closeMenu}
+              // Open above the button so the menu doesn't cover the bar.
+              anchorOrigin={{ vertical: "top", horizontal: "right" }}
+              transformOrigin={{ vertical: "bottom", horizontal: "right" }}
+              // "Sharing Menu" in the CVH design system.
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: -1,
+                    width: 360,
+                    borderRadius: 4,
+                    border: "1px solid",
+                    borderColor: "divider",
+                  },
+                },
+                list: {
+                  sx: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.25,
+                    py: 0,
+                    // The flex gap spaces the divider; drop MUI's own margins.
+                    "& .MuiMenuItem-root + .MuiDivider-root": { my: 0 },
+                  },
+                },
+              }}
             >
               <PublishedVizMenu
                 visualizationID={visualizationID}
                 closeMenu={closeMenu}
+                onUnpublish={onUnpublish}
+                canUnpublish={Boolean(hasWritePermissions)}
+                viewer={viewer}
+                source={shareSource}
+                showOpenPublicView={showOpenPublicView}
               />
             </Menu>
           )}
