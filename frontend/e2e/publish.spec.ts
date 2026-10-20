@@ -33,8 +33,8 @@ test("read-only members can share a published visualization but not make it priv
   await gotoWorkspace(page, PROJECT_ID);
   await page.getByRole("button", { name: "Published", exact: true }).click();
 
-  await expect(page.getByRole("menuitem", { name: "Copy link" })).toBeVisible();
-  await expect(
-    page.getByRole("menuitem", { name: "Make Private" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("menuitem")).toHaveText([
+    "Open Public View",
+    "Copy link",
+  ]);
 });

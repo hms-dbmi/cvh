@@ -341,9 +341,15 @@ export const handlers = [
   // Public visualization detail (handles both Gosling and Vitessce by uuid)
   http.get(`${apiUrl}/api/public/visualizations/:uuid`, ({ params }) => {
     if (params.uuid === publishedVitessceViz.uuid) {
+      if (flag("__e2eAnnotatedPublicViz")) {
+        return HttpResponse.json({
+          ...publishedVitessceViz,
+          conf: annotatedVitessceConf,
+        });
+      }
       return HttpResponse.json(
-        flag("__e2eAnnotatedPublicViz")
-          ? { ...publishedVitessceViz, conf: annotatedVitessceConf }
+        flag("__e2eTwoViewVitessce")
+          ? { ...publishedVitessceViz, conf: twoViewVitessceConf }
           : publishedVitessceViz,
       );
     }
