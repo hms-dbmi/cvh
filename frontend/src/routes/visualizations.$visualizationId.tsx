@@ -3,7 +3,9 @@ import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { createFileRoute } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { GoslingDesignerVEC } from "gosling-designer-vec";
@@ -243,7 +245,14 @@ function RouteComponent() {
   const { visualizationId } = Route.useParams();
 
   const { data } = useGetPublishedVisualization(visualizationId);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // The 400px sidebar would fill a phone screen, so narrow screens start
+  // with it closed. Only the starting state: the toggle decides after that.
+  // `noSsr` reads the query on the first render, so this initial value
+  // isn't the hook's default `false`.
+  const isNarrow = useMediaQuery(useTheme().breakpoints.down("md"), {
+    noSsr: true,
+  });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isNarrow);
   const onToggleSidebar = useCallback(() => {
     setIsSidebarOpen((open) => !open);
     // Vitessce's grid (react-grid-layout's WidthProvider) only re-measures on

@@ -70,6 +70,19 @@ test("public Vitessce visualization route renders the side panel", async ({
   await expectSidebarToggle(page, "E2E Public Vitessce", statusView);
 });
 
+test("public pages start with the sidebar closed on phones", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/visualizations/00000000-0000-0000-0000-000000000101");
+  await expect(
+    page.getByRole("button", { name: "Show sidebar" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "E2E Public Vitessce", level: 1 }),
+  ).toBeHidden();
+});
+
 test("public visitors see annotations without edit controls", async ({
   page,
 }) => {
