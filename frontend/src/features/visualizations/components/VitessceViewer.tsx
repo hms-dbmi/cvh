@@ -193,17 +193,29 @@ function VitessceViewer({
   // effect below can skip when the editor's value is just what we loaded.
   const lastServerValueRef = useRef<string>("");
 
+  // The visualization the local editor and viewer state belongs to.
+  const loadedVizIdRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
     const serverVal = data?.conf ? JSON.stringify(data.conf, null, 2) : "";
+    const previousServerVal = lastServerValueRef.current;
     lastServerValueRef.current = serverVal;
-    setEditorValue(serverVal);
-    // Server payload just landed — the live config ref and dirty flag
-    // are stale from whatever the user was doing on the previous viz.
+    const switchedViz = loadedVizIdRef.current !== selectedVizId;
+    loadedVizIdRef.current = selectedVizId;
+    // Every save refetches the visualization, so this also runs mid-edit.
+    // Only take the server's text if nothing was typed since the last load
+    // or save; the pending autosave still sends anything newer.
+    setEditorValue((current) =>
+      switchedViz || current === previousServerVal ? serverVal : current,
+    );
+    if (!switchedViz) return;
+    // A different visualization: the live config and dirty flags belong to
+    // the previous one.
     latestConfigRef.current = null;
     setHasUnsavedChanges(false);
     setModeBaseConfig(null);
     useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
-  }, [data?.conf]);
+  }, [data?.conf, selectedVizId]);
 
   // Vitessce uses `config.uid` to detect that a config has changed. Without
   // it, switching between visualizations in the workspace keeps the prior
@@ -349,8 +361,11 @@ function VitessceViewer({
       console.error(e);
       return false;
     }
-    setHasUnsavedChanges(false);
-    useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
+    // Changes made while the save was in flight are still unsaved.
+    if (latestConfigRef.current === latest) {
+      setHasUnsavedChanges(false);
+      useUnsavedAnnotationsStore.getState().setHasUnsavedAnnotations(false);
+    }
     return true;
   }, [updateVizAsync, toastError, selectedVizId, hasWritePermissions]);
 
@@ -431,12 +446,24 @@ function VitessceViewer({
       // effect that re-fires from setEditorValue after paste doesn't
       // schedule a redundant save with the same content.
       lastServerValueRef.current = value;
-      updateViz({
-        params: { path: { visualization_uuid: selectedVizId } },
-        body: { conf: parsed as Record<string, never> },
-      });
+      updateViz(
+        {
+          params: { path: { visualization_uuid: selectedVizId } },
+          body: { conf: parsed as Record<string, never> },
+        },
+        // The saved text replaces the whole config, so drop any unsaved
+        // viewer changes carried into Editing; they'd overwrite it.
+        { onSuccess: discardChanges },
+      );
     },
-    [selectedVizId, hasWritePermissions, data?.tool, updateViz, toastError],
+    [
+      selectedVizId,
+      hasWritePermissions,
+      data?.tool,
+      updateViz,
+      toastError,
+      discardChanges,
+    ],
   );
 
   // Generate a fresh Vitessce config from a single dataset URL and
@@ -451,10 +478,14 @@ function VitessceViewer({
         // at module load. See the top-of-file note on the lazy split.
         const { generateConfig } = await import("vitessce");
         const generated = await generateConfig([payload.url]);
-        updateViz({
-          params: { path: { visualization_uuid: selectedVizId } },
-          body: { conf: generated as Record<string, never> },
-        });
+        updateViz(
+          {
+            params: { path: { visualization_uuid: selectedVizId } },
+            body: { conf: generated as Record<string, never> },
+          },
+          // Replaces the whole config, like a code editor save.
+          { onSuccess: discardChanges },
+        );
         toastSuccess(`Generated Vitessce config from "${payload.name}".`);
       } catch (e) {
         const message = e instanceof Error ? e.message : "Unknown error";
@@ -462,7 +493,14 @@ function VitessceViewer({
         console.error(e);
       }
     },
-    [selectedVizId, hasWritePermissions, updateViz, toastSuccess, toastError],
+    [
+      selectedVizId,
+      hasWritePermissions,
+      updateViz,
+      toastSuccess,
+      toastError,
+      discardChanges,
+    ],
   );
 
   // Observe drops on the parent DndContext (installed by VitessceVizShell).
