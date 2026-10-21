@@ -83,7 +83,7 @@ interface VitessceViewerProps {
   onToggleSidebar: () => void;
 }
 
-function CodeEditor({
+export function CodeEditor({
   editorValue,
   setEditorValue,
   onPasteFlush,
@@ -94,6 +94,14 @@ function CodeEditor({
   onPasteFlush?: (value: string) => void;
   readOnly?: boolean;
 }) {
+  // Monaco calls `onMount` once, and this editor stays mounted while the user
+  // switches visualizations, so the paste listener must read the latest
+  // callback. Capturing it at mount sent a paste to the first visualization.
+  const onPasteFlushRef = useRef(onPasteFlush);
+  useEffect(() => {
+    onPasteFlushRef.current = onPasteFlush;
+  });
+
   return (
     <Stack sx={{ height: "100%", p: 2 }} spacing={1.5}>
       <Stack direction="row" alignItems="center" spacing={1}>
@@ -124,7 +132,7 @@ function CodeEditor({
             // user wait out the debounce. Read the value straight off
             // the editor because React state hasn't caught up yet.
             editor.onDidPaste(() => {
-              onPasteFlush?.(editor.getValue());
+              onPasteFlushRef.current?.(editor.getValue());
             });
           }}
           options={{
