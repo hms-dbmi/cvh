@@ -352,3 +352,104 @@ class CreateResponseTests(TestCase):
         self.assertEqual(body["uuid"], str(created.uuid))
         self.assertEqual(body["tool"], "vitessce")
         self.assertEqual(body["tags"], [])
+
+
+class TokenVerificationTests(TestCase):
+    """Bad tokens are the caller's problem (401, sign in again); an
+    unreachable Auth0 is not (503). Before this, everything except a
+    malformed token escaped as a 500."""
+
+    DOMAIN = "https://cvh-test.example/"
+    AUDIENCE = "https://api.cvh-test.example"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        cls.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+    def setUp(self):
+        import os
+
+        from django.contrib.auth.models import User
+
+        env_patch = patch.dict(
+            os.environ, {"AUTH0_DOMAIN": self.DOMAIN, "AUTH0_IDENTIFIER": self.AUDIENCE}
+        )
+        env_patch.start()
+        self.addCleanup(env_patch.stop)
+
+        self.jwks = patch("api.auth.PyJWKClient").start()
+        self.addCleanup(patch.stopall)
+        self.jwks.return_value.get_signing_key_from_jwt.return_value.key = (
+            self.private_key.public_key()
+        )
+
+        User.objects.create(username="auth0_tester", email="tester@example.com")
+
+    def _token(self, **overrides):
+        import time
+
+        import jwt
+
+        claims = {
+            "sub": "auth0|tester",
+            "aud": self.AUDIENCE,
+            "iss": self.DOMAIN,
+            "iat": int(time.time()),
+            "exp": int(time.time()) + 3600,
+            **overrides,
+        }
+        return jwt.encode(claims, self.private_key, algorithm="RS256")
+
+    def _get_user(self, token):
+        return self.client.get("/api/user", HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def test_valid_token_is_accepted(self):
+        response = self._get_user(self._token())
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_expired_token_is_unauthorized(self):
+        import time
+
+        response = self._get_user(self._token(exp=int(time.time()) - 60))
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_token_for_another_audience_is_unauthorized(self):
+        response = self._get_user(self._token(aud="https://someone-else.example"))
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_malformed_token_is_unauthorized(self):
+        from jwt.exceptions import DecodeError
+
+        self.jwks.return_value.get_signing_key_from_jwt.side_effect = DecodeError()
+
+        response = self._get_user("not-a-jwt")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_unknown_signing_key_is_unauthorized(self):
+        from jwt.exceptions import PyJWKClientError
+
+        self.jwks.return_value.get_signing_key_from_jwt.side_effect = PyJWKClientError(
+            "Unable to find a signing key that matches"
+        )
+
+        response = self._get_user(self._token())
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_unreachable_auth0_is_service_unavailable(self):
+        from jwt.exceptions import PyJWKClientConnectionError
+
+        self.jwks.return_value.get_signing_key_from_jwt.side_effect = (
+            PyJWKClientConnectionError("Fail to fetch data from the url")
+        )
+
+        response = self._get_user(self._token())
+
+        self.assertEqual(response.status_code, 503)

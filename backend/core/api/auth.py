@@ -4,7 +4,11 @@ import requests
 from django.contrib.auth.models import User
 from environs import env
 from jwt import PyJWKClient, decode
-from jwt.exceptions import DecodeError
+from jwt.exceptions import (
+    InvalidTokenError,
+    PyJWKClientConnectionError,
+    PyJWKClientError,
+)
 from ninja.errors import HttpError
 from ninja.security import HttpBearer
 
@@ -56,28 +60,29 @@ class RequestToken:
         if domain is None or identifier is None:
             raise HttpError(500, "Error with authentication configuration.")
 
-        signingKey: Any = (
-            PyJWKClient(domain + ".well-known/jwks.json")
-            .get_signing_key_from_jwt(self._token)
-            .key
-        )
-
-        if signingKey is None:
-            raise HttpError(
-                400,
-                "Could not retrieve a matching public key for the provided token.",
-            )
-
         try:
+            signing_key = (
+                PyJWKClient(domain + ".well-known/jwks.json")
+                .get_signing_key_from_jwt(self._token)
+                .key
+            )
             return decode(
                 jwt=self._token,
-                key=signingKey,
+                key=signing_key,
                 algorithms=["RS256"],
                 audience=identifier,
                 issuer=domain,
             )
-        except DecodeError:
-            raise HttpError(400, "Could not decode the provided token.") from None
+        # A subclass of PyJWKClientError, so it has to come first: Auth0 being
+        # unreachable isn't the caller's fault, and signing in again won't help.
+        except PyJWKClientConnectionError:
+            raise HttpError(
+                503, "Could not reach the sign-in service to verify the token."
+            ) from None
+        # Expired, for another audience or issuer, malformed, or signed by a
+        # key Auth0 doesn't publish. All mean "sign in again", so all are 401s.
+        except (InvalidTokenError, PyJWKClientError):
+            raise UnauthorizedError from None
 
     def _get_user_info(self, token: str) -> dict[str, Any] | None:
         domain = env.str("AUTH0_DOMAIN")
