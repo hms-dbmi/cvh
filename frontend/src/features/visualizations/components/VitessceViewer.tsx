@@ -445,15 +445,25 @@ function VitessceViewer({
       // Optimistically mark this value as committed so the debounced
       // effect that re-fires from setEditorValue after paste doesn't
       // schedule a redundant save with the same content.
+      const previousValue = lastServerValueRef.current;
       lastServerValueRef.current = value;
       updateViz(
         {
           params: { path: { visualization_uuid: selectedVizId } },
           body: { conf: parsed as Record<string, never> },
         },
-        // The saved text replaces the whole config, so drop any unsaved
-        // viewer changes carried into Editing; they'd overwrite it.
-        { onSuccess: discardChanges },
+        {
+          // The saved text replaces the whole config, so drop any unsaved
+          // viewer changes carried into Editing; they'd overwrite it.
+          onSuccess: discardChanges,
+          // Not saved after all: keep it counting as unsaved, so the next
+          // edit or paste retries it and a refetch doesn't replace it.
+          onError: () => {
+            if (lastServerValueRef.current === value) {
+              lastServerValueRef.current = previousValue;
+            }
+          },
+        },
       );
     },
     [

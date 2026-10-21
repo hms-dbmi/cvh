@@ -161,19 +161,26 @@ function GoslingVizShell({
       // only for newly-appended `targetUi: 'code-editor'` provenance
       // entries, so undo/redo back to a code-editor state doesn't
       // re-fire it.
-      updateViz({
-        body: {
-          conf: vis?.spec,
-          n_tracks: nTracks,
-          n_datasets: nDatasets,
+      // The commit that fired this call also fired onChange (which set
+      // dirty and stashed the change) just before it.
+      const sent = latestChangeRef.current;
+      updateViz(
+        {
+          body: {
+            conf: vis?.spec,
+            n_tracks: nTracks,
+            n_datasets: nDatasets,
+          },
+          params: { path: { visualization_uuid: selectedVizId } },
         },
-        params: { path: { visualization_uuid: selectedVizId } },
-      });
-      // The commit that fired this call also fires onChange (which sets
-      // dirty true just above). We follow it here to reset the flag,
-      // since we've just persisted the same change. Setter order is
-      // preserved by React's batching: onChange runs first, then this.
-      setHasUnsavedChanges(false);
+        // Only once it's stored, and only if nothing changed since: a failed
+        // save has to leave Save enabled so the change can be retried.
+        {
+          onSuccess: () => {
+            if (latestChangeRef.current === sent) setHasUnsavedChanges(false);
+          },
+        },
+      );
     },
     [updateViz, selectedVizId, hasWritePermissions],
   );
@@ -182,22 +189,28 @@ function GoslingVizShell({
     if (!selectedVizId || !hasWritePermissions) return;
     const payload = latestChangeRef.current;
     if (!payload) return;
-    try {
-      posthog.capture("visualization_saved", { viewer: "gosling" });
-      updateViz({
+    updateViz(
+      {
         body: {
           conf: payload.vis?.spec,
           n_tracks: payload.nTracks,
           n_datasets: payload.nDatasets,
         },
         params: { path: { visualization_uuid: selectedVizId } },
-      });
-      setHasUnsavedChanges(false);
-    } catch (e) {
-      toastError("Error saving visualization");
-      console.error(e);
-    }
-  }, [updateViz, toastError, selectedVizId, hasWritePermissions]);
+      },
+      // `mutate` doesn't throw; a failure arrives here as a toast from
+      // useUpdateVisualization. So clear the flag only once the save is
+      // stored, and only if nothing changed while it was in flight.
+      {
+        onSuccess: () => {
+          // Counted only once stored, so tracking can't block a save and
+          // the event means what it says.
+          posthog.capture("visualization_saved", { viewer: "gosling" });
+          if (latestChangeRef.current === payload) setHasUnsavedChanges(false);
+        },
+      },
+    );
+  }, [updateViz, selectedVizId, hasWritePermissions]);
 
   const onPublish = useCallback(() => {
     try {
