@@ -4,8 +4,9 @@ import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockAuth0Context } from "../test/auth-mock";
 
-// openapi-fetch captures `fetch` when the client module is created, so stub
-// it first and import the module fresh in each test.
+// The client module reads `fetch` and `VITE_API_URL` when it loads, so stub
+// both first and import it fresh in each test. CI has no `.env`, and a
+// relative URL can't be fetched outside a browser.
 const fetchMock = vi.fn(
   async (_request: Request) =>
     new Response("{}", {
@@ -41,10 +42,12 @@ describe("useClient", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("VITE_API_URL", "https://api.cvh.test");
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     fetchMock.mockClear();
   });
 
