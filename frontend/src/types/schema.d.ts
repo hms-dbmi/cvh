@@ -47,7 +47,7 @@ export interface paths {
         put: operations["api_routers_members_update_workspace_member"];
         /**
          * Add a workspace member
-         * @description Adds a user to a workspace with read permissions. Requires admin access to the workspace. Returns 404 with code `user_not_found` if no account exists for the email.
+         * @description Adds a user to a workspace with read permissions. Requires admin access to the workspace. Returns 404 with code `user_not_found` if no account exists for the email, and 409 with code `already_member` if that account is already a member.
          */
         post: operations["api_routers_members_add_workspace_member"];
         /**
@@ -1790,6 +1790,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
