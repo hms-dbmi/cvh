@@ -1,34 +1,75 @@
 import Divider from "@mui/material/Divider";
-import ListItemIcon from "@mui/material/ListItemIcon";
 import MenuItem from "@mui/material/MenuItem";
+import type { SxProps, Theme } from "@mui/material/styles";
 import {
-  ArrowBendUpRight,
+  ArrowSquareOut,
   LinkSimple,
+  LockSimple,
   PresentationChart,
-  Trash,
 } from "@phosphor-icons/react";
 import { useCallback } from "react";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 import { LinkMenuItem } from "@/features/navigation/components/Links";
 import posthog from "@/posthog";
-import { useHandleCopyClick } from "@/utils/useHandleCopyText";
 import { useUpdateVisualization } from "../api/useVisualizations";
+import {
+  type ShareSource,
+  useShareVisualization,
+} from "../hooks/useShareVisualization";
 
 type Props = {
   visualizationID: string;
+  // Tags analytics events. Passed in rather than fetched, since public
+  // visitors can't read the workspace API.
+  viewer?: string;
+  source?: ShareSource;
   closeMenu: () => void;
   onUnpublish?: () => void;
+  // Read-only members can share a published visualization but not make it
+  // private, so the menu hides that item for them.
+  canUnpublish?: boolean;
+  // Hidden on the public page, which is already the public view.
+  showOpenPublicView?: boolean;
 };
 
-function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
-  const handleCopyClick = useHandleCopyClick();
-  const path = `/visualizations/${visualizationID}`;
+const ICON_SIZE = 20;
+
+// "Sharing Menu Item" in the CVH design system.
+const menuItemSx: SxProps<Theme> = {
+  gap: 1,
+  height: 48,
+  px: 1.5,
+  borderRadius: 3,
+  typography: "button",
+  color: "text.primary",
+  "&:hover": { bgcolor: "rgba(138, 158, 168, 0.04)" },
+};
+
+function PublishedVizMenu({
+  visualizationID,
+  viewer,
+  source = "sharing_menu",
+  closeMenu,
+  onUnpublish,
+  canUnpublish = true,
+  showOpenPublicView = true,
+}: Props) {
   const { toastError } = useSnackbarActions();
+  const { path, copyLink } = useShareVisualization({
+    visualizationID,
+    viewer,
+    source,
+  });
+
+  const handleOpenPublicView = useCallback(() => {
+    posthog.capture("visualization_public_view_opened", { viewer, source });
+    closeMenu();
+  }, [viewer, source, closeMenu]);
 
   const handleCopy = useCallback(() => {
-    handleCopyClick(`${window.location.origin}${path}`);
+    copyLink();
     closeMenu();
-  }, [handleCopyClick, path, closeMenu]);
+  }, [copyLink, closeMenu]);
 
   const { mutate: updateViz } = useUpdateVisualization();
 
@@ -54,28 +95,30 @@ function PublishedVizMenu({ visualizationID, closeMenu, onUnpublish }: Props) {
 
   return (
     <>
-      <LinkMenuItem to={path} target="_blank" component="a" onClick={closeMenu}>
-        <ListItemIcon>
-          <PresentationChart size={24} />
-        </ListItemIcon>
-        See Public View
-        <ListItemIcon sx={{ ml: 2 }}>
-          <ArrowBendUpRight size={24} />
-        </ListItemIcon>
-      </LinkMenuItem>
-      <MenuItem onClick={handleCopy}>
-        <ListItemIcon>
-          <LinkSimple height={24} width={24} />
-        </ListItemIcon>
-        Copy Link
+      {showOpenPublicView && (
+        <LinkMenuItem
+          to={path}
+          target="_blank"
+          component="a"
+          onClick={handleOpenPublicView}
+          sx={menuItemSx}
+        >
+          <PresentationChart size={ICON_SIZE} />
+          Open Public View
+          <ArrowSquareOut size={ICON_SIZE} style={{ marginLeft: "auto" }} />
+        </LinkMenuItem>
+      )}
+      <MenuItem onClick={handleCopy} sx={menuItemSx}>
+        <LinkSimple size={ICON_SIZE} />
+        Copy link
       </MenuItem>
-      <Divider />
-      <MenuItem onClick={unPublishViz}>
-        <ListItemIcon>
-          <Trash height={24} width={24} />
-        </ListItemIcon>
-        Unpublish
-      </MenuItem>
+      {canUnpublish && <Divider />}
+      {canUnpublish && (
+        <MenuItem onClick={unPublishViz} sx={menuItemSx}>
+          <LockSimple size={ICON_SIZE} />
+          Make Private
+        </MenuItem>
+      )}
     </>
   );
 }

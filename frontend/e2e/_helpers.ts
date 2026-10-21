@@ -13,9 +13,7 @@ declare global {
 }
 
 export async function readRequests(page: Page): Promise<RecordedRequest[]> {
-  return page.evaluate<RecordedRequest[]>(
-    () => window.__e2eRequests ?? [],
-  );
+  return page.evaluate<RecordedRequest[]>(() => window.__e2eRequests ?? []);
 }
 
 /**
@@ -31,4 +29,25 @@ export async function gotoWorkspace(page: Page, projectId: string) {
   await expect(
     page.getByRole("group", { name: "Visualization mode" }),
   ).toBeVisible({ timeout: 20_000 });
+}
+
+/**
+ * The bottom bar floats 16px above the window's bottom edge. The Gosling
+ * designer once sized itself 20px taller than the space below the header,
+ * which pushed the bar partly off screen and let the page scroll.
+ */
+export async function expectBottomBarOnScreen(page: Page) {
+  const published = page.getByRole("button", {
+    name: "Published",
+    exact: true,
+  });
+  // The bar is the innermost Paper around its Published button.
+  const bar = page.locator(".MuiPaper-root").filter({ has: published }).last();
+  await expect(bar).toBeVisible();
+  const box = await bar.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box && viewport).toBeTruthy();
+  if (box && viewport) {
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 15);
+  }
 }

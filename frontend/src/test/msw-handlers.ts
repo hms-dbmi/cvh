@@ -123,13 +123,16 @@ const annotatedVitessceConf = {
 } as unknown as Record<string, never>;
 
 function getWorkspaceViz(): components["schemas"]["VisualizationOut"] {
+  let viz = workspaceViz;
   if (flag("__e2eGoslingWorkspace")) {
-    return { ...workspaceViz, tool: "gosling", conf: {} };
+    viz = { ...viz, tool: "gosling", conf: {} };
+  } else if (flag("__e2eTwoViewVitessce")) {
+    viz = { ...viz, conf: twoViewVitessceConf };
   }
-  if (flag("__e2eTwoViewVitessce")) {
-    return { ...workspaceViz, conf: twoViewVitessceConf };
+  if (flag("__e2ePublishedWorkspaceViz")) {
+    viz = { ...viz, published: true };
   }
-  return workspaceViz;
+  return viz;
 }
 
 const member: components["schemas"]["WorkspaceMemberOut"] = {
@@ -204,7 +207,11 @@ export const handlers = [
     HttpResponse.json({ items: [workspace], count: 1 }),
   ),
   http.get(`${apiUrl}/api/workspaces/:uuid`, () =>
-    HttpResponse.json(workspace),
+    HttpResponse.json(
+      flag("__e2eReadOnlyWorkspace")
+        ? { ...workspace, permissions: 1 }
+        : workspace,
+    ),
   ),
   http.get(`${apiUrl}/api/public/workspaces`, () =>
     HttpResponse.json({ items: [publicWorkspace], count: 1 }),
@@ -334,9 +341,15 @@ export const handlers = [
   // Public visualization detail (handles both Gosling and Vitessce by uuid)
   http.get(`${apiUrl}/api/public/visualizations/:uuid`, ({ params }) => {
     if (params.uuid === publishedVitessceViz.uuid) {
+      if (flag("__e2eAnnotatedPublicViz")) {
+        return HttpResponse.json({
+          ...publishedVitessceViz,
+          conf: annotatedVitessceConf,
+        });
+      }
       return HttpResponse.json(
-        flag("__e2eAnnotatedPublicViz")
-          ? { ...publishedVitessceViz, conf: annotatedVitessceConf }
+        flag("__e2eTwoViewVitessce")
+          ? { ...publishedVitessceViz, conf: twoViewVitessceConf }
           : publishedVitessceViz,
       );
     }

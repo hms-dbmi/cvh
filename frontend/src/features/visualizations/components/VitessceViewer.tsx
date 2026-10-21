@@ -29,6 +29,7 @@ import {
   useGetVisualization,
   useUpdateVisualization,
 } from "../api/useVisualizations";
+import { useUnsavedAnnotationsStore } from "../hooks/useUnsavedAnnotationsStore";
 import {
   type AnnotationUtils,
   annotationStoriesDiffer,
@@ -38,7 +39,6 @@ import {
   setAnnotationCloseButton,
   toAnnotatingConfig,
 } from "../utils/annotatingConfig.ts";
-import { useUnsavedAnnotationsStore } from "../hooks/useUnsavedAnnotationsStore";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
 
 // The `vitessce` package + its transitives (three.js, higlass, neuroglancer,
@@ -413,7 +413,9 @@ function VitessceViewer({
         } catch (e) {
           const message =
             e instanceof Error ? e.message : "Unknown validation error";
-          toastError(`Invalid Vitessce config: ${message} — changes not saved.`);
+          toastError(
+            `Invalid Vitessce config: ${message} — changes not saved.`,
+          );
           return;
         }
       }
@@ -447,19 +449,12 @@ function VitessceViewer({
         });
         toastSuccess(`Generated Vitessce config from "${payload.name}".`);
       } catch (e) {
-        const message =
-          e instanceof Error ? e.message : "Unknown error";
+        const message = e instanceof Error ? e.message : "Unknown error";
         toastError(`Could not generate config: ${message}`);
         console.error(e);
       }
     },
-    [
-      selectedVizId,
-      hasWritePermissions,
-      updateViz,
-      toastSuccess,
-      toastError,
-    ],
+    [selectedVizId, hasWritePermissions, updateViz, toastSuccess, toastError],
   );
 
   // Observe drops on the parent DndContext (installed by VitessceVizShell).
@@ -590,7 +585,9 @@ function VitessceViewer({
               // No fixed height: Vitessce fills the paper
               // (see vitessce-overrides.css).
               theme="light"
-              onConfigChange={hasWritePermissions ? handleConfigChange : undefined}
+              onConfigChange={
+                hasWritePermissions ? handleConfigChange : undefined
+              }
               areAnnotationsEditable={mode === "annotating"}
             />
           </Suspense>
@@ -646,6 +643,7 @@ function VitessceViewer({
             onModeChange={handleModeChange}
             published={data?.published}
             visualizationID={selectedVizId}
+            viewer="vitessce"
             onPublish={hasWritePermissions ? publishViz : undefined}
             // Save is only meaningful outside editing mode — the code editor
             // path autosaves on a 2.5s debounce, so a Save button there

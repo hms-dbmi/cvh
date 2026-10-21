@@ -1,0 +1,52 @@
+/*
+ * Fits gosling-designer-vec's canvas to CVH's layout.
+ * `.cvh-gosling-canvas` is set through the designer's `classNames.canvas`;
+ * the scrolling element is its only child.
+ *
+ * The designer's Tailwind utilities are all `!important` inside
+ * `@layer utilities`. For important declarations, earlier layers win (and
+ * any layer beats unlayered CSS), so these overrides sit in `@layer base`,
+ * which both Tailwind builds declare before `utilities`.
+ */
+@layer base {
+  /* CVH's app background (the theme's background.default), as behind the
+     Vitessce viewer, instead of the designer's blue-grey canvas. */
+  .cvh-gosling-canvas {
+    /* biome-ignore lint/complexity/noImportantStyles: must outrank the designer's !important utilities */
+    background-color: #f5f7fa !important;
+  }
+
+  .cvh-gosling-canvas > div {
+    /* Top: plus the visualization's own 8px margin, matches the Vitessce
+       viewer's 16px gutter below the header and beside the sidebar. */
+    /* biome-ignore lint/complexity/noImportantStyles: must outrank the designer's !important utilities */
+    padding-top: 8px !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must outrank the designer's !important utilities */
+    padding-inline: 16px !important;
+    /* The bottom bar floats over the canvas, so leave room for the bottom
+       of a tall visualization to scroll clear of it: the bar's 64px height,
+       its 16px offset and a 16px gap. */
+    /* biome-ignore lint/complexity/noImportantStyles: must outrank the designer's !important utilities */
+    padding-bottom: 96px !important;
+  }
+}
+
+/* The header's shadow is drawn underneath the designer's content, so the
+   canvas casts its own copy: a strip just above the canvas (clipped by its
+   overflow) with the header's exact shadow (MUI elevation 4). The right-hand
+   panel comes after the canvas in the designer's markup, so it covers the
+   shadow, which therefore stops at the panel. */
+.cvh-gosling-canvas::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -20px;
+  right: -20px;
+  height: 10px;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow:
+    0 2px 4px -1px rgb(0 0 0 / 20%),
+    0 4px 5px 0 rgb(0 0 0 / 14%),
+    0 1px 10px 0 rgb(0 0 0 / 12%);
+}

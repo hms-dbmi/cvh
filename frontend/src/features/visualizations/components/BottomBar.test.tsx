@@ -137,6 +137,60 @@ describe("BottomBar", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows only the modes it's given", () => {
+    render(
+      <BottomBar
+        mode="editing"
+        onModeChange={() => {}}
+        hasWritePermissions
+        modes={["editing", "exploring"]}
+      />,
+    );
+    expect(screen.getByText("Editing")).toBeInTheDocument();
+    expect(screen.getByText("Exploring")).toBeInTheDocument();
+    expect(screen.queryByText("Annotating")).not.toBeInTheDocument();
+  });
+
+  it("hides the mode switcher when there's only one mode", () => {
+    render(
+      <BottomBar
+        mode="exploring"
+        onModeChange={() => {}}
+        modes={["exploring"]}
+      />,
+    );
+    expect(
+      screen.queryByRole("group", { name: "Visualization mode" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders extra actions in the bar", () => {
+    render(
+      <BottomBar
+        mode="editing"
+        onModeChange={() => {}}
+        extraActions={<button type="button">Undo</button>}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Undo" })).toBeInTheDocument();
+  });
+
+  it("shows Published to read-only members but never Make Public", () => {
+    const { rerender } = render(
+      <BottomBar mode="exploring" onModeChange={() => {}} published />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Published" }),
+    ).toBeInTheDocument();
+
+    rerender(
+      <BottomBar mode="exploring" onModeChange={() => {}} published={false} />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /Make Public|Published/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("hides the Save button when onSave is not provided", () => {
     render(<BottomBar mode="exploring" onModeChange={() => {}} />);
     expect(

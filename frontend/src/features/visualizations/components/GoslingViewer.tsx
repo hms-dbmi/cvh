@@ -1,64 +1,70 @@
 import Box from "@mui/material/Box";
-import { GoslingDesignerVEC, useToggleSetting } from "gosling-designer-vec";
+import { GoslingDesignerVEC } from "gosling-designer-vec";
 import "gosling-designer-vec/build/style.css";
-import { memo, useCallback } from "react";
-import { SidebarToggleButton } from "./BottomBar.tsx";
+import "../gosling-overrides.css";
+import { memo, useMemo } from "react";
 import { DatasetActionsMenu } from "./DataList.tsx";
-import PublishedVizMenu from "./PublishedVizMenu.tsx";
+import GoslingBottomBar, {
+  GoslingBottomBarContext,
+  type GoslingBottomBarContextValue,
+} from "./GoslingBottomBar.tsx";
 
-interface GoslingViewerProps {
+interface GoslingViewerProps
+  extends Omit<GoslingBottomBarContextValue, "hasWritePermissions"> {
   permissions: number;
-  isSidebarOpen: boolean;
-  onToggleSidebar: () => void;
-}
-
-function GoslingPublishedVizMenu({
-  visualizationID,
-  closeMenu,
-}: {
-  visualizationID: string;
-  closeMenu: () => void;
-}) {
-  const toggleSetting = useToggleSetting();
-  const handleUnpublish = useCallback(() => {
-    toggleSetting("_isPublished", false);
-  }, [toggleSetting]);
-  return (
-    <PublishedVizMenu
-      visualizationID={visualizationID}
-      closeMenu={closeMenu}
-      onUnpublish={handleUnpublish}
-    />
-  );
 }
 
 function GoslingViewer({
   permissions,
+  visualizationID,
+  published,
+  onSave,
+  hasUnsavedChanges,
   isSidebarOpen,
   onToggleSidebar,
 }: GoslingViewerProps) {
   const hasWritePermissions = permissions >= 2;
+  const bottomBar = useMemo(
+    () => ({
+      visualizationID,
+      published,
+      hasWritePermissions,
+      onSave,
+      hasUnsavedChanges,
+      isSidebarOpen,
+      onToggleSidebar,
+    }),
+    [
+      visualizationID,
+      published,
+      hasWritePermissions,
+      onSave,
+      hasUnsavedChanges,
+      isSidebarOpen,
+      onToggleSidebar,
+    ],
+  );
 
   return (
     <Box sx={{ height: "100%" }}>
-      <GoslingDesignerVEC
-        visualizationPanel={null}
-        DatasetMenuButton={hasWritePermissions ? DatasetActionsMenu : undefined}
-        PublishMenu={GoslingPublishedVizMenu}
-        isLeftPanelOpen={false}
-        modeWidgetActions={
-          <SidebarToggleButton
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={onToggleSidebar}
-          />
-        }
-        externalDndContext
-        classNames={{
-          modeWidget: hasWritePermissions
-            ? "w-auto left-0 right-[400px]"
-            : undefined,
-        }}
-      />
+      <GoslingBottomBarContext.Provider value={bottomBar}>
+        <GoslingDesignerVEC
+          visualizationPanel={null}
+          DatasetMenuButton={
+            hasWritePermissions ? DatasetActionsMenu : undefined
+          }
+          isLeftPanelOpen={false}
+          // CVH's own bar, so Gosling and Vitessce share one bar and menu.
+          ModeWidget={GoslingBottomBar}
+          // Hook for gosling-overrides.css (canvas spacing, background and
+          // the header's shadow).
+          classNames={{ canvas: "cvh-gosling-canvas" }}
+          // The designer defaults to `calc(100vh - 44px)`, 20px taller than
+          // the space below CVH's 64px header, which let the page scroll.
+          style={{ height: "100%" }}
+          externalDndContext
+        />
+      </GoslingBottomBarContext.Provider>
     </Box>
   );
 }
