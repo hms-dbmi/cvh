@@ -420,3 +420,14 @@ class ProjectMember(models.Model):
             " workspace settings)."
         ),
     )
+
+    class Meta:
+        # One row per user per workspace. A second row made every lookup of
+        # that member (`.get()` in get_workspace, update and remove) fail
+        # with MultipleObjectsReturned, locking them out of the workspace.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project_key", "user_key"],
+                name="unique_project_member",
+            )
+        ]

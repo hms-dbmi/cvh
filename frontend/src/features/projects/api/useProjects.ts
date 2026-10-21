@@ -66,12 +66,14 @@ function useGetProject(projectId: string) {
   });
 }
 
-function isMemberNotFoundError(error: unknown) {
+// The members endpoint returns `{ code, detail }` for failures the inviter
+// can act on.
+function hasErrorCode(error: unknown, code: string) {
   return (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
-    error.code === "user_not_found"
+    error.code === code
   );
 }
 
@@ -86,8 +88,12 @@ function useAddProjectMember() {
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: (error, { body }) => {
-      if (isMemberNotFoundError(error)) {
+      if (hasErrorCode(error, "user_not_found")) {
         toastError(`No account found for ${body.email}.`);
+        return;
+      }
+      if (hasErrorCode(error, "already_member")) {
+        toastError(`${body.email} is already a member of this workspace.`);
         return;
       }
       toastError("Failed to share workspace.");
@@ -165,7 +171,7 @@ function useGetProjectMembers(projectId: string) {
 }
 
 export {
-  isMemberNotFoundError,
+  hasErrorCode,
   useAddProjectMember,
   useCreateProject,
   useDeleteProject,

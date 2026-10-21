@@ -23,13 +23,14 @@ router = Router(tags=["Workspace Members"])
 @router.post(
     "/workspaces/{workspace_uuid}/members",
     auth=Authorized(),
-    response={200: SuccessOut, 404: ErrorOut},
+    response={200: SuccessOut, 404: ErrorOut, 409: ErrorOut},
     summary="Add a workspace member",
     description=(
         "Adds a user to a workspace with read permissions."
         " Requires admin access to the workspace."
         " Returns 404 with code `user_not_found` if no account exists"
-        " for the email."
+        " for the email, and 409 with code `already_member` if that"
+        " account is already a member."
     ),
 )
 def add_workspace_member(request, workspace_uuid: UUID, member: WorkspaceMemberIn):
@@ -42,7 +43,16 @@ def add_workspace_member(request, workspace_uuid: UUID, member: WorkspaceMemberI
             "code": "user_not_found",
             "detail": "No account found for that email.",
         }
-    ProjectMember.objects.create(project_key=project, user_key=user, permissions=1)
+    _, created = ProjectMember.objects.get_or_create(
+        project_key=project, user_key=user, defaults={"permissions": 1}
+    )
+    if not created:
+        # Leave their current permissions alone; changing them is the
+        # update endpoint's job.
+        return 409, {
+            "code": "already_member",
+            "detail": "That account is already a member of this workspace.",
+        }
     return {"success": True}
 
 

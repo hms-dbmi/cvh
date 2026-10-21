@@ -20,14 +20,16 @@ test("inviting a collaborator fires POST /api/workspaces/<uuid>/members", async 
   await dialog.getByLabel("E-mail Address").fill("invitee@example.com");
   await dialog.getByRole("button", { name: "Invite" }).click();
 
-  await expect.poll(() => readRequests(page)).toContainEqual({
-    method: "POST",
-    path: `/api/workspaces/${PROJECT_ID}/members`,
-    body: { email: "invitee@example.com" },
-  });
+  await expect
+    .poll(() => readRequests(page))
+    .toContainEqual({
+      method: "POST",
+      path: `/api/workspaces/${PROJECT_ID}/members`,
+      body: { email: "invitee@example.com" },
+    });
 });
 
-test("inviting an email with no account explains how to proceed", async ({
+test("inviting a missing account or an existing member explains why", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -57,4 +59,14 @@ test("inviting an email with no account explains how to proceed", async ({
   // Editing the email clears the stale helper text.
   await emailField.fill("someone@example.com");
   await expect(dialog.getByText(/Ask them to sign up/)).toBeHidden();
+
+  // Inviting someone who's already a member is refused rather than
+  // creating a second membership.
+  await emailField.fill("member@example.com");
+  await dialog.getByRole("button", { name: "Invite" }).click();
+  await expect(
+    dialog.getByText(
+      "member@example.com is already a member of this workspace.",
+    ),
+  ).toBeVisible();
 });

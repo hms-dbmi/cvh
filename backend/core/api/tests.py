@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from .cfdb import CfdbDispatchResult, CfdbError, _parse_job_id
 from .models import Dataset
@@ -215,6 +215,74 @@ class AddWorkspaceMemberTests(TestCase):
         self.assertEqual(response.json(), {"success": True})
         member = ProjectMember.objects.get(project_key=self.project, user_key=invitee)
         self.assertEqual(member.permissions, 1)
+
+    def test_existing_member_returns_already_member(self):
+        from django.contrib.auth.models import User
+
+        from .models import ProjectMember
+
+        invitee = User.objects.create(username="invitee", email="invitee@example.com")
+        ProjectMember.objects.create(
+            project_key=self.project, user_key=invitee, permissions=2
+        )
+
+        response = self._invite("invitee@example.com")
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["code"], "already_member")
+        # Still one row, with the permission they already had.
+        member = ProjectMember.objects.get(project_key=self.project, user_key=invitee)
+        self.assertEqual(member.permissions, 2)
+
+    def test_inviting_yourself_keeps_your_access(self):
+        from .models import ProjectMember
+
+        response = self._invite("admin@example.com")
+
+        self.assertEqual(response.status_code, 409)
+        # A duplicate row used to make the workspace itself fail to load.
+        workspace = self.client.get(
+            f"/api/workspaces/{self.project.uuid}",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+        self.assertEqual(workspace.status_code, 200)
+        self.assertEqual(workspace.json()["permissions"], 3)
+        self.assertEqual(
+            ProjectMember.objects.filter(project_key=self.project).count(), 1
+        )
+
+
+class RemoveDuplicateMembersMigrationTests(TransactionTestCase):
+    """0034 collapses duplicate memberships before adding its constraint, so
+    it has to cope with the duplicates production may already hold."""
+
+    def _migrate(self, target):
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        executor.loader.build_graph()
+        executor.migrate([("api", target)])
+        return executor.loader.project_state([("api", target)]).apps
+
+    def test_keeps_the_highest_permission_row(self):
+        apps = self._migrate("0033_rename_vitessce_file_types")
+        User = apps.get_model("auth", "User")
+        Project = apps.get_model("api", "Project")
+        ProjectMember = apps.get_model("api", "ProjectMember")
+        user = User.objects.create(username="dup", email="dup@example.com")
+        project = Project.objects.create(name="Dup", user_key=user)
+        for permissions in (1, 3, 2):
+            ProjectMember.objects.create(
+                project_key=project, user_key=user, permissions=permissions
+            )
+
+        apps = self._migrate("0034_unique_project_member")
+
+        rows = apps.get_model("api", "ProjectMember").objects.filter(
+            project_key_id=project.pk, user_key_id=user.pk
+        )
+        self.assertEqual(list(rows.values_list("permissions", flat=True)), [3])
 
 
 class CreateResponseTests(TestCase):

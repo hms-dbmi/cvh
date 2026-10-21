@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 
 import posthog from "@/posthog";
-import { isMemberNotFoundError, useAddProjectMember } from "../api/useProjects";
+import { hasErrorCode, useAddProjectMember } from "../api/useProjects";
 
 interface FormValues {
   email: string;
@@ -77,9 +77,13 @@ export default function ShareProjectButton({
         },
         {
           onError: (error) => {
-            if (isMemberNotFoundError(error)) {
+            if (hasErrorCode(error, "user_not_found")) {
               setError("email", {
                 message: `No account found for ${email}. Ask them to sign up, then invite them again.`,
+              });
+            } else if (hasErrorCode(error, "already_member")) {
+              setError("email", {
+                message: `${email} is already a member of this workspace.`,
               });
             }
           },

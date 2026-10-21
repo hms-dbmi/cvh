@@ -321,6 +321,16 @@ export const handlers = [
         `/api/workspaces/${params.uuid}/members`,
         request,
       );
+      const { email } = (await request.clone().json()) as { email: string };
+      if (email === "member@example.com") {
+        return HttpResponse.json(
+          {
+            code: "already_member",
+            detail: "That account is already a member of this workspace.",
+          },
+          { status: 409 },
+        );
+      }
       if (flag("__e2eMemberNotFound")) {
         return HttpResponse.json(
           {
