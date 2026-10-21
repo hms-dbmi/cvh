@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import type { components } from "@/types/schema";
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
@@ -121,6 +121,9 @@ const annotatedVitessceConf = {
   ...minimalVitessceConf,
   layout: [{ component: "annotationController", x: 0, y: 0, w: 12, h: 2 }],
 } as unknown as Record<string, never>;
+
+// The last config saved under `__e2eSlowSave`, served back by the GET.
+let savedWorkspaceConf: Record<string, never> | undefined;
 
 function getWorkspaceViz(): components["schemas"]["VisualizationOut"] {
   let viz = workspaceViz;
@@ -245,7 +248,10 @@ export const handlers = [
   // Visualizations
   http.get(`${apiUrl}/api/visualizations/:uuid`, ({ params }) => {
     if (params.uuid === workspaceViz.uuid) {
-      return HttpResponse.json(getWorkspaceViz());
+      const viz = getWorkspaceViz();
+      return HttpResponse.json(
+        savedWorkspaceConf ? { ...viz, conf: savedWorkspaceConf } : viz,
+      );
     }
     return HttpResponse.json(publishedGoslingViz);
   }),
@@ -253,6 +259,15 @@ export const handlers = [
     `${apiUrl}/api/visualizations/:uuid`,
     async ({ request, params }) => {
       await recordRequest("PUT", `/api/visualizations/${params.uuid}`, request);
+      // Like the real API: hold the save open, so a spec can keep editing
+      // while it's in flight, and serve the saved config back afterwards.
+      if (flag("__e2eSlowSave")) {
+        const { conf } = (await request.clone().json()) as {
+          conf?: Record<string, never>;
+        };
+        await delay(1500);
+        if (conf) savedWorkspaceConf = conf;
+      }
       return HttpResponse.json({ success: true });
     },
   ),
