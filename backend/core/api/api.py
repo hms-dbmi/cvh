@@ -3,7 +3,6 @@ from ninja import NinjaAPI
 from .auth import ForbiddenError, UnauthorizedError
 from .routers.datasets import router as datasets_router
 from .routers.members import router as members_router
-from .routers.tags import router as tags_router
 from .routers.users import router as users_router
 from .routers.visualizations import router as visualizations_router
 from .routers.workspaces import router as workspaces_router
@@ -42,4 +41,3 @@ api.add_router("", members_router)
 api.add_router("", workspaces_router)
 api.add_router("", datasets_router)
 api.add_router("", visualizations_router)
-api.add_router("", tags_router)
