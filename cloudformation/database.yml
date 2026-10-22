@@ -50,6 +50,7 @@ Resources:
         - !Ref DBSecurityGroupId
       AllocatedStorage: "20"
       BackupRetentionPeriod: 7
+      DeletionProtection: true
       DBInstanceClass: db.t3.micro
       Engine: postgres
       MasterUsername: !Ref DBUserName
