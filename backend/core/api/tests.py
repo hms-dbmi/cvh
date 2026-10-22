@@ -453,3 +453,23 @@ class TokenVerificationTests(TestCase):
         response = self._get_user(self._token())
 
         self.assertEqual(response.status_code, 503)
+
+
+class GlobalTagsEndpointRemovedTests(TestCase):
+    """`GET /api/tags` needed no login and listed every workspace's tags,
+    private ones included. Tags are only served per workspace now."""
+
+    def test_global_tag_list_is_gone(self):
+        from .models import Project, Tag
+
+        Tag.objects.create(
+            tag="embargoed-assay",
+            key="assay",
+            project_key=Project.objects.create(name="Private", private=True),
+        )
+
+        for path in ("/api/tags", "/api/tags?sub_str=embargoed"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertNotIn(b"embargoed-assay", response.content)

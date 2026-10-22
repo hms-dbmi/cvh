@@ -13,7 +13,6 @@ const invalidateGetQuery = buildInvalidateGetQuery([
   path,
   publicPath,
   "/api/workspaces",
-  "/api/tags",
 ]);
 
 function hasFilter(filter: Record<string, unknown>) {

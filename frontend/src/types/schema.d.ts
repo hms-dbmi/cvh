@@ -472,26 +472,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search tags
-         * @description Returns all tags, optionally filtered by a substring match on the combined 'key:tag' value. Paginated.
-         */
-        get: operations["api_routers_tags_get_tags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1656,13 +1636,6 @@ export interface components {
              */
             tool: string;
         };
-        /** PagedTagOut */
-        PagedTagOut: {
-            /** Items */
-            items: components["schemas"]["TagOut"][];
-            /** Count */
-            count: number;
-        };
     };
     responses: never;
     parameters: never;
@@ -2477,30 +2450,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VisualizationSummaryOut"];
-                };
-            };
-        };
-    };
-    api_routers_tags_get_tags: {
-        parameters: {
-            query?: {
-                sub_str?: string | null;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedTagOut"];
                 };
             };
         };

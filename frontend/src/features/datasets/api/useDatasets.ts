@@ -8,7 +8,6 @@ const workspacePath = "/api/workspaces/{workspace_uuid}/datasets";
 const invalidateGetQuery = buildInvalidateGetQuery([
   path,
   "/api/workspaces",
-  "/api/tags",
 ]);
 
 interface Page {
