@@ -44,6 +44,8 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 
 ### Security
 - Removed `GET /api/tags`. It needed no sign-in and returned every tag in every workspace, including private ones, so anyone could list labels such as unpublished project or assay names. Its `?sub_str=` search also always failed with a 500, filtering on an annotation name that didn't exist. Nothing in the web app or `cvh-client` used it; tags are still served per workspace (`/api/workspaces/{uuid}/datasets/tags` and `/api/workspaces/{uuid}/visualizations/tags`), which check read access. The unused frontend hook `useTags.ts` that called it is removed too.
+- The database stack now sets `DeletionProtection: true` on the RDS instance, so a `delete-stack` or a change that would replace the database fails instead of deleting it.
+- The website's CloudFront distribution now redirects `http://` to `https://` (`ViewerProtocolPolicy: redirect-to-https`), so sign-in can't start on an unencrypted page. The images distribution already did this.
 
 ## [2026-10-01] (prod, a1f5e37)
 

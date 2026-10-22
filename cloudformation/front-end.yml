@@ -207,7 +207,7 @@ Resources:
                         QueryString: true
                     SmoothStreaming: false
                     TargetOriginId: !Ref RootBucket
-                    ViewerProtocolPolicy: "allow-all"
+                    ViewerProtocolPolicy: "redirect-to-https"
                     ResponseHeadersPolicyId: e61eb60c-9c35-4d20-a928-2b84e02af89c
                     CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
                 DefaultRootObject: "index.html"
