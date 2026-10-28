@@ -8,15 +8,18 @@ Sign-in uses the same Auth0 device flow as `CVHClient.from_login`, but never
 blocks a tool call or prints to stdout (stdout carries the MCP protocol): the
 first tool that needs a login starts the flow, opens the browser, and returns
 the URL and code for the user, while a background thread waits for the token.
-The token is kept in memory only, so each server start signs in again.
+The token is saved to a file only the user can read (`TOKEN_PATH`) and reused
+across restarts until it expires or the API rejects it.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 import webbrowser
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -28,7 +31,7 @@ from cvh_client.auth import (
     request_device_code,
 )
 from cvh_client.client import CVHClient
-from cvh_client.exceptions import CVHError
+from cvh_client.exceptions import AuthorizationError, CVHError, NotFoundError
 
 try:
     from mcp.server.mcpserver import MCPServer
@@ -45,6 +48,11 @@ AUTH0_CLIENT_ID = os.environ.get(
     "CVH_AUTH0_CLIENT_ID", "FKDEMc1rao9wVRnMIE9RznPsiLeHRXJS"
 )
 AUTH0_AUDIENCE = os.environ.get("CVH_AUTH0_AUDIENCE", "cvh-api-prod-id")
+TOKEN_PATH = (
+    Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
+    / "cvh-client"
+    / "mcp-token.json"
+)
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
@@ -62,6 +70,39 @@ _token: str | None = None
 _pending: dict | None = None  # Auth0 device-code response while the user signs in
 
 
+def _token_owner() -> dict:
+    # A token saved for one CVH deployment is never sent to another.
+    return {"api_url": API_URL, "domain": AUTH0_DOMAIN, "audience": AUTH0_AUDIENCE}
+
+
+def _load_token() -> str | None:
+    try:
+        saved = json.loads(TOKEN_PATH.read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(saved, dict) or saved.get("owner") != _token_owner():
+        return None
+    return saved.get("access_token")
+
+
+def _save_token(token: str) -> None:
+    try:
+        TOKEN_PATH.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        # Created with owner-only permissions, never world-readable even briefly.
+        fd = os.open(TOKEN_PATH, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as file:
+            json.dump({"owner": _token_owner(), "access_token": token}, file)
+    except OSError:
+        pass  # can't cache: the user just signs in again next start
+
+
+def _forget_token() -> None:
+    global _token
+    with _lock:
+        _token = None
+    TOKEN_PATH.unlink(missing_ok=True)
+
+
 def _wait_for_login(device: dict) -> None:
     global _token, _pending
     try:
@@ -74,6 +115,7 @@ def _wait_for_login(device: dict) -> None:
         )
         with _lock:
             _token = token_data["access_token"]
+        _save_token(token_data["access_token"])
     except DeviceAuthorizationError:
         pass  # denied or expired: the next tool call starts a fresh flow
     finally:
@@ -84,8 +126,10 @@ def _wait_for_login(device: dict) -> None:
 
 def _signed_in_client() -> CVHClient:
     """Return a client for the signed-in user, or start sign-in and raise ToolError."""
-    global _pending
+    global _token, _pending
     with _lock:
+        if _token is None:
+            _token = _load_token()
         if _token and not is_token_expired(_token):
             return CVHClient(base_url=API_URL, token=_token)
         if _pending is None:
@@ -139,6 +183,16 @@ def _call(
     try:
         with client:
             return _dump(fn(client), hidden)
+    except NotFoundError as exc:
+        # The API answers 404 both for missing records and for ones the user can't see.
+        raise ToolError(
+            f"Nothing found: no record with that UUID, or the user doesn't have access "
+            f"to it. ({exc})"
+        ) from exc
+    except AuthorizationError as exc:
+        if exc.status_code == 401:
+            _forget_token()  # revoked or rejected: sign in again on the next call
+        raise ToolError(str(exc)) from exc
     except CVHError as exc:
         # Surface the API's message (404, 403, ...) to the model instead of a generic failure.
         raise ToolError(str(exc)) from exc
@@ -176,9 +230,9 @@ def list_datasets(
     """List datasets in a workspace.
 
     Filters combine with AND; values inside one list combine with OR. `assembly`
-    is a genome assembly such as "hg38"; `file_type` is one of bigwig, vector,
-    cooler, multivec, bam, vcf, bed, gff, beddb, csv; `name` is a
-    case-insensitive substring.
+    is a genome assembly such as "hg38"; `file_type` matches a dataset's
+    `file_type` exactly, e.g. bigwig or multivec (Gosling) or image.ome-tiff
+    (Vitessce); `name` is a case-insensitive substring.
     """
     return _call(
         lambda c: c.list_datasets(
@@ -200,9 +254,11 @@ def get_dataset(dataset_uuid: str) -> dict:
 
 
 @server.tool(annotations=READ_ONLY)
-def list_visualizations(workspace_uuid: str, name: str | None = None) -> list[dict]:
+def list_visualizations(workspace_uuid: str, name: str | None = None) -> dict:
     """List visualizations in a workspace (without their configs; use get_visualization for one)."""
-    return _call(lambda c: c.list_visualizations(workspace_uuid, name=name))
+    items = _call(lambda c: c.list_visualizations(workspace_uuid, name=name))
+    # The API returns a bare list; match the {items, count} shape of the other list tools.
+    return {"items": items, "count": len(items)}
 
 
 @server.tool(annotations=READ_ONLY)
@@ -215,7 +271,7 @@ def get_visualization(visualization_uuid: str) -> dict:
 def search_public_visualizations(
     tags: list[str] | None = None, limit: int = 100, offset: int = 0
 ) -> dict:
-    """List published visualizations, newest first. No sign-in needed.
+    """List published visualizations, most recently modified first (not publish date). No sign-in needed.
 
     `tags` are tag labels (text), not UUIDs.
     """

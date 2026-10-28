@@ -1,3 +1,5 @@
+import json
+import stat
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -9,10 +11,15 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from cvh_client import mcp_server
 from cvh_client.client import CVHClient
-from cvh_client.exceptions import NotFoundError
-from cvh_client.models import PagedVisualizations, PagedWorkspaces, Workspace
+from cvh_client.exceptions import AuthorizationError, NotFoundError
+from cvh_client.models import (
+    PagedVisualizations,
+    PagedWorkspaces,
+    VisualizationSummary,
+    Workspace,
+)
 
-from .test_client import WORKSPACE_DATA, _make_jwt
+from .test_client import VISUALIZATION_DATA, WORKSPACE_DATA, _make_jwt
 
 DEVICE = {
     "device_code": "dev-code",
@@ -25,10 +32,14 @@ DEVICE = {
 
 
 @pytest.fixture(autouse=True)
-def signed_out():
+def signed_out(tmp_path):
     mcp_server._token = None
     mcp_server._pending = None
-    with patch.object(mcp_server.webbrowser, "open"):
+    # Never read or write the real token cache.
+    with (
+        patch.object(mcp_server, "TOKEN_PATH", tmp_path / "cvh-client" / "token.json"),
+        patch.object(mcp_server.webbrowser, "open"),
+    ):
         yield
     mcp_server._token = None
     mcp_server._pending = None
@@ -109,7 +120,7 @@ def test_api_errors_reach_the_model_as_tool_errors():
         patch.object(
             CVHClient, "get_public_visualization", side_effect=NotFoundError(response)
         ),
-        pytest.raises(ToolError, match="404"),
+        pytest.raises(ToolError, match="doesn.t have access.*404"),
     ):
         mcp_server.get_public_visualization("missing")
 
@@ -126,3 +137,86 @@ def test_public_tools_never_start_sign_in():
     ):
         mcp_server.search_public_visualizations()
     request.assert_not_called()
+
+
+def _api_error(cls, status):
+    response = httpx.Response(
+        status, request=httpx.Request("GET", "https://api.example.org/x")
+    )
+    return cls(response)
+
+
+def test_login_is_saved_owner_only_and_reused_after_restart():
+    token = _make_jwt({"exp": 9999999999})
+    with patch.object(
+        mcp_server, "poll_for_token", return_value={"access_token": token}
+    ):
+        mcp_server._pending = dict(DEVICE)
+        mcp_server._wait_for_login(mcp_server._pending)
+
+    mode = stat.S_IMODE(mcp_server.TOKEN_PATH.stat().st_mode)
+    assert mode == 0o600
+
+    mcp_server._token = None  # a fresh server process
+    request = MagicMock()
+    with (
+        patch.object(mcp_server, "request_device_code", request),
+        patch.object(
+            CVHClient, "get_workspace", return_value=Workspace(**WORKSPACE_DATA)
+        ),
+    ):
+        mcp_server.get_workspace("ws-uuid-1")
+    request.assert_not_called()
+
+
+def test_token_saved_for_another_deployment_is_ignored():
+    mcp_server.TOKEN_PATH.parent.mkdir(parents=True)
+    mcp_server.TOKEN_PATH.write_text(
+        json.dumps(
+            {
+                "owner": {**mcp_server._token_owner(), "audience": "cvh-api-dev"},
+                "access_token": _make_jwt({"exp": 9999999999}),
+            }
+        )
+    )
+    assert mcp_server._load_token() is None
+
+
+def test_rejected_token_is_forgotten():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    mcp_server._save_token(mcp_server._token)
+    with (
+        patch.object(
+            CVHClient,
+            "get_workspace",
+            side_effect=_api_error(AuthorizationError, 401),
+        ),
+        pytest.raises(ToolError),
+    ):
+        mcp_server.get_workspace("ws-uuid-1")
+    assert mcp_server._token is None
+    assert not mcp_server.TOKEN_PATH.exists()
+
+
+def test_forbidden_keeps_the_token():
+    # 403 means no access to that workspace, not a bad sign-in.
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    with (
+        patch.object(
+            CVHClient,
+            "get_workspace",
+            side_effect=_api_error(AuthorizationError, 403),
+        ),
+        pytest.raises(ToolError),
+    ):
+        mcp_server.get_workspace("ws-uuid-1")
+    assert mcp_server._token is not None
+
+
+def test_list_visualizations_matches_the_other_list_tools():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    summary = VisualizationSummary.model_validate(VISUALIZATION_DATA)
+    with patch.object(CVHClient, "list_visualizations", return_value=[summary]):
+        result = mcp_server.list_visualizations("ws-uuid-1")
+    assert result["count"] == 1
+    assert result["items"][0]["uuid"] == VISUALIZATION_DATA["uuid"]
