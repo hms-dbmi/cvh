@@ -121,6 +121,28 @@ except CVHAPIError as e:
     print(f"API error {e.status_code}: {e}")
 ```
 
+## MCP server (AI assistants)
+
+`cvh-mcp` is an [MCP](https://modelcontextprotocol.io) server that lets an AI assistant such as Claude read your CVH workspaces, datasets and visualizations. It is read-only for now.
+
+Add it to Claude Code:
+
+```bash
+claude mcp add cvh -- uvx --from "cvh-client[mcp]" cvh-mcp
+```
+
+Or to Claude Desktop, in `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cvh": { "command": "uvx", "args": ["--from", "cvh-client[mcp]", "cvh-mcp"] }
+  }
+}
+```
+
+The first request that needs your account opens the CVH sign-in page and shows a code to confirm; then ask again. Published visualizations work without signing in. Set `CVH_API_URL`, `CVH_AUTH0_DOMAIN`, `CVH_AUTH0_CLIENT_ID` and `CVH_AUTH0_AUDIENCE` to point it at a self-hosted CVH.
+
 ## Examples
 
 See the `examples/` directory for Jupyter notebooks:

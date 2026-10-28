@@ -28,6 +28,7 @@ cvh-client is a Python API client library for CVH, designed for use in Jupyter n
 - `src/cvh_client/` — package source (src layout)
 - `src/cvh_client/client.py` — `CVHClient` class: httpx-based API client with typed methods for workspaces, datasets, and visualizations. Handles automatic token refresh via Auth0.
 - `src/cvh_client/auth.py` — Auth0 device authorization flow (OAuth 2.0 Device Grant) and JWT expiration checking
+- `src/cvh_client/mcp_server.py` — read-only MCP server (`cvh-mcp`, needs the `mcp` extra) wrapping `CVHClient`; signs in with the device flow without blocking or writing to stdout
 - `src/cvh_client/models.py` — Pydantic models for API responses (Workspace, Dataset, Visualization, etc.)
 - `tests/` — pytest test suite
 - `examples/` — Jupyter notebooks demonstrating client usage
