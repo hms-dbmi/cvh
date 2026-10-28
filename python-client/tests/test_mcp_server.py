@@ -47,7 +47,7 @@ def signed_out(tmp_path):
 
 async def test_every_tool_is_read_only():
     tools = await mcp_server.server.list_tools()
-    assert len(tools) == 8
+    assert len(tools) == 12
     assert all(t.annotations.read_only_hint for t in tools)
 
 
@@ -220,3 +220,84 @@ def test_list_visualizations_matches_the_other_list_tools():
         result = mcp_server.list_visualizations("ws-uuid-1")
     assert result["count"] == 1
     assert result["items"][0]["uuid"] == VISUALIZATION_DATA["uuid"]
+
+
+def _cfdb_response(data=None, errors=None):
+    body = {"data": data}
+    if errors:
+        body["errors"] = errors
+    return httpx.Response(
+        200, json=body, request=httpx.Request("POST", "https://cfdb.example.org")
+    )
+
+
+def test_cfdb_filters_become_nested_input_and_pages_are_capped():
+    data = {"files": {"totalCount": 1, "items": [{"localId": "f1"}]}}
+    with patch.object(
+        mcp_server.httpx, "post", return_value=_cfdb_response(data)
+    ) as post:
+        result = mcp_server.search_cfdb_files(
+            dcc=["ENCODE"], file_format=["bigWig"], page=-1, page_size=10_000
+        )
+
+    variables = post.call_args.kwargs["json"]["variables"]
+    assert variables["input"] == [
+        {"dcc": [{"dccAbbreviation": ["ENCODE"]}], "fileFormat": [{"name": ["bigWig"]}]}
+    ]
+    assert variables["page"] == 0
+    assert variables["pageSize"] == 500
+    assert result == {"count": 1, "items": [{"localId": "f1"}]}
+
+
+def test_cfdb_field_values_use_friendly_names():
+    data = {"distinctValues": [{"field": "dcc.dcc_abbreviation", "values": ["ENCODE"]}]}
+    with patch.object(
+        mcp_server.httpx, "post", return_value=_cfdb_response(data)
+    ) as post:
+        result = mcp_server.cfdb_field_values(["dcc", "assay_type"])
+
+    sent = post.call_args.kwargs["json"]["variables"]
+    assert sent["fields"] == ["dcc.dcc_abbreviation", "assay_type.name"]
+    assert sent["input"] is None
+    assert result == {"dcc": ["ENCODE"], "assay_type": []}
+
+
+def test_cfdb_errors_reach_the_model():
+    with (
+        patch.object(
+            mcp_server.httpx,
+            "post",
+            return_value=_cfdb_response(errors=[{"message": "pageSize too large"}]),
+        ),
+        pytest.raises(ToolError, match="pageSize too large"),
+    ):
+        mcp_server.count_cfdb_files()
+
+
+def test_missing_cfdb_file_is_a_clear_error():
+    with (
+        patch.object(
+            mcp_server.httpx,
+            "post",
+            return_value=_cfdb_response({"files": {"items": []}}),
+        ),
+        pytest.raises(ToolError, match="No cfdb file"),
+    ):
+        mcp_server.get_cfdb_file("ENCODE", "missing")
+
+
+def test_count_cfdb_files_groups_by_field_and_counts_files_without_a_value():
+    def fake_post(url, json, timeout):
+        variables = json["variables"]
+        if "distinctValues" in json["query"]:
+            return _cfdb_response(
+                {"distinctValues": [{"field": "assay_type.name", "values": ["A", "B"]}]}
+            )
+        assay = (variables["input"] or [{}])[0].get("assayType")
+        count = {None: 10, "A": 6, "B": 3}[assay[0]["name"][0] if assay else None]
+        return _cfdb_response({"fileCount": count})
+
+    with patch.object(mcp_server.httpx, "post", side_effect=fake_post):
+        result = mcp_server.count_cfdb_files(dcc=["ENCODE"], group_by="assay_type")
+
+    assert result == {"count": 10, "groups": {"A": 6, "B": 3}, "no_value": 1}

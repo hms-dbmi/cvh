@@ -123,7 +123,7 @@ except CVHAPIError as e:
 
 ## MCP server (AI assistants)
 
-`cvh-mcp` is an [MCP](https://modelcontextprotocol.io) server that lets an AI assistant such as Claude read your CVH workspaces, datasets and visualizations. It is read-only for now.
+`cvh-mcp` is an [MCP](https://modelcontextprotocol.io) server that lets an AI assistant such as Claude read your CVH workspaces, datasets and visualizations, and search Common Fund (CFDE) file metadata in cfdb. It is read-only for now.
 
 Add it to Claude Code:
 
@@ -141,7 +141,7 @@ Or to Claude Desktop, in `claude_desktop_config.json`:
 }
 ```
 
-The first request that needs your account opens the CVH sign-in page and shows a code to confirm; then ask again. Published visualizations work without signing in. Your sign-in is saved in `~/.cache/cvh-client/mcp-token.json`, readable only by you, until it expires; delete that file to sign out. Set `CVH_API_URL`, `CVH_AUTH0_DOMAIN`, `CVH_AUTH0_CLIENT_ID` and `CVH_AUTH0_AUDIENCE` to point it at a self-hosted CVH.
+The first request that needs your account opens the CVH sign-in page and shows a code to confirm; then ask again. Published visualizations work without signing in. Your sign-in is saved in `~/.cache/cvh-client/mcp-token.json`, readable only by you, until it expires; delete that file to sign out. The cfdb tools never need sign-in. Set `CVH_API_URL`, `CVH_AUTH0_DOMAIN`, `CVH_AUTH0_CLIENT_ID` and `CVH_AUTH0_AUDIENCE` to point it at a self-hosted CVH, and `CVH_CFDB_URL` for another cfdb.
 
 ## Examples
 

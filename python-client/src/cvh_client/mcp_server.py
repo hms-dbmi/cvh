@@ -1,4 +1,5 @@
-"""MCP server that lets an AI assistant read CVH workspaces, datasets and visualizations.
+"""MCP server that lets an AI assistant read CVH workspaces, datasets and visualizations,
+and search CFDE file metadata in cfdb.
 
 Run with `cvh-mcp` (stdio transport) after installing the `mcp` extra:
 
@@ -19,9 +20,11 @@ import os
 import threading
 import webbrowser
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Literal
 
+import httpx
 from pydantic import BaseModel
 
 from cvh_client.auth import (
@@ -48,6 +51,8 @@ AUTH0_CLIENT_ID = os.environ.get(
     "CVH_AUTH0_CLIENT_ID", "FKDEMc1rao9wVRnMIE9RznPsiLeHRXJS"
 )
 AUTH0_AUDIENCE = os.environ.get("CVH_AUTH0_AUDIENCE", "cvh-api-prod-id")
+# Same default as the CVH backend's CFDB_BASE_URL.
+CFDB_URL = os.environ.get("CVH_CFDB_URL", "https://dev.cfdb.vis-api.link")
 TOKEN_PATH = (
     Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
     / "cvh-client"
@@ -55,13 +60,19 @@ TOKEN_PATH = (
 )
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
+CFDB_READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=True)
 
 server = MCPServer(
     name="cvh",
     instructions=(
         "Read-only access to the Community Visualization Hub (CVH): the user's "
         "workspaces, the genomic datasets in them, and Gosling or Vitessce "
-        "visualizations. Published visualizations can be read without signing in."
+        "visualizations. Published visualizations can be read without signing in. "
+        "The cfdb tools search Common Fund (CFDE) file metadata without signing in; "
+        "their filters match exactly, so look values up with cfdb_field_values first, "
+        "per DCC: DCCs name the same thing differently (ENCODE's \"Hi-C\" is 4DN's "
+        '"bulk Hi-C assay"), and cfdb uses GRCh38/GRCm38 where CVH datasets say '
+        "hg38/mm10."
     ),
 )
 
@@ -287,6 +298,218 @@ def get_public_visualization(visualization_uuid: str) -> dict:
     return _call(
         lambda c: c.get_public_visualization(visualization_uuid), signed_in=False
     )
+
+
+# ── cfdb (CFDE file metadata, public GraphQL) ─────────────────────────
+
+# Friendly names for the fields cfdb can list distinct values of.
+CFDB_FIELDS = {
+    "dcc": "dcc.dcc_abbreviation",
+    "file_format": "file_format.name",
+    "assay_type": "assay_type.name",
+    "data_type": "data_type.name",
+    "genome_assembly": "genome_assembly",
+    "output_type": "output_type",
+    "data_access_level": "data_access_level",
+}
+CfdbField = Literal[
+    "dcc",
+    "file_format",
+    "assay_type",
+    "data_type",
+    "genome_assembly",
+    "output_type",
+    "data_access_level",
+]
+CFDB_MAX_PAGE_SIZE = 500  # cfdb rejects larger pages
+# shortcut: a breakdown is one count per value, so cap it; narrow the filters past this.
+CFDB_MAX_GROUPS = 50
+CfdbGroupField = Literal[
+    "dcc", "file_format", "assay_type", "data_type", "genome_assembly"
+]
+
+CFDB_FILE_FIELDS = """
+  localId filename persistentId accessUrl sizeInBytes genomeAssembly
+  dcc { dccAbbreviation } fileFormat { name } assayType { name } dataType { name }
+  collections { name }
+"""
+CFDB_FILE_DETAIL_FIELDS = (
+    CFDB_FILE_FIELDS
+    + """
+  idNamespace creationTime md5 sha256 mimeType compressionFormat analysisType
+  outputType outputTypeDetail dataAccessLevel genomeAnnotation condition assayInfo
+  project { name description } collections { name description lab experimentType
+  experimentTarget anatomy { name } }
+"""
+)
+
+
+def _cfdb_input(
+    dcc: list[str] | None = None,
+    file_format: list[str] | None = None,
+    assay_type: list[str] | None = None,
+    data_type: list[str] | None = None,
+    genome_assembly: list[str] | None = None,
+    filename: list[str] | None = None,
+    local_id: list[str] | None = None,
+) -> list[dict] | None:
+    """Build cfdb's nested FileMetadataInput from flat filters."""
+    filters: dict[str, Any] = {}
+    if dcc:
+        filters["dcc"] = [{"dccAbbreviation": dcc}]
+    if file_format:
+        filters["fileFormat"] = [{"name": file_format}]
+    if assay_type:
+        filters["assayType"] = [{"name": assay_type}]
+    if data_type:
+        filters["dataType"] = [{"name": data_type}]
+    if genome_assembly:
+        filters["genomeAssembly"] = genome_assembly
+    if filename:
+        filters["filename"] = filename
+    if local_id:
+        filters["localId"] = local_id
+    return [filters] if filters else None
+
+
+def _cfdb_query(query: str, variables: dict[str, Any]) -> dict:
+    try:
+        response = httpx.post(
+            f"{CFDB_URL}/metadata",
+            json={"query": query, "variables": variables},
+            timeout=60,
+        )
+        response.raise_for_status()
+        body = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise ToolError(f"cfdb request failed: {exc}") from exc
+    if body.get("errors"):
+        raise ToolError(f"cfdb error: {body['errors'][0].get('message')}")
+    return body["data"]
+
+
+@server.tool(annotations=CFDB_READ_ONLY)
+def count_cfdb_files(
+    dcc: list[str] | None = None,
+    file_format: list[str] | None = None,
+    assay_type: list[str] | None = None,
+    data_type: list[str] | None = None,
+    genome_assembly: list[str] | None = None,
+    group_by: CfdbGroupField | None = None,
+) -> dict:
+    """Count CFDE files in cfdb matching the filters, optionally broken down by one field.
+
+    With `group_by`, returns `groups` ({value: count}) and `no_value`, the files
+    with no value for that field. Filters match exact, case-sensitive values
+    (look them up with cfdb_field_values, per DCC); values in one list combine
+    with OR, different filters with AND. `dcc` takes abbreviations such as
+    "4DN_DCIC" or "ENCODE". No sign-in needed.
+    """
+    filters = {
+        "dcc": dcc,
+        "file_format": file_format,
+        "assay_type": assay_type,
+        "data_type": data_type,
+        "genome_assembly": genome_assembly,
+    }
+    count_query = "query($input: [FileMetadataInput!]) { fileCount(input: $input) }"
+
+    def count(**kwargs: list[str] | None) -> int:
+        return _cfdb_query(count_query, {"input": _cfdb_input(**kwargs)})["fileCount"]
+
+    total = count(**filters)
+    if group_by is None:
+        return {"count": total}
+
+    values = cfdb_field_values([group_by], **filters)[group_by]
+    values = [value for value in values if isinstance(value, str)]
+    if len(values) > CFDB_MAX_GROUPS:
+        raise ToolError(
+            f"{len(values)} distinct {group_by} values; narrow the filters to at "
+            f"most {CFDB_MAX_GROUPS} before grouping."
+        )
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        counts = list(
+            pool.map(lambda value: count(**{**filters, group_by: [value]}), values)
+        )
+    groups = dict(sorted(zip(values, counts), key=lambda item: -item[1]))
+    return {"count": total, "groups": groups, "no_value": total - sum(counts)}
+
+
+@server.tool(annotations=CFDB_READ_ONLY)
+def cfdb_field_values(
+    fields: list[CfdbField],
+    dcc: list[str] | None = None,
+    file_format: list[str] | None = None,
+    assay_type: list[str] | None = None,
+    data_type: list[str] | None = None,
+    genome_assembly: list[str] | None = None,
+) -> dict:
+    """List the distinct values of cfdb fields, optionally among files matching the filters.
+
+    Use it to find valid filter values, or to answer "which assays does ENCODE
+    have?". Filters work as in count_cfdb_files. No sign-in needed.
+    """
+    data = _cfdb_query(
+        "query($fields: [String!]!, $input: [FileMetadataInput!]) "
+        "{ distinctValues(fields: $fields, input: $input) { field values } }",
+        {
+            "fields": [CFDB_FIELDS[name] for name in fields],
+            "input": _cfdb_input(
+                dcc, file_format, assay_type, data_type, genome_assembly
+            ),
+        },
+    )
+    by_path = {row["field"]: row["values"] for row in data["distinctValues"]}
+    return {name: by_path.get(CFDB_FIELDS[name], []) for name in fields}
+
+
+@server.tool(annotations=CFDB_READ_ONLY)
+def search_cfdb_files(
+    dcc: list[str] | None = None,
+    file_format: list[str] | None = None,
+    assay_type: list[str] | None = None,
+    data_type: list[str] | None = None,
+    genome_assembly: list[str] | None = None,
+    filename: list[str] | None = None,
+    page: int = 0,
+    page_size: int = 25,
+) -> dict:
+    """Search CFDE files in cfdb, one page at a time (`page` starts at 0, at most 500 per page).
+
+    Returns `count` (all matches) and this page's `items`. Some files have no
+    `fileFormat` (e.g. 4DN .pairs.gz and .hic), so a `file_format` filter skips them. For "how many" or
+    "broken down by" questions use count_cfdb_files or cfdb_field_values instead
+    of paging through files. Filters work as in count_cfdb_files, plus an exact
+    `filename`. No sign-in needed.
+    """
+    data = _cfdb_query(
+        "query($input: [FileMetadataInput!], $page: Int!, $pageSize: Int!) "
+        "{ files(input: $input, page: $page, pageSize: $pageSize) "
+        f"{{ totalCount items {{ {CFDB_FILE_FIELDS} }} }} }}",
+        {
+            "input": _cfdb_input(
+                dcc, file_format, assay_type, data_type, genome_assembly, filename
+            ),
+            "page": max(page, 0),
+            "pageSize": min(max(page_size, 1), CFDB_MAX_PAGE_SIZE),
+        },
+    )
+    return {"count": data["files"]["totalCount"], "items": data["files"]["items"]}
+
+
+@server.tool(annotations=CFDB_READ_ONLY)
+def get_cfdb_file(dcc: str, local_id: str) -> dict:
+    """Get full metadata for one CFDE file by its DCC abbreviation and `localId`. No sign-in needed."""
+    data = _cfdb_query(
+        "query($input: [FileMetadataInput!]) "
+        f"{{ files(input: $input, pageSize: 1) {{ items {{ {CFDB_FILE_DETAIL_FIELDS} }} }} }}",
+        {"input": _cfdb_input(dcc=[dcc], local_id=[local_id])},
+    )
+    items = data["files"]["items"]
+    if not items:
+        raise ToolError(f"No cfdb file with localId {local_id!r} in {dcc!r}.")
+    return items[0]
 
 
 def main() -> None:
