@@ -315,7 +315,7 @@ def get_public_visualization(visualization_uuid: str) -> dict:
 @functools.cache
 def _gosling_validator() -> Draft7Validator:
     # gosling.schema.json is copied from gosling.js v2.0.0-alpha.10, the version CVH's
-    # designer uses; update it when CVH upgrades gosling.js. Same check as gosling.js's
+    # frontend uses; update it when CVH upgrades gosling.js. Same check as gosling.js's
     # validateGoslingSpec (Ajv, draft-07; the only keyword beside its $refs is description).
     schema = json.loads((Path(__file__).parent / "gosling.schema.json").read_text())
     return Draft7Validator(schema)
@@ -368,7 +368,7 @@ def _tracks(spec: Any, parent: dict | None = None):
 
 
 def _gosling_counts(spec: dict) -> dict:
-    """n_tracks and n_datasets as the designer computes them when it saves (getNumTracks/getNumDatasets)."""
+    """n_tracks and n_datasets as the CVH frontend computes them when it saves (getNumTracks/getNumDatasets)."""
     n_tracks = sum(
         1
         for track, parent in _tracks(spec)

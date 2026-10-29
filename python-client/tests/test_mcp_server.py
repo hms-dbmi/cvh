@@ -330,7 +330,7 @@ def test_gosling_errors_name_the_real_problem():
     assert mcp_server._gosling_errors(VALID_SPEC) == []
 
 
-def test_gosling_counts_match_the_designer():
+def test_gosling_counts_match_the_frontend():
     track = VALID_SPEC["tracks"][0]
     spec = {
         "views": [
