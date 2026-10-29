@@ -1,5 +1,5 @@
 """MCP server that lets an AI assistant read CVH workspaces, datasets and visualizations,
-create and edit visualizations, and search CFDE file metadata in cfdb.
+create, edit, tag and publish visualizations, add datasets, and search CFDE file metadata in cfdb.
 
 Run with `cvh-mcp` (stdio transport) after installing the `mcp` extra:
 
@@ -24,9 +24,11 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 import httpx
 from pydantic import BaseModel
+from typing_extensions import TypedDict  # pydantic needs this one on Python < 3.12
 
 from cvh_client.auth import (
     DeviceAuthorizationError,
@@ -69,14 +71,32 @@ CREATES = ToolAnnotations(
 OVERWRITES = ToolAnnotations(
     readOnlyHint=False, destructiveHint=True, openWorldHint=False
 )
+# Publishing exposes data to everyone, so clients should ask first.
+PUBLISHES = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=True, openWorldHint=True
+)
+
+
+# Runs a long job on cfdb's servers.
+STARTS_PROCESSING = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, openWorldHint=True
+)
+
+
+class Tag(TypedDict):
+    key: str
+    tag: str
+
 
 server = MCPServer(
     name="cvh",
     instructions=(
         "Access to the Community Visualization Hub (CVH): the user's workspaces, the "
         "genomic datasets in them, and Gosling or Vitessce visualizations, which "
-        "you can create and edit. Published visualizations can be read without "
-        "signing in and are good examples of working Gosling specs. "
+        "you can create, edit and tag; you can also add datasets, including files "
+        "found in cfdb. Publish, or start cfdb processing, only when the user agrees. "
+        "Published visualizations can be read without signing in and are good "
+        "examples of working Gosling specs. "
         "The cfdb tools search Common Fund (CFDE) file metadata without signing in; "
         "their filters match exactly, so look values up with cfdb_field_values first, "
         "per DCC: DCCs name the same thing differently (ENCODE's \"Hi-C\" is 4DN's "
@@ -460,6 +480,95 @@ def update_visualization(
     return {"uuid": visualization_uuid, "updated": sorted(fields)}
 
 
+@server.tool(annotations=PUBLISHES)
+def publish_visualization(visualization_uuid: str) -> dict:
+    """Make a visualization public: anyone, signed in or not, can view it and it's
+    listed on CVH's public page, even if its workspace is private.
+
+    Only call this when the user has asked to publish this visualization.
+    """
+    _call(lambda c: c.publish_visualization(visualization_uuid))
+    return {"uuid": visualization_uuid, "published": True}
+
+
+@server.tool(annotations=OVERWRITES)
+def unpublish_visualization(visualization_uuid: str) -> dict:
+    """Make a published visualization private again; its public link stops working."""
+    _call(lambda c: c.unpublish_visualization(visualization_uuid))
+    return {"uuid": visualization_uuid, "published": False}
+
+
+@server.tool(annotations=OVERWRITES)
+def set_visualization_tags(visualization_uuid: str, tags: list[Tag]) -> dict:
+    """Replace all tags on a visualization; an empty list removes them all.
+
+    Tags are key/value pairs such as {"key": "assay", "tag": "ChIP-seq"}. New ones
+    are created in the workspace. Include existing tags you want to keep.
+    """
+    _call(lambda c: c.set_visualization_tags(visualization_uuid, tags))
+    return {"uuid": visualization_uuid, "tags": tags}
+
+
+@server.tool(annotations=CREATES)
+def add_dataset(
+    workspace_uuid: str,
+    name: str,
+    file_type: str,
+    source_url: str,
+    tool: Literal["gosling", "vitessce"] = "gosling",
+    assembly: str | None = None,
+    data_type: str | None = None,
+    index_url: str | None = None,
+    description: str | None = None,
+    extra: dict | None = None,
+) -> dict:
+    """Add a dataset to a workspace from a URL the browser can fetch. CVH stores the
+    link, not the file. To add a file found in cfdb, use add_cfdb_dataset instead.
+
+    Required fields depend on `file_type`:
+    - Gosling "bigwig", "vector", "cooler", "beddb": `assembly` (e.g. "hg38") and
+      `data_type` (a short label such as "signal").
+    - Gosling "multivec": also `extra={"row_names": [...]}`.
+    - Gosling "bam", "vcf", "bed", "gff": also `index_url`.
+    - Gosling "csv": also `extra={"separator": ",", "headers": true,
+      "data_column": [[column, "nominal"|"quantitative"|"chromosome"|"genomic"|"key"], ...]}`.
+    - Vitessce types such as "anndata.zarr" or "image.ome-tiff": only `source_url`.
+    Returns the new dataset, including its `uuid`.
+    """
+    fields = {
+        key: value
+        for key, value in (
+            ("assembly", assembly),
+            ("data_type", data_type),
+            ("index_url", index_url),
+        )
+        if value is not None
+    }
+    return _call(
+        lambda c: c.create_dataset(
+            workspace_uuid,
+            name,
+            file_type,
+            source_url=source_url,
+            tool=tool,
+            description=description,
+            **fields,
+            **(extra or {}),
+        )
+    )
+
+
+@server.tool(annotations=OVERWRITES)
+def set_dataset_tags(dataset_uuid: str, tags: list[Tag]) -> dict:
+    """Replace all tags on a dataset; an empty list removes them all.
+
+    Tags are key/value pairs such as {"key": "assay", "tag": "ChIP-seq"}. New ones
+    are created in the workspace. Include existing tags you want to keep.
+    """
+    _call(lambda c: c.set_dataset_tags(dataset_uuid, tags))
+    return {"uuid": dataset_uuid, "tags": tags}
+
+
 # ── cfdb (CFDE file metadata, public GraphQL) ─────────────────────────
 
 # Friendly names for the fields cfdb can list distinct values of.
@@ -490,7 +599,7 @@ CfdbGroupField = Literal[
 
 CFDB_FILE_FIELDS = """
   localId filename persistentId accessUrl sizeInBytes genomeAssembly
-  dcc { dccAbbreviation } fileFormat { name } assayType { name } dataType { name }
+  dcc { dccAbbreviation } fileFormat { id name } assayType { name } dataType { name }
   collections { name }
 """
 CFDB_FILE_DETAIL_FIELDS = (
@@ -670,6 +779,117 @@ def get_cfdb_file(dcc: str, local_id: str) -> dict:
     if not items:
         raise ToolError(f"No cfdb file with localId {local_id!r} in {dcc!r}.")
     return items[0]
+
+
+# cfdb's /data URLs name a DCC differently from GraphQL; same map as the frontend's
+# CFDB_DCC_URL_SLUG.
+CFDB_DCC_SLUGS = {"4DN_DCIC": "4dn", "ENCODE": "encode"}
+# EDAM format id → CVH file_type, as Browse Library maps them (frontend/src/api/cfdb.ts).
+CFDB_READY_FORMATS = {"format:3006": "bigwig"}
+# These need cfdb processing first; the file_type is the processed output.
+CFDB_PROCESSED_FORMATS = {
+    "format:2572": "bam",
+    "format:2573": "bam",  # SAM
+    "format:3003": "bed",
+    "format:3004": "bed",  # bigBed
+    "format:3016": "vcf",
+    "format:1939": "gff",
+    "format:1975": "gff",  # GFF3
+    "format:2306": "gff",  # GTF
+}
+
+
+@server.tool(annotations=CREATES)
+def add_cfdb_dataset(
+    workspace_uuid: str, dcc: str, local_id: str, name: str | None = None
+) -> dict:
+    """Add a CFDE file from cfdb to a workspace, the way CVH's Browse Library does.
+
+    `dcc` and `local_id` are as returned by search_cfdb_files. `name` defaults to the
+    file name. Supports bigWig, BAM, SAM, BED, bigBed, VCF, GFF, GFF3 and GTF.
+    If the result's `processing_status` is "needed", cfdb has to index the file before
+    it can be drawn. Tell the user, and ask before calling start_dataset_processing.
+    """
+    file = get_cfdb_file(dcc, local_id)
+    format_id = (file.get("fileFormat") or {}).get("id")
+    slug = CFDB_DCC_SLUGS.get(dcc, dcc.lower())
+    common = {"assembly": file.get("genomeAssembly") or "unknown"}
+    if format_id in CFDB_READY_FORMATS:
+        file_type = CFDB_READY_FORMATS[format_id]
+        fields = {
+            **common,
+            "source_url": f"{CFDB_URL}/data/{quote(slug, safe='')}/{quote(local_id, safe='')}",
+        }
+    elif format_id in CFDB_PROCESSED_FORMATS:
+        file_type = CFDB_PROCESSED_FORMATS[format_id]
+        # The backend builds the URLs from these and flags the dataset for processing.
+        fields = {**common, "cfdb_dcc": slug, "cfdb_id": local_id}
+    else:
+        # shortcut: CSV/TSV aren't supported here (Browse Library adds them without columns).
+        raise ToolError(
+            f"Can't add {local_id}: its format "
+            f"({(file.get('fileFormat') or {}).get('name')}) isn't one CVH can draw "
+            "from cfdb yet."
+        )
+    dataset = _call(
+        lambda c: c.create_dataset(
+            workspace_uuid,
+            name or file["filename"],
+            file_type,
+            data_type=file_type,
+            **fields,
+        )
+    )
+    return dataset
+
+
+@server.tool(annotations=STARTS_PROCESSING)
+def start_dataset_processing(dataset_uuid: str) -> dict:
+    """Start (or retry after a failure) cfdb processing for a dataset added from cfdb.
+
+    Only call this after the user agrees: it runs a cfdb job that often takes 20+
+    minutes. Same as the start button in the CVH data panel. Check on it later with
+    check_dataset_processing.
+    """
+    started = _call(lambda c: c.post(f"/api/datasets/{dataset_uuid}/process"))
+    return {"uuid": dataset_uuid, **started}
+
+
+@server.tool(annotations=CREATES)
+def check_dataset_processing(dataset_uuid: str) -> dict:
+    """Check cfdb processing for a dataset added from cfdb, and record the result in CVH.
+
+    Does what the CVH data panel does while it's open: asks cfdb about the running job
+    and, once it finishes, tells CVH, which may start the next step (indexing). Returns
+    `processing_status` ("started", "processed" or "failed") and, while it's running,
+    cfdb's `job` status and progress.
+    """
+    dataset = _call(lambda c: c.get_dataset(dataset_uuid))
+    status = {
+        key: dataset.get(key)
+        for key in ("processing_status", "processing_started_at", "processing_error")
+    }
+    if dataset["processing_status"] != "started":
+        return {"uuid": dataset_uuid, **status}
+    try:
+        response = httpx.get(
+            f"{CFDB_URL}/jobs/{quote(dataset['processing_job_id'], safe='')}",
+            timeout=30,
+        )
+        response.raise_for_status()
+        job = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise ToolError(f"cfdb job lookup failed: {exc}") from exc
+    if job.get("status") not in ("completed", "failed"):
+        return {"uuid": dataset_uuid, **status, "job": job}
+    outcome = {
+        "status": "processed" if job["status"] == "completed" else "failed",
+        "error": job.get("error"),
+    }
+    updated = _call(
+        lambda c: c.put(f"/api/datasets/{dataset_uuid}/processing-status", json=outcome)
+    )
+    return {"uuid": dataset_uuid, **updated}
 
 
 def main() -> None:
