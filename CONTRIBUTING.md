@@ -14,7 +14,7 @@ This is a monorepo with three packages, each in its own subdirectory:
 
 - **`backend/`** — Django + Django Ninja API server.
 - **`frontend/`** — React + Vite + TypeScript SPA.
-- **`python-client/`** — hand-written Python client library for the API. Published to [TestPyPI as `cvh-client`](https://test.pypi.org/project/cvh-client/).
+- **`python-client/`** — hand-written Python client library for the API. Published to [PyPI as `cvh-client`](https://pypi.org/project/cvh-client/).
 
 See the [Common commands](./README.md#common-commands) table for per-package invocations.
 
@@ -45,7 +45,7 @@ Full setup instructions live in the [README](./README.md). The short version:
 - Title should describe *what* the PR does, not *how* (e.g. "Show accession IDs in browse table" not "Refactor cfdb hook to return accession").
 - Include a short summary of what changed and why in the description.
 - Include a test plan — the checklist of things you exercised to verify the change works.
-- CI (lint, typecheck, tests) must pass before review.
+- CI (frontend unit + e2e tests, python-client lint + tests) must pass before review.
 - Screenshots or short screen recordings are helpful for UI changes.
 
 We use squash merges, so individual commits on your branch don't need to be pristine — the squashed commit message is what lands in `main`.
@@ -54,7 +54,7 @@ We use squash merges, so individual commits on your branch don't need to be pris
 
 - **Backend**: Python 3.13, Django + Django Ninja, [Ruff](https://docs.astral.sh/ruff/) for lint + format. Config in `backend/pyproject.toml`.
 - **Frontend**: TypeScript, React 19, [Biome](https://biomejs.dev/) for lint + format. Config in `frontend/biome.json`.
-- **Python client**: Python 3.13, `httpx` + `pydantic`, Ruff for lint + format. Config in `python-client/pyproject.toml`.
+- **Python client**: Python 3.10+ (developed on 3.13), `httpx` + `pydantic`, Ruff for lint + format. Config in `python-client/pyproject.toml`.
 - Prefer explicit types over `any`. If TypeScript is complaining, the fix is usually clearer types, not `@ts-expect-error`.
 - Prefer plain functions and hooks over classes.
 - Comments explain *why*, not *what*. Well-named identifiers cover the *what*.
@@ -69,13 +69,7 @@ The frontend consumes the backend's OpenAPI schema via generated types (`fronten
 
 ## Releasing the Python client
 
-The `cvh-client` package is published to TestPyPI via the `Publish cvh-client to TestPyPI` workflow (manual dispatch). To cut a release:
-
-1. Bump the version in **both** `python-client/VERSION.txt` and `python-client/pyproject.toml` — they must match.
-2. Merge the version bump to `main`.
-3. Actions → **Publish cvh-client to TestPyPI** → **Run workflow** → enter the same version string as confirmation.
-
-The workflow reads `VERSION.txt`, verifies it matches your input, lints + tests + builds, then publishes via trusted publishing (OIDC — no long-lived tokens).
+The `cvh-client` package is published to PyPI via the `Publish cvh-client` workflow (manual dispatch; rehearse on TestPyPI first). See [Releasing in `python-client/README.md`](python-client/README.md#releasing) for the steps.
 
 ## Design & feature discussions
 

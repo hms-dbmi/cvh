@@ -143,10 +143,10 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-When using Docker, you still need to run migrations. Either exec into the container or run them before starting compose:
+When using Docker, migrations run automatically when the container starts (`backend/entrypoint.sh`). To create new migrations:
 
 ```bash
-docker compose --env-file ./core/.env exec django-web python ./core/manage.py migrate
+docker compose --env-file ./core/.env exec django-web python ./core/manage.py makemigrations
 ```
 
 ### Frontend
@@ -210,7 +210,7 @@ npx playwright test --ui             # interactive runner
 npx playwright show-report           # open the HTML report from the last run
 ```
 
-The Playwright config (`frontend/playwright.config.ts`) starts its own Vite dev server on port 5174 with `VITE_E2E=true`, so you can keep your normal `npm run dev` running on 5173 in parallel. Reports go to `frontend/playwright-report/` (gitignored). Tests also run in CI via `.github/workflows/e2e.yml` on every push and PR to `main`.
+The Playwright config (`frontend/playwright.config.ts`) starts its own Vite dev server on port 5174 with `VITE_E2E=true`, so you can keep your normal `npm run dev` running on 5173 in parallel. Reports go to `frontend/playwright-report/` (gitignored). Tests also run in CI via `.github/workflows/e2e.yml` on pushes and PRs to `main` that touch `frontend/`.
 
 ## API Documentation
 

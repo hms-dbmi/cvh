@@ -23,11 +23,11 @@ On the new app's **Settings** tab:
 
 - **Allowed Callback URLs**:
   ```
-  http://localhost:8000/oidc/callback/, https://admin.designer.gosling-lang.org/oidc/callback/
+  http://localhost:8000/oidc/callback/, https://admin.dev.visualizationhub.org/oidc/callback/, https://admin.visualizationhub.org/oidc/callback/
   ```
 - **Allowed Logout URLs**:
   ```
-  http://localhost:8000/admin/, https://admin.designer.gosling-lang.org/admin/
+  http://localhost:8000/admin/, https://admin.dev.visualizationhub.org/admin/, https://admin.visualizationhub.org/admin/
   ```
 - Leave **Allowed Web Origins** blank.
 
