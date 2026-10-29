@@ -24,7 +24,7 @@ Once you add an email, choose one of the following access levels:
 
 If you ever need to remove a collaborator, an Admin can delete them from the workspace at any time.
 
-## Editing vs. Exploration Mode
+## Editing vs. Exploring
 
 While inside a workspace, you can use the bottom bar to switch between different viewing and editing modes.
 
@@ -32,7 +32,7 @@ While inside a workspace, you can use the bottom bar to switch between different
 
 Here is a breakdown of what each mode allows you to do:
 
-- **Exploration Mode:** Allows you to zoom in and interact with the screen exactly as a collaborator or public viewer would see it.
-- **Edit Mode:** Allows you to modify the visualization itself, add new data, and configure views. The editing workflow depends on the tool you are using:
+- **Exploring:** Allows you to zoom in and interact with the screen exactly as a collaborator or public viewer would see it.
+- **Editing:** Allows you to modify the visualization itself, add new data, and configure views. The editing workflow depends on the tool you are using:
     - **Gosling:** Make changes using the Right-Hand Side Panel or the built-in Text Editor.
     - **Vitessce:** Edit by pasting in your text-based specification. More advanced editing features will be added in future updates!

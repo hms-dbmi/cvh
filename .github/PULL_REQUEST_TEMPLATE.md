@@ -7,8 +7,8 @@
 <!--
 Add a one-line entry under the appropriate section in `CHANGELOG.md` (root
 of the repo, or `python-client/CHANGELOG.md` if this PR only touches the
-Python client). Put it under `[Unreleased]` — the prod deploy workflow
-promotes that section to a dated block automatically.
+Python client). Put it under `[Unreleased]`; it's moved to a dated block by hand after
+the next prod deploy (see `docs/release.md`).
 
 Sections: Added / Changed / Deprecated / Removed / Fixed / Security.
 

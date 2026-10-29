@@ -3,7 +3,7 @@
 CVH deploys to **dev** automatically on every push to `main`, and to **prod** via two manual workflows in `.github/workflows/`:
 
 - `deploy-front-end-prod.yml` — rebuilds the frontend with prod env vars and syncs to the prod S3 bucket + invalidates CloudFront.
-- `deploy-api-prod.yml` — retags the ECR image currently tagged `latest` (or a passed-in tag, for rollbacks) as `prod` and forces the prod ECS service to redeploy.
+- `deploy-api-prod.yml` — retags the ECR image currently tagged `latest` (or a passed-in tag, for rollbacks) as `prod` and forces the prod API and admin ECS services to redeploy.
 
 Both workflows are `workflow_dispatch` (manual). A prod deploy usually runs both, back to back.
 
@@ -45,4 +45,4 @@ If the deploy fails (e.g., ECS never converges, S3 sync errors), **do not** prom
 
 ## Python client
 
-`python-client/CHANGELOG.md` tracks the TestPyPI package, which releases on its own cadence via `publish-client.yml`. The rolling process is the same (rename `[Unreleased]` to a dated block) but happens on client release, not CVH prod deploy.
+`python-client/CHANGELOG.md` tracks the PyPI package (`cvh-client`), which releases on its own cadence via `publish-client.yml`. The rolling process is the same (rename `[Unreleased]` to a dated block) but happens on client release, not CVH prod deploy.

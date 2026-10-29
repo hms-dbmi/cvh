@@ -17,11 +17,11 @@ Now drop the other data sources onto this new view, one by one. Start with **HFF
 
 ## Linking Views
 
-Switch to **Exploration Mode** and you will see that the views are not linked yet: each one zooms and pans independently. Here the second view is zoomed in while the first is unchanged.
+Switch to **Exploring** mode and you will see that the views are not linked yet: each one zooms and pans independently. Here the second view is zoomed in while the first is unchanged.
 
 ![Second view zoomed in independently of the first](views-not-linked.webp)
 
-To link them, go back to **Editing Mode** and open the **View Linking** panel on the right side, specifying **VIEW 1** as Source and **VIEW 2** as Target. Back in **Exploration Mode**, the two views now zoom and pan together.
+To link them, go back to **Editing** mode and open the **View Linking** panel on the right side, specifying **VIEW 1** as Source and **VIEW 2** as Target. Back in **Exploring** mode, the two views now zoom and pan together.
 
 ![View Linking panel with VIEW 1 as Source and VIEW 2 as Target](view-linking-panel.webp)
 ![The two views zooming and panning in coordination](views-linked.webp)
@@ -46,7 +46,7 @@ Then switch TRACK 1 from the heatmap back to a bar chart, since bars read more c
 
 **4. Point the link at the brush.** In the **View Linking** panel, change Source to **BRUSH 1** and Target to **VIEW 2**.
 
-Now switch to **Exploration Mode** and try the brush: click and drag its start or end to change its range, and click and drag its middle to move it.
+Now switch to **Exploring** mode and try the brush: click and drag its start or end to change its range, and click and drag its middle to move it.
 
 ![Finished overview and detail visualization with a working brush](brush-linked-overview.webp)
 

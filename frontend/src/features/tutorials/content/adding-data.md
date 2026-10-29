@@ -11,7 +11,7 @@ Some data sources require additional configuration after upload and will not be 
 
 ## Data Panel
 
-The Data Panel displays all the datasets available to you and your collaborators within your workspace. You can populate your Data Panel by uploading your own files using the Add Data Source button, or by opening the Browse Library modal to explore and add datasets directly from various Data Coordinating Centers.
+The Data Panel displays all the datasets available to you and your collaborators within your workspace. You can populate your Data Panel by uploading your own files using the Link Data Source button, or by opening the Browse Library modal to explore and add datasets directly from various Data Coordinating Centers.
 
 ![Data Panel — empty and populated](%CLOUDFRONT_URL%/tutorials/data-panel.png)
 
@@ -25,13 +25,13 @@ Once you select a DCC, a preview table will display the available datasets. To f
 
 ![Data Library modal](%CLOUDFRONT_URL%/tutorials/data-library.png)
 
-**Tip**: For more advanced filtering and complex search queries, we recommend visiting the DCC's website directly which is also linked in the Quick Lookup accordion.
+**Tip**: For more advanced filtering and complex search queries, we recommend visiting the DCC's website directly which is also linked in the Quick Dataset ID Lookup panel.
 
 ## Uploading Local Data
 
 The Community Visualization Hub currently does not host data files directly. Your data must be hosted externally with a publicly accessible link.
 
-To add your own dataset, click the **Add Data Source** button in the Data Panel to open the setup modal. You will start by selecting the file type for your data. From there, fill in the core file information—including the source URL, index URL (if required), and a recognizable data source name—before defining the genome assembly and providing any other necessary supporting details.
+To add your own dataset, click the **Link Data Source** button in the Data Panel to open the setup modal. You will start by selecting the file type for your data. From there, fill in the core file information—including the source URL, index URL (if required), and a recognizable data source name—before defining the genome assembly and providing any other necessary supporting details.
 
 ![Choosing a file type and adding data source information](%CLOUDFRONT_URL%/tutorials/add-data-source.png)
 
