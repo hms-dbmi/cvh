@@ -10,6 +10,7 @@ Categories: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Se
 
 ### Added
 - `cvh-mcp`, an MCP server that lets AI assistants such as Claude read your workspaces, datasets and visualizations, and published visualizations without signing in. It can also count, list and search CFDE files in cfdb, also without signing in. Your sign-in is remembered between restarts until it expires. Install it with the new `mcp` extra; see "MCP server" in the README.
+- The MCP server can create visualizations and change their config, name, description or author. A Gosling spec is checked against the Gosling schema first and isn't saved if it's invalid; the assistant gets the errors so it can fix them.
 
 ## [0.4.1] - 2026-10-09
 
