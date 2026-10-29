@@ -503,7 +503,8 @@ def set_visualization_tags(visualization_uuid: str, tags: list[Tag]) -> dict:
     """Replace all tags on a visualization; an empty list removes them all.
 
     Tags are key/value pairs such as {"key": "assay", "tag": "ChIP-seq"}. New ones
-    are created in the workspace. Include existing tags you want to keep.
+    are created in the workspace. First read the current `tags` with get_visualization
+    and keep the ones the user didn't ask to remove.
     """
     _call(lambda c: c.set_visualization_tags(visualization_uuid, tags))
     return {"uuid": visualization_uuid, "tags": tags}
@@ -563,7 +564,8 @@ def set_dataset_tags(dataset_uuid: str, tags: list[Tag]) -> dict:
     """Replace all tags on a dataset; an empty list removes them all.
 
     Tags are key/value pairs such as {"key": "assay", "tag": "ChIP-seq"}. New ones
-    are created in the workspace. Include existing tags you want to keep.
+    are created in the workspace. First read the current `tags` with get_dataset and
+    keep the ones the user didn't ask to remove.
     """
     _call(lambda c: c.set_dataset_tags(dataset_uuid, tags))
     return {"uuid": dataset_uuid, "tags": tags}
