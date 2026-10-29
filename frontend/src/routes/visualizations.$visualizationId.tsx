@@ -22,7 +22,6 @@ import { BottomBar } from "../features/visualizations/components/BottomBar";
 import formatVisualization from "../features/visualizations/utils/formatVisualization";
 import type { components } from "../types/schema";
 import "gosling-designer-vec/build/style.css";
-import "react-grid-layout/css/styles.css";
 import "../features/visualizations/vitessce-overrides.css";
 import "../features/visualizations/gosling-overrides.css";
 import Accordion from "@mui/material/Accordion";
