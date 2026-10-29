@@ -48,6 +48,7 @@ Categories per Keep a Changelog: **Added**, **Changed**, **Deprecated**, **Remov
 - The database stack now sets `DeletionProtection: true` on the RDS instance, so a `delete-stack` or a change that would replace the database fails instead of deleting it.
 - The website's CloudFront distribution now redirects `http://` to `https://` (`ViewerProtocolPolicy: redirect-to-https`), so sign-in can't start on an unencrypted page. The images distribution already did this.
 - Updated three libraries with critical security advisories: DOMPurify 3.4.17 (used by the code editor and PostHog; the editor pins an older version, so `package.json` overrides it), seroval 1.7.5 (TanStack Router), and shell-quote 1.12.0 (GraphQL codegen, a build tool).
+- The API now uses certifi 2026.10.23, which drops the emSign root certificates whose intermediate CA keys were compromised (GHSA-6q48-6c7w-9gw2), so the backend no longer trusts certificates issued under them.
 
 ## [2026-10-01] (prod, a1f5e37)
 
