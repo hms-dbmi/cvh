@@ -51,8 +51,8 @@ AUTH0_CLIENT_ID = os.environ.get(
     "CVH_AUTH0_CLIENT_ID", "FKDEMc1rao9wVRnMIE9RznPsiLeHRXJS"
 )
 AUTH0_AUDIENCE = os.environ.get("CVH_AUTH0_AUDIENCE", "cvh-api-prod-id")
-# Same default as the CVH backend's CFDB_BASE_URL.
-CFDB_URL = os.environ.get("CVH_CFDB_URL", "https://dev.cfdb.vis-api.link")
+# The cfdb that production CVH uses; dev CVH uses https://dev.cfdb.vis-api.link.
+CFDB_URL = os.environ.get("CVH_CFDB_URL", "https://cfdb.visualizationhub.org")
 TOKEN_PATH = (
     Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
     / "cvh-client"
