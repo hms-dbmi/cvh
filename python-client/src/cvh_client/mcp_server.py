@@ -1,5 +1,5 @@
 """MCP server that lets an AI assistant read CVH workspaces, datasets and visualizations,
-and search CFDE file metadata in cfdb.
+create and edit visualizations, and search CFDE file metadata in cfdb.
 
 Run with `cvh-mcp` (stdio transport) after installing the `mcp` extra:
 
@@ -15,6 +15,7 @@ across restarts until it expires or the API rejects it.
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import threading
@@ -37,6 +38,7 @@ from cvh_client.client import CVHClient
 from cvh_client.exceptions import AuthorizationError, CVHError, NotFoundError
 
 try:
+    from jsonschema import Draft7Validator
     from mcp.server.mcpserver import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
     from mcp_types import ToolAnnotations
@@ -61,13 +63,20 @@ TOKEN_PATH = (
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 CFDB_READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=True)
+CREATES = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, openWorldHint=False
+)
+OVERWRITES = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=True, openWorldHint=False
+)
 
 server = MCPServer(
     name="cvh",
     instructions=(
-        "Read-only access to the Community Visualization Hub (CVH): the user's "
-        "workspaces, the genomic datasets in them, and Gosling or Vitessce "
-        "visualizations. Published visualizations can be read without signing in. "
+        "Access to the Community Visualization Hub (CVH): the user's workspaces, the "
+        "genomic datasets in them, and Gosling or Vitessce visualizations, which "
+        "you can create and edit. Published visualizations can be read without "
+        "signing in and are good examples of working Gosling specs. "
         "The cfdb tools search Common Fund (CFDE) file metadata without signing in; "
         "their filters match exactly, so look values up with cfdb_field_values first, "
         "per DCC: DCCs name the same thing differently (ENCODE's \"Hi-C\" is 4DN's "
@@ -298,6 +307,157 @@ def get_public_visualization(visualization_uuid: str) -> dict:
     return _call(
         lambda c: c.get_public_visualization(visualization_uuid), signed_in=False
     )
+
+
+# ── Visualization writes ───────────────────────────────────────────────
+
+
+@functools.cache
+def _gosling_validator() -> Draft7Validator:
+    # gosling.schema.json is copied from gosling.js v2.0.0-alpha.10, the version CVH's
+    # designer uses; update it when CVH upgrades gosling.js. Same check as gosling.js's
+    # validateGoslingSpec (Ajv, draft-07; the only keyword beside its $refs is description).
+    schema = json.loads((Path(__file__).parent / "gosling.schema.json").read_text())
+    return Draft7Validator(schema)
+
+
+def _gosling_errors(spec: Any, limit: int = 3) -> list[str]:
+    """The most useful schema errors, as `path: message` lines."""
+
+    # The spec is an anyOf of several shapes, so the top-level error only says "not
+    # valid under any of the given schemas". The real problems are its leaf errors:
+    # prefer the deepest path, then messages most anyOf branches agree on, and put
+    # "required" last since most of those come from branches that don't apply.
+    def leaves(error):
+        if not error.context:
+            yield error
+        for child in error.context:
+            yield from leaves(child)
+
+    counts: dict[tuple[str, str], int] = {}
+    depth: dict[tuple[str, str], int] = {}
+    for error in _gosling_validator().iter_errors(spec):
+        for leaf in leaves(error):
+            key = (leaf.json_path, leaf.message[:300])  # enum messages list every value
+            counts[key] = counts.get(key, 0) + 1
+            depth[key] = len(leaf.absolute_path) - (leaf.validator == "required")
+    ranked = sorted(counts, key=lambda key: (-depth[key], -counts[key]))
+    return [f"{path}: {message}" for path, message in ranked[:limit]]
+
+
+def _check_gosling(spec: Any) -> None:
+    errors = _gosling_errors(spec)
+    if errors:
+        raise ToolError(
+            "Not saved: the Gosling spec is invalid (most likely cause first). Fix it "
+            "and try again:\n" + "\n".join(errors)
+        )
+
+
+def _tracks(spec: Any, parent: dict | None = None):
+    """Yield (track, parent) for every track, like gosling-designer-vec's traverseTracks."""
+    if not isinstance(spec, dict):
+        return
+    if isinstance(spec.get("tracks"), list):
+        for track in spec["tracks"]:
+            yield track, spec
+            yield from _tracks(track, spec)
+    elif isinstance(spec.get("views"), list):
+        for view in spec["views"]:
+            yield from _tracks(view, spec)
+
+
+def _gosling_counts(spec: dict) -> dict:
+    """n_tracks and n_datasets as the designer computes them when it saves (getNumTracks/getNumDatasets)."""
+    n_tracks = sum(
+        1
+        for track, parent in _tracks(spec)
+        if isinstance(track, dict)
+        and parent.get("alignment") != "overlay"  # layers of an overlay count once
+        and "type" not in track  # dummy tracks
+    )
+    urls = {
+        track["data"]["url"]
+        for track, _ in _tracks(spec)
+        if isinstance(track, dict)
+        and isinstance(track.get("data"), dict)
+        and "url" in track["data"]
+    }
+    return {"n_tracks": n_tracks, "n_datasets": len(urls)}
+
+
+def _conf_fields(tool: str, conf: dict) -> dict:
+    if tool != "gosling":
+        return {"conf": conf}  # shortcut: Vitessce configs aren't validated yet
+    _check_gosling(conf)
+    return {"conf": conf, **_gosling_counts(conf)}
+
+
+@server.tool(annotations=CREATES)
+def create_visualization(
+    workspace_uuid: str,
+    name: str,
+    conf: dict | None = None,
+    tool: Literal["gosling", "vitessce"] = "gosling",
+    description: str | None = None,
+    author: str | None = None,
+) -> dict:
+    """Create a private visualization in a workspace the user can write to.
+
+    `conf` is the full Gosling spec (or Vitessce config). A Gosling spec is
+    validated first, and nothing is created if it's invalid; the errors come back
+    so you can fix them. Read a published Gosling visualization for a working
+    example. Returns the new visualization, including its `uuid`.
+    """
+    fields = _conf_fields(tool, conf) if conf is not None else {}
+    created = _call(
+        lambda c: c.create_visualization(
+            workspace_uuid, name, description=description, author=author, tool=tool
+        )
+    )
+    if not fields:
+        return created
+    try:
+        _call(lambda c: c.update_visualization(created["uuid"], **fields))
+    except ToolError as exc:
+        raise ToolError(
+            f"Created visualization {created['uuid']} but saving its config failed; "
+            f"retry with update_visualization. {exc}"
+        ) from exc
+    return {**created, **fields}
+
+
+@server.tool(annotations=OVERWRITES)
+def update_visualization(
+    visualization_uuid: str,
+    conf: dict | None = None,
+    name: str | None = None,
+    description: str | None = None,
+    author: str | None = None,
+) -> dict:
+    """Change a visualization's config, name, description or author.
+
+    `conf` replaces the whole config, so start from get_visualization's `conf`
+    and change only what's needed. A Gosling spec is validated first and nothing
+    is saved if it's invalid. Doesn't publish; the visualization stays as public
+    or private as it was.
+    """
+    fields: dict[str, Any] = {
+        key: value
+        for key, value in (
+            ("name", name),
+            ("description", description),
+            ("author", author),
+        )
+        if value is not None
+    }
+    if conf is not None:
+        tool = _call(lambda c: c.get_visualization(visualization_uuid))["tool"]
+        fields.update(_conf_fields(tool, conf))
+    if not fields:
+        raise ToolError("Nothing to update: pass conf, name, description or author.")
+    _call(lambda c: c.update_visualization(visualization_uuid, **fields))
+    return {"uuid": visualization_uuid, "updated": sorted(fields)}
 
 
 # ── cfdb (CFDE file metadata, public GraphQL) ─────────────────────────

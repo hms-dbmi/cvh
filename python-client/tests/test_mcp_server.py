@@ -15,6 +15,7 @@ from cvh_client.exceptions import AuthorizationError, NotFoundError
 from cvh_client.models import (
     PagedVisualizations,
     PagedWorkspaces,
+    Visualization,
     VisualizationSummary,
     Workspace,
 )
@@ -45,10 +46,16 @@ def signed_out(tmp_path):
     mcp_server._pending = None
 
 
-async def test_every_tool_is_read_only():
-    tools = await mcp_server.server.list_tools()
-    assert len(tools) == 12
-    assert all(t.annotations.read_only_hint for t in tools)
+WRITE_TOOLS = {"create_visualization", "update_visualization"}
+
+
+async def test_only_write_tools_can_change_data():
+    tools = {t.name: t.annotations for t in await mcp_server.server.list_tools()}
+    assert len(tools) == 14
+    for name, annotations in tools.items():
+        assert annotations.read_only_hint is (name not in WRITE_TOOLS), name
+    # Overwriting a config is destructive, so clients should ask first.
+    assert tools["update_visualization"].destructive_hint is True
 
 
 def test_signed_out_call_starts_one_device_flow_and_returns_the_code():
@@ -301,3 +308,88 @@ def test_count_cfdb_files_groups_by_field_and_counts_files_without_a_value():
         result = mcp_server.count_cfdb_files(dcc=["ENCODE"], group_by="assay_type")
 
     assert result == {"count": 10, "groups": {"A": 6, "B": 3}, "no_value": 1}
+
+
+VALID_SPEC = {
+    "tracks": [
+        {
+            "data": {"url": "https://example.org/a.bw", "type": "bigwig"},
+            "mark": "bar",
+            "x": {"field": "position", "type": "genomic"},
+            "width": 600,
+            "height": 100,
+        }
+    ]
+}
+
+
+def test_gosling_errors_name_the_real_problem():
+    spec = {"tracks": [{**VALID_SPEC["tracks"][0], "mark": "bars"}]}
+    errors = mcp_server._gosling_errors(spec)
+    assert errors[0].startswith("$.tracks[0].mark: 'bars' is not one of")
+    assert mcp_server._gosling_errors(VALID_SPEC) == []
+
+
+def test_gosling_counts_match_the_designer():
+    track = VALID_SPEC["tracks"][0]
+    spec = {
+        "views": [
+            {"tracks": [track, {**track, "data": {"url": "b", "type": "csv"}}]},
+            {
+                "tracks": [
+                    {"alignment": "overlay", "tracks": [track, track]},
+                    {"type": "dummy-track"},
+                ]
+            },
+        ]
+    }
+    # The overlay counts once, its layers and the dummy track not at all.
+    assert mcp_server._gosling_counts(spec) == {"n_tracks": 3, "n_datasets": 2}
+
+
+def test_invalid_spec_creates_nothing():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    bad = {"tracks": [{**VALID_SPEC["tracks"][0], "mark": "bars"}]}
+    with (
+        patch.object(CVHClient, "create_visualization") as create,
+        pytest.raises(ToolError, match="mark"),
+    ):
+        mcp_server.create_visualization("ws-uuid-1", "Bad", conf=bad)
+    create.assert_not_called()
+
+
+def test_create_with_spec_saves_config_and_counts():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    created = Visualization.model_validate({**VISUALIZATION_DATA, "conf": None})
+    with (
+        patch.object(CVHClient, "create_visualization", return_value=created),
+        patch.object(CVHClient, "update_visualization", return_value={}) as update,
+    ):
+        result = mcp_server.create_visualization("ws-uuid-1", "New", conf=VALID_SPEC)
+    update.assert_called_once_with(
+        created.uuid, conf=VALID_SPEC, n_tracks=1, n_datasets=1
+    )
+    assert result["conf"] == VALID_SPEC
+
+
+def test_update_validates_gosling_but_not_vitessce():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    bad = {"tracks": "not a list"}
+    for tool, should_save in (("gosling", False), ("vitessce", True)):
+        existing = Visualization.model_validate({**VISUALIZATION_DATA, "tool": tool})
+        with (
+            patch.object(CVHClient, "get_visualization", return_value=existing),
+            patch.object(CVHClient, "update_visualization", return_value={}) as update,
+        ):
+            if should_save:
+                mcp_server.update_visualization("viz-uuid-1", conf=bad)
+            else:
+                with pytest.raises(ToolError, match="invalid"):
+                    mcp_server.update_visualization("viz-uuid-1", conf=bad)
+        assert update.called is should_save, tool
+
+
+def test_update_without_changes_is_an_error():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    with pytest.raises(ToolError, match="Nothing to update"):
+        mcp_server.update_visualization("viz-uuid-1")
