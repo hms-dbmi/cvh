@@ -13,6 +13,7 @@ from cvh_client import mcp_server
 from cvh_client.client import CVHClient
 from cvh_client.exceptions import AuthorizationError, NotFoundError
 from cvh_client.models import (
+    Dataset,
     PagedVisualizations,
     PagedWorkspaces,
     Visualization,
@@ -20,7 +21,7 @@ from cvh_client.models import (
     Workspace,
 )
 
-from .test_client import VISUALIZATION_DATA, WORKSPACE_DATA, _make_jwt
+from .test_client import DATASET_DATA, VISUALIZATION_DATA, WORKSPACE_DATA, _make_jwt
 
 DEVICE = {
     "device_code": "dev-code",
@@ -46,16 +47,28 @@ def signed_out(tmp_path):
     mcp_server._pending = None
 
 
-WRITE_TOOLS = {"create_visualization", "update_visualization"}
+WRITE_TOOLS = {
+    "create_visualization",
+    "update_visualization",
+    "publish_visualization",
+    "unpublish_visualization",
+    "set_visualization_tags",
+    "add_dataset",
+    "add_cfdb_dataset",
+    "set_dataset_tags",
+    "start_dataset_processing",
+    "check_dataset_processing",
+}
 
 
 async def test_only_write_tools_can_change_data():
     tools = {t.name: t.annotations for t in await mcp_server.server.list_tools()}
-    assert len(tools) == 14
+    assert len(tools) == 22
     for name, annotations in tools.items():
         assert annotations.read_only_hint is (name not in WRITE_TOOLS), name
     # Overwriting a config is destructive, so clients should ask first.
     assert tools["update_visualization"].destructive_hint is True
+    assert tools["publish_visualization"].destructive_hint is True
 
 
 def test_signed_out_call_starts_one_device_flow_and_returns_the_code():
@@ -393,3 +406,105 @@ def test_update_without_changes_is_an_error():
     mcp_server._token = _make_jwt({"exp": 9999999999})
     with pytest.raises(ToolError, match="Nothing to update"):
         mcp_server.update_visualization("viz-uuid-1")
+
+
+def _cfdb_file(format_id, format_name):
+    return _cfdb_response(
+        {
+            "files": {
+                "items": [
+                    {
+                        "localId": "4DNFI1",
+                        "filename": "reads.sam",
+                        "genomeAssembly": "GRCh38",
+                        "fileFormat": {"id": format_id, "name": format_name},
+                    }
+                ]
+            }
+        }
+    )
+
+
+def test_add_cfdb_dataset_matches_browse_library():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    cases = (
+        # Ready to draw: CVH links straight to cfdb's /data URL.
+        (
+            "format:3006",
+            "bigwig",
+            {"source_url": f"{mcp_server.CFDB_URL}/data/4dn/4DNFI1"},
+            "not_needed",
+        ),
+        # Needs processing: the backend builds the URLs from the ids.
+        ("format:2573", "bam", {"cfdb_dcc": "4dn", "cfdb_id": "4DNFI1"}, "needed"),
+    )
+    for format_id, file_type, fields, processing in cases:
+        dataset = Dataset.model_validate(
+            {**DATASET_DATA, "processing_status": processing}
+        )
+        with (
+            patch.object(
+                mcp_server.httpx, "post", return_value=_cfdb_file(format_id, "x")
+            ),
+            patch.object(CVHClient, "create_dataset", return_value=dataset) as create,
+            patch.object(CVHClient, "post") as start,
+        ):
+            result = mcp_server.add_cfdb_dataset("ws-uuid-1", "4DN_DCIC", "4DNFI1")
+        # Processing waits for the user's go-ahead.
+        start.assert_not_called()
+        assert result["processing_status"] == processing
+        create.assert_called_once_with(
+            "ws-uuid-1",
+            "reads.sam",
+            file_type,
+            data_type=file_type,
+            assembly="GRCh38",
+            **fields,
+        )
+
+
+def test_add_cfdb_dataset_refuses_unsupported_formats():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    with (
+        patch.object(
+            mcp_server.httpx, "post", return_value=_cfdb_file("format:3475", "TSV")
+        ),
+        patch.object(CVHClient, "create_dataset") as create,
+        pytest.raises(ToolError, match="TSV"),
+    ):
+        mcp_server.add_cfdb_dataset("ws-uuid-1", "4DN_DCIC", "4DNFI1")
+    create.assert_not_called()
+
+
+def test_check_processing_records_a_finished_job_like_the_data_panel():
+    mcp_server._token = _make_jwt({"exp": 9999999999})
+    running = Dataset.model_validate(
+        {**DATASET_DATA, "processing_status": "started", "processing_job_id": "job-1"}
+    )
+    for job, reported in (
+        ({"status": "running", "progress": 0.4}, None),
+        ({"status": "completed"}, {"status": "processed", "error": None}),
+        (
+            {"status": "failed", "error": "bad file"},
+            {"status": "failed", "error": "bad file"},
+        ),
+    ):
+        response = httpx.Response(
+            200, json=job, request=httpx.Request("GET", "https://cfdb.example.org")
+        )
+        with (
+            patch.object(CVHClient, "get_dataset", return_value=running),
+            patch.object(mcp_server.httpx, "get", return_value=response) as get,
+            patch.object(
+                CVHClient, "put", return_value={"processing_status": "x"}
+            ) as put,
+        ):
+            result = mcp_server.check_dataset_processing("ds-uuid-1")
+        assert get.call_args.args[0].endswith("/jobs/job-1")
+        if reported is None:
+            put.assert_not_called()
+            assert result["job"] == job
+        else:
+            put.assert_called_once_with(
+                "/api/datasets/ds-uuid-1/processing-status", json=reported
+            )
