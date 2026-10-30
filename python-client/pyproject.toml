@@ -31,6 +31,11 @@ dependencies = [
 # vitessce ships the Jupyter widget's runtime (anywidget) only in its
 # heavy `[all]` extra, so request it directly for `.widget()`.
 vitessce = ["vitessce>=3.0", "anywidget>=0.11"]
+# MCP server for AI assistants: `cvh-mcp` (see cvh_client.mcp_server).
+mcp = ["mcp>=2.3,<3"]
+
+[project.scripts]
+cvh-mcp = "cvh_client.mcp_server:main"
 
 [project.urls]
 Homepage = "https://visualizationhub.org"
