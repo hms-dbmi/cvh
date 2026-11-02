@@ -359,7 +359,19 @@ class VisualizationConf(UserCreated):
     author = models.CharField(
         max_length=100,
         null=True,
-        help_text="Attribution string shown alongside the visualization in the UI.",
+        help_text=(
+            "Legacy free-text attribution, from before authors were linked"
+            " to users. Shown only while `authors` is empty."
+        ),
+    )
+    authors = models.ManyToManyField(
+        User,
+        related_name="authored_visualizations",
+        blank=True,
+        help_text=(
+            "Users credited as authors. The creator is added on create;"
+            " anyone added later must be a member of the workspace."
+        ),
     )
     tool = models.CharField(
         max_length=10,

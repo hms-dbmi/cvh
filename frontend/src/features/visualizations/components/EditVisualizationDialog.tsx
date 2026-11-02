@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import { useCallback, useEffect } from "react";
 import {
+  Controller,
   type UseControllerProps,
   useController,
   useForm,
@@ -10,12 +11,17 @@ import {
 import { z } from "zod";
 import DialogButtonCopy from "@/components/DialogButtonCopy.tsx";
 import posthog from "@/posthog";
-import { useUpdateVisualization } from "../api/useVisualizations.ts";
+import type { components } from "@/types/schema.d.ts";
+import {
+  useSetVisualizationAuthors,
+  useUpdateVisualization,
+} from "../api/useVisualizations.ts";
+import AuthorsField from "./AuthorsField.tsx";
 
 interface FormValues {
   name: string;
   description?: string;
-  author?: string;
+  author_usernames: string[];
 }
 
 function FormTextField({
@@ -53,68 +59,73 @@ const schema = z.object({
     .string()
     .max(300, { message: "Description must be less than 300 characters" })
     .optional(),
-  author: z.string().optional(),
+  author_usernames: z.array(z.string()),
 });
 
 export default function EditVisualizationDialog({
   initialName,
   initialDescription,
-  initialAuthor,
+  initialAuthors,
+  projectId,
   visualizationId,
   open,
   setOpen,
 }: {
   initialName: string;
   initialDescription?: string;
-  initialAuthor?: string;
+  initialAuthors: components["schemas"]["AuthorOut"][];
+  projectId: string;
   visualizationId: string;
   closeMenu: () => void;
   setOpen: (o: boolean) => void;
   open: boolean;
 }) {
+  const initialUsernames = initialAuthors.map((a) => a.username).join(",");
   const { handleSubmit, control, reset } = useForm({
     defaultValues: {
       name: initialName,
       description: initialDescription,
-      author: initialAuthor,
+      author_usernames: initialUsernames ? initialUsernames.split(",") : [],
     },
     mode: "onChange",
     resolver: zodResolver(schema),
   });
 
   const { mutate } = useUpdateVisualization();
+  const { mutate: setAuthors } = useSetVisualizationAuthors();
 
   const onSubmit = useCallback(
-    ({ name, description, author }: FormValues) => {
+    ({ name, description, author_usernames }: FormValues) => {
       posthog.capture("visualization_details_update_submitted");
       mutate({
         params: { path: { visualization_uuid: visualizationId } },
         body: {
           name,
           description,
-          author,
         },
       });
+      if (author_usernames.join(",") !== initialUsernames) {
+        setAuthors({
+          params: { path: { visualization_uuid: visualizationId } },
+          body: { usernames: author_usernames },
+        });
+      }
       setOpen(false);
     },
-    [mutate, visualizationId, setOpen],
+    [mutate, setAuthors, visualizationId, setOpen, initialUsernames],
   );
-
-  useEffect(() => {
-    reset({
-      name: initialName,
-      description: initialDescription,
-      author: initialAuthor,
-    });
-  }, [reset, initialName, initialDescription, initialAuthor]);
 
   const handleReset = useCallback(() => {
     reset({
       name: initialName,
       description: initialDescription,
-      author: initialAuthor,
+      author_usernames: initialUsernames ? initialUsernames.split(",") : [],
     });
-  }, [initialAuthor, initialDescription, initialName, reset]);
+  }, [initialDescription, initialName, initialUsernames, reset]);
+
+  useEffect(() => {
+    handleReset();
+  }, [handleReset]);
 
   return (
     <DialogButtonCopy
@@ -143,11 +154,17 @@ export default function EditVisualizationDialog({
           control={control}
           placeholder="Visualization description..."
         />
-        <FormTextField
-          name="author"
-          label="Author"
+        <Controller
+          name="author_usernames"
           control={control}
-          placeholder="Visualization author..."
+          render={({ field }) => (
+            <AuthorsField
+              projectId={projectId}
+              value={field.value}
+              onChange={field.onChange}
+              knownAuthors={initialAuthors}
+            />
+          )}
         />
       </Stack>
     </DialogButtonCopy>

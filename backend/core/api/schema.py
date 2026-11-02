@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Any, Literal, TypedDict
 
+from django.contrib.auth.models import User
 from ninja import ModelSchema, Schema
 from pydantic import UUID4, EmailStr, Field, model_validator
 
@@ -397,10 +398,33 @@ class DatasetWithTagsOut(DatasetOut):
     tags: list[TagOut]
 
 
+class AuthorOut(Schema):
+    """A visualization author. Shown on public pages, so no email: `name` is
+    the user's first and last name, or the part of their email before the @
+    when they haven't set one."""
+
+    username: str
+    name: str
+
+    @staticmethod
+    def resolve_name(obj: User) -> str:
+        return obj.get_full_name() or obj.email.split("@")[0]
+
+
+class AuthorsIn(Schema):
+    usernames: list[str]
+
+
 class VisualizationIn(ModelSchema):
     workspace_uuid: UUID4
     description: str | None = None
     author: str | None = None
+    author_usernames: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Workspace members to credit alongside the creator, who is always added."
+        ),
+    )
 
     class Meta:
         model = VisualizationConf
@@ -409,6 +433,7 @@ class VisualizationIn(ModelSchema):
 
 class VisualizationSummaryOut(ModelSchema):
     tags: list[TagOut]
+    authors: list[AuthorOut]
 
     class Meta:
         model = VisualizationConf
@@ -425,6 +450,7 @@ class VisualizationSummaryOut(ModelSchema):
 
 class VisualizationOut(ModelSchema):
     tags: list[TagOut]
+    authors: list[AuthorOut]
 
     class Meta:
         model = VisualizationConf
