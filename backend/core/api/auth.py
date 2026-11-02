@@ -31,7 +31,7 @@ class Authorized(HttpBearer):
             permissions = []
         self.required_permissions = permissions
 
-    def authenticate(self, _, token):
+    def authenticate(self, request, token):
         token: RequestToken = RequestToken(token)
         if token is None or token.is_authorized() is False:
             raise UnauthorizedError
@@ -40,6 +40,9 @@ class Authorized(HttpBearer):
         ):
             raise ForbiddenError
 
+        # The username can't be turned back into it ("|" becomes "_"), and
+        # Auth0's Management API needs it.
+        request.auth0_user_id = token.sub
         user = token.get_user()
         return user
 
