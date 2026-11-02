@@ -290,7 +290,7 @@ def _not_members_error(usernames):
     summary="Create a visualization",
     description=(
         "Creates a new visualization in a workspace, with the"
-        " creator as its first author. Returns 400 with code"
+        " creator as an author. Returns 400 with code"
         " `not_a_member` if any `author_usernames` aren't workspace"
         " members. Requires write access to the workspace."
     ),
