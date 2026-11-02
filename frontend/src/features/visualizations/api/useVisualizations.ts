@@ -146,6 +146,19 @@ function useTagVisualization() {
   });
 }
 
+function useSetVisualizationAuthors() {
+  const { toastError } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("put", `${path}/{visualization_uuid}/authors`, {
+    onSuccess: () =>
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery }),
+    onError: () => {
+      toastError("Failed to update authors.");
+    },
+  });
+}
+
 function useGetProjectVisualizationTags(workspace_uuid: string) {
   const client = useClient();
 
@@ -164,6 +177,7 @@ export {
   useGetPublishedVisualization,
   useGetPublishedVisualizations,
   useGetVisualization,
+  useSetVisualizationAuthors,
   useTagVisualization,
   useUpdateVisualization,
 };

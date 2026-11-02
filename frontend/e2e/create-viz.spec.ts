@@ -17,7 +17,10 @@ async function fillNewVizDialog(
   await expect(dialog).toBeVisible();
   await dialog.getByLabel("Name").fill(name);
   await dialog.getByLabel("Description").fill(`E2E ${tool} viz`);
-  await dialog.getByLabel("Author").fill("E2E");
+  // The creator is always an author; add the other workspace member.
+  await expect(dialog.getByText("E2E User (you)")).toBeVisible();
+  await dialog.getByRole("button", { name: "Add author" }).click();
+  await page.getByRole("menuitem", { name: /Member User/ }).click();
   // The tool select is a MUI <TextField select> rendered as a combobox.
   await dialog.getByRole("combobox", { name: "Tool" }).click();
   await page.getByRole("option", { name: tool }).click();
@@ -35,7 +38,7 @@ test("creating a Gosling visualization fires POST with tool: gosling", async ({
     body: {
       name: "My Gosling Viz",
       description: "E2E gosling viz",
-      author: "E2E",
+      author_usernames: ["member"],
       tool: "gosling",
       workspace_uuid: PROJECT_ID,
     },
@@ -53,7 +56,7 @@ test("creating a Vitessce visualization fires POST with tool: vitessce", async (
     body: {
       name: "My Vitessce Viz",
       description: "E2E vitessce viz",
-      author: "E2E",
+      author_usernames: ["member"],
       tool: "vitessce",
       workspace_uuid: PROJECT_ID,
     },

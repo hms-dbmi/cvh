@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -15,6 +16,8 @@ from ..helpers import (
 )
 from ..models import Project, Tag, VisualizationConf
 from ..schema import (
+    AuthorsIn,
+    ErrorOut,
     SuccessOut,
     TagOut,
     TagsIn,
@@ -53,6 +56,7 @@ def get_published_visualizations(
         VisualizationConf.objects.filter(Q(published=True) & q)
         .order_by("-modified_timestamp")
         .distinct()
+        .prefetch_related("authors")
     )
     return visualizations
 
@@ -90,6 +94,7 @@ def get_workspace_visualizations(
         VisualizationConf.objects.filter(Q(project_key=project) & q)
         .distinct()
         .order_by("-modified_timestamp")
+        .prefetch_related("authors")
     )
     return visualizations
 
@@ -231,20 +236,69 @@ def tag_visualization(request, visualization_uuid: UUID, payload: TagsIn):
     return {"success": True}
 
 
+@router.put(
+    "/visualizations/{visualization_uuid}/authors",
+    auth=Authorized(),
+    response={200: SuccessOut, 400: ErrorOut},
+    summary="Set a visualization's authors",
+    description=(
+        "Replaces all authors on a visualization, by username."
+        " Each must be a workspace member or already an author."
+        " Returns 400 with code `not_a_member` otherwise."
+        " Requires write access."
+    ),
+)
+def set_visualization_authors(request, visualization_uuid: UUID, payload: AuthorsIn):
+    visualization = get_object_or_404(VisualizationConf, uuid=visualization_uuid)
+    try:
+        project = Project.objects.get_write_project(
+            project_uuid=visualization.project_key.uuid,
+            user=request.auth,
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to set visualization authors.") from None
+    authors, missing = _find_authors(project, payload.usernames, visualization)
+    if missing:
+        return 400, _not_members_error(missing)
+    visualization.authors.set(authors)
+    return {"success": True}
+
+
+def _find_authors(project, usernames, visualization=None):
+    """The users named in `usernames` who are members of `project`, or
+    already authors of `visualization` (credit stays after someone leaves the
+    workspace), plus the usernames that matched neither."""
+    eligible = Q(projectmember__project_key=project)
+    if visualization is not None:
+        eligible |= Q(authored_visualizations=visualization)
+    users = list(User.objects.filter(eligible, username__in=usernames).distinct())
+    missing = sorted(set(usernames) - {user.username for user in users})
+    return users, missing
+
+
+def _not_members_error(usernames):
+    return {
+        "code": "not_a_member",
+        "detail": f"Not members of this workspace: {', '.join(usernames)}.",
+    }
+
+
 @router.post(
     "/visualizations",
     auth=Authorized(),
-    response={201: VisualizationSummaryOut},
+    response={201: VisualizationSummaryOut, 400: ErrorOut},
     summary="Create a visualization",
     description=(
-        "Creates a new visualization in a workspace."
-        " Requires write access to the workspace."
+        "Creates a new visualization in a workspace, with the"
+        " creator as its first author. Returns 400 with code"
+        " `not_a_member` if any `author_usernames` aren't workspace"
+        " members. Requires write access to the workspace."
     ),
 )
 def create_visualization(request, visualization: VisualizationIn):
     visualization_dict = visualization.dict()
-    workspace_uuid = visualization_dict.get("workspace_uuid")
-    del visualization_dict["workspace_uuid"]
+    workspace_uuid = visualization_dict.pop("workspace_uuid")
+    author_usernames = visualization_dict.pop("author_usernames")
 
     try:
         project = Project.objects.get_write_project(
@@ -252,5 +306,9 @@ def create_visualization(request, visualization: VisualizationIn):
         )
     except Project.DoesNotExist:
         raise Http404("Failed to create visualization.") from None
+    authors, missing = _find_authors(project, author_usernames)
+    if missing:
+        return 400, _not_members_error(missing)
     viz = VisualizationConf.objects.create(**visualization_dict, project_key=project)
-    return viz
+    viz.authors.set([request.auth, *authors])
+    return 201, viz

@@ -88,7 +88,7 @@ class VisualizationConfAdmin(admin.ModelAdmin):
     )
     list_filter = ("tool", "published")
     search_fields = ("name", "description", "author")
-    raw_id_fields = ("project_key",)
+    raw_id_fields = ("project_key", "authors")
     filter_horizontal = ("tags",)
     readonly_fields = (
         "uuid",

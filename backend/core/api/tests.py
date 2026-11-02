@@ -473,3 +473,122 @@ class GlobalTagsEndpointRemovedTests(TestCase):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 404)
                 self.assertNotIn(b"embargoed-assay", response.content)
+
+
+class VisualizationAuthorsTests(TestCase):
+    """Authors are linked users: the creator is added on create, and anyone
+    added must be a workspace member. Public pages show `name`, so it falls
+    back to the email's local part and never carries an email."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember, VisualizationConf
+
+        self.owner = User.objects.create(
+            username="owner", email="owner@example.com", first_name="Ada"
+        )
+        self.member = User.objects.create(username="member", email="mem@example.com")
+        self.outsider = User.objects.create(username="outsider", email="out@x.org")
+        self.project = Project.objects.create(name="Shared", user_key=self.owner)
+        for user, permissions in ((self.owner, 3), (self.member, 2)):
+            ProjectMember.objects.create(
+                project_key=self.project, user_key=user, permissions=permissions
+            )
+        self.viz = VisualizationConf.objects.create(
+            project_key=self.project, name="Viz", published=True
+        )
+
+        auth_patch = patch("api.auth.Authorized.authenticate", return_value=self.owner)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+
+    def _send(self, method, path, data):
+        return getattr(self.client, method)(
+            path,
+            data=data,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+
+    def _set_authors(self, usernames):
+        return self._send(
+            "put",
+            f"/api/visualizations/{self.viz.uuid}/authors",
+            {"usernames": usernames},
+        )
+
+    def test_create_adds_creator_and_requested_members(self):
+        response = self._send(
+            "post",
+            "/api/visualizations",
+            {
+                "workspace_uuid": str(self.project.uuid),
+                "name": "New",
+                "tool": "gosling",
+                "author_usernames": ["member"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertCountEqual(
+            response.json()["authors"],
+            [
+                {"username": "owner", "name": "Ada"},
+                {"username": "member", "name": "mem"},
+            ],
+        )
+
+    def test_create_rejects_non_members_and_creates_nothing(self):
+        from .models import VisualizationConf
+
+        response = self._send(
+            "post",
+            "/api/visualizations",
+            {
+                "workspace_uuid": str(self.project.uuid),
+                "name": "New",
+                "tool": "gosling",
+                "author_usernames": ["outsider"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "not_a_member")
+        self.assertFalse(VisualizationConf.objects.filter(name="New").exists())
+
+    def test_set_authors_replaces_the_list(self):
+        self.viz.authors.set([self.owner])
+
+        response = self._set_authors(["member"])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(self.viz.authors.all()), [self.member])
+
+    def test_set_authors_rejects_non_members(self):
+        response = self._set_authors(["owner", "outsider"])
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("outsider", response.json()["detail"])
+        self.assertEqual(self.viz.authors.count(), 0)
+
+    def test_former_members_stay_authors(self):
+        from .models import ProjectMember
+
+        self.viz.authors.set([self.member])
+        ProjectMember.objects.filter(user_key=self.member).delete()
+
+        response = self._set_authors(["owner", "member"])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.viz.authors.count(), 2)
+
+    def test_public_visualization_shows_names_not_emails(self):
+        self.viz.authors.set([self.owner, self.member])
+
+        response = self.client.get(f"/api/public/visualizations/{self.viz.uuid}")
+
+        self.assertEqual(
+            sorted(a["name"] for a in response.json()["authors"]), ["Ada", "mem"]
+        )
+        self.assertNotIn(b"@example.com", response.content)

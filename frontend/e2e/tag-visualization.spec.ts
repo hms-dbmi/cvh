@@ -31,3 +31,28 @@ test("tagging a visualization fires PUT /api/visualizations/<uuid>/tags", async 
     body: { tags: [{ key: "project", tag: "e2e-test" }] },
   });
 });
+
+test("editing a visualization's authors fires PUT /api/visualizations/<uuid>/authors", async ({
+  page,
+}) => {
+  await gotoWorkspace(page, PROJECT_ID);
+
+  const vizRow = page
+    .getByRole("listitem")
+    .filter({ hasText: "E2E Workspace Vitessce" });
+  await vizRow.locator('button[aria-haspopup="true"]').click();
+  await page.getByRole("menuitem", { name: "Edit Details" }).click();
+
+  // The viz mock's only author is the E2E user; add the other member.
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("E2E User")).toBeVisible();
+  await dialog.getByRole("button", { name: "Add author" }).click();
+  await page.getByRole("menuitem", { name: /Member User/ }).click();
+  await dialog.getByRole("button", { name: "Submit" }).click();
+
+  await expect.poll(() => readRequests(page)).toContainEqual({
+    method: "PUT",
+    path: `/api/visualizations/${VIZ_ID}/authors`,
+    body: { usernames: ["e2e-user", "member"] },
+  });
+});
