@@ -483,7 +483,7 @@ export interface paths {
         put?: never;
         /**
          * Create a visualization
-         * @description Creates a new visualization in a workspace, with the creator as its first author. Returns 400 with code `not_a_member` if any `author_usernames` aren't workspace members. Requires write access to the workspace.
+         * @description Creates a new visualization in a workspace, with the creator as an author. Returns 400 with code `not_a_member` if any `author_usernames` aren't workspace members. Requires write access to the workspace.
          */
         post: operations["api_routers_visualizations_create_visualization"];
         delete?: never;
