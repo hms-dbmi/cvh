@@ -104,7 +104,8 @@ export default function GoslingBottomBar({
         left: 0,
         // Center over the canvas, clear of the right panel when it's open.
         right: hasWritePermissions && !isExploring ? GOSLING_PANEL_WIDTH : 0,
-        bottom: status._editor ? CODE_EDITOR_OFFSET : 16,
+        // The designer hides the code editor while exploring, even if it's on.
+        bottom: status._editor && !isExploring ? CODE_EDITOR_OFFSET : 16,
         display: "flex",
         justifyContent: "center",
         pointerEvents: "none",
