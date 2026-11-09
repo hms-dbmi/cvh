@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Stack from "@mui/material/Stack";
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import {
   Controller,
   type UseControllerProps,
@@ -80,12 +80,18 @@ export default function EditVisualizationDialog({
   setOpen: (o: boolean) => void;
   open: boolean;
 }) {
-  const initialUsernames = initialAuthors.map((a) => a.username).join(",");
-  const { handleSubmit, control, reset } = useForm({
-    defaultValues: {
+  const {
+    handleSubmit,
+    control,
+    reset,
+    // Read during render: react-hook-form only tracks dirtyFields once read.
+    formState: { dirtyFields },
+  } = useForm({
+    // Unlike defaultValues, values follows the props (compared by value).
+    values: {
       name: initialName,
       description: initialDescription,
-      author_usernames: initialUsernames ? initialUsernames.split(",") : [],
+      author_usernames: initialAuthors.map((a) => a.username),
     },
     mode: "onChange",
     resolver: zodResolver(schema),
@@ -104,7 +110,7 @@ export default function EditVisualizationDialog({
           description,
         },
       });
-      if (author_usernames.join(",") !== initialUsernames) {
+      if (dirtyFields.author_usernames) {
         setAuthors({
           params: { path: { visualization_uuid: visualizationId } },
           body: { usernames: author_usernames },
@@ -112,20 +118,10 @@ export default function EditVisualizationDialog({
       }
       setOpen(false);
     },
-    [mutate, setAuthors, visualizationId, setOpen, initialUsernames],
+    [mutate, setAuthors, visualizationId, setOpen, dirtyFields],
   );
 
-  const handleReset = useCallback(() => {
-    reset({
-      name: initialName,
-      description: initialDescription,
-      author_usernames: initialUsernames ? initialUsernames.split(",") : [],
-    });
-  }, [initialDescription, initialName, initialUsernames, reset]);
-
-  useEffect(() => {
-    handleReset();
-  }, [handleReset]);
+  const handleReset = useCallback(() => reset(), [reset]);
 
   return (
     <DialogButtonCopy

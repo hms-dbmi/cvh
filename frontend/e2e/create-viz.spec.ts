@@ -19,8 +19,8 @@ async function fillNewVizDialog(
   await dialog.getByLabel("Description").fill(`E2E ${tool} viz`);
   // The creator is always an author; add the other workspace member.
   await expect(dialog.getByText("E2E User (you)")).toBeVisible();
-  await dialog.getByRole("button", { name: "Add author" }).click();
-  await page.getByRole("menuitem", { name: /Member User/ }).click();
+  await dialog.getByRole("combobox", { name: "Authors" }).click();
+  await page.getByRole("option", { name: /Member User/ }).click();
   // The tool select is a MUI <TextField select> rendered as a combobox.
   await dialog.getByRole("combobox", { name: "Tool" }).click();
   await page.getByRole("option", { name: tool }).click();

@@ -46,8 +46,8 @@ test("editing a visualization's authors fires PUT /api/visualizations/<uuid>/aut
   // The viz mock's only author is the E2E user; add the other member.
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("E2E User")).toBeVisible();
-  await dialog.getByRole("button", { name: "Add author" }).click();
-  await page.getByRole("menuitem", { name: /Member User/ }).click();
+  await dialog.getByRole("combobox", { name: "Authors" }).click();
+  await page.getByRole("option", { name: /Member User/ }).click();
   await dialog.getByRole("button", { name: "Submit" }).click();
 
   await expect.poll(() => readRequests(page)).toContainEqual({

@@ -1,12 +1,7 @@
+import Autocomplete from "@mui/material/Autocomplete";
 import Chip from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
 import ListItemText from "@mui/material/ListItemText";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { Plus } from "@phosphor-icons/react";
-import { useState } from "react";
+import TextField from "@mui/material/TextField";
 import { useGetProjectMembers } from "@/features/projects/api/useProjects";
 import type { components } from "@/types/schema.d.ts";
 
@@ -25,10 +20,10 @@ export function authorName({
 }
 
 /**
- * The authors of a visualization, by username, as chips with a + menu of
- * the workspace's other members. `fixed` is shown first and can't be
- * removed (the creator, in the New Visualization dialog). `knownAuthors`
- * names current authors who may have since left the workspace.
+ * The authors of a visualization, by username, picked from the workspace's
+ * members. `fixed` is an author who isn't in `value` and can't be removed
+ * (the creator, in the New Visualization dialog). `knownAuthors` names
+ * current authors who may have since left the workspace.
  */
 export default function AuthorsField({
   projectId,
@@ -44,62 +39,61 @@ export default function AuthorsField({
   knownAuthors?: Author[];
 }) {
   const { data: members = [] } = useGetProjectMembers(projectId);
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   const names = new Map(knownAuthors.map((a) => [a.username, a.name]));
+  const emails = new Map<string, string>();
   for (const member of members) {
     names.set(member.username, authorName(member));
+    emails.set(member.username, member.email);
   }
-  const addable = members.filter(
-    (m) => m.username !== fixed?.username && !value.includes(m.username),
-  );
+  // Current authors stay options so they keep their labels after leaving.
+  const options = [
+    ...new Set([...value, ...members.map((m) => m.username)]),
+  ].filter((username) => username !== fixed?.username);
+  const label = (username: string) => names.get(username) ?? username;
 
   return (
-    <Stack spacing={1}>
-      <Typography variant="body2" color="text.secondary">
-        Authors
-      </Typography>
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-        {fixed && <Chip label={`${fixed.name} (you)`} size="small" />}
-        {value.map((username) => (
-          <Chip
-            key={username}
-            label={names.get(username) ?? username}
-            size="small"
-            onDelete={() => onChange(value.filter((u) => u !== username))}
+    <Autocomplete
+      multiple
+      filterSelectedOptions
+      options={options}
+      value={value}
+      onChange={(_event, usernames) => onChange(usernames)}
+      getOptionLabel={label}
+      renderOption={({ key, ...props }, username) => (
+        <li key={key} {...props}>
+          {/* The email tells apart members with the same name. */}
+          <ListItemText
+            primary={label(username)}
+            secondary={emails.get(username)}
           />
-        ))}
-        {addable.length > 0 && (
-          <IconButton
-            size="small"
-            aria-label="Add author"
-            onClick={(event) => setMenuAnchor(event.currentTarget)}
-          >
-            <Plus size={16} />
-          </IconButton>
-        )}
-      </Stack>
-      <Menu
-        anchorEl={menuAnchor}
-        open={menuAnchor !== null}
-        onClose={() => setMenuAnchor(null)}
-      >
-        {addable.map((member) => (
-          <MenuItem
-            key={member.username}
-            onClick={() => {
-              onChange([...value, member.username]);
-              setMenuAnchor(null);
-            }}
-          >
-            {/* The email tells apart members with the same name. */}
-            <ListItemText
-              primary={authorName(member)}
-              secondary={member.email}
+        </li>
+      )}
+      renderTags={(usernames, getTagProps) =>
+        usernames.map((username, index) => {
+          const { key, ...tagProps } = getTagProps({ index });
+          return (
+            <Chip
+              key={key}
+              label={label(username)}
+              size="small"
+              {...tagProps}
             />
-          </MenuItem>
-        ))}
-      </Menu>
-    </Stack>
+          );
+        })
+      }
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Authors"
+          size="small"
+          helperText={fixed && `${fixed.name} (you) is added as an author.`}
+          // slotProps.inputLabel replaces Autocomplete's label props, so keep them.
+          slotProps={{
+            inputLabel: { ...params.InputLabelProps, shrink: true },
+          }}
+        />
+      )}
+    />
   );
 }

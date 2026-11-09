@@ -139,7 +139,7 @@ export default function AddVisualizationButton({
               projectId={projectId}
               value={field.value}
               onChange={field.onChange}
-              // The backend adds the creator; shown here so it's clear.
+              // The backend adds the creator; noted here so it's clear.
               fixed={
                 user && { username: user.username, name: authorName(user) }
               }
