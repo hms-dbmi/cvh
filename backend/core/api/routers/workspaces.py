@@ -33,7 +33,9 @@ def create_workspace(request, workspace: WorkspaceIn):
     user_key = {"user_key": request.auth}
     p = Project.objects.create(**workspace.dict(), **user_key)
     ProjectMember.objects.create(project_key=p, user_key=request.auth, permissions=3)
-    VisualizationConf.objects.create(project_key=p, name="Visualization 1")
+    VisualizationConf.objects.create(project_key=p, name="Visualization 1").authors.add(
+        request.auth
+    )
     # Re-read through the manager so the response carries the uuid,
     # timestamps, and the count annotations WorkspaceOut declares.
     project = Project.objects.get(pk=p.pk)

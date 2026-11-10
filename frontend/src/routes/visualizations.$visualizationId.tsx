@@ -76,7 +76,12 @@ function PublishedVisualizationPanel({
             {viz?.published_timestamp && (
               <>Published {formatISO(viz.published_timestamp)}</>
             )}
-            {viz?.author && <> by {viz.author}</>}
+            {/* Linked authors, else the legacy free-text credit. */}
+            {viz.authors.length > 0 ? (
+              <> by {viz.authors.map((a) => a.name).join(", ")}</>
+            ) : (
+              viz.author && <> by {viz.author}</>
+            )}
           </Typography>
           <Typography variant="body2">{viz.description}</Typography>
           <Typography variant="body2" sx={{ color: "#4E5A63" }}>

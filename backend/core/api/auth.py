@@ -140,7 +140,7 @@ class RequestToken:
 
             VisualizationConf.objects.create(
                 project_key=project, name="Visualization 1"
-            )
+            ).authors.add(user)
 
         return user
 

@@ -452,6 +452,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/visualizations/{visualization_uuid}/authors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a visualization's authors
+         * @description Replaces all authors on a visualization, by username. Each must be a workspace member or already an author. Returns 400 with code `not_a_member` otherwise. Requires write access.
+         */
+        put: operations["api_routers_visualizations_set_visualization_authors"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/visualizations": {
         parameters: {
             query?: never;
@@ -463,7 +483,7 @@ export interface paths {
         put?: never;
         /**
          * Create a visualization
-         * @description Creates a new visualization in a workspace. Requires write access to the workspace.
+         * @description Creates a new visualization in a workspace, with the creator as an author. Returns 400 with code `not_a_member` if any `author_usernames` aren't workspace members. Requires write access to the workspace.
          */
         post: operations["api_routers_visualizations_create_visualization"];
         delete?: never;
@@ -1412,6 +1432,18 @@ export interface components {
             /** Uuids */
             uuids?: string[];
         };
+        /**
+         * AuthorOut
+         * @description A visualization author. Shown on public pages, so no email: `name` is
+         *     the user's first and last name, or the part of their email before the @
+         *     when they haven't set one.
+         */
+        AuthorOut: {
+            /** Username */
+            username: string;
+            /** Name */
+            name: string;
+        };
         /** PagedVisualizationSummaryOut */
         PagedVisualizationSummaryOut: {
             /** Items */
@@ -1423,9 +1455,11 @@ export interface components {
         VisualizationSummaryOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
+            /** Authors */
+            authors: components["schemas"]["AuthorOut"][];
             /**
              * Author
-             * @description Attribution string shown alongside the visualization in the UI.
+             * @description Legacy free-text attribution, from before authors were linked to users. Shown only while `authors` is empty.
              */
             author?: string | null;
             /**
@@ -1496,6 +1530,8 @@ export interface components {
         VisualizationOut: {
             /** Tags */
             tags: components["schemas"]["TagOut"][];
+            /** Authors */
+            authors: components["schemas"]["AuthorOut"][];
             /**
              * Conf
              * @description Gosling spec (for tool='gosling') or Vitessce config (for tool='vitessce'). Structure depends on the tool — consult the respective docs for the schema.
@@ -1503,7 +1539,7 @@ export interface components {
             conf?: Record<string, never> | null;
             /**
              * Author
-             * @description Attribution string shown alongside the visualization in the UI.
+             * @description Legacy free-text attribution, from before authors were linked to users. Shown only while `authors` is empty.
              */
             author?: string | null;
             /**
@@ -1584,7 +1620,7 @@ export interface components {
             description?: string | null;
             /**
              * Author
-             * @description Attribution string shown alongside the visualization in the UI.
+             * @description Legacy free-text attribution, from before authors were linked to users. Shown only while `authors` is empty.
              */
             author?: string | null;
             /**
@@ -1613,6 +1649,11 @@ export interface components {
              */
             n_datasets?: number | null;
         };
+        /** AuthorsIn */
+        AuthorsIn: {
+            /** Usernames */
+            usernames: string[];
+        };
         /** VisualizationIn */
         VisualizationIn: {
             /**
@@ -1624,6 +1665,11 @@ export interface components {
             description?: string | null;
             /** Author */
             author?: string | null;
+            /**
+             * Author Usernames
+             * @description Workspace members to credit alongside the creator, who is always added.
+             */
+            author_usernames?: string[];
             /**
              * Name
              * @description Human-readable name shown in the UI.
@@ -2430,6 +2476,41 @@ export interface operations {
             };
         };
     };
+    api_routers_visualizations_set_visualization_authors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visualization_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     api_routers_visualizations_create_visualization: {
         parameters: {
             query?: never;
@@ -2450,6 +2531,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VisualizationSummaryOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

@@ -148,7 +148,9 @@ def create_example_datasets(request, payload: ExampleDatasetIn):
 
     if payload.include_visualizations:
         viz = example.get("visualization", {})
-        VisualizationConf.objects.create(**viz, project_key=project)
+        VisualizationConf.objects.create(**viz, project_key=project).authors.add(
+            request.auth
+        )
 
     return {"success": True}
 

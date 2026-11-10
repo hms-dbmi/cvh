@@ -114,7 +114,8 @@ function ActionsMenu({
         visualizationId={visualizationId}
         initialDescription={data?.description || undefined}
         initialName={data?.name}
-        initialAuthor={data?.author || undefined}
+        initialAuthors={data.authors}
+        projectId={projectId}
         closeMenu={handleClose}
         open={openEdit}
         setOpen={setOpenEdit}

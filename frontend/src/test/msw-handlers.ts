@@ -80,7 +80,8 @@ const publishedGoslingViz: components["schemas"]["VisualizationOut"] = {
   n_tracks: 1,
   n_datasets: 1,
   published_timestamp: "2026-01-01T00:00:00Z",
-  author: "E2E User",
+  author: null,
+  authors: [{ username: "e2e-user", name: "E2E User" }],
   tags: [],
   created_timestamp: "2026-01-01T00:00:00Z",
   modified_timestamp: "2026-01-01T00:00:00Z",
@@ -277,6 +278,17 @@ export const handlers = [
       await recordRequest(
         "PUT",
         `/api/visualizations/${params.uuid}/tags`,
+        request,
+      );
+      return HttpResponse.json({ success: true });
+    },
+  ),
+  http.put(
+    `${apiUrl}/api/visualizations/:uuid/authors`,
+    async ({ request, params }) => {
+      await recordRequest(
+        "PUT",
+        `/api/visualizations/${params.uuid}/authors`,
         request,
       );
       return HttpResponse.json({ success: true });

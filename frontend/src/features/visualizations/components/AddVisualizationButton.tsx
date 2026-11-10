@@ -5,14 +5,17 @@ import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import { Plus } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
 import {
+  Controller,
   type UseControllerProps,
   useController,
   useForm,
 } from "react-hook-form";
 import { z } from "zod";
 import DialogButton from "@/components/DialogButton";
+import { useGetUser } from "@/features/navigation/api/useUser";
 import posthog from "@/posthog";
 import { useCreateVisualization } from "../api/useVisualizations";
+import AuthorsField, { authorName } from "./AuthorsField";
 
 const text = {
   button: "New Visualization",
@@ -24,7 +27,7 @@ const TOOL_OPTIONS = ["gosling", "vitessce"] as const;
 interface FormValues {
   name: string;
   description?: string;
-  author?: string;
+  author_usernames: string[];
   tool: (typeof TOOL_OPTIONS)[number];
 }
 
@@ -65,7 +68,7 @@ const schema = z.object({
     .string()
     .max(300, { message: "Description must be less than 300 characters" })
     .optional(),
-  author: z.string().optional(),
+  author_usernames: z.array(z.string()),
   tool: z.enum(TOOL_OPTIONS),
 });
 
@@ -82,7 +85,7 @@ export default function AddVisualizationButton({
     defaultValues: {
       name: "",
       description: undefined,
-      author: undefined,
+      author_usernames: [],
       tool: "gosling",
     },
     mode: "onChange",
@@ -95,6 +98,7 @@ export default function AddVisualizationButton({
   }, [reset]);
 
   const { mutate } = useCreateVisualization(setSelectedVizId);
+  const { data: user } = useGetUser();
 
   const onSubmit = useCallback(
     (formData: FormValues) => {
@@ -127,7 +131,21 @@ export default function AddVisualizationButton({
           label="Description"
           control={control}
         />
-        <FormTextField name="author" label="Author" control={control} />
+        <Controller
+          name="author_usernames"
+          control={control}
+          render={({ field }) => (
+            <AuthorsField
+              projectId={projectId}
+              value={field.value}
+              onChange={field.onChange}
+              // The backend adds the creator; noted here so it's clear.
+              fixed={
+                user && { username: user.username, name: authorName(user) }
+              }
+            />
+          )}
+        />
         <FormTextField
           name="tool"
           label="Tool"
