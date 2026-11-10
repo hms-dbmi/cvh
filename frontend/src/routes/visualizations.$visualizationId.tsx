@@ -20,6 +20,7 @@ import {
 import { useGetPublishedVisualization } from "../features/visualizations/api/useVisualizations";
 import { BottomBar } from "../features/visualizations/components/BottomBar";
 import formatVisualization from "../features/visualizations/utils/formatVisualization";
+import { nudgeVitessceOnResize } from "../features/visualizations/utils/nudgeVitessceOnResize";
 import type { components } from "../types/schema";
 import "gosling-designer-vec/build/style.css";
 import "../features/visualizations/vitessce-overrides.css";
@@ -289,6 +290,7 @@ function RouteComponent() {
           }}
         >
           <Paper
+            ref={nudgeVitessceOnResize}
             sx={{ flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden" }}
           >
             {data.conf && (

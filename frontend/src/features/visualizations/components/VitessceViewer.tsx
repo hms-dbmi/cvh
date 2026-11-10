@@ -38,6 +38,7 @@ import {
   setAnnotationCloseButton,
   toAnnotatingConfig,
 } from "../utils/annotatingConfig.ts";
+import { nudgeVitessceOnResize } from "../utils/nudgeVitessceOnResize.ts";
 import { BottomBar, type Mode } from "./BottomBar.tsx";
 
 // The `vitessce` package + its transitives (three.js, higlass, neuroglancer,
@@ -187,6 +188,19 @@ function VitessceViewer({
     id: DROP_ZONE_ID,
     disabled: !hasWritePermissions || !selectedVizId,
   });
+  // The paper is both the drop zone and Vitessce's container. Returning a
+  // cleanup means React won't call the ref with null, so clear the drop ref here.
+  const paperRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      setDropRef(el);
+      const stopNudging = nudgeVitessceOnResize(el);
+      return () => {
+        stopNudging?.();
+        setDropRef(null);
+      };
+    },
+    [setDropRef],
+  );
 
   // Track the last string that came from the server so the auto-save
   // effect below can skip when the editor's value is just what we loaded.
@@ -570,7 +584,7 @@ function VitessceViewer({
       }}
     >
       <Paper
-        ref={setDropRef}
+        ref={paperRef}
         sx={{
           flex: 1,
           minWidth: 0,
