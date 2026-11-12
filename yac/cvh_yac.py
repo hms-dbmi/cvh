@@ -13,8 +13,10 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
+from typing import Annotated
 
 from botocore.session import get_session
+from fastapi import Depends, HTTPException
 from jose import jwt
 from starlette.concurrency import run_in_threadpool
 from udiagent.server import app as server
@@ -126,6 +128,33 @@ def budget_check(token_payload: dict, usage) -> str | None:
             "or you can request more."
         )
     return None
+
+
+def usage(token_payload: dict, now: datetime | None = None) -> dict:
+    """This month's spending against the person's limit, for the CVH profile
+    and Explore tab (Active, Near Limit from 85%, Limit Reached at 100%)."""
+    now = now or datetime.now(UTC)
+    limit = float(token_payload.get(LIMIT_CLAIM, USER_MONTHLY_USD))
+    spent, _ = _spent(_keys(token_payload["sub"], _month(now)))
+    renews = datetime(now.year + now.month // 12, now.month % 12 + 1, 1, tzinfo=UTC)
+    # Rounded down, so 99.9% isn't shown as Limit Reached; round() first so
+    # float error can't turn 85% into 84. A $0 limit means no credits at all.
+    percent = 100 if limit <= 0 else min(100, int(round(spent / limit * 100, 6)))
+    return {
+        "spent_usd": round(spent, 4),
+        "limit_usd": limit,
+        "percent_used": percent,
+        "renews_on": renews.date().isoformat(),
+    }
+
+
+@app.get("/v1/yac/usage")
+def get_usage(token_payload: Annotated[dict, Depends(server.verify_jwt)]):
+    try:
+        return usage(token_payload)
+    except Exception:
+        log.exception("could not read YAC spending")
+        raise HTTPException(503, "YAC usage is unavailable right now.") from None
 
 
 def record(sub: str, headers, now: datetime | None = None) -> float:

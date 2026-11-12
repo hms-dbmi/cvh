@@ -165,3 +165,34 @@ def test_server_refuses_to_start_without_its_data(tmp_path):
     )
     assert result.returncode != 0
     assert "query backends failed to load: cfdb" in result.stderr
+
+
+def test_usage_reports_percent_and_renewal(db):
+    db.items["user#auth0|a#2026-12"] = 0.5
+    result = cvh_yac.usage({"sub": "auth0|a"}, datetime(2026, 12, 15, tzinfo=UTC))
+    assert result == {
+        "spent_usd": 0.5,
+        "limit_usd": 2.0,
+        "percent_used": 25,
+        "renews_on": "2027-01-01",
+    }
+
+
+def test_usage_uses_the_bump_and_stops_at_100(db):
+    db.items[month_key("auth0|a")] = 12.0
+    result = cvh_yac.usage({"sub": "auth0|a", cvh_yac.LIMIT_CLAIM: 5})
+    assert (result["limit_usd"], result["percent_used"]) == (5.0, 100)
+
+
+def test_usage_endpoint_reads_the_verified_token(db):
+    import udiagent.server.app as server
+    from fastapi.testclient import TestClient
+
+    db.items[month_key("auth0|a")] = 1.8
+    cvh_yac.app.dependency_overrides[server.verify_jwt] = lambda: {"sub": "auth0|a"}
+    try:
+        response = TestClient(cvh_yac.app).get("/v1/yac/usage")
+    finally:
+        cvh_yac.app.dependency_overrides.clear()
+    assert response.status_code == 200, response.text
+    assert response.json()["percent_used"] == 90

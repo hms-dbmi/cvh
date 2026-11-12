@@ -23,6 +23,7 @@ The AWS infrastructure for YAC is maintained separately.
 - **Before each model call**, udiagent calls `budget_check(token_payload, usage)`, which refuses the turn once this month's spending plus the turn so far reaches either limit. If spending can't be read, it refuses rather than letting the turn run.
 - **After each turn**, a middleware reads udiagent's `X-Usage-*` headers, prices the tokens at the US-profile rates in `cvh_yac.py`, and adds the cost to the person's and the overall totals in DynamoDB (`YAC_USAGE_TABLE`).
 - **A turn can finish slightly over a limit**, by about one turn's cost, since the check runs before each call.
+- **`GET /v1/yac/usage`** returns the signed-in person's `spent_usd`, `limit_usd`, `percent_used` (rounded down, at most 100) and `renews_on` (the 1st of next month, UTC), with their YAC token. The profile page and Explore tab show Near Limit from 85% and Limit Reached at 100%.
 
 **Raising someone's budget:** in Auth0, set `yac_monthly_usd` in the person's `app_metadata`, for example `{"yac_monthly_usd": 5}`. It applies when their YAC token renews, or right away if they sign out and back in. The post-login Action (see Auth0 setup) copies it into the token.
 
