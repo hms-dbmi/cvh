@@ -1,0 +1,78 @@
+# YAC
+
+YAC is [udiagent](https://github.com/hms-dbmi/udi-yac), a natural-language chart agent, running over cfdb metadata. It runs as its own service. The model is gpt-6.1-sol on Amazon Bedrock, called with the service's AWS role, so there is no API key. udiagent checks each request's token against the YAC API in Auth0 itself.
+
+The AWS infrastructure for YAC is maintained separately.
+
+## What's in the repo
+
+| Path | What it is |
+| --- | --- |
+| `yac/Dockerfile`, `yac/requirements.in` | The image: udiagent from PyPI, pinned with hashes in `yac/requirements.txt` |
+| `yac/cvh_yac.py` | The entry point: udiagent's server plus monthly budgets (see Budgets) |
+| `yac/cfdb/build.sql`, `yac/cfdb/build.py` | Builds `cfdb.duckdb` from a raw cfdb dump (from udi-yac's `dev/cfdb`) |
+| `yac/cfdb/yac-packages.json` | The package description udiagent reads; udi calls it the query backends file |
+| `yac/yac.env.example` | Template for the service's settings |
+| `.github/workflows/deploy-yac.yml` | Builds and pushes `cvh-yac:latest`, then redeploys |
+
+## Budgets
+
+`yac/cvh_yac.py` is the server's entry point: udiagent plus monthly budgets. Each person gets `YAC_USER_MONTHLY_USD` ($2) a month, and everyone together gets `YAC_TOTAL_MONTHLY_USD` ($100). Months are UTC calendar months. At about $0.010 a turn, $2 is roughly 200 turns.
+
+- **Before each model call**, udiagent calls `budget_check(token_payload, usage)`, which refuses the turn once this month's spending plus the turn so far reaches either limit. If spending can't be read, it refuses rather than letting the turn run.
+- **After each turn**, a middleware reads udiagent's `X-Usage-*` headers, prices the tokens at the US-profile rates in `cvh_yac.py`, and adds the cost to the person's and the overall totals in DynamoDB (`YAC_USAGE_TABLE`).
+- **A turn can finish slightly over a limit**, by about one turn's cost, since the check runs before each call.
+
+**Raising someone's budget:** in Auth0, set `yac_monthly_usd` in the person's `app_metadata`, for example `{"yac_monthly_usd": 5}`. It applies when their YAC token renews, or right away if they sign out and back in. The post-login Action (see Auth0 setup) copies it into the token.
+
+## Auth0 setup, per environment
+
+In the environment's tenant:
+
+1. Create the YAC API. Its identifier becomes `JWT_AUDIENCE`. Set its token lifetime to 3600 seconds (APIs → YAC → Settings), so removing someone's role takes effect within an hour instead of the default 24.
+2. Create the YAC users role. Approving an access request adds it (see `docs/admin-deployment.md`).
+3. Add this post-login Action and attach it to the post-login trigger, with an Action secret `YAC_AUDIENCE` set to the YAC API's identifier. It refuses YAC tokens to people without the role and copies their budget into the token:
+
+   ```js
+   exports.onExecutePostLogin = async (event, api) => {
+     if (event.resource_server?.identifier !== event.secrets.YAC_AUDIENCE) return;
+     if (!event.authorization?.roles?.includes("YAC users")) {
+       api.access.deny("YAC access hasn't been granted.");
+       return;
+     }
+     const limit = event.user.app_metadata?.yac_monthly_usd;
+     if (typeof limit === "number") {
+       api.accessToken.setCustomClaim("https://cvh/yac_monthly_usd", limit);
+     }
+   };
+   ```
+
+## Building the data
+
+Build `cfdb.duckdb` from a raw cfdb dump:
+
+```bash
+uv run --python 3.13 --with 'duckdb>=2,<3' python yac/cfdb/build.py ~/Downloads/cfdb.duckdb yac/cfdb/cfdb.duckdb
+```
+
+The service reads it together with `yac/cfdb/yac-packages.json`, from one directory. Always deploy both files from one build.
+
+## Tests
+
+`requirements.txt` is hashed for the Linux image, so install from `requirements.in` locally:
+
+```bash
+uv venv --python 3.13 /tmp/yac-test
+VIRTUAL_ENV=/tmp/yac-test uv pip install pytest -r yac/requirements.in
+cd yac && /tmp/yac-test/bin/python -m pytest test_cvh_yac.py
+```
+
+## Updating udiagent
+
+Change the pin in `yac/requirements.in`, run `uv pip compile requirements.in --python-version 3.13 --python-platform x86_64-unknown-linux-gnu --generate-hashes -o requirements.txt` in `yac/`, and merge. The workflow builds and redeploys.
+
+## When something fails
+
+- **`query backends failed to load: cfdb`:** udiagent couldn't open `cfdb.duckdb`, because it's missing, corrupt, or written by a newer DuckDB than the image has. `cvh_yac.py` stops the server instead of letting it run without data. Redeploy both data files from one build.
+- **udiagent won't start:** it validates its settings at startup and logs every problem at once. Common ones are `OPENAI_API_KEY` set alongside `UDI_BEDROCK`, `JWT_ALGORITHM` not `RS256`, or only some of the Langfuse values set.
+- **Requests return 503:** udiagent couldn't call Bedrock. The cause is logged at `ERROR`.
