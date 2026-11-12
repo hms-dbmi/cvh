@@ -3,7 +3,7 @@
 CVH deploys to **dev** automatically on every push to `main`, and to **prod** via two manual workflows in `.github/workflows/`:
 
 - `deploy-front-end-prod.yml` — rebuilds the frontend with prod env vars and syncs to the prod S3 bucket + invalidates CloudFront.
-- `deploy-api-prod.yml` — retags the ECR image currently tagged `latest` (or a passed-in tag, for rollbacks) as `prod` and forces the prod API and admin ECS services to redeploy.
+- `deploy-api-prod.yml` — retags the ECR image currently tagged `latest` (or a passed-in tag, for rollbacks) as `prod` and forces the prod API and admin ECS services to redeploy. Once prod YAC exists, it does the same for the `cvh-yac` image and service, so the API and YAC are always promoted together.
 
 Both workflows are `workflow_dispatch` (manual). A prod deploy usually runs both, back to back.
 

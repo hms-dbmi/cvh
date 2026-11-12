@@ -58,3 +58,45 @@ jobs:
               --service "$API_SERVICE" --force-new-deployment
             aws ecs update-service --cluster "$ADMIN_CLUSTER" \
               --service "$ADMIN_SERVICE" --force-new-deployment
+
+  yac:
+    if: github.repository == 'hms-dbmi/cvh'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./yac
+    permissions:
+        id-token: write
+        contents: read
+    env:
+      YAC_CLUSTER: ${{ secrets.ECS_YAC_CLUSTER }}
+      YAC_SERVICE: ${{ secrets.ECS_YAC_SERVICE }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push YAC to ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: cvh-yac
+          IMAGE_TAG: latest
+        run: |
+            docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+            docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Force new ECS deployment (YAC)
+        # Skipped until the YAC stack exists and these secrets are set.
+        if: ${{ env.YAC_CLUSTER != '' }}
+        run: |
+            aws ecs update-service --cluster "$YAC_CLUSTER" \
+              --service "$YAC_SERVICE" --force-new-deployment

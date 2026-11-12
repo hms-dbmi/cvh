@@ -13,7 +13,8 @@ The AWS infrastructure for YAC is maintained separately.
 | `yac/cfdb/build.sql`, `yac/cfdb/build.py` | Builds `cfdb.duckdb` from a raw cfdb dump (from udi-yac's `dev/cfdb`) |
 | `yac/cfdb/yac-packages.json` | The package description udiagent reads; udi calls it the query backends file |
 | `yac/yac.env.example` | Template for the service's settings |
-| `.github/workflows/deploy-yac.yml` | Builds and pushes `cvh-yac:latest`, then redeploys |
+| `.github/workflows/deploy-api.yml` | The `yac` job builds and pushes `cvh-yac:latest` on every push to `main`, then redeploys dev |
+| `.github/workflows/deploy-api-prod.yml` | Promotes `cvh-yac` to prod together with the API (see `docs/release.md`) |
 
 ## Budgets
 
@@ -69,7 +70,7 @@ cd yac && /tmp/yac-test/bin/python -m pytest test_cvh_yac.py
 
 ## Updating udiagent
 
-Change the pin in `yac/requirements.in`, run `uv pip compile requirements.in --python-version 3.13 --python-platform x86_64-unknown-linux-gnu --generate-hashes -o requirements.txt` in `yac/`, and merge. The workflow builds and redeploys.
+Change the pin in `yac/requirements.in`, run `uv pip compile requirements.in --python-version 3.13 --python-platform x86_64-unknown-linux-gnu --generate-hashes -o requirements.txt` in `yac/`, and merge. `deploy-api.yml` builds it and redeploys dev; prod gets it on the next `deploy-api-prod.yml` run.
 
 ## When something fails
 
