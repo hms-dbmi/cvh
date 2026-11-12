@@ -161,8 +161,8 @@ WSGI_APPLICATION = "core.wsgi.application"
 #
 # Credentials (DB_USER, DB_PASSWORD) and SECRET_KEY are pulled from a
 # consolidated AWS Secrets Manager entry in production. Injection is
-# handled by ECS itself via the task definition's `Secrets:` field
-# (see cloudformation/back-end.yml), so the app reads them from env
+# handled by ECS itself via the task definition's `Secrets:` field,
+# so the app reads them from env
 # uniformly in dev (.env) and prod.
 
 DB_USER = env.str("DB_USER")
@@ -300,9 +300,8 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # Auth0-backed OIDC for the Django admin SERVICE_VARIANT. The client_id
-# and client_secret are sensitive; in production they come from the
-# AppSecretsArn entry via ECS `Secrets:` injection (see
-# cloudformation/back-end.yml). Domain / claim names are operational
+# and client_secret are sensitive; in production they come from
+# Secrets Manager via ECS `Secrets:` injection. Domain / claim names are operational
 # config, not secrets. The api SERVICE_VARIANT also imports these (no
 # harm — the URLs aren't mounted there) so both processes share the
 # same settings module.

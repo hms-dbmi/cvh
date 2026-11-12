@@ -96,20 +96,7 @@ cp .env.example .env
 | `AUTH0_IDENTIFIER` | Your Auth0 API identifier / audience |
 | `ECS_CONTAINER_METADATA_URI_V4` | Leave empty for local development |
 
-In production these env vars are still read the same way; the difference is *transport*. Three sources at runtime:
-
-- **S3 EnvironmentFile** — most non-secret operational config (`DEBUG`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, `AUTH0_DOMAIN`, `AUTH0_IDENTIFIER`, `DB_ENGINE`).
-- **CFN-injected inline `Environment:`** — values the parent stack derives from other stacks' outputs (`DB_HOST`, `DB_PORT`, `DB_NAME` from the database stack; `SERVICE_VARIANT` for the admin task). These auto-update on CFN changes, so they don't need to be kept in sync manually in S3.
-- **Secrets Manager via `Secrets:` injection** — referenced in `cloudformation/back-end.yml`:
-
-- **`RdsSecretArn`** — the RDS-managed secret auto-created with the database instance. RDS owns its schema (`username`, `password`) and may rotate `password` on a schedule, so app-level secrets do *not* go here. Provides `DB_USER`, `DB_PASSWORD`.
-- **`AppSecretsArn`** — a separate Secrets Manager entry for app-level secrets. Add new app-level secrets here as the codebase grows.
-  ```json
-  { "secret_key": "<django secret>" }
-  ```
-  Provides `SECRET_KEY`.
-
-If either secret is encrypted with a customer-managed KMS key, that key's resource policy must grant `kms:Decrypt` to the `ECSExecutionRole` (the role ECS uses to inject secrets before the container starts). Previously, this permission lived on the `TaskContainerRole` because the running app fetched the DB secret via boto3; the role grant is no longer needed there since the running app no longer touches Secrets Manager directly.
+In production the same env vars are set by ECS: non-secret config from an S3 environment file, database connection values from the stack, and secrets (`SECRET_KEY`, `DB_USER`, `DB_PASSWORD`) from AWS Secrets Manager. The infrastructure is maintained separately.
 
 ### Frontend (`frontend/.env`)
 
