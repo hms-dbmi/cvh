@@ -208,7 +208,14 @@ export const handlers = [
 
   // Workspaces
   http.get(`${apiUrl}/api/workspaces`, () =>
-    HttpResponse.json({ items: [workspace], count: 1 }),
+    HttpResponse.json({
+      items: [
+        flag("__e2eReadOnlyWorkspace")
+          ? { ...workspace, permissions: 1 }
+          : workspace,
+      ],
+      count: 1,
+    }),
   ),
   http.get(`${apiUrl}/api/workspaces/:uuid`, () =>
     HttpResponse.json(

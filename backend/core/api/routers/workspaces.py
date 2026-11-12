@@ -136,6 +136,10 @@ def get_workspace(request, workspace_uuid: UUID):
         permissions = ProjectMember.objects.get(
             project_key=project, user_key=request.auth
         ).permissions
+    # The creator is an admin whatever their member row says, matching
+    # `get_admin_project` and the workspace list.
+    if project.user_key_id == request.auth.id:
+        permissions = 3
     # Attach `permissions` to the model instance so it lands in the
     # schema output alongside every field WorkspaceOut declares
     # (including `created_by`, resolved by the schema from user_key).

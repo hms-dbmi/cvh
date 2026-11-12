@@ -37,7 +37,8 @@ export default function DeleteWorkspaceDialog({
   return (
     <DialogButton
       open
-      setOpen={onClose}
+      // Stay open until the delete finishes, so onDeleted still runs.
+      setOpen={() => !isPending && onClose()}
       isButton={false}
       text={{
         button: null,

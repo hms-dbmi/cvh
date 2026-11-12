@@ -91,9 +91,29 @@ function WorkspaceListItem({
     primaryMeta = collabLabel;
   }
 
+  // Rename and delete need admin access on the backend.
+  const canEdit = (project.permissions ?? 0) >= 3;
+
   return (
     <MenuItem
       {...selectedProps}
+      // The menu closes on Tab, so keyboard users can't reach the options
+      // button; Shift+F10, the context-menu key and right-click open it here.
+      // The keys are handled directly since macOS doesn't map them to a
+      // contextmenu event.
+      {...(canEdit && {
+        "aria-keyshortcuts": "Shift+F10",
+        onContextMenu: (e: React.MouseEvent<HTMLElement>) => {
+          e.preventDefault();
+          onOpenOptions(e.currentTarget, project);
+        },
+        onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+          if ((e.shiftKey && e.key === "F10") || e.key === "ContextMenu") {
+            e.preventDefault();
+            onOpenOptions(e.currentTarget, project);
+          }
+        },
+      })}
       sx={{
         borderRadius: "8px",
         marginBottom: 1,
@@ -155,8 +175,7 @@ function WorkspaceListItem({
             {updatedLabel}
           </Typography>
         </Stack>
-        {/* Rename and delete need admin access on the backend. */}
-        {(project.permissions ?? 0) >= 3 && (
+        {canEdit && (
           <IconButton
             aria-label={`Options for ${project.name}`}
             sx={{ alignSelf: "flex-start" }}
@@ -219,6 +238,16 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
   } | null>(null);
   const openOptions = (anchor: HTMLElement, { uuid, name }: WorkspaceOut) => {
     if (uuid) setOptions({ anchor, project: { uuid, name } });
+  };
+  // Pick the next workspace here: the cached list still has the deleted
+  // one, so /project could send us straight back to it.
+  const leaveDeletedWorkspace = () => {
+    const next = projectsData?.items.find((p) => p.uuid !== projectId)?.uuid;
+    if (next) {
+      navigate({ to: "/project/{-$projectId}", params: { projectId: next } });
+    } else {
+      navigate({ to: "/" });
+    }
   };
   const openDialog = (kind: "rename" | "delete") => {
     if (!options) return;
@@ -436,9 +465,8 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
           project={dialog.project}
           onClose={() => setDialog(null)}
           onDeleted={
-            // Deleting the open workspace: /project picks the first one left.
             dialog.project.uuid === projectId
-              ? () => navigate({ to: "/project/{-$projectId}", params: {} })
+              ? leaveDeletedWorkspace
               : undefined
           }
         />

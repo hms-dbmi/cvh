@@ -354,12 +354,14 @@ class CreateResponseTests(TestCase):
         self.assertEqual(body["tags"], [])
 
 
-class ListWorkspacesPermissionsTests(TestCase):
-    """GET /api/workspaces returns the caller's permission level per
-    workspace, so the frontend shows rename and delete only to admins.
+class WorkspacePermissionsTests(TestCase):
+    """GET /api/workspaces and /api/workspaces/<uuid> return the caller's
+    permission level, so the frontend shows rename and delete only to
+    admins. The creator is an admin even if their member row says less,
+    since that's how the backend checks admin access.
     """
 
-    def test_list_returns_callers_permissions(self):
+    def test_permissions_in_list_and_detail(self):
         from django.contrib.auth.models import User
 
         from .models import Project, ProjectMember
@@ -367,18 +369,22 @@ class ListWorkspacesPermissionsTests(TestCase):
         owner = User.objects.create(username="owner", email="owner@example.com")
         editor = User.objects.create(username="editor", email="editor@example.com")
         project = Project.objects.create(name="Shared", user_key=owner)
-        ProjectMember.objects.create(project_key=project, user_key=owner, permissions=3)
+        ProjectMember.objects.create(project_key=project, user_key=owner, permissions=1)
         ProjectMember.objects.create(
             project_key=project, user_key=editor, permissions=2
         )
 
         for user, expected in [(owner, 3), (editor, 2)]:
             with patch("api.auth.Authorized.authenticate", return_value=user):
-                response = self.client.get(
+                listed = self.client.get(
                     "/api/workspaces", HTTP_AUTHORIZATION="Bearer test-token"
                 )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()["items"][0]["permissions"], expected)
+                detail = self.client.get(
+                    f"/api/workspaces/{project.uuid}",
+                    HTTP_AUTHORIZATION="Bearer test-token",
+                )
+            self.assertEqual(listed.json()["items"][0]["permissions"], expected)
+            self.assertEqual(detail.json()["permissions"], expected)
 
 
 class TokenVerificationTests(TestCase):

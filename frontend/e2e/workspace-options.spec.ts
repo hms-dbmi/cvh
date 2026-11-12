@@ -54,4 +54,36 @@ test("deleting a workspace needs DELETE typed, then fires DELETE", async ({
       path: `/api/workspaces/${PROJECT_ID}`,
       body: undefined,
     });
+  // It was the only workspace, so there's nowhere left but home.
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("Shift+F10 on a workspace tile opens its options", async ({ page }) => {
+  await page.goto(`/project/${PROJECT_ID}`);
+  await page
+    .getByRole("button", { name: /E2E Test Project/i })
+    .first()
+    .click();
+  await page
+    .getByRole("menuitem", { name: /E2E Test Project/ })
+    .press("Shift+F10");
+  await expect(page.getByRole("menuitem", { name: "Rename" })).toBeVisible();
+});
+
+test("viewers don't get workspace options", async ({ page }) => {
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e flag
+    (window as any).__e2eReadOnlyWorkspace = true;
+  });
+  await page.goto(`/project/${PROJECT_ID}`);
+  await page
+    .getByRole("button", { name: /E2E Test Project/i })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("menuitem", { name: /E2E Test Project/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Options for E2E Test Project" }),
+  ).toHaveCount(0);
 });
