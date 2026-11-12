@@ -113,19 +113,18 @@ class ProjectMemberAdmin(admin.ModelAdmin):
 class YacAccessRequestAdmin(admin.ModelAdmin):
     """Approve, decline or revoke YAC access. Approve and revoke change the
     YAC users role in Auth0 first, and only record the decision if Auth0
-    accepted it, so this list never says someone has access they don't."""
+    accepted it, so this list never says someone has access they don't.
+    Declined or revoked people contact us; approving their request again
+    restores access."""
 
-    list_display = ("user", "affiliation", "status", "requested_at", "decided_at")
+    list_display = ("user", "status", "requested_at", "decided_at")
     list_filter = ("status",)
-    search_fields = ("user__username", "user__email", "affiliation", "purpose")
+    search_fields = ("user__username", "user__email")
     ordering = ("-requested_at",)
     actions = ("approve", "decline", "revoke")
     readonly_fields = (
         "user",
         "auth0_user_id",
-        "affiliation",
-        "purpose",
-        "terms_version",
         "status",
         "requested_at",
         "decided_at",
@@ -163,7 +162,7 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
             "approved",
         )
 
-    @admin.action(description="Decline (set a reason on the request first)")
+    @admin.action(description="Decline")
     def decline(self, request, queryset):
         pending = queryset.filter(status=models.YacAccessRequest.Status.pending)
         for access in pending:

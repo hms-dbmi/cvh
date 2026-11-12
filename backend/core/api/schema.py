@@ -541,20 +541,9 @@ class ProcessingOut(Schema):
     processing_error: str | None = None
 
 
-class YacAccessIn(Schema):
-    affiliation: str = Field(min_length=1, max_length=200)
-    purpose: str = Field(min_length=1, max_length=1000)
-    accept_terms: Literal[True] = Field(
-        description="Must be true: the requester accepts the current beta terms."
-    )
-
-
 class YacAccessOut(Schema):
-    """What the YAC page shows. `none` means the user hasn't asked yet."""
+    """The user's AI access state. `none` means they haven't asked yet."""
 
     status: Literal["none", "pending", "approved", "declined", "revoked"]
     requested_at: datetime | None = None
     decided_at: datetime | None = None
-    decline_reason: str = ""
-    terms_version: str = Field(description="The beta terms version in force now.")
-    terms: str = Field(description="The beta terms text the request form shows.")

@@ -112,15 +112,15 @@ For break-glass when Auth0 is unreachable, use ECS Exec to drop into the running
 
 ## YAC Access Requests
 
-People ask to use YAC from CVH (`POST /api/yac/access`), and an admin decides in **Django admin → YAC access requests**:
+People ask for AI access (YAC) from their profile or the Explore tab (`POST /api/yac/access`), and an admin decides in **Django admin → YAC access requests**:
 
 - **Approve** adds the YAC users role to the person in Auth0, through the Management API, then records the decision. If Auth0 refuses or can't be reached, the request stays pending and the admin sees why.
-- **Decline** records the decision with no Auth0 call. Fill in **Decline reason** on the request first; the person sees it, and can ask again.
+- **Decline** records the decision with no Auth0 call.
 - **Revoke** removes the role in Auth0, then marks the request revoked.
 
-Access lasts until it's revoked; there's no expiry. Any Django admin (`cvh_admin` role) can run these actions: John approves, with one or two other admins as backups.
+Each person can ask once. Declined and revoked people see "Contact Us" (hidive@hms.harvard.edu); to let them back in, **Approve** their existing request. Access lasts until it's revoked; there's no expiry. Any Django admin (`cvh_admin` role) can run these actions: John approves, with one or two other admins as backups.
 
-**Status** can only change through these actions, so Django never shows someone as approved without the role. Auth0 is what enforces access: YAC refuses tokens to anyone without the role. Requests record the beta terms version accepted. The terms and their version live in `backend/core/api/yac_terms.py`; change `TERMS_VERSION` whenever the text changes. They're a placeholder until the real terms are drafted.
+**Status** can only change through these actions, so Django never shows someone as approved without the role. Auth0 is what enforces access: YAC refuses tokens to anyone without the role.
 
 ### One-time setup per environment
 

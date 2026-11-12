@@ -595,8 +595,8 @@ class VisualizationAuthorsTests(TestCase):
 
 
 class YacAccessRequestTests(TestCase):
-    """GET and POST /api/yac/access: the YAC page reads its state from these,
-    and a request records who asked, under which Auth0 ID and terms."""
+    """GET and POST /api/yac/access: the profile and Explore tab read the
+    user's AI access state from these, and a request records the Auth0 ID."""
 
     def setUp(self):
         from django.contrib.auth.models import User
@@ -614,57 +614,37 @@ class YacAccessRequestTests(TestCase):
     def _get(self):
         return self.client.get("/api/yac/access", HTTP_AUTHORIZATION="Bearer t")
 
-    def _request(self, **overrides):
-        body = {"affiliation": "HMS", "purpose": "ENCODE files", "accept_terms": True}
-        return self.client.post(
-            "/api/yac/access",
-            data={**body, **overrides},
-            content_type="application/json",
-            HTTP_AUTHORIZATION="Bearer t",
+    def _request(self):
+        return self.client.post("/api/yac/access", HTTP_AUTHORIZATION="Bearer t")
+
+    def test_new_user_has_not_asked(self):
+        self.assertEqual(
+            self._get().json(),
+            {"status": "none", "requested_at": None, "decided_at": None},
         )
 
-    def test_new_user_has_not_asked_and_sees_the_terms(self):
-        from .yac_terms import TERMS, TERMS_VERSION
-
-        body = self._get().json()
-
-        self.assertEqual(body["status"], "none")
-        self.assertEqual((body["terms_version"], body["terms"]), (TERMS_VERSION, TERMS))
-
-    def test_request_is_pending_and_records_the_auth0_id_and_terms(self):
+    def test_request_is_pending_and_records_the_auth0_id(self):
         from .models import YacAccessRequest
-        from .yac_terms import TERMS_VERSION
 
         response = self._request()
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "pending")
+        self.assertIsNotNone(response.json()["requested_at"])
         access = YacAccessRequest.objects.get(user=self.user)
         self.assertEqual(access.auth0_user_id, "google-oauth2|42")
-        self.assertEqual(access.terms_version, TERMS_VERSION)
 
-    def test_terms_must_be_accepted(self):
-        self.assertEqual(self._request(accept_terms=False).status_code, 422)
-
-    def test_cannot_request_again_while_pending(self):
-        self._request()
-        response = self._request()
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json()["code"], "already_requested")
-
-    def test_declined_user_can_ask_again(self):
+    def test_cannot_request_again_in_any_state(self):
         from .models import YacAccessRequest
 
         self._request()
-        YacAccessRequest.objects.filter(user=self.user).update(
-            status="declined", decline_reason="Not yet"
-        )
-        self.assertEqual(self._get().json()["decline_reason"], "Not yet")
-
-        response = self._request(purpose="4DN Hi-C")
-
-        self.assertEqual(response.json()["status"], "pending")
-        self.assertEqual(response.json()["decline_reason"], "")
+        for status in ("pending", "approved", "declined", "revoked"):
+            YacAccessRequest.objects.filter(user=self.user).update(status=status)
+            response = self._request()
+            with self.subTest(status=status):
+                self.assertEqual(response.status_code, 409)
+                self.assertEqual(response.json()["code"], "already_requested")
+                self.assertEqual(self._get().json()["status"], status)
 
 
 class YacAccessAdminTests(TestCase):
@@ -685,9 +665,6 @@ class YacAccessAdminTests(TestCase):
         self.access = YacAccessRequest.objects.create(
             user=requester,
             auth0_user_id="google-oauth2|42",
-            affiliation="HMS",
-            purpose="ENCODE files",
-            terms_version="2026-11",
             requested_at=timezone.now(),
         )
         self.model_admin = YacAccessRequestAdmin(YacAccessRequest, site)
@@ -719,6 +696,17 @@ class YacAccessAdminTests(TestCase):
 
         self.assertEqual(self.access.status, "pending")
         self.assertIsNone(self.access.decided_at)
+
+    def test_approving_a_declined_request_restores_access(self):
+        # Declined and revoked people contact us instead of asking again.
+        self.access.status = "declined"
+        self.access.save()
+
+        with patch("api.admin.grant_yac_role") as grant:
+            self._run("approve")
+
+        grant.assert_called_once_with("google-oauth2|42")
+        self.assertEqual(self.access.status, "approved")
 
     def test_revoke_removes_the_role(self):
         self.access.status = "approved"

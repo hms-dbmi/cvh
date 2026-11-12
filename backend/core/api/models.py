@@ -466,27 +466,10 @@ class YacAccessRequest(models.Model):
         max_length=255,
         help_text="The requester's Auth0 user ID, used to grant or remove the role.",
     )
-    affiliation = models.CharField(
-        max_length=200, help_text="Institution or project, as the requester gave it."
-    )
-    purpose = models.TextField(
-        max_length=1000, help_text="What the requester wants to explore with YAC."
-    )
-    terms_version = models.CharField(
-        max_length=20, help_text="The beta terms version the requester accepted."
-    )
     status = models.CharField(
         max_length=10, choices=Status, default=Status.pending, db_index=True
     )
-    decline_reason = models.TextField(
-        max_length=500,
-        blank=True,
-        default="",
-        help_text="Shown to the requester when declined.",
-    )
-    requested_at = models.DateTimeField(
-        help_text="When the request was last submitted, including re-requests."
-    )
+    requested_at = models.DateTimeField(help_text="When the request was submitted.")
     decided_at = models.DateTimeField(null=True, blank=True)
     decided_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
