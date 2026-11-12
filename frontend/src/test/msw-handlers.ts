@@ -306,6 +306,14 @@ export const handlers = [
     await recordRequest("PUT", "/api/user", request);
     return HttpResponse.json({ success: true });
   }),
+  http.put(`${apiUrl}/api/workspaces/:uuid`, async ({ request, params }) => {
+    await recordRequest("PUT", `/api/workspaces/${params.uuid}`, request);
+    return HttpResponse.json({ success: true });
+  }),
+  http.delete(`${apiUrl}/api/workspaces/:uuid`, async ({ request, params }) => {
+    await recordRequest("DELETE", `/api/workspaces/${params.uuid}`, request);
+    return HttpResponse.json({ success: true });
+  }),
   http.put(
     `${apiUrl}/api/workspaces/:uuid/members`,
     async ({ request, params }) => {

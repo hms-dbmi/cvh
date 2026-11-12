@@ -3,8 +3,10 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
@@ -12,14 +14,20 @@ import Typography from "@mui/material/Typography";
 import {
   CaretDown,
   CaretUp,
+  DotsThree,
   MagnifyingGlass,
+  PencilSimple,
+  Trash,
   User,
   Users,
 } from "@phosphor-icons/react";
+import { useNavigate } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
 import { useDeferredValue, useMemo, useState } from "react";
 import useGetProjects from "@/features/projects/api/useProjects";
 import AddProjectButton from "@/features/projects/components/AddProjectButton";
+import DeleteWorkspaceDialog from "@/features/projects/components/DeleteWorkspaceDialog";
+import RenameWorkspaceDialog from "@/features/projects/components/RenameWorkspaceDialog";
 import type { components } from "@/types/schema";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
@@ -30,9 +38,11 @@ function WorkspaceListItem({
   project,
   isSelected,
   showSharedBy = false,
+  onOpenOptions,
 }: {
   project: WorkspaceOut;
   isSelected: boolean;
+  onOpenOptions: (anchor: HTMLElement, project: WorkspaceOut) => void;
   // When true, the secondary line leads with "Shared By: <name>" —
   // used in the Shared Workspaces section so the user knows who invited
   // them. Silently ignored when `project.created_by` is null (legacy
@@ -101,7 +111,8 @@ function WorkspaceListItem({
           : {}),
       }}
     >
-      <Stack direction="row" spacing={2}>
+      {/* Fill the tile so the options button sits at its right edge. */}
+      <Stack direction="row" spacing={2} sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ alignSelf: "center" }}>
           <Avatar
             sx={{
@@ -144,6 +155,21 @@ function WorkspaceListItem({
             {updatedLabel}
           </Typography>
         </Stack>
+        {/* Rename and delete need admin access on the backend. */}
+        {(project.permissions ?? 0) >= 3 && (
+          <IconButton
+            aria-label={`Options for ${project.name}`}
+            sx={{ alignSelf: "flex-start" }}
+            onClick={(e) => {
+              // Keep the tile's link from navigating.
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenOptions(e.currentTarget, project);
+            }}
+          >
+            <DotsThree size={20} weight="bold" />
+          </IconButton>
+        )}
       </Stack>
     </MenuItem>
   );
@@ -178,6 +204,28 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [fromMeOnly, setFromMeOnly] = useState(false);
   const deferredSearch = useDeferredValue(searchQuery);
+
+  // The options menu and dialogs render outside the workspace menu, so
+  // its type-ahead can't steal keystrokes from the dialog inputs.
+  const navigate = useNavigate();
+  type Target = { uuid: string; name: string };
+  const [options, setOptions] = useState<{
+    anchor: HTMLElement;
+    project: Target;
+  } | null>(null);
+  const [dialog, setDialog] = useState<{
+    kind: "rename" | "delete";
+    project: Target;
+  } | null>(null);
+  const openOptions = (anchor: HTMLElement, { uuid, name }: WorkspaceOut) => {
+    if (uuid) setOptions({ anchor, project: { uuid, name } });
+  };
+  const openDialog = (kind: "rename" | "delete") => {
+    if (!options) return;
+    setDialog({ kind, project: options.project });
+    setOptions(null);
+    setAnchorEl(null);
+  };
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -320,6 +368,7 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
         <WorkspaceListItem
           project={currentProject}
           isSelected
+          onOpenOptions={openOptions}
           // Show "Shared By:" on the current tile when the active
           // workspace wasn't created by the viewer. Mirrors the
           // partition rule below (unknown creator → treat as shared).
@@ -333,7 +382,12 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
             <Divider sx={{ mx: 2, my: 1 }} />
             <Typography sx={SECTION_HEADING_SX}>Personal Workspaces</Typography>
             {personalWorkspaces.map((p) => (
-              <WorkspaceListItem key={p.uuid} project={p} isSelected={false} />
+              <WorkspaceListItem
+                key={p.uuid}
+                project={p}
+                isSelected={false}
+                onOpenOptions={openOptions}
+              />
             ))}
           </>
         )}
@@ -347,11 +401,48 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
                 project={p}
                 isSelected={false}
                 showSharedBy
+                onOpenOptions={openOptions}
               />
             ))}
           </>
         )}
       </Menu>
+      <Menu
+        anchorEl={options?.anchor}
+        open={Boolean(options)}
+        onClose={() => setOptions(null)}
+      >
+        <MenuItem onClick={() => openDialog("rename")}>
+          <ListItemIcon>
+            <PencilSimple size={20} />
+          </ListItemIcon>
+          Rename
+        </MenuItem>
+        <MenuItem onClick={() => openDialog("delete")}>
+          <ListItemIcon>
+            <Trash size={20} />
+          </ListItemIcon>
+          Delete
+        </MenuItem>
+      </Menu>
+      {dialog?.kind === "rename" && (
+        <RenameWorkspaceDialog
+          project={dialog.project}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === "delete" && (
+        <DeleteWorkspaceDialog
+          project={dialog.project}
+          onClose={() => setDialog(null)}
+          onDeleted={
+            // Deleting the open workspace: /project picks the first one left.
+            dialog.project.uuid === projectId
+              ? () => navigate({ to: "/project/{-$projectId}", params: {} })
+              : undefined
+          }
+        />
+      )}
     </>
   );
 }

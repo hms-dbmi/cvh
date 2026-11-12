@@ -354,6 +354,33 @@ class CreateResponseTests(TestCase):
         self.assertEqual(body["tags"], [])
 
 
+class ListWorkspacesPermissionsTests(TestCase):
+    """GET /api/workspaces returns the caller's permission level per
+    workspace, so the frontend shows rename and delete only to admins.
+    """
+
+    def test_list_returns_callers_permissions(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember
+
+        owner = User.objects.create(username="owner", email="owner@example.com")
+        editor = User.objects.create(username="editor", email="editor@example.com")
+        project = Project.objects.create(name="Shared", user_key=owner)
+        ProjectMember.objects.create(project_key=project, user_key=owner, permissions=3)
+        ProjectMember.objects.create(
+            project_key=project, user_key=editor, permissions=2
+        )
+
+        for user, expected in [(owner, 3), (editor, 2)]:
+            with patch("api.auth.Authorized.authenticate", return_value=user):
+                response = self.client.get(
+                    "/api/workspaces", HTTP_AUTHORIZATION="Bearer test-token"
+                )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["items"][0]["permissions"], expected)
+
+
 class TokenVerificationTests(TestCase):
     """Bad tokens are the caller's problem (401, sign in again); an
     unreachable Auth0 is not (503). Before this, everything except a
