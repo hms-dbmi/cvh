@@ -9,6 +9,3 @@
 /.github/workflows/deploy-api-prod.yml         @john-conroy
 /.github/workflows/deploy-front-end-prod.yml   @john-conroy
 /.github/workflows/publish-client.yml          @john-conroy
-
-# Infrastructure — CloudFormation templates.
-/cloudformation/                       @john-conroy
