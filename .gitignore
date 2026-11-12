@@ -175,3 +175,5 @@ cython_debug/
 .pypirc
 
 backend/core/data/*
+# YAC data build output (uploaded to S3, not committed)
+yac/cfdb/*.duckdb

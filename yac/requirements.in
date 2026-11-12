@@ -1,0 +1,5 @@
+# cvh_yac.py needs budget_check(token_payload, usage) from udi-yac #243.
+# 0.13.0a0 is the first release with it; move to 0.13.0 once that's out.
+udiagent[server,duckdb,bedrock,langfuse]==0.13.0a0
+# cfdb/cfdb.duckdb is written in DuckDB 2's storage format.
+duckdb>=2,<3
