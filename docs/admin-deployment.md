@@ -109,3 +109,20 @@ Override either via env vars (`OIDC_ADMIN_ROLE_CLAIM`, `OIDC_ADMIN_ROLE_NAME`) i
 - Existing Django users created via Auth0 have their `is_staff` / `is_superuser` flags re-synced on every login (`update_user`), so revoking the Auth0 role takes effect on the next sign-in.
 
 For break-glass when Auth0 is unreachable, use ECS Exec to drop into the running container and run `python manage.py shell` directly — there is intentionally no local password fallback.
+
+## YAC Access Requests
+
+People ask to use YAC from CVH (`POST /api/yac/access`), and an admin decides in **Django admin → YAC access requests**:
+
+- **Approve** adds the YAC users role to the person in Auth0, through the Management API, then records the decision. If Auth0 refuses or can't be reached, the request stays pending and the admin sees why.
+- **Decline** records the decision with no Auth0 call. Fill in **Decline reason** on the request first; the person sees it, and can ask again.
+- **Revoke** removes the role in Auth0, then marks the request revoked.
+
+Access lasts until it's revoked; there's no expiry. Any Django admin (`cvh_admin` role) can run these actions: John approves, with one or two other admins as backups.
+
+**Status** can only change through these actions, so Django never shows someone as approved without the role. Auth0 is what enforces access: YAC refuses tokens to anyone without the role. Requests record the beta terms version accepted. The terms and their version live in `backend/core/api/yac_terms.py`; change `TERMS_VERSION` whenever the text changes. They're a placeholder until the real terms are drafted.
+
+### One-time setup per environment
+
+1. **Machine-to-machine app:** in the environment's Auth0 tenant, Applications → Create Application → Machine to Machine, for example "CVH admin (Management API)". Authorize it for the **Auth0 Management API** with only the scopes for assigning and removing a user's roles (`create:role_members` and `delete:role_members`; check them against Auth0's docs for `POST` and `DELETE /api/v2/users/{id}/roles`).
+2. **Settings:** give the admin service `AUTH0_MGMT_CLIENT_ID` and `AUTH0_MGMT_CLIENT_SECRET` (from step 1) and `YAC_AUTH0_ROLE_ID` (the YAC users role's ID, `rol_…`, on its page under User Management → Roles). Locally, put them in `backend/core/.env`. Until they're set, Approve and Revoke show which one is missing and leave the request unchanged.
