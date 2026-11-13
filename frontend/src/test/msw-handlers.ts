@@ -230,6 +230,12 @@ export const handlers = [
     });
   }),
   http.get(`${yacUrl}/v1/yac/usage`, () => {
+    if (flag("__e2eYacUsageError")) {
+      return HttpResponse.json(
+        { detail: "YAC access hasn't been granted." },
+        { status: 403 },
+      );
+    }
     // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
     const percent = (window as any).__e2eYacPercent ?? 16;
     return HttpResponse.json({

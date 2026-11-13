@@ -9,6 +9,7 @@ import { PencilSimple } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useGetUser } from "@/features/navigation/api/useUser";
 import { LoginButton } from "@/features/navigation/components/AuthButtons";
+import { yacConfigured } from "../api/useYacAccess";
 import AiUsage, { LABEL_SX } from "./AiUsage";
 import UpdateNameDialog from "./UpdateNameDialog";
 
@@ -57,8 +58,12 @@ function ProfileDetails() {
         </Typography>
         <Typography variant="body2">{user.email}</Typography>
       </Stack>
-      <Divider />
-      <AiUsage />
+      {yacConfigured && (
+        <>
+          <Divider />
+          <AiUsage />
+        </>
+      )}
       {editingName && (
         <UpdateNameDialog
           firstName={user.first_name}

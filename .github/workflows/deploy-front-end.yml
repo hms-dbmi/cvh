@@ -40,6 +40,10 @@ jobs:
         VITE_API_URL: ${{secrets.VITE_API_URL}}
         VITE_CLOUDFRONT_URL: ${{secrets.VITE_CLOUDFRONT_URL}}
         VITE_CFDB_API_URL: ${{secrets.VITE_CFDB_API_URL}}
+        # The AI section stays hidden until these repo variables are set
+        # (the dev YAC URL and its Auth0 API identifier).
+        VITE_YAC_URL: ${{vars.YAC_URL}}
+        VITE_YAC_AUDIENCE: ${{vars.YAC_AUDIENCE}}
         VITE_FEATURED_PATH: featured/dev-featured.json
         VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{secrets.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}}
         VITE_PUBLIC_POSTHOG_HOST: ${{secrets.VITE_PUBLIC_POSTHOG_HOST}}

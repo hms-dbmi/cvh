@@ -42,6 +42,8 @@ export type YacUsage = {
 
 const YAC_URL: string | undefined = import.meta.env.VITE_YAC_URL;
 const YAC_AUDIENCE: string | undefined = import.meta.env.VITE_YAC_AUDIENCE;
+// No YAC in this environment yet: the profile hides AI usage entirely.
+const yacConfigured = Boolean(YAC_URL && YAC_AUDIENCE);
 
 // This month's AI spending, from the YAC service with a YAC token (only
 // people with access can get one). Off until the YAC settings are set.
@@ -49,7 +51,7 @@ function useYacUsage(enabled: boolean) {
   const { getAccessTokenSilently } = useAuth0();
   return useQuery({
     queryKey: ["yac-usage"],
-    enabled: enabled && Boolean(YAC_URL && YAC_AUDIENCE),
+    enabled: enabled && yacConfigured,
     queryFn: async (): Promise<YacUsage> => {
       const token = await getAccessTokenSilently({
         authorizationParams: { audience: YAC_AUDIENCE },
@@ -65,4 +67,4 @@ function useYacUsage(enabled: boolean) {
   });
 }
 
-export { useGetYacAccess, useRequestYacAccess, useYacUsage };
+export { useGetYacAccess, useRequestYacAccess, useYacUsage, yacConfigured };

@@ -112,7 +112,7 @@ For break-glass when Auth0 is unreachable, use ECS Exec to drop into the running
 
 ## YAC Access Requests
 
-People ask for AI access (YAC) from their profile or the Explore tab (`POST /api/yac/access`), and an admin decides in **Django admin → YAC access requests**:
+People ask for AI access (YAC) from their profile page (`POST /api/yac/access`), and an admin decides in **Django admin → YAC access requests**:
 
 - **Approve** adds the YAC users role to the person in Auth0, through the Management API, then records the decision. If Auth0 refuses or can't be reached, the request stays pending and the admin sees why.
 - **Decline** records the decision with no Auth0 call.

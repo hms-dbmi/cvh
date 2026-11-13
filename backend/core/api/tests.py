@@ -595,7 +595,7 @@ class VisualizationAuthorsTests(TestCase):
 
 
 class YacAccessRequestTests(TestCase):
-    """GET and POST /api/yac/access: the profile and Explore tab read the
+    """GET and POST /api/yac/access: the profile page reads the
     user's AI access state from these, and a request records the Auth0 ID."""
 
     def setUp(self):

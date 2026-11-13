@@ -116,3 +116,19 @@ test("AI usage says so when access can't be loaded", async ({ page }) => {
     aiUsage(page).getByText("AI usage is unavailable right now."),
   ).toBeVisible({ timeout: 15_000 });
 });
+
+test("approved users are told when their usage can't be read", async ({
+  page,
+}) => {
+  await gotoProfile(page, {
+    __e2eYacStatus: "approved",
+    __e2eYacUsageError: true,
+  });
+  await expect(
+    aiUsage(page).getByText("Active", { exact: true }),
+  ).toBeVisible();
+  // React Query retries three times (about 7s) before reporting the error.
+  await expect(
+    aiUsage(page).getByText("Your AI usage is unavailable right now."),
+  ).toBeVisible({ timeout: 15_000 });
+});

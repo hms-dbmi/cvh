@@ -165,8 +165,9 @@ function CreditUsageBar({ usage }: { usage: YacUsage }) {
   );
 }
 
-// Without usage (YAC not configured, or the request failed) it's just Active.
-function approvedContent(usage: YacUsage | undefined) {
+// Until usage loads it's just Active. If YAC refused it (say, the Auth0
+// role is missing although Django says approved), say so.
+function approvedContent(usage: YacUsage | undefined, usageFailed: boolean) {
   if (!usage) {
     return {
       chip: (
@@ -176,7 +177,12 @@ function approvedContent(usage: YacUsage | undefined) {
           color={COLORS.success}
         />
       ),
-      body: null,
+      body: usageFailed ? (
+        <Typography variant="body2">
+          Your AI usage is unavailable right now. If this continues,{" "}
+          <ContactUs />.
+        </Typography>
+      ) : null,
     };
   }
 
@@ -244,7 +250,9 @@ function useAiUsageContent() {
   const { data: access, isError } = useGetYacAccess();
   const { mutate, isPending } = useRequestYacAccess();
   // Set up on every render, but only fetches for approved users.
-  const { data: usage } = useYacUsage(access?.status === "approved");
+  const { data: usage, isError: usageFailed } = useYacUsage(
+    access?.status === "approved",
+  );
 
   if (!access) {
     return isError
@@ -321,7 +329,7 @@ function useAiUsageContent() {
         ),
       };
     case "approved":
-      return approvedContent(usage);
+      return approvedContent(usage, usageFailed);
     default:
       // Declined and revoked look the same: no access, contact us.
       return {
