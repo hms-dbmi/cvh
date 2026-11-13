@@ -21,7 +21,7 @@ function RouteComponent() {
     return <ProjectsPage projectId={projectId} />;
   }
 
-  const firstProjectID = projectsData?.items?.[0].uuid;
+  const firstProjectID = projectsData?.items?.[0]?.uuid;
 
   if (firstProjectID) {
     router.navigate({

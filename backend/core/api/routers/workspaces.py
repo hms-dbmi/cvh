@@ -1,7 +1,7 @@
 import contextlib
 from uuid import UUID
 
-from django.db.models import Count
+from django.db.models import Case, Count, OuterRef, Subquery, Value, When
 from ninja import Router
 from ninja.pagination import paginate
 
@@ -65,6 +65,18 @@ def get_workspaces(request):
         .filter(private=True)
         .order_by("-modified_timestamp")
         .annotate(workspace_members_count=Count("projectmember", distinct=True))
+        # The creator is an admin even without a member row, matching
+        # `get_admin_project`, so the list can show admin-only actions.
+        .annotate(
+            permissions=Case(
+                When(user_key=request.auth, then=Value(3)),
+                default=Subquery(
+                    ProjectMember.objects.filter(
+                        project_key=OuterRef("pk"), user_key=request.auth
+                    ).values("permissions")[:1]
+                ),
+            )
+        )
     )
     return workspaces
 
@@ -124,6 +136,10 @@ def get_workspace(request, workspace_uuid: UUID):
         permissions = ProjectMember.objects.get(
             project_key=project, user_key=request.auth
         ).permissions
+    # The creator is an admin whatever their member row says, matching
+    # `get_admin_project` and the workspace list.
+    if project.user_key_id == request.auth.id:
+        permissions = 3
     # Attach `permissions` to the model instance so it lands in the
     # schema output alongside every field WorkspaceOut declares
     # (including `created_by`, resolved by the schema from user_key).
