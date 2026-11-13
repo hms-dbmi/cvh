@@ -9,6 +9,7 @@ Needs udiagent with budget_check(token_payload, usage) (udi-yac #243).
 """
 
 import calendar
+import functools
 import json
 import logging
 import os
@@ -46,6 +47,26 @@ if _backends_file and (
 
 log = logging.getLogger("cvh_yac")
 
+# Auth0 puts the YAC users role's permissions in the token (RBAC on the YAC
+# API). Checking it here means a missing or broken post-login Action can't
+# hand YAC to everyone: without the permission, every endpoint answers 403.
+REQUIRED_PERMISSION = "use:yac"
+_verify_token = server.verify_jwt
+
+
+@functools.wraps(_verify_token)  # keeps its Authorization header parameters
+def _verify_with_permission(*args, **kwargs):
+    payload = _verify_token(*args, **kwargs)
+    # Insecure dev mode verifies nothing; budget_check refuses those turns.
+    if payload.get("dev_mode"):
+        return payload
+    if REQUIRED_PERMISSION not in payload.get("permissions", []):
+        raise HTTPException(403, "YAC access hasn't been granted.")
+    return payload
+
+
+app.dependency_overrides[server.verify_jwt] = _verify_with_permission
+
 USER_MONTHLY_USD = float(os.environ.get("YAC_USER_MONTHLY_USD", "2"))
 TOTAL_MONTHLY_USD = float(os.environ.get("YAC_TOTAL_MONTHLY_USD", "100"))
 LIMIT_CLAIM = "https://cvh/yac_monthly_usd"
@@ -58,6 +79,14 @@ PRICE_OUTPUT = 11.00
 
 # Keep a month's totals for about 13 months after it starts.
 KEEP_SECONDS = 400 * 24 * 3600
+
+# The budget check only sees finished turns, so cap what one turn can cost
+# before it's recorded. A fresh chat sends about 25 KB (cfdb's schema and
+# domains); 512 KB leaves room for a long conversation.
+MAX_BODY_BYTES = 512 * 1024
+# People with a turn running. shortcut: per process, which is enough while
+# the stack runs one YAC task; move to a DynamoDB lock if it runs more.
+_running: set[str] = set()
 
 _table = os.environ.get("YAC_USAGE_TABLE", "")
 _dynamodb = None
@@ -190,22 +219,48 @@ async def record_usage(request, call_next):
     # budgets. It's a developer tool; refuse it and its analysis here.
     if request.url.path.startswith("/v1/yac/benchmark"):
         return JSONResponse({"error": "Not found."}, status_code=404)
-    response = await call_next(request)
-    if (
-        request.url.path == "/v1/yac/completions"
-        and response.status_code == 200
-        and "x-usage-total-tokens" in response.headers
-    ):
+    if request.url.path != "/v1/yac/completions":
+        return await call_next(request)
+
+    # Content-Length first, so a huge body is refused before it's read.
+    length = request.headers.get("content-length", "")
+    declared = int(length) if length.isdigit() else 0
+    if declared > MAX_BODY_BYTES or len(await request.body()) > MAX_BODY_BYTES:
+        return JSONResponse(
+            {"error": "This conversation is too long. Start a new one."},
+            status_code=413,
+        )
+    # Unverified here; udiagent verifies it, and a forged token only holds
+    # the lock until udiagent refuses it.
+    sub = _token_sub(request)
+    if sub in _running:
+        return JSONResponse(
+            {"error": "You already have a request running. Wait for it to finish."},
+            status_code=429,
+        )
+    if sub:
+        _running.add(sub)
+    try:
+        response = await call_next(request)
+    finally:
+        _running.discard(sub)
+
+    if response.status_code == 200 and "x-usage-total-tokens" in response.headers:
         try:
             # udiagent verified this token before answering 200.
-            sub = jwt.get_unverified_claims(
-                request.headers["authorization"].split(" ", 1)[1]
-            )["sub"]
             await run_in_threadpool(record, sub, response.headers)
         except Exception:
             # The AWS Budgets alert is the backstop for unrecorded turns.
             log.exception("could not record YAC usage")
     return response
+
+
+def _token_sub(request) -> str | None:
+    try:
+        token = request.headers["authorization"].split(" ", 1)[1]
+        return jwt.get_unverified_claims(token)["sub"]
+    except Exception:
+        return None
 
 
 app.state.budget_check = budget_check

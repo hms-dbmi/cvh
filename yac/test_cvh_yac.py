@@ -143,6 +143,54 @@ def test_benchmark_routes_are_refused(db, monkeypatch, path):
     assert response.status_code == 404
 
 
+def _post_turn(token_sub, body=None):
+    from fastapi.testclient import TestClient
+    from jose import jwt
+
+    token = jwt.encode({"sub": token_sub}, "test", algorithm="HS256")
+    return TestClient(cvh_yac.app).post(
+        "/v1/yac/completions",
+        json=body
+        or {
+            "messages": [{"role": "user", "content": "Files by DCC?"}],
+            "dataSchema": "{}",
+            "dataDomains": "{}",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
+def test_oversized_turn_is_refused_before_the_model(db, monkeypatch):
+    import udiagent.server.app as server
+
+    monkeypatch.setattr(server, "completions", pytest.fail)
+    response = _post_turn(
+        "auth0|a",
+        {
+            "messages": [{"role": "user", "content": "x" * cvh_yac.MAX_BODY_BYTES}],
+            "dataSchema": "{}",
+            "dataDomains": "{}",
+        },
+    )
+    assert response.status_code == 413
+
+
+def test_second_turn_while_one_is_running_is_refused(db, monkeypatch):
+    import udiagent.server.app as server
+
+    monkeypatch.setattr(server, "completions", pytest.fail)
+    monkeypatch.setattr(cvh_yac, "_running", {"auth0|a"})
+    assert _post_turn("auth0|a").status_code == 429
+
+
+def test_finished_turn_frees_the_user(db, monkeypatch):
+    import udiagent.server.app as server
+
+    monkeypatch.setattr(server, "completions", lambda *_, **__: ([], {}))
+    assert _post_turn("auth0|a").status_code == 200
+    assert cvh_yac._running == set()
+
+
 def test_udiagent_passes_the_token_to_our_check(db):
     # udi-yac #243: the server binds each request's token to the hook.
     from udiagent.server.app import _budget_check
@@ -197,15 +245,46 @@ def test_usage_uses_the_bump_and_stops_at_100(db):
     assert (result["limit_usd"], result["percent_used"]) == (5.0, 100)
 
 
-def test_usage_endpoint_reads_the_verified_token(db):
+def test_usage_endpoint_reads_the_verified_token(db, monkeypatch):
     import udiagent.server.app as server
     from fastapi.testclient import TestClient
 
     db.items[month_key("auth0|a")] = 1.8
-    cvh_yac.app.dependency_overrides[server.verify_jwt] = lambda: {"sub": "auth0|a"}
-    try:
-        response = TestClient(cvh_yac.app).get("/v1/yac/usage")
-    finally:
-        cvh_yac.app.dependency_overrides.clear()
+    monkeypatch.setitem(
+        cvh_yac.app.dependency_overrides,
+        server.verify_jwt,
+        lambda: {"sub": "auth0|a"},
+    )
+    response = TestClient(cvh_yac.app).get("/v1/yac/usage")
     assert response.status_code == 200, response.text
     assert response.json()["percent_used"] == 90
+
+
+@pytest.mark.parametrize(
+    ("claims", "allowed"),
+    [
+        ({"sub": "auth0|a", "permissions": ["use:yac"]}, True),
+        ({"sub": "auth0|a", "permissions": []}, False),
+        ({"sub": "auth0|a"}, False),
+    ],
+)
+def test_tokens_need_the_yac_permission(db, monkeypatch, claims, allowed):
+    from fastapi import HTTPException
+
+    # Stand in for udiagent's signature check; ours runs after it.
+    monkeypatch.setattr(cvh_yac, "_verify_token", lambda *_, **__: claims)
+    if allowed:
+        assert cvh_yac._verify_with_permission() == claims
+    else:
+        with pytest.raises(HTTPException) as refused:
+            cvh_yac._verify_with_permission()
+        assert refused.value.status_code == 403
+
+
+def test_every_endpoint_uses_the_permission_check():
+    import udiagent.server.app as server
+
+    assert (
+        cvh_yac.app.dependency_overrides[server.verify_jwt]
+        is cvh_yac._verify_with_permission
+    )
