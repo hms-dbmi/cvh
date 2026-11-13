@@ -123,7 +123,7 @@ except CVHAPIError as e:
 
 ## MCP server (AI assistants)
 
-`cvh-mcp` is an [MCP](https://modelcontextprotocol.io) server that lets an AI assistant such as Claude read your CVH workspaces, datasets and visualizations, create and edit visualizations, and search Common Fund (CFDE) file metadata in cfdb. Gosling specs are checked against the Gosling schema before they are saved. It can't delete anything or publish.
+`cvh-mcp` is an [MCP](https://modelcontextprotocol.io) server that lets an AI assistant such as Claude read your CVH workspaces, datasets and visualizations, create and edit visualizations, add datasets by URL or from cfdb, tag datasets and visualizations, publish visualizations, and search Common Fund (CFDE) file metadata in cfdb. Gosling specs are checked against the Gosling schema before they are saved. It can't delete anything.
 
 Add it to Claude Code:
 
