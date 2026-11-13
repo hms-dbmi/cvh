@@ -61,7 +61,19 @@ jobs:
             fi
             printf '%s' "$MANIFEST" > "$RUNNER_TEMP/manifest-$REPOSITORY.json"
           done
+          digest() {
+            aws ecr batch-get-image --repository-name "$1" \
+              --image-ids imageTag="$2" \
+              --query 'images[].imageId.imageDigest' --output text
+          }
           for REPOSITORY in $REPOSITORIES; do
+            # ECR refuses to re-put a tag that already points at this image
+            # (ImageAlreadyExistsException), which would stop the loop before
+            # the next repository is tagged.
+            if [ "$(digest "$REPOSITORY" prod)" = "$(digest "$REPOSITORY" "$SOURCE_TAG")" ]; then
+              echo "$REPOSITORY:prod is already $SOURCE_TAG"
+              continue
+            fi
             aws ecr put-image \
               --repository-name "$REPOSITORY" \
               --image-tag prod \

@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - main
+  # Run by hand from main to redeploy without a new commit, for example
+  # after setting the ECS_YAC_* secrets.
+  workflow_dispatch:
 
 jobs:
   build:
-    if: github.repository == 'hms-dbmi/cvh'
+    # Only main deploys, including manual runs.
+    if: github.repository == 'hms-dbmi/cvh' && github.ref == 'refs/heads/main'
     # Available versions:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-24.04
@@ -23,7 +27,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Configure AWS Credentials
-        if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
@@ -65,7 +69,9 @@ jobs:
   yac:
     # Off until the cvh-yac ECR repository exists and the deploy role can
     # push to it: set the repo variable YAC_ENABLED to true then.
-    if: github.repository == 'hms-dbmi/cvh' && vars.YAC_ENABLED == 'true'
+    if: >-
+      github.repository == 'hms-dbmi/cvh' && github.ref == 'refs/heads/main'
+      && vars.YAC_ENABLED == 'true'
     runs-on: ubuntu-24.04
     defaults:
       run:

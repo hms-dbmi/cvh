@@ -1,0 +1,41 @@
+name: YAC tests
+
+# Runs on PRs (and push to main) that touch the YAC service, so a broken
+# budget or access check is caught before deploy-api.yml builds the image.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "yac/**"
+      - ".github/workflows/test-yac.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "yac/**"
+      - ".github/workflows/test-yac.yml"
+
+defaults:
+  run:
+    working-directory: yac
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install --require-hashes -r requirements.txt
+          pip install pytest
+
+      - name: Tests
+        run: python -m pytest test_cvh_yac.py
