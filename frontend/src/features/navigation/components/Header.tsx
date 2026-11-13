@@ -30,8 +30,7 @@ import posthog from "@/posthog";
 import generateAvatarColor from "@/utils/generateAvatarColor";
 import { useGetUser } from "../api/useUser";
 import { LoginButton } from "./AuthButtons";
-import EditProfileDialog from "./EditProfileDialog";
-import { Link } from "./Links";
+import { Link, LinkMenuItem } from "./Links";
 import WorkspaceMenu from "./WorkspaceMenu";
 
 function CollaboratorsMenu({ projectId }: { projectId: string }) {
@@ -118,14 +117,9 @@ function ProjectControls() {
 function ProfileMenu() {
   const { data, isLoading } = useGetUser();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openEditProfile, setOpenEditProfile] = useState(false);
   const { logout } = useAuth0();
 
   const open = Boolean(anchorEl);
-
-  const handleOpenEditProfile = useCallback(() => {
-    setOpenEditProfile(true);
-  }, []);
 
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -151,13 +145,6 @@ function ProfileMenu() {
 
   return (
     <>
-      <EditProfileDialog
-        initialFirstName={data?.first_name}
-        initialLastName={data?.last_name}
-        closeMenu={handleClose}
-        open={openEditProfile}
-        setOpen={setOpenEditProfile}
-      />
       <IconButton
         onClick={handleClick}
         size="small"
@@ -222,15 +209,12 @@ function ProfileMenu() {
           </Stack>
         </MenuItem>
         <Divider />
-        <MenuItem
-          onClick={handleOpenEditProfile}
-          sx={(theme) => theme.typography.button}
-        >
+        <LinkMenuItem to="/profile" sx={(theme) => theme.typography.button}>
           <ListItemIcon>
             <User size={16} />
           </ListItemIcon>
           View Profile
-        </MenuItem>
+        </LinkMenuItem>
         <Divider />
         <MenuItem
           onClick={handleLogOut}
