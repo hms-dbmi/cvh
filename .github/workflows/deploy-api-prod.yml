@@ -7,7 +7,8 @@ name: Deploy API (prod)
 # main — this workflow does not rebuild.
 #
 # Rollback: run the workflow again with a specific source tag (via the
-# `source_tag` input) instead of `latest`.
+# `source_tag` input) instead of `latest`. deploy-api.yml tags every image
+# with its commit SHA, so pass the SHA of the commit to go back to.
 
 on:
   workflow_dispatch:
@@ -36,16 +37,19 @@ jobs:
           aws-region: us-east-2
 
       - name: Retag source images as `prod`
-        # cvh-yac is promoted with the API once prod YAC exists (its
-        # secrets are set). Both source images are checked before either
-        # tag moves, so a missing one can't leave prod half-promoted.
+        # cvh-yac is promoted with the API once prod YAC exists: set the
+        # variable YAC_PROD_ENABLED to true on the production environment.
+        # Not the secrets: production inherits repo secrets it doesn't
+        # override, so dev's ECS_YAC_* would turn this on too early. Both
+        # source images are checked before either tag moves, so a missing one
+        # can't leave prod half-promoted.
         env:
           SOURCE_TAG: ${{ github.event.inputs.source_tag }}
-          YAC_CLUSTER: ${{ secrets.ECS_YAC_CLUSTER }}
+          YAC_PROD_ENABLED: ${{ vars.YAC_PROD_ENABLED }}
         run: |
           set -euo pipefail
           REPOSITORIES="cvh-api"
-          if [ -n "$YAC_CLUSTER" ]; then REPOSITORIES="$REPOSITORIES cvh-yac"; fi
+          if [ "$YAC_PROD_ENABLED" = "true" ]; then REPOSITORIES="$REPOSITORIES cvh-yac"; fi
           for REPOSITORY in $REPOSITORIES; do
             MANIFEST=$(aws ecr batch-get-image \
               --repository-name "$REPOSITORY" \
@@ -66,12 +70,13 @@ jobs:
 
       - name: Force new ECS deployment (API + admin + YAC)
         # API and admin live in separate ECS clusters — see comment in
-        # deploy-api.yml. YAC is skipped until its secrets are set.
+        # deploy-api.yml. YAC is skipped until YAC_PROD_ENABLED is set.
         env:
           API_CLUSTER: ${{ secrets.ECS_API_CLUSTER }}
           API_SERVICE: ${{ secrets.ECS_API_SERVICE }}
           ADMIN_CLUSTER: ${{ secrets.ECS_ADMIN_CLUSTER }}
           ADMIN_SERVICE: ${{ secrets.ECS_ADMIN_SERVICE }}
+          YAC_PROD_ENABLED: ${{ vars.YAC_PROD_ENABLED }}
           YAC_CLUSTER: ${{ secrets.ECS_YAC_CLUSTER }}
           YAC_SERVICE: ${{ secrets.ECS_YAC_SERVICE }}
         run: |
@@ -80,7 +85,7 @@ jobs:
             --service "$API_SERVICE" --force-new-deployment
           aws ecs update-service --cluster "$ADMIN_CLUSTER" \
             --service "$ADMIN_SERVICE" --force-new-deployment
-          if [ -n "$YAC_CLUSTER" ]; then
+          if [ "$YAC_PROD_ENABLED" = "true" ]; then
             aws ecs update-service --cluster "$YAC_CLUSTER" \
               --service "$YAC_SERVICE" --force-new-deployment
           fi
