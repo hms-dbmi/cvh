@@ -45,17 +45,41 @@ const YAC_AUDIENCE: string | undefined = import.meta.env.VITE_YAC_AUDIENCE;
 // No YAC in this environment yet: the profile hides AI usage entirely.
 const yacConfigured = Boolean(YAC_URL && YAC_AUDIENCE);
 
+const usageKey = ["yac-usage"];
+
+// Silent token renewal runs in a hidden iframe, which browsers that block
+// third-party cookies (Safari, Brave) refuse with login_required. Those
+// people sign in to YAC once in a popup instead (useYacSignIn).
+const SIGN_IN_ERRORS = [
+  "login_required",
+  "consent_required",
+  "interaction_required",
+];
+
+export class YacSignInRequired extends Error {}
+
 // This month's AI spending, from the YAC service with a YAC token (only
 // people with access can get one). Off until the YAC settings are set.
 function useYacUsage(enabled: boolean) {
   const { getAccessTokenSilently } = useAuth0();
   return useQuery({
-    queryKey: ["yac-usage"],
+    queryKey: usageKey,
     enabled: enabled && yacConfigured,
+    // A 403 or a sign-in error won't heal on retry.
+    retry: false,
     queryFn: async (): Promise<YacUsage> => {
-      const token = await getAccessTokenSilently({
-        authorizationParams: { audience: YAC_AUDIENCE },
-      });
+      let token: string;
+      try {
+        token = await getAccessTokenSilently({
+          authorizationParams: { audience: YAC_AUDIENCE },
+        });
+      } catch (e) {
+        const code = (e as { error?: string }).error;
+        if (code && SIGN_IN_ERRORS.includes(code)) {
+          throw new YacSignInRequired(code);
+        }
+        throw e;
+      }
       const response = await fetch(`${YAC_URL}/v1/yac/usage`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -67,4 +91,27 @@ function useYacUsage(enabled: boolean) {
   });
 }
 
-export { useGetYacAccess, useRequestYacAccess, useYacUsage, yacConfigured };
+// Gets the YAC token in a popup, then loads usage with it from the cache.
+// Call it from a click so the browser allows the popup.
+function useYacSignIn() {
+  const { getAccessTokenWithPopup } = useAuth0();
+  const queryClient = useQueryClient();
+  return async () => {
+    try {
+      await getAccessTokenWithPopup({
+        authorizationParams: { audience: YAC_AUDIENCE },
+      });
+    } catch {
+      return; // Closed or blocked popup: keep the sign-in prompt.
+    }
+    queryClient.invalidateQueries({ queryKey: usageKey });
+  };
+}
+
+export {
+  useGetYacAccess,
+  useRequestYacAccess,
+  useYacSignIn,
+  useYacUsage,
+  yacConfigured,
+};

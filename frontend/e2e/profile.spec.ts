@@ -110,6 +110,9 @@ test("a fractional usage is shown as a whole percent", async ({ page }) => {
 });
 
 test("AI usage says so when access can't be loaded", async ({ page }) => {
+  // Retries a 5xx from Django (about 7s), which a cold dev server can push
+  // past the default timeout.
+  test.slow();
   await gotoProfile(page, { __e2eYacAccessError: true });
   // React Query retries three times (about 7s) before reporting the error.
   await expect(
@@ -127,8 +130,18 @@ test("approved users are told when their usage can't be read", async ({
   await expect(
     aiUsage(page).getByText("Active", { exact: true }),
   ).toBeVisible();
-  // React Query retries three times (about 7s) before reporting the error.
   await expect(
     aiUsage(page).getByText("Your AI usage is unavailable right now."),
-  ).toBeVisible({ timeout: 15_000 });
+  ).toBeVisible();
+});
+
+test("blocked silent sign-in falls back to a popup", async ({ page }) => {
+  await gotoProfile(page, {
+    __e2eYacStatus: "approved",
+    __e2eYacSignInRequired: true,
+  });
+  await aiUsage(page).getByRole("button", { name: "Sign In" }).click();
+  await expect(
+    aiUsage(page).getByText("Credits renew every month."),
+  ).toBeVisible();
 });

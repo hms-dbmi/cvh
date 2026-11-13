@@ -20,7 +20,9 @@ import type { ReactElement, ReactNode } from "react";
 import {
   useGetYacAccess,
   useRequestYacAccess,
+  useYacSignIn,
   useYacUsage,
+  YacSignInRequired,
   type YacUsage,
 } from "../api/useYacAccess";
 
@@ -165,9 +167,39 @@ function CreditUsageBar({ usage }: { usage: YacUsage }) {
   );
 }
 
+function UsageUnavailable({
+  error,
+  signIn,
+}: {
+  error: Error;
+  signIn: () => void;
+}) {
+  if (error instanceof YacSignInRequired) {
+    return (
+      <Stack spacing={1} alignItems="flex-start">
+        <Typography variant="body2">
+          Sign in to the AI service to see your usage.
+        </Typography>
+        <Button variant="outlined" onClick={signIn}>
+          Sign In
+        </Button>
+      </Stack>
+    );
+  }
+  return (
+    <Typography variant="body2">
+      Your AI usage is unavailable right now. If this continues, <ContactUs />.
+    </Typography>
+  );
+}
+
 // Until usage loads it's just Active. If YAC refused it (say, the Auth0
 // role is missing although Django says approved), say so.
-function approvedContent(usage: YacUsage | undefined, usageFailed: boolean) {
+function approvedContent(
+  usage: YacUsage | undefined,
+  usageError: Error | null,
+  signIn: () => void,
+) {
   if (!usage) {
     return {
       chip: (
@@ -177,11 +209,8 @@ function approvedContent(usage: YacUsage | undefined, usageFailed: boolean) {
           color={COLORS.success}
         />
       ),
-      body: usageFailed ? (
-        <Typography variant="body2">
-          Your AI usage is unavailable right now. If this continues,{" "}
-          <ContactUs />.
-        </Typography>
+      body: usageError ? (
+        <UsageUnavailable error={usageError} signIn={signIn} />
       ) : null,
     };
   }
@@ -250,9 +279,10 @@ function useAiUsageContent() {
   const { data: access, isError } = useGetYacAccess();
   const { mutate, isPending } = useRequestYacAccess();
   // Set up on every render, but only fetches for approved users.
-  const { data: usage, isError: usageFailed } = useYacUsage(
+  const { data: usage, error: usageError } = useYacUsage(
     access?.status === "approved",
   );
+  const signIn = useYacSignIn();
 
   if (!access) {
     return isError
@@ -329,7 +359,7 @@ function useAiUsageContent() {
         ),
       };
     case "approved":
-      return approvedContent(usage, usageFailed);
+      return approvedContent(usage, usageError, signIn);
     default:
       // Declined and revoked look the same: no access, contact us.
       return {
