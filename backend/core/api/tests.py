@@ -680,6 +680,13 @@ class YacAccessAdminTests(TestCase):
         getattr(self.model_admin, action)(self.request, YacAccessRequest.objects.all())
         self.access.refresh_from_db()
 
+    def test_requests_cannot_be_added_or_deleted(self):
+        self.assertFalse(self.model_admin.has_add_permission(self.request))
+        self.assertFalse(
+            self.model_admin.has_delete_permission(self.request, self.access)
+        )
+        self.assertNotIn("delete_selected", self.model_admin.get_actions(self.request))
+
     def test_approve_grants_the_role_then_records_it(self):
         with patch("api.admin.grant_yac_role") as grant:
             self._run("approve")

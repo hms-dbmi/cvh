@@ -131,6 +131,14 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
         "decided_by",
     )
 
+    # Requests come only from the API. Deleting one would leave the role in
+    # Auth0 while the profile says "Not Enabled"; revoke instead.
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     def _decide(self, request, access, status):
         access.status = status
         access.decided_at = timezone.now()
