@@ -14,6 +14,7 @@ The AWS infrastructure for YAC is maintained separately.
 | `yac/cfdb/yac-packages.json` | The package description udiagent reads; udi calls it the query backends file |
 | `yac/yac.env.example` | Template for the service's settings |
 | `.github/workflows/deploy-api.yml` | Once the repo variable `YAC_ENABLED` is `true`, the `yac` job runs the tests, builds and pushes `cvh-yac` (`latest` and the commit SHA) on every push to `main`, then redeploys dev |
+| `.github/workflows/test-yac.yml` | Runs the YAC tests on PRs that touch `yac/` |
 | `.github/workflows/deploy-api-prod.yml` | Promotes `cvh-yac` to prod together with the API once the production environment's `YAC_PROD_ENABLED` is `true` (see `docs/release.md`) |
 
 ## Budgets
@@ -21,9 +22,9 @@ The AWS infrastructure for YAC is maintained separately.
 `yac/cvh_yac.py` is the server's entry point: udiagent plus monthly budgets. Each person gets `YAC_USER_MONTHLY_USD` ($2) a month, and everyone together gets `YAC_TOTAL_MONTHLY_USD` ($100). Months are UTC calendar months. At about $0.010 a turn, $2 is roughly 200 turns.
 
 - **Before each model call**, udiagent calls `budget_check(token_payload, usage)`, which refuses the turn once this month's spending plus the turn so far reaches either limit. If spending can't be read, it refuses rather than letting the turn run.
-- **After each turn**, a middleware reads udiagent's `X-Usage-*` headers, prices the tokens at the US-profile rates in `cvh_yac.py`, and adds the cost to the person's and the overall totals in DynamoDB (`YAC_USAGE_TABLE`).
+- **After each turn**, a middleware reads udiagent's `X-Usage-*` headers, prices the tokens at the US-profile rates in `cvh_yac.py`, and adds the cost to the person's and the overall totals in DynamoDB (`YAC_USAGE_TABLE`). A turn that fails with a 5xx sends no usage headers, so it's charged an estimate instead: its request size as input tokens (about 4 bytes each). That keeps failed turns from being free, at the cost of a cent or two when a turn fails before any model call.
 - **A turn can finish slightly over a limit**, by about one turn's cost, since the check runs before each call.
-- **One turn at a time, 512 KB at most.** A person's second turn while one is running gets a 429, and a request over 512 KB (a fresh chat is about 25 KB) gets a 413. Together they cap how far past a limit anyone can get before their turns are recorded. The lock is per process, which holds while YAC runs as one task.
+- **One turn at a time, 512 KB at most.** A person's second turn while one is running gets a 429, and a request over 512 KB (a fresh chat is about 25 KB) gets a 413. Together they cap how far past a limit anyone can get before their turns are recorded. The lock is per process, which holds while YAC runs as one task. Bodies are also capped while they stream in, so a request without a `Content-Length` can't fill the task's memory before the check.
 - **udiagent's benchmark routes are refused** (`/v1/yac/benchmark*` returns 404). The benchmark calls the model without reporting usage, so its spending would never count.
 - **`GET /v1/yac/usage`** returns the signed-in person's `spent_usd`, `limit_usd`, `percent_used` (rounded down, at most 100) and `renews_on` (the 1st of next month, UTC), with their YAC token. The profile page and Explore tab show Near Limit from 85% and Limit Reached at 100%.
 
@@ -37,6 +38,7 @@ In the environment's tenant:
    - Set the token lifetime to 3600 seconds, so removing someone's role takes effect within an hour instead of the default 24.
    - Turn on **RBAC** and **Add Permissions in the Access Token**, and add a permission `use:yac`. `cvh_yac.py` answers 403 to any token without it, so a missing or broken Action can't open YAC to everyone.
    - Under **Application Access**, allow only the CVH single-page app for user access and deny all client (machine-to-machine) access.
+   - Turn on **Allow Skipping User Consent**. The CVH app fetches the YAC token silently; without it, Auth0 answers `consent_required` and the profile asks the person to sign in to YAC in a popup.
 2. Create the YAC users role and give it the `use:yac` permission. Approving an access request adds the role (see `docs/admin-deployment.md`).
 3. Add this post-login Action and attach it to the post-login trigger, with an Action secret `YAC_AUDIENCE` set to the YAC API's identifier. It refuses YAC tokens to people without the role and copies their budget into the token:
 

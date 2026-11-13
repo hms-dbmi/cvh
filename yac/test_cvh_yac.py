@@ -191,6 +191,65 @@ def test_finished_turn_frees_the_user(db, monkeypatch):
     assert cvh_yac._running == set()
 
 
+def test_our_refusals_carry_cors_headers(db, monkeypatch):
+    from fastapi.testclient import TestClient
+    from jose import jwt
+
+    # Registered inside udiagent's CORS middleware, so browsers can read why.
+    monkeypatch.setattr(cvh_yac, "_running", {"auth0|a"})
+    token = jwt.encode({"sub": "auth0|a"}, "test", algorithm="HS256")
+    response = TestClient(cvh_yac.app).post(
+        "/v1/yac/completions",
+        json={"messages": [], "dataSchema": "{}", "dataDomains": "{}"},
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Origin": "https://dev.visualizationhub.org",
+        },
+    )
+    assert response.status_code == 429
+    assert "access-control-allow-origin" in response.headers
+
+
+def test_streamed_body_over_the_limit_is_cut_off(db, monkeypatch):
+    import udiagent.server.app as server
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setattr(server, "completions", pytest.fail)
+
+    def chunks():  # no Content-Length, so only the streaming cap can stop it
+        for _ in range(cvh_yac.MAX_BODY_BYTES // 65536 + 2):
+            yield b"x" * 65536
+
+    response = TestClient(cvh_yac.app).post("/v1/yac/completions", content=chunks())
+    assert response.status_code == 413
+
+
+def test_failed_turn_is_charged_an_estimate(db, monkeypatch):
+    import udiagent.server.app as server
+    from fastapi import HTTPException
+
+    def failing_completions(*_, **__):
+        raise HTTPException(502, "model call failed")
+
+    monkeypatch.setattr(server, "completions", failing_completions)
+    response = _post_turn("auth0|a")
+    assert response.status_code == 502
+    sent = len(response.request.content)
+    # record() stores six decimal places.
+    assert db.items[month_key("auth0|a")] == pytest.approx(
+        cvh_yac.cost_usd(sent // 4, 0, 0, 0), abs=1e-6
+    )
+
+
+def test_unprocessed_spending_keys_refuse_the_turn(db, monkeypatch):
+    monkeypatch.setattr(
+        db,
+        "batch_get_item",
+        lambda **_: {"Responses": {"usage": []}, "UnprocessedKeys": {"usage": {}}},
+    )
+    assert "unavailable" in cvh_yac.budget_check({"sub": "auth0|a"}, usage())
+
+
 def test_udiagent_passes_the_token_to_our_check(db):
     # udi-yac #243: the server binds each request's token to the hook.
     from udiagent.server.app import _budget_check

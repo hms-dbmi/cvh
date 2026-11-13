@@ -21,6 +21,9 @@ from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse
 from jose import jwt
 from starlette.concurrency import run_in_threadpool
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 from udiagent.server import app as server
 from udiagent.server.app import app
 
@@ -124,6 +127,10 @@ def _spent(keys: tuple[str, str]) -> tuple[float, float]:
     resp = _db().batch_get_item(
         RequestItems={_table: {"Keys": [{"pk": {"S": k}} for k in keys]}}
     )
+    # Throttled keys come back unprocessed; reading them as $0 would let the
+    # turn through, so treat it as a failed read (budget_check refuses).
+    if resp.get("UnprocessedKeys"):
+        raise RuntimeError("DynamoDB left YAC spending keys unprocessed")
     found = {
         i["pk"]["S"]: float(i["spent_usd"]["N"]) for i in resp["Responses"][_table]
     }
@@ -212,7 +219,6 @@ def record(sub: str, headers, now: datetime | None = None) -> float:
     return turn
 
 
-@app.middleware("http")
 async def record_usage(request, call_next):
     # udiagent's benchmark calls the model on our Bedrock role without
     # sending usage headers, so its spending would never count against the
@@ -225,7 +231,9 @@ async def record_usage(request, call_next):
     # Content-Length first, so a huge body is refused before it's read.
     length = request.headers.get("content-length", "")
     declared = int(length) if length.isdigit() else 0
-    if declared > MAX_BODY_BYTES or len(await request.body()) > MAX_BODY_BYTES:
+    if declared > MAX_BODY_BYTES or (body_bytes := len(await request.body())) > (
+        MAX_BODY_BYTES
+    ):
         return JSONResponse(
             {"error": "This conversation is too long. Start a new one."},
             status_code=413,
@@ -246,13 +254,35 @@ async def record_usage(request, call_next):
         _running.discard(sub)
 
     if response.status_code == 200 and "x-usage-total-tokens" in response.headers:
-        try:
-            # udiagent verified this token before answering 200.
-            await run_in_threadpool(record, sub, response.headers)
-        except Exception:
-            # The AWS Budgets alert is the backstop for unrecorded turns.
-            log.exception("could not record YAC usage")
+        usage_headers = response.headers
+    elif response.status_code >= 500 and await _verified(request):
+        # A turn that fails after some model calls sends no usage headers, so
+        # charge its request once as input (about 4 bytes a token). That can
+        # overcharge a turn that failed before any call, by a cent or two.
+        usage_headers = {"x-usage-prompt-tokens": str(body_bytes // 4)}
+    else:
+        return response
+    try:
+        await run_in_threadpool(record, sub, usage_headers)
+    except Exception:
+        # The AWS Budgets alert is the backstop for unrecorded turns.
+        log.exception("could not record YAC usage")
     return response
+
+
+async def _verified(request) -> bool:
+    """Whether the request's token passes udiagent's check. A 5xx can come
+    before verification (Auth0 unreachable), and a forged token mustn't
+    charge someone else's budget."""
+    try:
+        await run_in_threadpool(
+            _verify_token,
+            authorization=request.headers.get("authorization", ""),
+            _scheme=None,
+        )
+        return True
+    except Exception:
+        return False
 
 
 def _token_sub(request) -> str | None:
@@ -262,5 +292,15 @@ def _token_sub(request) -> str | None:
     except Exception:
         return None
 
+
+# Inside udiagent's CORS middleware (user_middleware runs outermost first),
+# so browsers can read our 413/429/404 replies. add_middleware or
+# @app.middleware would put it outside CORS.
+app.user_middleware.append(Middleware(BaseHTTPMiddleware, dispatch=record_usage))
+# Outermost: caps a body as it streams in, before anything reads it. FastAPI
+# ignores Starlette's max_body_size, so add the middleware directly.
+app.user_middleware.insert(
+    0, Middleware(RequestBodyLimitMiddleware, max_body_size=MAX_BODY_BYTES)
+)
 
 app.state.budget_check = budget_check
