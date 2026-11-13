@@ -8,6 +8,9 @@ Categories: **Added**, **Changed**, **Deprecated**, **Removed**, **Fixed**, **Se
 
 ## [Unreleased]
 
+### Added
+- `cvh-mcp`, an MCP server that lets AI assistants such as Claude read your workspaces, datasets and visualizations, and published visualizations without signing in. It can also count, list and search CFDE files in cfdb, also without signing in. Your sign-in is remembered between restarts until it expires. Install it with the new `mcp` extra; see "MCP server" in the README.
+
 ## [0.4.1] - 2026-10-09
 
 ### Fixed
