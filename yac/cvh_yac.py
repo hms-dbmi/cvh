@@ -17,6 +17,7 @@ from typing import Annotated
 
 from botocore.session import get_session
 from fastapi import Depends, HTTPException
+from fastapi.responses import JSONResponse
 from jose import jwt
 from starlette.concurrency import run_in_threadpool
 from udiagent.server import app as server
@@ -184,6 +185,11 @@ def record(sub: str, headers, now: datetime | None = None) -> float:
 
 @app.middleware("http")
 async def record_usage(request, call_next):
+    # udiagent's benchmark calls the model on our Bedrock role without
+    # sending usage headers, so its spending would never count against the
+    # budgets. It's a developer tool; refuse it and its analysis here.
+    if request.url.path.startswith("/v1/yac/benchmark"):
+        return JSONResponse({"error": "Not found."}, status_code=404)
     response = await call_next(request)
     if (
         request.url.path == "/v1/yac/completions"

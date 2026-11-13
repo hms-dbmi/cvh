@@ -130,6 +130,19 @@ def test_completed_turn_is_recorded_through_the_server(db, monkeypatch):
     assert db.items[month_key("auth0|a")] == pytest.approx(0.33)
 
 
+@pytest.mark.parametrize("path", ["/v1/yac/benchmark", "/v1/yac/benchmark_analysis"])
+def test_benchmark_routes_are_refused(db, monkeypatch, path):
+    import udiagent.server.app as server
+    from fastapi.testclient import TestClient
+
+    # Its spending would bypass the budgets, so it must never reach udiagent.
+    monkeypatch.setattr(server, "completions", pytest.fail)
+    response = TestClient(cvh_yac.app).request(
+        "POST" if path.endswith("benchmark") else "GET", path, json={}
+    )
+    assert response.status_code == 404
+
+
 def test_udiagent_passes_the_token_to_our_check(db):
     # udi-yac #243: the server binds each request's token to the hook.
     from udiagent.server.app import _budget_check
