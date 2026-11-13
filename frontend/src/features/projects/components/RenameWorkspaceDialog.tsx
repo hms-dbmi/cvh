@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { useCallback } from "react";
 import { useController, useForm } from "react-hook-form";
@@ -30,15 +31,18 @@ export default function RenameWorkspaceDialog({
     resolver: zodResolver(schema),
   });
   const { field, fieldState } = useController({ name: "name", control });
-  const { mutate } = useUpdateProject();
+  const { mutate, isPending } = useUpdateProject();
 
   const onSubmit = useCallback(
     ({ name }: FormValues) => {
-      mutate({
-        params: { path: { workspace_uuid: project.uuid } },
-        body: { name },
-      });
-      onClose();
+      // Close only once saved, so a failed save keeps the typed name.
+      mutate(
+        {
+          params: { path: { workspace_uuid: project.uuid } },
+          body: { name },
+        },
+        { onSuccess: onClose },
+      );
     },
     [mutate, project.uuid, onClose],
   );
@@ -48,8 +52,18 @@ export default function RenameWorkspaceDialog({
       open
       setOpen={onClose}
       isButton={false}
-      text={{ button: null, title: "Rename Workspace", submitButton: "Save" }}
+      text={{ button: null, title: "Rename Workspace" }}
       onSubmit={handleSubmit(onSubmit)}
+      actionButtons={
+        <Button
+          variant="contained"
+          type="submit"
+          disabled={isPending}
+          sx={{ padding: "12px 16px", borderRadius: "8px" }}
+        >
+          Save
+        </Button>
+      }
     >
       <TextField
         label="Workspace"

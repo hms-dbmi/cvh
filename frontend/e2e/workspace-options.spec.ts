@@ -31,6 +31,9 @@ test("renaming a workspace fires PUT /api/workspaces/<uuid>", async ({
       path: `/api/workspaces/${PROJECT_ID}`,
       body: { name: "Renamed Workspace" },
     });
+  // The dialog closes once saved and hands focus back to the switcher.
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("#workspaces-button")).toBeFocused();
 });
 
 test("deleting a workspace needs DELETE typed, then fires DELETE", async ({
@@ -56,6 +59,23 @@ test("deleting a workspace needs DELETE typed, then fires DELETE", async ({
     });
   // It was the only workspace, so there's nowhere left but home.
   await expect(page).toHaveURL(/\/$/);
+});
+
+test("deleting the open workspace moves to the next one", async ({ page }) => {
+  await page.addInitScript(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e flag
+    (window as any).__e2eSecondWorkspace = true;
+  });
+  await openOptions(page);
+  await page.getByRole("menuitem", { name: "Delete" }).click();
+
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Type DELETE").fill("DELETE");
+  await dialog.getByRole("button", { name: "Delete" }).click();
+
+  await expect(page).toHaveURL(
+    /\/project\/00000000-0000-0000-0000-000000000012$/,
+  );
 });
 
 test("Shift+F10 on a workspace tile opens its options", async ({ page }) => {

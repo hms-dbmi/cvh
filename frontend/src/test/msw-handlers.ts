@@ -207,16 +207,21 @@ export const handlers = [
   http.get(`${apiUrl}/api/user`, () => HttpResponse.json(user)),
 
   // Workspaces
-  http.get(`${apiUrl}/api/workspaces`, () =>
-    HttpResponse.json({
-      items: [
-        flag("__e2eReadOnlyWorkspace")
-          ? { ...workspace, permissions: 1 }
-          : workspace,
-      ],
-      count: 1,
-    }),
-  ),
+  http.get(`${apiUrl}/api/workspaces`, () => {
+    const items = [
+      flag("__e2eReadOnlyWorkspace")
+        ? { ...workspace, permissions: 1 }
+        : workspace,
+    ];
+    if (flag("__e2eSecondWorkspace")) {
+      items.push({
+        ...workspace,
+        uuid: "00000000-0000-0000-0000-000000000012",
+        name: "E2E Second Project",
+      });
+    }
+    return HttpResponse.json({ items, count: items.length });
+  }),
   http.get(`${apiUrl}/api/workspaces/:uuid`, () =>
     HttpResponse.json(
       flag("__e2eReadOnlyWorkspace")

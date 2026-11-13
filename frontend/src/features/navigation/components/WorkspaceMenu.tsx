@@ -23,7 +23,8 @@ import {
 } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { formatRelative } from "date-fns";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import useGetProjects from "@/features/projects/api/useProjects";
 import AddProjectButton from "@/features/projects/components/AddProjectButton";
 import DeleteWorkspaceDialog from "@/features/projects/components/DeleteWorkspaceDialog";
@@ -98,15 +99,10 @@ function WorkspaceListItem({
     <MenuItem
       {...selectedProps}
       // The menu closes on Tab, so keyboard users can't reach the options
-      // button; Shift+F10, the context-menu key and right-click open it here.
-      // The keys are handled directly since macOS doesn't map them to a
-      // contextmenu event.
+      // button; Shift+F10 and the context-menu key open it here. Handled as
+      // keys, not contextmenu, so right-click keeps the browser's link menu.
       {...(canEdit && {
         "aria-keyshortcuts": "Shift+F10",
-        onContextMenu: (e: React.MouseEvent<HTMLElement>) => {
-          e.preventDefault();
-          onOpenOptions(e.currentTarget, project);
-        },
         onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
           if ((e.shiftKey && e.key === "F10") || e.key === "ContextMenu") {
             e.preventDefault();
@@ -255,6 +251,13 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
     setOptions(null);
     setAnchorEl(null);
   };
+  // The item that opened the dialog is gone, so return focus to the
+  // switcher. Unmount first, or the dialog's focus trap takes it back.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeDialog = () => {
+    flushSync(() => setDialog(null));
+    triggerRef.current?.focus();
+  };
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -308,6 +311,7 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
     <>
       <Button
         id="workspaces-button"
+        ref={triggerRef}
         aria-controls={open ? "workspaces-menu" : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
@@ -455,15 +459,12 @@ export default function WorkspaceMenu({ projectId }: { projectId: string }) {
         </MenuItem>
       </Menu>
       {dialog?.kind === "rename" && (
-        <RenameWorkspaceDialog
-          project={dialog.project}
-          onClose={() => setDialog(null)}
-        />
+        <RenameWorkspaceDialog project={dialog.project} onClose={closeDialog} />
       )}
       {dialog?.kind === "delete" && (
         <DeleteWorkspaceDialog
           project={dialog.project}
-          onClose={() => setDialog(null)}
+          onClose={closeDialog}
           onDeleted={
             dialog.project.uuid === projectId
               ? leaveDeletedWorkspace

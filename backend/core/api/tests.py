@@ -368,13 +368,17 @@ class WorkspacePermissionsTests(TestCase):
 
         owner = User.objects.create(username="owner", email="owner@example.com")
         editor = User.objects.create(username="editor", email="editor@example.com")
+        viewer = User.objects.create(username="viewer", email="viewer@example.com")
         project = Project.objects.create(name="Shared", user_key=owner)
         ProjectMember.objects.create(project_key=project, user_key=owner, permissions=1)
         ProjectMember.objects.create(
             project_key=project, user_key=editor, permissions=2
         )
+        ProjectMember.objects.create(
+            project_key=project, user_key=viewer, permissions=1
+        )
 
-        for user, expected in [(owner, 3), (editor, 2)]:
+        for user, expected in [(owner, 3), (editor, 2), (viewer, 1)]:
             with patch("api.auth.Authorized.authenticate", return_value=user):
                 listed = self.client.get(
                     "/api/workspaces", HTTP_AUTHORIZATION="Bearer test-token"
