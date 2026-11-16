@@ -390,6 +390,36 @@ class WorkspacePermissionsTests(TestCase):
             self.assertEqual(listed.json()["items"][0]["permissions"], expected)
             self.assertEqual(detail.json()["permissions"], expected)
 
+    def test_editor_cannot_rename_or_delete(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember
+
+        owner = User.objects.create(username="owner", email="owner@example.com")
+        editor = User.objects.create(username="editor", email="editor@example.com")
+        project = Project.objects.create(name="Shared", user_key=owner)
+        ProjectMember.objects.create(
+            project_key=project, user_key=editor, permissions=2
+        )
+
+        url = f"/api/workspaces/{project.uuid}"
+        # A refused call raises Project.DoesNotExist, which the test client
+        # re-raises instead of returning the 500 a real client gets.
+        self.client.raise_request_exception = False
+        with patch("api.auth.Authorized.authenticate", return_value=editor):
+            renamed = self.client.put(
+                url,
+                {"name": "Hijacked"},
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer test-token",
+            )
+            deleted = self.client.delete(url, HTTP_AUTHORIZATION="Bearer test-token")
+
+        self.assertGreaterEqual(renamed.status_code, 400)
+        self.assertGreaterEqual(deleted.status_code, 400)
+        project.refresh_from_db()
+        self.assertEqual(project.name, "Shared")
+
 
 class TokenVerificationTests(TestCase):
     """Bad tokens are the caller's problem (401, sign in again); an

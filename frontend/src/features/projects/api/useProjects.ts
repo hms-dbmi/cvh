@@ -136,9 +136,17 @@ function useDeleteProject() {
   const queryClient = useQueryClient();
   const client = useClient();
   return client.useMutation("delete", "/api/workspaces/{workspace_uuid}", {
-    onSuccess: () => {
+    onSuccess: (_data, { params }) => {
       toastSuccess("Deleted workspace.");
-      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+      // Skip the deleted workspace's own queries: refetching them only
+      // 404s (with retries) while the page navigates away.
+      const deleted = params.path.workspace_uuid;
+      queryClient.invalidateQueries({
+        predicate: (q) =>
+          invalidateGetQuery(q) &&
+          (q.queryKey[2] as { params?: { path?: { workspace_uuid?: string } } })
+            ?.params?.path?.workspace_uuid !== deleted,
+      });
     },
     onError: () => {
       toastError("Failed to delete workspace.");
