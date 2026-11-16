@@ -93,7 +93,7 @@ function WorkspaceListItem({
   }
 
   // Rename and delete need admin access on the backend.
-  const canEdit = (project.permissions ?? 0) >= 3;
+  const isAdmin = (project.permissions ?? 0) >= 3;
 
   return (
     <MenuItem
@@ -101,7 +101,7 @@ function WorkspaceListItem({
       // The menu closes on Tab, so keyboard users can't reach the options
       // button; Shift+F10 and the context-menu key open it here. Handled as
       // keys, not contextmenu, so right-click keeps the browser's link menu.
-      {...(canEdit && {
+      {...(isAdmin && {
         "aria-keyshortcuts": "Shift+F10",
         onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
           if ((e.shiftKey && e.key === "F10") || e.key === "ContextMenu") {
@@ -171,7 +171,7 @@ function WorkspaceListItem({
             {updatedLabel}
           </Typography>
         </Stack>
-        {canEdit && (
+        {isAdmin && (
           <IconButton
             aria-label={`Options for ${project.name}`}
             sx={{ alignSelf: "flex-start" }}
