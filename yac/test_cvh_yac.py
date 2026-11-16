@@ -156,7 +156,10 @@ def _post_turn(token_sub, body=None):
             "dataSchema": "{}",
             "dataDomains": "{}",
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Origin": "https://dev.visualizationhub.org",
+        },
     )
 
 
@@ -173,6 +176,8 @@ def test_oversized_turn_is_refused_before_the_model(db, monkeypatch):
         },
     )
     assert response.status_code == 413
+    # Browsers can only read it with CORS headers.
+    assert "access-control-allow-origin" in response.headers
 
 
 def test_second_turn_while_one_is_running_is_refused(db, monkeypatch):
@@ -241,6 +246,38 @@ def test_failed_turn_is_charged_an_estimate(db, monkeypatch):
     )
 
 
+def test_crashed_turn_is_charged_a_capped_estimate(db, monkeypatch):
+    import udiagent.server.app as server
+
+    def crashing_completions(*_, **__):
+        raise RuntimeError("tool handler bug")
+
+    monkeypatch.setattr(server, "completions", crashing_completions)
+    long_turn = {
+        "messages": [{"role": "user", "content": "x" * 400_000}],
+        "dataSchema": "{}",
+        "dataDomains": "{}",
+    }
+    with pytest.raises(RuntimeError):
+        _post_turn("auth0|a", long_turn)
+    assert db.items[month_key("auth0|a")] == pytest.approx(
+        cvh_yac.cost_usd(cvh_yac.MAX_ESTIMATE_BYTES // 4, 0, 0, 0), abs=1e-6
+    )
+    assert cvh_yac._running == set()
+
+
+def test_unavailable_backend_is_not_charged(db, monkeypatch):
+    import udiagent.server.app as server
+    from fastapi import HTTPException
+
+    def unavailable(*_, **__):
+        raise HTTPException(503, "Bedrock unavailable")
+
+    monkeypatch.setattr(server, "completions", unavailable)
+    assert _post_turn("auth0|a").status_code == 503
+    assert month_key("auth0|a") not in db.items
+
+
 def test_unprocessed_spending_keys_refuse_the_turn(db, monkeypatch):
     monkeypatch.setattr(
         db,
@@ -302,6 +339,49 @@ def test_usage_uses_the_bump_and_stops_at_100(db):
     db.items[month_key("auth0|a")] = 12.0
     result = cvh_yac.usage({"sub": "auth0|a", cvh_yac.LIMIT_CLAIM: 5})
     assert (result["limit_usd"], result["percent_used"]) == (5.0, 100)
+
+
+def test_usage_is_full_when_the_shared_budget_is_spent(db):
+    # budget_check refuses everyone then, so don't show "Active".
+    db.items[month_key("auth0|a")] = 0.2
+    db.items[total_key()] = cvh_yac.TOTAL_MONTHLY_USD
+    assert cvh_yac.usage({"sub": "auth0|a"})["percent_used"] == 100
+
+
+def test_large_issue_report_is_not_refused_as_too_long(db):
+    from fastapi.testclient import TestClient
+
+    # Reports carry a whole session export; only turns are held to 512 KB.
+    response = TestClient(cvh_yac.app).post(
+        "/v1/yac/issue_report",
+        content=b"x" * (cvh_yac.MAX_BODY_BYTES + 100_000),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code != 413
+
+
+def test_failed_turn_with_a_bad_token_charges_nobody(db, monkeypatch):
+    import udiagent.server.app as server
+    from fastapi import HTTPException
+
+    def bad_token(*_, **__):
+        raise HTTPException(401, "bad token")
+
+    def failing_completions(*_, **__):
+        raise HTTPException(502, "model call failed")
+
+    monkeypatch.setattr(cvh_yac, "_verify_token", bad_token)
+    monkeypatch.setattr(server, "completions", failing_completions)
+    _post_turn("auth0|a")
+    assert db.items == {}
+
+
+def test_verify_token_takes_the_arguments_we_pass():
+    # _verified calls udiagent's verify_jwt by keyword and treats any error
+    # as "not verified", so a renamed parameter would quietly stop failed
+    # turns being charged. A TypeError here catches it. (Tests run in
+    # udiagent's insecure dev mode, so the token itself isn't checked.)
+    cvh_yac._verify_token(authorization="Bearer not-a-jwt", _scheme=None)
 
 
 def test_usage_endpoint_reads_the_verified_token(db, monkeypatch):

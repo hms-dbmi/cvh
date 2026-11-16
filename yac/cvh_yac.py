@@ -24,6 +24,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.body_limit import RequestBodyLimitMiddleware
+from udiagent.api import MAX_ISSUE_REPORT_BYTES
 from udiagent.server import app as server
 from udiagent.server.app import app
 
@@ -87,6 +88,9 @@ KEEP_SECONDS = 400 * 24 * 3600
 # before it's recorded. A fresh chat sends about 25 KB (cfdb's schema and
 # domains); 512 KB leaves room for a long conversation.
 MAX_BODY_BYTES = 512 * 1024
+# A failed turn is charged at most a fresh chat's request as input (about a
+# cent), so retrying a long conversation through an outage stays cheap.
+MAX_ESTIMATE_BYTES = 25_000
 # People with a turn running. shortcut: per process, which is enough while
 # the stack runs one YAC task; move to a DynamoDB lock if it runs more.
 _running: set[str] = set()
@@ -172,11 +176,15 @@ def usage(token_payload: dict, now: datetime | None = None) -> dict:
     and Explore tab (Active, Near Limit from 85%, Limit Reached at 100%)."""
     now = now or datetime.now(UTC)
     limit = float(token_payload.get(LIMIT_CLAIM, USER_MONTHLY_USD))
-    spent, _ = _spent(_keys(token_payload["sub"], _month(now)))
+    spent, total = _spent(_keys(token_payload["sub"], _month(now)))
     renews = datetime(now.year + now.month // 12, now.month % 12 + 1, 1, tzinfo=UTC)
     # Rounded down, so 99.9% isn't shown as Limit Reached; round() first so
-    # float error can't turn 85% into 84. A $0 limit means no credits at all.
-    percent = 100 if limit <= 0 else min(100, int(round(spent / limit * 100, 6)))
+    # float error can't turn 85% into 84. A $0 limit means no credits at all,
+    # and a spent shared budget refuses everyone's turns until it resets.
+    if limit <= 0 or total >= TOTAL_MONTHLY_USD:
+        percent = 100
+    else:
+        percent = min(100, int(round(spent / limit * 100, 6)))
     return {
         "spent_usd": round(spent, 4),
         "limit_usd": limit,
@@ -248,26 +256,37 @@ async def record_usage(request, call_next):
         )
     if sub:
         _running.add(sub)
+    # A turn that fails after some model calls sends no usage headers, so
+    # charge its request once as input (about 4 bytes a token), capped.
+    # 503 is udiagent's "couldn't reach Bedrock or Auth0": no model call.
+    estimate = {"x-usage-prompt-tokens": str(min(body_bytes, MAX_ESTIMATE_BYTES) // 4)}
     try:
         response = await call_next(request)
+    except Exception:
+        # Errors udiagent doesn't turn into a response (a tool or DuckDB bug).
+        if await _verified(request):
+            await _record(sub, estimate)
+        raise
     finally:
         _running.discard(sub)
 
     if response.status_code == 200 and "x-usage-total-tokens" in response.headers:
-        usage_headers = response.headers
-    elif response.status_code >= 500 and await _verified(request):
-        # A turn that fails after some model calls sends no usage headers, so
-        # charge its request once as input (about 4 bytes a token). That can
-        # overcharge a turn that failed before any call, by a cent or two.
-        usage_headers = {"x-usage-prompt-tokens": str(body_bytes // 4)}
-    else:
-        return response
+        await _record(sub, response.headers)
+    elif (
+        response.status_code >= 500
+        and response.status_code != 503
+        and await _verified(request)
+    ):
+        await _record(sub, estimate)
+    return response
+
+
+async def _record(sub, usage_headers) -> None:
     try:
         await run_in_threadpool(record, sub, usage_headers)
     except Exception:
         # The AWS Budgets alert is the backstop for unrecorded turns.
         log.exception("could not record YAC usage")
-    return response
 
 
 async def _verified(request) -> bool:
@@ -293,14 +312,16 @@ def _token_sub(request) -> str | None:
         return None
 
 
-# Inside udiagent's CORS middleware (user_middleware runs outermost first),
-# so browsers can read our 413/429/404 replies. add_middleware or
-# @app.middleware would put it outside CORS.
-app.user_middleware.append(Middleware(BaseHTTPMiddleware, dispatch=record_usage))
-# Outermost: caps a body as it streams in, before anything reads it. FastAPI
-# ignores Starlette's max_body_size, so add the middleware directly.
-app.user_middleware.insert(
-    0, Middleware(RequestBodyLimitMiddleware, max_body_size=MAX_BODY_BYTES)
+# Both inside udiagent's CORS middleware (user_middleware runs outermost
+# first), so browsers can read our 413/429/404 replies; add_middleware or
+# @app.middleware would put them outside CORS. The body limit comes first:
+# it caps a body as it streams in, before record_usage reads it. It's set to
+# udiagent's issue report limit, since reports carry a whole session export;
+# record_usage holds turns to MAX_BODY_BYTES. FastAPI ignores Starlette's
+# max_body_size, so add the middleware directly.
+app.user_middleware.append(
+    Middleware(RequestBodyLimitMiddleware, max_body_size=MAX_ISSUE_REPORT_BYTES)
 )
+app.user_middleware.append(Middleware(BaseHTTPMiddleware, dispatch=record_usage))
 
 app.state.budget_check = budget_check

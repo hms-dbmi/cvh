@@ -8,7 +8,7 @@ name: Deploy API (prod)
 #
 # Rollback: run the workflow again with a specific source tag (via the
 # `source_tag` input) instead of `latest`. deploy-api.yml tags every image
-# with its commit SHA, so pass the SHA of the commit to go back to.
+# with its full commit SHA, so pass the full SHA of the commit to go back to.
 
 on:
   workflow_dispatch:
@@ -70,7 +70,14 @@ jobs:
             # ECR refuses to re-put a tag that already points at this image
             # (ImageAlreadyExistsException), which would stop the loop before
             # the next repository is tagged.
-            if [ "$(digest "$REPOSITORY" prod)" = "$(digest "$REPOSITORY" "$SOURCE_TAG")" ]; then
+            # Checked as its own command: a failed lookup inside [ ] would
+            # compare two empty strings as equal and skip the promotion.
+            SOURCE_DIGEST=$(digest "$REPOSITORY" "$SOURCE_TAG")
+            if [ -z "$SOURCE_DIGEST" ]; then
+              echo "No digest for $REPOSITORY:$SOURCE_TAG" >&2
+              exit 1
+            fi
+            if [ "$(digest "$REPOSITORY" prod)" = "$SOURCE_DIGEST" ]; then
               echo "$REPOSITORY:prod is already $SOURCE_TAG"
               continue
             fi
