@@ -777,6 +777,29 @@ class Auth0ManagementTests(TestCase):
         headers = call.call_args.kwargs["headers"]
         self.assertEqual(headers["Authorization"], "Bearer mgmt")
 
+    def test_refused_token_is_dropped_from_the_cache(self):
+        from unittest.mock import MagicMock
+
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        from .yac_access import TOKEN_CACHE_KEY, Auth0ManagementError, grant_yac_role
+
+        cache.set(TOKEN_CACHE_KEY, "old", 3600)
+        with (
+            override_settings(
+                AUTH0_DOMAIN="https://cvh-test.example/",
+                YAC_AUTH0_ROLE_ID="rol_yac",
+            ),
+            patch(
+                "api.yac_access.requests.request",
+                return_value=MagicMock(ok=False, status_code=403),
+            ),
+            self.assertRaises(Auth0ManagementError),
+        ):
+            grant_yac_role("google-oauth2|42")
+        self.assertIsNone(cache.get(TOKEN_CACHE_KEY))
+
     def test_unreachable_auth0_is_reported_not_raised(self):
         import requests
         from django.test import override_settings

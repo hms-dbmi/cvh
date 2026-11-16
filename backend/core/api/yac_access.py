@@ -54,6 +54,10 @@ def _change_role(method: str, auth0_user_id: str) -> None:
         timeout=10,
     )
     if not response.ok:
+        if response.status_code in (401, 403):
+            # Scopes or the secret may have been fixed since; don't keep
+            # sending the old token for the rest of its day.
+            cache.delete(TOKEN_CACHE_KEY)
         raise Auth0ManagementError(
             f"Auth0 refused the role change ({response.status_code})."
         )

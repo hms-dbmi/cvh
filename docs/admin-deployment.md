@@ -116,7 +116,7 @@ People ask for AI access (YAC) from their profile page (`POST /api/yac/access`),
 
 - **Approve** adds the YAC users role to the person in Auth0, through the Management API, then records the decision. If Auth0 refuses or can't be reached, the request stays pending and the admin sees why.
 - **Decline** records the decision with no Auth0 call.
-- **Revoke** removes the role in Auth0, then marks the request revoked.
+- **Revoke** removes the role in Auth0, then marks the request revoked. A YAC token they already hold keeps working until it expires, within an hour (the YAC API's token lifetime); their monthly budget still applies meanwhile.
 
 Each person can ask once. Declined and revoked people see "Contact Us" (hidive@hms.harvard.edu); to let them back in, **Approve** their existing request. Access lasts until it's revoked; there's no expiry. Any Django admin (`cvh_admin` role) can run these actions: John approves, with one or two other admins as backups.
 

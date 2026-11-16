@@ -158,7 +158,14 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
             self._decide(request, access, status)
             done += 1
         if done:
-            self.message_user(request, f"{verb.capitalize()} {done}.", messages.SUCCESS)
+            note = (
+                " Access ends within an hour, when their current YAC token expires."
+                if status == models.YacAccessRequest.Status.revoked
+                else ""
+            )
+            self.message_user(
+                request, f"{verb.capitalize()} {done}.{note}", messages.SUCCESS
+            )
 
     @admin.action(description="Approve: add the YAC users role in Auth0")
     def approve(self, request, queryset):
