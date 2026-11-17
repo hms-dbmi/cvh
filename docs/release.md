@@ -27,7 +27,7 @@ git log $(git describe --tags --match 'prod-frontend-*' --abbrev=0)..main --onel
 git log $(git describe --tags --match 'prod-api-*' --abbrev=0)..main --oneline
 ```
 
-The tags are annotated (`git tag -a`) so `git show <tag>` gives you the deploy date and, for the API, the ECR source tag.
+The tags are annotated (`git tag -a`) so `git show <tag>` gives you the deploy date and, for the API, the ECR source tag. The API tag marks the commit whose image was promoted, read from the image's SHA tag, so after a rollback it's the older commit. That lookup needs `ecr:DescribeImages` on the deploy role; without it, the tag falls back to `main`'s newest commit.
 
 ## Rolling the changelog
 

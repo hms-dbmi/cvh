@@ -109,12 +109,31 @@ jobs:
               --service "$YAC_SERVICE" --force-new-deployment
           fi
 
-      - name: Checkout main to tag
+      - name: Find the promoted commit
+        id: commit
+        # Tag the commit that's now in prod, not main's newest, which differs
+        # after a rollback or while a newer deploy is still running.
+        # deploy-api.yml tags each image with its full commit SHA; images from
+        # before that (or a failed lookup) fall back to main.
+        env:
+          SOURCE_TAG: ${{ github.event.inputs.source_tag }}
+        run: |
+          if [[ "$SOURCE_TAG" =~ ^[0-9a-f]{40}$ ]]; then
+            SHA=$SOURCE_TAG
+          else
+            SHA=$(aws ecr describe-images --repository-name cvh-api \
+              --image-ids imageTag=prod \
+              --query 'imageDetails[0].imageTags' --output text \
+              | tr '\t' '\n' | grep -E '^[0-9a-f]{40}$' | head -n 1)
+          fi
+          echo "ref=${SHA:-main}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the promoted commit to tag
         # Only need the git tree here (the promote job above doesn't
         # check out because it's ECR-only).
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ steps.commit.outputs.ref }}
 
       - name: Tag commit as prod-api-YYYY-MM-DD
         # Marks the git commit whose image was promoted. The source ECR

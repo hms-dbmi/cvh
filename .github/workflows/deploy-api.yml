@@ -8,6 +8,11 @@ on:
   # after setting the ECS_YAC_* secrets.
   workflow_dispatch:
 
+# One run at a time, in order, so an older run can't move `latest` back
+# after a newer one.
+concurrency:
+  group: deploy-api
+
 jobs:
   build:
     # Only main deploys, including manual runs.
