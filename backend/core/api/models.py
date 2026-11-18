@@ -448,7 +448,7 @@ class ProjectMember(models.Model):
 class YacAccessRequest(models.Model):
     """A person's request to use YAC, the cfdb chart agent, and its outcome.
 
-    Auth0 enforces access (the YAC users role); this records who asked and
+    Auth0 enforces access (the yac_user role); this records who asked and
     what an admin decided. Approving or revoking in the Django admin adds or
     removes the role through Auth0's Management API.
     """

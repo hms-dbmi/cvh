@@ -39,13 +39,13 @@ In the environment's tenant:
    - Turn on **RBAC** and **Add Permissions in the Access Token**, and add a permission `use:yac`. `cvh_yac.py` answers 403 to any token without it, so a missing or broken Action can't open YAC to everyone.
    - Under **Application Access**, allow only the CVH single-page app for user access and deny all client (machine-to-machine) access.
    - Turn on **Allow Skipping User Consent**. The CVH app fetches the YAC token silently; without it, Auth0 answers `consent_required` and the profile asks the person to sign in to YAC in a popup.
-2. Create the YAC users role and give it the `use:yac` permission. Approving an access request adds the role (see `docs/admin-deployment.md`).
+2. Create the `yac_user` role and give it the `use:yac` permission. Approving an access request adds the role (see `docs/admin-deployment.md`).
 3. Add this post-login Action and attach it to the post-login trigger, with an Action secret `YAC_AUDIENCE` set to the YAC API's identifier. It refuses YAC tokens to people without the role and copies their budget into the token:
 
    ```js
    exports.onExecutePostLogin = async (event, api) => {
      if (event.resource_server?.identifier !== event.secrets.YAC_AUDIENCE) return;
-     if (!event.authorization?.roles?.includes("YAC users")) {
+     if (!event.authorization?.roles?.includes("yac_user")) {
        api.access.deny("YAC access hasn't been granted.");
        return;
      }

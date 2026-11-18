@@ -114,7 +114,7 @@ For break-glass when Auth0 is unreachable, use ECS Exec to drop into the running
 
 People ask for AI access (YAC) from their profile page (`POST /api/yac/access`), and an admin decides in **Django admin → YAC access requests**:
 
-- **Approve** adds the YAC users role to the person in Auth0, through the Management API, then records the decision. If Auth0 refuses or can't be reached, the request stays pending and the admin sees why.
+- **Approve** adds the `yac_user` role to the person in Auth0, through the Management API, then records the decision. If Auth0 refuses or can't be reached, the request stays pending and the admin sees why.
 - **Decline** records the decision with no Auth0 call.
 - **Revoke** removes the role in Auth0, then marks the request revoked. A YAC token they already hold keeps working until it expires, within an hour (the YAC API's token lifetime); their monthly budget still applies meanwhile.
 
@@ -125,4 +125,4 @@ Each person can ask once. Declined and revoked people see "Contact Us" (hidive@h
 ### One-time setup per environment
 
 1. **Machine-to-machine app:** in the environment's Auth0 tenant, Applications → Create Application → Machine to Machine, for example "CVH admin (Management API)". Authorize it for the **Auth0 Management API** with only the scopes for assigning and removing a user's roles (`create:role_members` and `delete:role_members`; check them against Auth0's docs for `POST` and `DELETE /api/v2/users/{id}/roles`).
-2. **Settings:** give the admin service `AUTH0_MGMT_CLIENT_ID` and `AUTH0_MGMT_CLIENT_SECRET` (from step 1) and `YAC_AUTH0_ROLE_ID` (the YAC users role's ID, `rol_…`, on its page under User Management → Roles). Locally, put them in `backend/core/.env`. Until they're set, Approve and Revoke show which one is missing and leave the request unchanged.
+2. **Settings:** give the admin service `AUTH0_MGMT_CLIENT_ID` and `AUTH0_MGMT_CLIENT_SECRET` (from step 1) and `YAC_AUTH0_ROLE_ID` (the `yac_user` role's ID, `rol_…`, on its page under User Management → Roles). Locally, put them in `backend/core/.env`. Until they're set, Approve and Revoke show which one is missing and leave the request unchanged.

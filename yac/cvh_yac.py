@@ -51,7 +51,7 @@ if _backends_file and (
 
 log = logging.getLogger("cvh_yac")
 
-# Auth0 puts the YAC users role's permissions in the token (RBAC on the YAC
+# Auth0 puts the yac_user role's permissions in the token (RBAC on the YAC
 # API). Checking it here means a missing or broken post-login Action can't
 # hand YAC to everyone: without the permission, every endpoint answers 403.
 REQUIRED_PERMISSION = "use:yac"
