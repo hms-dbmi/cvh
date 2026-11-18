@@ -3,7 +3,7 @@
 CVH deploys to **dev** automatically on every push to `main`, and to **prod** via two manual workflows in `.github/workflows/`:
 
 - `deploy-front-end-prod.yml` — rebuilds the frontend with prod env vars and syncs to the prod S3 bucket + invalidates CloudFront.
-- `deploy-api-prod.yml` — retags the ECR image currently tagged `latest` (or a passed-in tag, for rollbacks) as `prod` and forces the prod API and admin ECS services to redeploy.
+- `deploy-api-prod.yml` — retags the ECR image currently tagged `latest` (or a passed-in tag, for rollbacks) as `prod` and forces the prod API and admin ECS services to redeploy. Once prod YAC exists and the production environment's `YAC_PROD_ENABLED` variable is `true`, it does the same for the `cvh-yac` image and service, so the API and YAC are always promoted together. Every image is also tagged with its full commit SHA; pass one (all 40 characters) as `source_tag` to roll back.
 
 Both workflows are `workflow_dispatch` (manual). A prod deploy usually runs both, back to back.
 
@@ -27,7 +27,7 @@ git log $(git describe --tags --match 'prod-frontend-*' --abbrev=0)..main --onel
 git log $(git describe --tags --match 'prod-api-*' --abbrev=0)..main --oneline
 ```
 
-The tags are annotated (`git tag -a`) so `git show <tag>` gives you the deploy date and, for the API, the ECR source tag.
+The tags are annotated (`git tag -a`) so `git show <tag>` gives you the deploy date and, for the API, the ECR source tag. The API tag marks the commit whose image was promoted, read from the image's SHA tag, so after a rollback it's the older commit. That lookup needs `ecr:DescribeImages` on the deploy role; without it, the tag falls back to `main`'s newest commit.
 
 ## Rolling the changelog
 

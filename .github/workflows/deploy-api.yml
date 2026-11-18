@@ -4,10 +4,19 @@ on:
   push:
     branches:
       - main
+  # Run by hand from main to redeploy without a new commit, for example
+  # after setting the ECS_YAC_* secrets.
+  workflow_dispatch:
+
+# One run at a time, in order, so an older run can't move `latest` back
+# after a newer one.
+concurrency:
+  group: deploy-api
 
 jobs:
   build:
-    if: github.repository == 'hms-dbmi/cvh'
+    # Only main deploys, including manual runs.
+    if: github.repository == 'hms-dbmi/cvh' && github.ref == 'refs/heads/main'
     # Available versions:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-24.04
@@ -23,7 +32,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Configure AWS Credentials
-        if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
@@ -38,9 +47,12 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: cvh-api
           IMAGE_TAG: latest
+        # Also tagged with the commit, so deploy-api-prod.yml can promote or
+        # roll back a matching API and YAC pair by SHA.
         run: |
-            docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-            docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+            docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+              -t $REGISTRY/$REPOSITORY:$GITHUB_SHA .
+            docker push --all-tags $REGISTRY/$REPOSITORY
 
       - name: Force new ECS deployment (API + admin)
         # API and admin live in separate ECS clusters — the admin
@@ -58,3 +70,62 @@ jobs:
               --service "$API_SERVICE" --force-new-deployment
             aws ecs update-service --cluster "$ADMIN_CLUSTER" \
               --service "$ADMIN_SERVICE" --force-new-deployment
+
+  yac:
+    # Off until the cvh-yac ECR repository exists and the deploy role can
+    # push to it: set the repo variable YAC_ENABLED to true then.
+    if: >-
+      github.repository == 'hms-dbmi/cvh' && github.ref == 'refs/heads/main'
+      && vars.YAC_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./yac
+    permissions:
+        id-token: write
+        contents: read
+    env:
+      YAC_CLUSTER: ${{ secrets.ECS_YAC_CLUSTER }}
+      YAC_SERVICE: ${{ secrets.ECS_YAC_SERVICE }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test the budgets
+        run: |
+            pip install --require-hashes -r requirements.txt
+            pip install pytest
+            python -m pytest test_cvh_yac.py
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push YAC to ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: cvh-yac
+          IMAGE_TAG: latest
+        # Also tagged with the commit, so deploy-api-prod.yml can promote or
+        # roll back a matching API and YAC pair by SHA.
+        run: |
+            docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+              -t $REGISTRY/$REPOSITORY:$GITHUB_SHA .
+            docker push --all-tags $REGISTRY/$REPOSITORY
+
+      - name: Force new ECS deployment (YAC)
+        # Skipped until the YAC stack exists and these secrets are set.
+        if: ${{ env.YAC_CLUSTER != '' }}
+        run: |
+            aws ecs update-service --cluster "$YAC_CLUSTER" \
+              --service "$YAC_SERVICE" --force-new-deployment

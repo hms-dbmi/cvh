@@ -112,7 +112,7 @@ class ProjectMemberAdmin(admin.ModelAdmin):
 @admin.register(models.YacAccessRequest)
 class YacAccessRequestAdmin(admin.ModelAdmin):
     """Approve, decline or revoke YAC access. Approve and revoke change the
-    YAC users role in Auth0 first, and only record the decision if Auth0
+    yac_user role in Auth0 first, and only record the decision if Auth0
     accepted it, so this list never says someone has access they don't.
     Declined or revoked people contact us; approving their request again
     restores access."""
@@ -167,7 +167,7 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
                 request, f"{verb.capitalize()} {done}.{note}", messages.SUCCESS
             )
 
-    @admin.action(description="Approve: add the YAC users role in Auth0")
+    @admin.action(description="Approve: add the yac_user role in Auth0")
     def approve(self, request, queryset):
         self._with_auth0(
             request,
@@ -184,7 +184,7 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
             self._decide(request, access, models.YacAccessRequest.Status.declined)
         self.message_user(request, f"Declined {len(pending)}.", messages.SUCCESS)
 
-    @admin.action(description="Revoke: remove the YAC users role in Auth0")
+    @admin.action(description="Revoke: remove the yac_user role in Auth0")
     def revoke(self, request, queryset):
         self._with_auth0(
             request,

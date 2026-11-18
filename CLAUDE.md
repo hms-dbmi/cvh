@@ -101,7 +101,7 @@ A push to `main` deploys to dev:
 
 Prod deploys are manual (`workflow_dispatch`): `deploy-api-prod.yml` promotes an ECR image, `deploy-front-end-prod.yml` builds and syncs the prod site. See `docs/release.md`.
 
-Tests run on PRs: `test-frontend.yml`, `e2e.yml`, `test-python-client.yml`. `publish-client.yml` publishes `cvh-client` to TestPyPI or PyPI by hand.
+Tests run on PRs: `test-frontend.yml`, `e2e.yml`, `test-python-client.yml`, `test-yac.yml`. `publish-client.yml` publishes `cvh-client` to TestPyPI or PyPI by hand.
 
 ## Dataset Types
 

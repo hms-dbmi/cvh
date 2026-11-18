@@ -1,4 +1,4 @@
-"""Grant and remove the YAC users role through Auth0's Management API.
+"""Grant and remove the yac_user role through Auth0's Management API.
 
 The admin service calls these when an admin approves or revokes a YAC access
 request. Auth0 is what enforces access: YAC refuses tokens to anyone without

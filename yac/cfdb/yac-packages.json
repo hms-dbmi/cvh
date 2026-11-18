@@ -1,0 +1,288 @@
+{
+  "cfdb": {
+    "type": "duckdb",
+    "tables": {
+      "Files": "files",
+      "Collections": "collections",
+      "Biosamples": "biosamples",
+      "Subjects": "subjects"
+    },
+    "schemas": {
+      "Files": {
+        "title": "Files",
+        "description": "One row per data file submitted to the Common Fund Data Ecosystem by a DCC (ENCODE or 4DN), with its format, assay and size, and the collection, biosample and subject it came from.",
+        "primaryKey": [
+          "file_id"
+        ],
+        "foreignKeys": [
+          {
+            "fields": [
+              "collection_id"
+            ],
+            "reference": {
+              "resource": "Collections",
+              "fields": [
+                "collection_id"
+              ]
+            }
+          },
+          {
+            "fields": [
+              "biosample_id"
+            ],
+            "reference": {
+              "resource": "Biosamples",
+              "fields": [
+                "biosample_id"
+              ]
+            }
+          },
+          {
+            "fields": [
+              "subject_id"
+            ],
+            "reference": {
+              "resource": "Subjects",
+              "fields": [
+                "subject_id"
+              ]
+            }
+          }
+        ],
+        "fields": [
+          {
+            "name": "file_id",
+            "title": "File ID",
+            "description": "C2M2 local identifier of the file."
+          },
+          {
+            "name": "accession",
+            "description": "DCC accession of the file, e.g. ENCFF… or 4DNFI…."
+          },
+          {
+            "name": "dcc",
+            "title": "DCC",
+            "description": "Data Coordinating Center that submitted the file: ENCODE or 4DN."
+          },
+          {
+            "name": "file_format",
+            "description": "EDAM file format, e.g. FASTQ, BAM, bigWig, BED."
+          },
+          {
+            "name": "data_type",
+            "description": "EDAM data type the file holds, e.g. Sequence alignment, Annotation track."
+          },
+          {
+            "name": "assay",
+            "description": "OBI assay that produced the file, e.g. ChIP-seq assay, RNA-seq assay, Hi-C."
+          },
+          {
+            "name": "output_type",
+            "description": "DCC-specific output type, e.g. reads, alignments, peaks, signal p-value."
+          },
+          {
+            "name": "genome_assembly",
+            "description": "Reference genome the file is aligned to, e.g. GRCh38, hg19, mm10."
+          },
+          {
+            "name": "status",
+            "description": "Release status at the DCC: released or archived (blank for 4DN)."
+          },
+          {
+            "name": "size_gb",
+            "title": "Size (GB)",
+            "description": "File size in gigabytes (10^9 bytes)."
+          },
+          {
+            "name": "created_year",
+            "title": "Year created",
+            "description": "Year the file was created at the DCC.",
+            "udi:time_format": "year"
+          },
+          {
+            "name": "species",
+            "description": "Species the file's data comes from (ENCODE's per-file organism, else the subject's), e.g. Homo sapiens, Mus musculus."
+          },
+          {
+            "name": "anatomy",
+            "description": "UBERON anatomy or cell line of the file's collection (copied from Collections), e.g. K562, heart."
+          },
+          {
+            "name": "collection_id",
+            "title": "Collection ID",
+            "description": "The collection (experiment or replicate set) the file belongs to."
+          },
+          {
+            "name": "biosample_id",
+            "title": "Biosample ID",
+            "description": "The biosample the file's collection was assayed on."
+          },
+          {
+            "name": "subject_id",
+            "title": "Subject ID",
+            "description": "The subject (organism or cell line) the biosample came from."
+          }
+        ]
+      },
+      "Collections": {
+        "title": "Collections",
+        "description": "One row per C2M2 collection: an ENCODE experiment or annotation, or a 4DN experiment or replicate set. Groups the files produced together.",
+        "primaryKey": [
+          "collection_id"
+        ],
+        "foreignKeys": [
+          {
+            "fields": [
+              "biosample_id"
+            ],
+            "reference": {
+              "resource": "Biosamples",
+              "fields": [
+                "biosample_id"
+              ]
+            }
+          },
+          {
+            "fields": [
+              "subject_id"
+            ],
+            "reference": {
+              "resource": "Subjects",
+              "fields": [
+                "subject_id"
+              ]
+            }
+          }
+        ],
+        "fields": [
+          {
+            "name": "collection_id",
+            "title": "Collection ID",
+            "description": "C2M2 local identifier of the collection."
+          },
+          {
+            "name": "accession",
+            "description": "DCC accession, e.g. ENCSR… or 4DNEX…."
+          },
+          {
+            "name": "dcc",
+            "title": "DCC",
+            "description": "Data Coordinating Center: ENCODE or 4DN."
+          },
+          {
+            "name": "lab",
+            "description": "Lab that produced the collection."
+          },
+          {
+            "name": "experiment_type",
+            "description": "Experiment type, e.g. TF ChIP-seq, DNase-seq, in situ Hi-C."
+          },
+          {
+            "name": "target",
+            "description": "Assay target for ChIP-seq and similar, e.g. CTCF-human, H3K27ac-human."
+          },
+          {
+            "name": "analyte_class",
+            "description": "Class of molecule assayed, e.g. DNA, RNA, polyadenylated mRNA."
+          },
+          {
+            "name": "anatomy",
+            "description": "UBERON anatomy or cell line the collection was assayed on."
+          },
+          {
+            "name": "biosample_id",
+            "title": "Biosample ID",
+            "description": "The biosample the collection was assayed on."
+          },
+          {
+            "name": "subject_id",
+            "title": "Subject ID",
+            "description": "The subject the biosample came from."
+          }
+        ]
+      },
+      "Biosamples": {
+        "title": "Biosamples",
+        "description": "One row per biosample: tissue, cells or a cell line taken from a subject and assayed.",
+        "primaryKey": [
+          "biosample_id"
+        ],
+        "foreignKeys": [
+          {
+            "fields": [
+              "subject_id"
+            ],
+            "reference": {
+              "resource": "Subjects",
+              "fields": [
+                "subject_id"
+              ]
+            }
+          }
+        ],
+        "fields": [
+          {
+            "name": "biosample_id",
+            "title": "Biosample ID",
+            "description": "C2M2 local identifier of the biosample."
+          },
+          {
+            "name": "dcc",
+            "title": "DCC",
+            "description": "Data Coordinating Center: ENCODE or 4DN."
+          },
+          {
+            "name": "anatomy",
+            "description": "UBERON anatomy or cell type of the biosample, e.g. colon, stem cell."
+          },
+          {
+            "name": "biosample_type",
+            "description": "ENCODE biosample type: cell line, tissue, primary cell, … (blank for 4DN)."
+          },
+          {
+            "name": "subject_count",
+            "title": "Subjects",
+            "description": "Number of subjects the biosample was pooled from."
+          },
+          {
+            "name": "subject_id",
+            "title": "Subject ID",
+            "description": "The subject the biosample came from (the first, when pooled)."
+          }
+        ]
+      },
+      "Subjects": {
+        "title": "Subjects",
+        "description": "One row per subject: an organism or cell line that biosamples were taken from.",
+        "primaryKey": [
+          "subject_id"
+        ],
+        "fields": [
+          {
+            "name": "subject_id",
+            "title": "Subject ID",
+            "description": "C2M2 local identifier of the subject."
+          },
+          {
+            "name": "dcc",
+            "title": "DCC",
+            "description": "Data Coordinating Center: ENCODE or 4DN."
+          },
+          {
+            "name": "species",
+            "description": "NCBI taxonomy species, e.g. Homo sapiens, Mus musculus."
+          }
+        ]
+      }
+    },
+    "examplePrompts": [
+      "How many files does each DCC have, broken down by file format?",
+      "What is the total file size in GB for each assay?",
+      "Which experiment types have the most collections?",
+      "How many files were created each year, by DCC?",
+      "Which anatomical sites have the most biosamples?",
+      "How many files are there per species and genome assembly?"
+    ],
+    "database": "/data/cfdb.duckdb"
+  }
+}
