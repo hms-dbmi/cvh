@@ -539,3 +539,11 @@ class ProcessingOut(Schema):
     processing_started_at: datetime | None = None
     processing_completed_at: datetime | None = None
     processing_error: str | None = None
+
+
+class YacAccessOut(Schema):
+    """The user's AI access state. `none` means they haven't asked yet."""
+
+    status: Literal["none", "pending", "approved", "declined", "revoked"]
+    requested_at: datetime | None = None
+    decided_at: datetime | None = None

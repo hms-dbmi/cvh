@@ -6,6 +6,7 @@ from .routers.members import router as members_router
 from .routers.users import router as users_router
 from .routers.visualizations import router as visualizations_router
 from .routers.workspaces import router as workspaces_router
+from .routers.yac import router as yac_router
 
 api = NinjaAPI(
     title="Community Visualization Hub API",
@@ -41,3 +42,4 @@ api.add_router("", members_router)
 api.add_router("", workspaces_router)
 api.add_router("", datasets_router)
 api.add_router("", visualizations_router)
+api.add_router("", yac_router)

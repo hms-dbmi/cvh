@@ -44,6 +44,10 @@ export default defineConfig({
           // the CFDB GraphQL origin. Matches the fallback in
           // src/test/msw-handlers.ts; mirrored in the CI build step.
           VITE_CFDB_API_URL: "http://127.0.0.1:9100",
+          // Same for the YAC service, which the profile page's usage bar
+          // calls; mirrored in the CI build step.
+          VITE_YAC_URL: "http://127.0.0.1:9200",
+          VITE_YAC_AUDIENCE: "e2e-yac",
         },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

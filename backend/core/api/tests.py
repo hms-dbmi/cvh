@@ -659,3 +659,228 @@ class VisualizationAuthorsTests(TestCase):
             sorted(a["name"] for a in response.json()["authors"]), ["Ada", "mem"]
         )
         self.assertNotIn(b"@example.com", response.content)
+
+
+class YacAccessRequestTests(TestCase):
+    """GET and POST /api/yac/access: the profile page reads the
+    user's AI access state from these, and a request records the Auth0 ID."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        self.user = User.objects.create(username="google-oauth2_42", email="a@x.org")
+
+        def authenticate(request, token):
+            request.auth0_user_id = "google-oauth2|42"
+            return self.user
+
+        auth_patch = patch("api.auth.Authorized.authenticate", side_effect=authenticate)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+
+    def _get(self):
+        return self.client.get("/api/yac/access", HTTP_AUTHORIZATION="Bearer t")
+
+    def _request(self):
+        return self.client.post("/api/yac/access", HTTP_AUTHORIZATION="Bearer t")
+
+    def test_new_user_has_not_asked(self):
+        self.assertEqual(
+            self._get().json(),
+            {"status": "none", "requested_at": None, "decided_at": None},
+        )
+
+    def test_request_is_pending_and_records_the_auth0_id(self):
+        from .models import YacAccessRequest
+
+        response = self._request()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "pending")
+        self.assertIsNotNone(response.json()["requested_at"])
+        access = YacAccessRequest.objects.get(user=self.user)
+        self.assertEqual(access.auth0_user_id, "google-oauth2|42")
+
+    def test_cannot_request_again_in_any_state(self):
+        from .models import YacAccessRequest
+
+        self._request()
+        for status in ("pending", "approved", "declined", "revoked"):
+            YacAccessRequest.objects.filter(user=self.user).update(status=status)
+            response = self._request()
+            with self.subTest(status=status):
+                self.assertEqual(response.status_code, 409)
+                self.assertEqual(response.json()["code"], "already_requested")
+                self.assertEqual(self._get().json()["status"], status)
+
+
+class YacAccessAdminTests(TestCase):
+    """Approve and revoke change the role in Auth0 first, and record the
+    decision only if Auth0 accepted it."""
+
+    def setUp(self):
+        from django.contrib.admin.sites import site
+        from django.contrib.auth.models import User
+        from django.test import RequestFactory
+        from django.utils import timezone
+
+        from .admin import YacAccessRequestAdmin
+        from .models import YacAccessRequest
+
+        self.admin_user = User.objects.create(username="admin")
+        requester = User.objects.create(username="google-oauth2_42")
+        self.access = YacAccessRequest.objects.create(
+            user=requester,
+            auth0_user_id="google-oauth2|42",
+            requested_at=timezone.now(),
+        )
+        self.model_admin = YacAccessRequestAdmin(YacAccessRequest, site)
+        self.request = RequestFactory().post("/admin/")
+        self.request.user = self.admin_user
+        message_patch = patch.object(self.model_admin, "message_user")
+        self.messages = message_patch.start()
+        self.addCleanup(message_patch.stop)
+
+    def _run(self, action):
+        from .models import YacAccessRequest
+
+        getattr(self.model_admin, action)(self.request, YacAccessRequest.objects.all())
+        self.access.refresh_from_db()
+
+    def test_requests_cannot_be_added_or_deleted(self):
+        self.assertFalse(self.model_admin.has_add_permission(self.request))
+        self.assertFalse(
+            self.model_admin.has_delete_permission(self.request, self.access)
+        )
+        self.assertNotIn("delete_selected", self.model_admin.get_actions(self.request))
+
+    def test_approve_grants_the_role_then_records_it(self):
+        with patch("api.admin.grant_yac_role") as grant:
+            self._run("approve")
+
+        grant.assert_called_once_with("google-oauth2|42")
+        self.assertEqual(self.access.status, "approved")
+        self.assertEqual(self.access.decided_by, self.admin_user)
+
+    def test_approve_stays_pending_when_auth0_refuses(self):
+        from .yac_access import Auth0ManagementError
+
+        with patch("api.admin.grant_yac_role", side_effect=Auth0ManagementError("403")):
+            self._run("approve")
+
+        self.assertEqual(self.access.status, "pending")
+        self.assertIsNone(self.access.decided_at)
+
+    def test_approving_a_declined_request_restores_access(self):
+        # Declined and revoked people contact us instead of asking again.
+        self.access.status = "declined"
+        self.access.save()
+
+        with patch("api.admin.grant_yac_role") as grant:
+            self._run("approve")
+
+        grant.assert_called_once_with("google-oauth2|42")
+        self.assertEqual(self.access.status, "approved")
+
+    def test_revoke_removes_the_role(self):
+        self.access.status = "approved"
+        self.access.save()
+
+        with patch("api.admin.remove_yac_role") as remove:
+            self._run("revoke")
+
+        remove.assert_called_once_with("google-oauth2|42")
+        self.assertEqual(self.access.status, "revoked")
+
+    def test_decline_needs_no_auth0_call(self):
+        with patch("api.admin.grant_yac_role") as grant:
+            self._run("decline")
+
+        grant.assert_not_called()
+        self.assertEqual(self.access.status, "declined")
+
+
+class Auth0ManagementTests(TestCase):
+    """The Management API call: one cached token, and the user ID encoded,
+    since Auth0 IDs contain `|`."""
+
+    def setUp(self):
+        from django.core.cache import cache
+
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+    def test_grant_posts_the_role_with_an_encoded_user_id(self):
+        from unittest.mock import MagicMock
+
+        from django.test import override_settings
+
+        from .yac_access import grant_yac_role
+
+        token = MagicMock(ok=True)
+        token.json.return_value = {"access_token": "mgmt", "expires_in": 86400}
+        with (
+            override_settings(
+                AUTH0_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_CLIENT_ID="id",
+                AUTH0_MGMT_CLIENT_SECRET="secret",
+                YAC_AUTH0_ROLE_ID="rol_yac",
+            ),
+            patch("api.yac_access.requests.post", return_value=token) as post,
+            patch(
+                "api.yac_access.requests.request", return_value=MagicMock(ok=True)
+            ) as call,
+        ):
+            grant_yac_role("google-oauth2|42")
+            grant_yac_role("google-oauth2|43")
+
+        post.assert_called_once()  # the token is reused
+        method, url = call.call_args.args
+        self.assertEqual(method, "POST")
+        self.assertEqual(
+            url, "https://cvh-test.example/api/v2/users/google-oauth2%7C43/roles"
+        )
+        self.assertEqual(call.call_args.kwargs["json"], {"roles": ["rol_yac"]})
+        headers = call.call_args.kwargs["headers"]
+        self.assertEqual(headers["Authorization"], "Bearer mgmt")
+
+    def test_refused_token_is_dropped_from_the_cache(self):
+        from unittest.mock import MagicMock
+
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        from .yac_access import TOKEN_CACHE_KEY, Auth0ManagementError, grant_yac_role
+
+        cache.set(TOKEN_CACHE_KEY, "old", 3600)
+        with (
+            override_settings(
+                AUTH0_DOMAIN="https://cvh-test.example/",
+                YAC_AUTH0_ROLE_ID="rol_yac",
+            ),
+            patch(
+                "api.yac_access.requests.request",
+                return_value=MagicMock(ok=False, status_code=403),
+            ),
+            self.assertRaises(Auth0ManagementError),
+        ):
+            grant_yac_role("google-oauth2|42")
+        self.assertIsNone(cache.get(TOKEN_CACHE_KEY))
+
+    def test_unreachable_auth0_is_reported_not_raised(self):
+        import requests
+        from django.test import override_settings
+
+        from .yac_access import Auth0ManagementError, grant_yac_role
+
+        with (
+            override_settings(
+                AUTH0_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_CLIENT_ID="id",
+                AUTH0_MGMT_CLIENT_SECRET="secret",
+                YAC_AUTH0_ROLE_ID="rol_yac",
+            ),
+            patch("api.yac_access.requests.post", side_effect=requests.Timeout()),
+            self.assertRaisesMessage(Auth0ManagementError, "Couldn't reach Auth0"),
+        ):
+            grant_yac_role("google-oauth2|42")

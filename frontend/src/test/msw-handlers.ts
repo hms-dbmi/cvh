@@ -3,6 +3,7 @@ import type { components } from "@/types/schema";
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 const cfdbApiUrl = import.meta.env.VITE_CFDB_API_URL ?? "http://127.0.0.1:9100";
+const yacUrl = import.meta.env.VITE_YAC_URL ?? "http://127.0.0.1:9200";
 
 const user: components["schemas"]["UserOut"] = {
   username: "e2e-user",
@@ -205,6 +206,45 @@ function flag(name: string): boolean {
 
 export const handlers = [
   http.get(`${apiUrl}/api/user`, () => HttpResponse.json(user)),
+
+  // AI (YAC) access. `__e2eYacStatus` picks the state ("none" by default)
+  // and `__e2eYacPercent` the share of credits used once approved.
+  http.get(`${apiUrl}/api/yac/access`, () => {
+    if (flag("__e2eYacAccessError")) {
+      return HttpResponse.json({ detail: "Unavailable" }, { status: 503 });
+    }
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    const status = (window as any).__e2eYacStatus ?? "none";
+    return HttpResponse.json(
+      status === "none"
+        ? { status }
+        : { status, requested_at: "2026-11-06T15:00:00Z", decided_at: null },
+    );
+  }),
+  http.post(`${apiUrl}/api/yac/access`, async ({ request }) => {
+    await recordRequest("POST", "/api/yac/access", request);
+    return HttpResponse.json({
+      status: "pending",
+      requested_at: "2026-11-06T15:00:00Z",
+      decided_at: null,
+    });
+  }),
+  http.get(`${yacUrl}/v1/yac/usage`, () => {
+    if (flag("__e2eYacUsageError")) {
+      return HttpResponse.json(
+        { detail: "YAC access hasn't been granted." },
+        { status: 403 },
+      );
+    }
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    const percent = (window as any).__e2eYacPercent ?? 16;
+    return HttpResponse.json({
+      spent_usd: percent / 50,
+      limit_usd: 2,
+      percent_used: percent,
+      renews_on: "2026-12-01",
+    });
+  }),
 
   // Workspaces
   http.get(`${apiUrl}/api/workspaces`, () => {

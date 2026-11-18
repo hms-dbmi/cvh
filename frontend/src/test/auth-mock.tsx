@@ -15,8 +15,27 @@ export const mockAuth0Context = {
   isLoading: false,
   user: mockUser,
   error: undefined,
-  getAccessTokenSilently: async () => "e2e-fake-token",
-  getAccessTokenWithPopup: async () => "e2e-fake-token",
+  // `__e2eYacSignInRequired` makes silent sign-in to the YAC audience fail
+  // the way a browser blocking third-party cookies does, until the popup.
+  getAccessTokenSilently: async (options?: {
+    authorizationParams?: { audience?: string };
+  }) => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    const w = window as any;
+    if (
+      w.__e2eYacSignInRequired &&
+      options?.authorizationParams?.audience ===
+        import.meta.env.VITE_YAC_AUDIENCE
+    ) {
+      throw { error: "login_required" };
+    }
+    return "e2e-fake-token";
+  },
+  getAccessTokenWithPopup: async () => {
+    // biome-ignore lint/suspicious/noExplicitAny: e2e harness only
+    (window as any).__e2eYacSignInRequired = false;
+    return "e2e-fake-token";
+  },
   getIdTokenClaims: async () => undefined,
   loginWithRedirect: noop,
   loginWithPopup: noop,
