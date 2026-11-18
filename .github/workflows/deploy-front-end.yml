@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - main
+  # Run by hand from main to rebuild without a new commit, for example
+  # after setting the YAC_URL and YAC_AUDIENCE variables.
+  workflow_dispatch:
 
 jobs:
   build:
-    if: github.repository == 'hms-dbmi/cvh'
+    # Only main deploys, including manual runs.
+    if: github.repository == 'hms-dbmi/cvh' && github.ref == 'refs/heads/main'
     # Available versions:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-24.04
@@ -40,6 +44,10 @@ jobs:
         VITE_API_URL: ${{secrets.VITE_API_URL}}
         VITE_CLOUDFRONT_URL: ${{secrets.VITE_CLOUDFRONT_URL}}
         VITE_CFDB_API_URL: ${{secrets.VITE_CFDB_API_URL}}
+        # The AI section stays hidden until these repo variables are set
+        # (the dev YAC URL and its Auth0 API identifier).
+        VITE_YAC_URL: ${{vars.YAC_URL}}
+        VITE_YAC_AUDIENCE: ${{vars.YAC_AUDIENCE}}
         VITE_FEATURED_PATH: featured/dev-featured.json
         VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{secrets.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}}
         VITE_PUBLIC_POSTHOG_HOST: ${{secrets.VITE_PUBLIC_POSTHOG_HOST}}
@@ -57,14 +65,14 @@ jobs:
       run: npm run build
 
     - name: Configure AWS Credentials
-      if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
+      if: ${{ github.ref == 'refs/heads/main' }}
       uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
         aws-region: us-east-1
 
     - name: Upload to S3
-      if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
+      if: ${{ github.ref == 'refs/heads/main' }}
       run: |
         # Hashed assets (Vite writes content-hashed filenames under
         # `assets/`) can be cached forever — a rebuild produces a new
@@ -83,6 +91,6 @@ jobs:
           --cache-control "public, max-age=0, must-revalidate"
     
     - name: Invalidate Cache
-      if: ${{ github.event_name == 'push' && github.ref  == 'refs/heads/main' }}
+      if: ${{ github.ref == 'refs/heads/main' }}
       run: |
         aws cloudfront create-invalidation --distribution-id ${{secrets.CF_DISTRIBUTION_ID}} --paths "/*"

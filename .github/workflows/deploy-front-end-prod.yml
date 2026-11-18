@@ -46,6 +46,11 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_CLOUDFRONT_URL: ${{ secrets.VITE_CLOUDFRONT_URL }}
           VITE_CFDB_API_URL: ${{ secrets.VITE_CFDB_API_URL }}
+          # Separate names from dev's YAC_URL/YAC_AUDIENCE, which production
+          # would otherwise inherit: the AI section stays hidden on prod
+          # until these are set on the production environment.
+          VITE_YAC_URL: ${{ vars.YAC_PROD_URL }}
+          VITE_YAC_AUDIENCE: ${{ vars.YAC_PROD_AUDIENCE }}
           VITE_FEATURED_PATH: featured/prod-featured.json
           # Prod deploy — PostHog captures unconditionally, and every
           # event is tagged `environment: production` so it lands in

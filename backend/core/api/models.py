@@ -443,3 +443,40 @@ class ProjectMember(models.Model):
                 name="unique_project_member",
             )
         ]
+
+
+class YacAccessRequest(models.Model):
+    """A person's request to use YAC, the cfdb chart agent, and its outcome.
+
+    Auth0 enforces access (the YAC users role); this records who asked and
+    what an admin decided. Approving or revoking in the Django admin adds or
+    removes the role through Auth0's Management API.
+    """
+
+    class Status(models.TextChoices):
+        pending = "pending"
+        approved = "approved"
+        declined = "declined"
+        revoked = "revoked"
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="yac_access_request"
+    )
+    auth0_user_id = models.CharField(
+        max_length=255,
+        help_text="The requester's Auth0 user ID, used to grant or remove the role.",
+    )
+    status = models.CharField(
+        max_length=10, choices=Status, default=Status.pending, db_index=True
+    )
+    requested_at = models.DateTimeField(help_text="When the request was submitted.")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        verbose_name = "YAC access request"
+
+    def __str__(self):
+        return f"{self.user} ({self.status})"

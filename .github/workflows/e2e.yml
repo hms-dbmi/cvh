@@ -63,6 +63,9 @@ jobs:
           # Same idea for the CFDB GraphQL origin. Matches the fallback in
           # src/test/msw-handlers.ts and the dev-mode env in playwright.config.ts.
           VITE_CFDB_API_URL: "http://127.0.0.1:9100"
+          # Turns on the profile page's AI usage bar against the MSW mock.
+          VITE_YAC_URL: "http://127.0.0.1:9200"
+          VITE_YAC_AUDIENCE: "e2e-yac"
           NODE_OPTIONS: --max_old_space_size=4096
         run: npm run build
 
