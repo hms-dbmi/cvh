@@ -80,18 +80,19 @@ test("Explore asks for AI access before showing the chat", async ({ page }) => {
     "true",
   );
 
-  // Leaving the library would lose the conversation, so it asks first.
-  await dialog.getByRole("button", { name: "Back to Data Catalogs" }).click();
-  const confirm = page.getByRole("dialog", { name: "Leave this library?" });
-  await confirm.getByRole("button", { name: "Stay" }).click();
-  await expect(confirm).toBeHidden();
-  await expect(dialog.getByRole("tab", { name: /Explore/ })).toBeVisible();
-
   // Back on Browse, the file table is still there.
   await dialog.getByRole("tab", { name: "Browse" }).click();
   await expect(
     dialog.getByRole("row").filter({ hasText: "e2e-track.bigwig" }),
   ).toBeVisible();
+
+  // No message was sent, so there's no conversation to lose: leaving the
+  // library doesn't ask first.
+  await dialog.getByRole("button", { name: "Back to Data Catalogs" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Leave this library?" }),
+  ).toBeHidden();
+  await expect(dialog.getByText("4D NUCLEOME DATA COORDINATION")).toBeVisible();
 });
 
 test("a long Explore conversation scrolls inside the chat, not the page", async ({

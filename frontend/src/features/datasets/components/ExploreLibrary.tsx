@@ -67,12 +67,14 @@ export default function ExploreLibrary({
   dcc,
   selectingIds,
   onFileIdsChange,
+  onMessageSent,
   selectedIds,
   setSelectedIds,
 }: {
   dcc: DccType;
   selectingIds: string[] | null;
   onFileIdsChange: (fileIds: string[] | null) => void;
+  onMessageSent: () => void;
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
@@ -128,6 +130,7 @@ export default function ExploreLibrary({
               token={token}
               dcc={getDccShortName(dcc)}
               onFileIdsChange={onFileIdsChange}
+              onMessageSent={onMessageSent}
             />
           </Suspense>
         </Box>

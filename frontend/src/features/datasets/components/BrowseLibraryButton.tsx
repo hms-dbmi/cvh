@@ -1219,6 +1219,9 @@ export default function BrowseLibraryButton({
   const [exploreFileIds, setExploreFileIds] = useState<string[] | null>(null);
   // Mounted on first visit and kept, so switching tabs keeps the chat.
   const [exploreOpened, setExploreOpened] = useState(false);
+  // Whether a message was sent in Explore: only then is there a
+  // conversation that leaving would throw away.
+  const [hasConversation, setHasConversation] = useState(false);
   // Leaving a library throws its Explore conversation away; this holds the
   // leave waiting for the user to confirm.
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
@@ -1232,6 +1235,7 @@ export default function BrowseLibraryButton({
     setSelectingIds(null);
     setExploreFileIds(null);
     setExploreOpened(false);
+    setHasConversation(false);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -1251,7 +1255,7 @@ export default function BrowseLibraryButton({
   }, []);
 
   const leaveLibrary = (leave: () => void) =>
-    exploreOpened ? setPendingLeave(() => leave) : leave();
+    hasConversation ? setPendingLeave(() => leave) : leave();
   const backToCatalogs = () => {
     setSelectedDcc(null);
     resetLibrary();
@@ -1366,6 +1370,7 @@ export default function BrowseLibraryButton({
                 dcc={selectedDcc}
                 selectingIds={selectingIds}
                 onFileIdsChange={setExploreFileIds}
+                onMessageSent={() => setHasConversation(true)}
                 selectedIds={exploreSelectedIds}
                 setSelectedIds={setExploreSelectedIds}
               />
