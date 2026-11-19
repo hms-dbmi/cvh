@@ -226,6 +226,7 @@ describe("ExploreLibrary", () => {
         dcc={library}
         selectingIds={null}
         onFileIdsChange={vi.fn()}
+        onConversationChange={vi.fn()}
         selectedIds={new Set()}
         setSelectedIds={vi.fn()}
       />,

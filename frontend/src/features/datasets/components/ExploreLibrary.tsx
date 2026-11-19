@@ -67,12 +67,14 @@ export default function ExploreLibrary({
   dcc,
   selectingIds,
   onFileIdsChange,
+  onConversationChange,
   selectedIds,
   setSelectedIds,
 }: {
   dcc: DccType;
   selectingIds: string[] | null;
   onFileIdsChange: (fileIds: string[] | null) => void;
+  onConversationChange: (hasConversation: boolean) => void;
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
@@ -94,7 +96,8 @@ export default function ExploreLibrary({
   if (!access) return aiContent?.body ?? <Loading />;
 
   return (
-    <Stack spacing={2} sx={{ height: "100%" }}>
+    // useFlexGap: the hidden chat box mustn't leave a gap above the table.
+    <Stack spacing={2} useFlexGap sx={{ flex: 1, minHeight: 0 }}>
       {showBanner && aiContent?.body}
       {/* The usage banner covers a sign-in problem when usage fails too. A
           failed refresh with a token still in hand stays quiet unless it
@@ -117,8 +120,10 @@ export default function ExploreLibrary({
         <Box
           sx={{
             display: selectingIds === null ? "block" : "none",
+            // UDIChat fills its parent, so the parent needs a set height:
+            // the space left in the dialog, never less than 420px.
             flex: 1,
-            minHeight: 560,
+            minHeight: 420,
           }}
         >
           <Suspense fallback={<Loading />}>
@@ -126,6 +131,7 @@ export default function ExploreLibrary({
               token={token}
               dcc={getDccShortName(dcc)}
               onFileIdsChange={onFileIdsChange}
+              onConversationChange={onConversationChange}
             />
           </Suspense>
         </Box>
@@ -231,7 +237,8 @@ export function ExploreFileTable({
   const missing = new Set(fileIds).size - listed.length;
 
   return (
-    <Stack spacing={1}>
+    // Fills the space left in the dialog; the table scrolls inside it.
+    <Stack spacing={1} sx={{ flex: 1, minHeight: 0 }}>
       {missing > 0 && (
         <Typography variant="body2">
           {missing === fileIds.length
@@ -239,7 +246,8 @@ export function ExploreFileTable({
             : `${plural(missing, "file")} matched in Explore ${missing === 1 ? "isn’t" : "aren’t"} in the library right now.`}
         </Typography>
       )}
-      <TableContainer sx={{ maxHeight: 640, overflow: "auto" }}>
+      {/* Never shorter than a few rows; very short windows scroll instead. */}
+      <TableContainer sx={{ flex: 1, minHeight: 240, overflow: "auto" }}>
         <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
           <FileTableHead
             selectableCount={selectableIds.size}

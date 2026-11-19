@@ -13,12 +13,16 @@ export default function ExploreChat({
   token,
   dcc,
   onFileIdsChange,
+  onConversationChange,
 }: {
   token: string;
   // The library's short name as YAC stores it in Files.dcc ("ENCODE", "4DN").
   dcc: string;
   // Every file left by the filters, or null while no filter reaches Files.
   onFileIdsChange: (fileIds: string[] | null) => void;
+  // Whether there's a conversation to lose: true once a message is sent,
+  // false again after udi-yac's reset clears it.
+  onConversationChange: (hasConversation: boolean) => void;
 }) {
   // A host filter scopes the chat to this library; the user sees it as a
   // chip but the agent can't remove it.
@@ -42,6 +46,13 @@ export default function ExploreChat({
       allowApiKey={false}
       filters={filters}
       cohort={{ entity: FILES, fields: ["file_id"] }}
+      onEvent={(name) => {
+        // A sent message or an imported session is work leaving would lose.
+        if (name === "message_sent" || name === "session_imported") {
+          onConversationChange(true);
+        }
+        if (name === "conversation_reset") onConversationChange(false);
+      }}
       onCohortChange={(cohort: UDICohort | null) =>
         onFileIdsChange(
           cohort ? cohort.keys.map((key) => String(key.file_id)) : null,
