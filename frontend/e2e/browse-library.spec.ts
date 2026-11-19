@@ -84,16 +84,93 @@ test("Explore asks for AI access before showing the chat", async ({ page }) => {
     "true",
   );
 
-  // Leaving the library would lose the conversation, so it asks first.
-  await dialog.getByRole("button", { name: "Back to Data Catalogs" }).click();
-  const confirm = page.getByRole("dialog", { name: "Leave this library?" });
-  await confirm.getByRole("button", { name: "Stay" }).click();
-  await expect(confirm).toBeHidden();
-  await expect(dialog.getByRole("tab", { name: /Explore/ })).toBeVisible();
-
   // Back on Browse, the file table is still there.
   await dialog.getByRole("tab", { name: "Browse" }).click();
   await expect(
     dialog.getByRole("row").filter({ hasText: "e2e-track.bigwig" }),
   ).toBeVisible();
+
+  // No message was sent, so there's no conversation to lose: leaving the
+  // library doesn't ask first.
+  await dialog.getByRole("button", { name: "Back to Data Catalogs" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Leave this library?" }),
+  ).toBeHidden();
+  await expect(dialog.getByRole("tab", { name: /Explore/ })).toBeHidden();
+});
+
+test("a long Explore conversation scrolls inside the chat, not the page", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    Object.assign(window, { __e2eYacStatus: "approved" }),
+  );
+  await gotoWorkspace(page, PROJECT_ID);
+  await page.getByRole("button", { name: "Browse Library" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByText("4D NUCLEOME DATA COORDINATION").click();
+  await dialog.getByRole("tab", { name: /Explore/ }).click();
+  const chat = page.locator(".udi-yac");
+  await expect(chat).toBeVisible();
+  const content = page.locator(".MuiDialogContent-root");
+  const overflow = () =>
+    content.evaluate((el) => el.scrollHeight - el.clientHeight);
+  const chatHeight = () => chat.evaluate((el) => el.clientHeight);
+  const before = { overflow: await overflow(), chat: await chatHeight() };
+
+  // Stand-in for a long session: tall content in udi-yac's outer layout,
+  // which (unlike its chat column) doesn't clip, as with a tall data panel
+  // or chart grid.
+  await chat.evaluate((root) => {
+    const tall = document.createElement("div");
+    tall.style.height = "3000px";
+    root.firstElementChild?.appendChild(tall);
+  });
+
+  // The chat keeps its height and scrolls inside; the dialog doesn't grow.
+  expect(await chatHeight()).toBe(before.chat);
+  expect(await overflow()).toBe(before.overflow);
+});
+
+test("after a chat message, leaving the library asks first", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    Object.assign(window, { __e2eYacStatus: "approved" }),
+  );
+  await gotoWorkspace(page, PROJECT_ID);
+  await page.getByRole("button", { name: "Browse Library" }).click();
+  const dialog = page.getByRole("dialog").first();
+  const library = page.getByText("4D NUCLEOME DATA COORDINATION");
+  await library.click();
+  await dialog.getByRole("tab", { name: /Explore/ }).click();
+
+  // udi-yac reports message_sent as the message goes out, before any reply.
+  const question = page.getByPlaceholder("Ask a question...");
+  await question.fill("How many files are there?");
+  await question.press("Enter");
+
+  const back = dialog.getByRole("button", { name: "Back to Data Catalogs" });
+  const confirm = page.getByRole("dialog", { name: "Leave this library?" });
+  await back.click();
+  await confirm.getByRole("button", { name: "Stay" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(dialog.getByRole("tab", { name: /Explore/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+
+  await back.click();
+  await confirm.getByRole("button", { name: "Leave" }).click();
+  // The library's header repeats its name, so check its tabs are gone, once
+  // the confirm has closed and the library dialog is no longer aria-hidden.
+  await expect(confirm).toBeHidden();
+  const explore = dialog.getByRole("tab", { name: /Explore/ });
+  await expect(explore).toBeHidden();
+
+  // Leaving reset the conversation, so the next visit leaves right away.
+  await library.click();
+  await back.click();
+  await expect(confirm).toBeHidden();
+  await expect(explore).toBeHidden();
 });

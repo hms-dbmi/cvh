@@ -16,8 +16,14 @@ const props = () => chat.props as UDIChatConfig;
 describe("ExploreChat", () => {
   it("scopes the chat to the library and reports file IDs as strings", () => {
     const onFileIdsChange = vi.fn();
+    const onConversationChange = vi.fn();
     render(
-      <ExploreChat token="t" dcc="ENCODE" onFileIdsChange={onFileIdsChange} />,
+      <ExploreChat
+        token="t"
+        dcc="ENCODE"
+        onFileIdsChange={onFileIdsChange}
+        onConversationChange={onConversationChange}
+      />,
     );
 
     expect(props().authToken).toBe("t");
@@ -38,5 +44,16 @@ describe("ExploreChat", () => {
 
     props().onCohortChange?.(null);
     expect(onFileIdsChange).toHaveBeenLastCalledWith(null);
+
+    // A sent message makes a conversation worth warning about; udi-yac's
+    // reset clears it again. Other events don't count.
+    props().onEvent?.("response_received");
+    expect(onConversationChange).not.toHaveBeenCalled();
+    props().onEvent?.("message_sent", { charCount: 5 });
+    expect(onConversationChange).toHaveBeenLastCalledWith(true);
+    props().onEvent?.("conversation_reset");
+    expect(onConversationChange).toHaveBeenLastCalledWith(false);
+    props().onEvent?.("session_imported");
+    expect(onConversationChange).toHaveBeenLastCalledWith(true);
   });
 });
