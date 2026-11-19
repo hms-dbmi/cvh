@@ -117,12 +117,15 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
     Declined or revoked people contact us; approving their request again
     restores access."""
 
-    list_display = ("user", "status", "requested_at", "decided_at")
+    list_display = ("email", "name", "status", "requested_at", "decided_at")
+    list_select_related = ("user",)
     list_filter = ("status",)
     search_fields = ("user__username", "user__email")
     ordering = ("-requested_at",)
     actions = ("approve", "decline", "revoke")
     readonly_fields = (
+        "email",
+        "name",
         "user",
         "auth0_user_id",
         "status",
@@ -130,6 +133,15 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
         "decided_at",
         "decided_by",
     )
+
+    # The user's username is their Auth0 ID, so show who they are instead.
+    @admin.display(ordering="user__email")
+    def email(self, access):
+        return access.user.email
+
+    @admin.display(ordering="user__last_name")
+    def name(self, access):
+        return access.user.get_full_name()
 
     # Requests come only from the API. Deleting one would leave the role in
     # Auth0 while the profile says "Not Enabled"; revoke instead.
