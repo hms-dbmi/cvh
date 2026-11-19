@@ -2,6 +2,7 @@ from typing import Literal
 from uuid import UUID
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -24,6 +25,8 @@ from ..schema import (
     DatasetIn,
     DatasetOut,
     DatasetQuerySchema,
+    DatasetsBulkIn,
+    DatasetsBulkOut,
     DatasetUpdate,
     DatasetWithTagsOut,
     ExampleDatasetIn,
@@ -51,20 +54,7 @@ router = Router(tags=["Datasets"])
 def create_dataset(request, dataset: DatasetIn):
     dataset_dict = dataset.dict()
     workspace_uuid = dataset_dict.get("workspace_uuid")
-    del dataset_dict["workspace_uuid"]
-
-    fields = _apply_cfdb_source(dataset_dict["dataset"])
-    # `tool` lives at the DatasetIn top level (not inside the file-type
-    # discriminated union) because a file type like BAM can belong to
-    # either Gosling or Vitessce workspaces. Merge it in before persist.
-    fields["tool"] = dataset_dict["tool"]
-    # VitessceDataset accepts `data_type=None` (e.g., cfdb imports where
-    # only the file format is known); the Dataset model's `data_type`
-    # is a non-null CharField, so translate to the empty-string sentinel
-    # here rather than making the DB column nullable and rewriting every
-    # downstream reader.
-    if fields.get("data_type") is None:
-        fields["data_type"] = ""
+    fields = _dataset_fields(dataset_dict["dataset"], dataset_dict["tool"])
 
     if workspace_uuid:
         try:
@@ -75,6 +65,69 @@ def create_dataset(request, dataset: DatasetIn):
             raise Http404("Failed to create dataset.") from None
         return 201, Dataset.objects.create(**fields, project_key=project)
     return 201, Dataset.objects.create(**fields, user_key=request.auth)
+
+
+@router.post(
+    "/datasets/bulk",
+    auth=Authorized(),
+    response={201: DatasetsBulkOut},
+    summary="Add datasets to a workspace in one request",
+    description=(
+        "Creates up to 500 datasets in a workspace, all or none. Datasets"
+        " whose source URL is already in the workspace for the same tool"
+        " are skipped and counted in `skipped`. Requires write access."
+    ),
+)
+def create_datasets(request, payload: DatasetsBulkIn):
+    payload_dict = payload.dict()
+    try:
+        project = Project.objects.get_write_project(
+            user=request.auth, project_uuid=payload_dict["workspace_uuid"]
+        )
+    except Project.DoesNotExist:
+        raise Http404("Failed to add datasets.") from None
+
+    rows = [_dataset_fields(d, payload_dict["tool"]) for d in payload_dict["datasets"]]
+    created = []
+    with transaction.atomic():
+        # Lock the workspace so two adds at once (a double click) can't both
+        # miss the other's files and create duplicates.
+        # (The base manager: the default one groups for counts, which Postgres
+        # can't lock.)
+        Project._base_manager.select_for_update().filter(pk=project.pk).first()
+        seen = set(
+            Dataset.objects.filter(
+                project_key=project,
+                tool=payload_dict["tool"],
+                source_url__in=[row["source_url"] for row in rows],
+            ).values_list("source_url", flat=True)
+        )
+        for fields in rows:
+            if fields["source_url"] in seen:
+                continue
+            seen.add(fields["source_url"])
+            # One at a time: Dataset.save() sets the processing status, which
+            # bulk_create would skip.
+            created.append(Dataset.objects.create(**fields, project_key=project))
+    return 201, {"created": created, "skipped": len(rows) - len(created)}
+
+
+def _dataset_fields(dataset: dict, tool: str) -> dict:
+    """The model fields for one incoming dataset, shared by single and bulk
+    create."""
+    fields = _apply_cfdb_source(dataset)
+    # `tool` lives at the request's top level (not inside the file-type
+    # discriminated union) because a file type like BAM can belong to
+    # either Gosling or Vitessce workspaces. Merge it in before persist.
+    fields["tool"] = tool
+    # VitessceDataset accepts `data_type=None` (e.g., cfdb imports where
+    # only the file format is known); the Dataset model's `data_type`
+    # is a non-null CharField, so translate to the empty-string sentinel
+    # here rather than making the DB column nullable and rewriting every
+    # downstream reader.
+    if fields.get("data_type") is None:
+        fields["data_type"] = ""
+    return fields
 
 
 def _apply_cfdb_source(fields: dict) -> dict:
