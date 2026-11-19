@@ -859,6 +859,9 @@ function AddToWorkspaceButton({
     }
 
     const buildDataset = (file: CfdbFile): NewDataset | null => {
+      // Dataset names are capped at 100 characters; one longer filename
+      // would otherwise fail the whole add.
+      const name = file.filename.slice(0, 100);
       const assembly =
         (file.genomeAssembly as
           | "hg38"
@@ -877,7 +880,7 @@ function AddToWorkspaceButton({
 
       if (isTsv || isCsv) {
         return {
-          name: file.filename,
+          name,
           source_url: buildCfdbFileSourceUrl(file),
           data_type: "csv",
           assembly,
@@ -901,7 +904,7 @@ function AddToWorkspaceButton({
 
       if (goslingType && isBrowseLibraryReadyType(goslingType)) {
         return {
-          name: file.filename,
+          name,
           source_url: buildCfdbFileSourceUrl(file),
           data_type: goslingType,
           assembly,
@@ -923,7 +926,7 @@ function AddToWorkspaceButton({
         // The processed type comes from a lookup table as a plain string;
         // the backend validates it against the dataset union.
         return {
-          name: file.filename,
+          name,
           data_type: processedType,
           assembly,
           file_type: processedType,
