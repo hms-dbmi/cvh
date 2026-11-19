@@ -167,18 +167,23 @@ function CreditUsageBar({ usage }: { usage: YacUsage }) {
   );
 }
 
+// Explore reuses this with its own wording: signing in unlocks the chat there.
 export function UsageUnavailable({
   error,
   signIn,
+  signInTo = "see your usage",
+  unavailable = "Your AI usage is unavailable right now.",
 }: {
   error: Error;
   signIn: () => void;
+  signInTo?: string;
+  unavailable?: string;
 }) {
   if (error instanceof YacSignInRequired) {
     return (
       <Stack spacing={1} alignItems="flex-start">
         <Typography variant="body2">
-          Sign in to the AI service to see your usage.
+          Sign in to the AI service to {signInTo}.
         </Typography>
         <Button variant="outlined" onClick={signIn}>
           Sign In
@@ -188,7 +193,7 @@ export function UsageUnavailable({
   }
   return (
     <Typography variant="body2">
-      Your AI usage is unavailable right now. If this continues, <ContactUs />.
+      {unavailable} If this continues, <ContactUs />.
     </Typography>
   );
 }

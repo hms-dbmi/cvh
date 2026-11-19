@@ -18,6 +18,7 @@ import {
   useYacSignIn,
   useYacToken,
   useYacUsage,
+  YacSignInRequired,
 } from "@/features/profile/api/useYacAccess";
 import {
   NEAR_LIMIT_PERCENT,
@@ -95,10 +96,20 @@ export default function ExploreLibrary({
   return (
     <Stack spacing={2} sx={{ height: "100%" }}>
       {showBanner && aiContent?.body}
-      {/* The usage banner covers a sign-in problem when usage fails too. */}
-      {approved && tokenError && !usageError && (
-        <UsageUnavailable error={tokenError} signIn={signIn} />
-      )}
+      {/* The usage banner covers a sign-in problem when usage fails too. A
+          failed refresh with a token still in hand stays quiet unless it
+          needs a sign-in; the next refresh usually succeeds. */}
+      {approved &&
+        tokenError &&
+        !usageError &&
+        (!token || tokenError instanceof YacSignInRequired) && (
+          <UsageUnavailable
+            error={tokenError}
+            signIn={signIn}
+            signInTo="use Explore"
+            unavailable="Explore is unavailable right now."
+          />
+        )}
       {approved && !token && !usageError && !tokenError && <Loading />}
       {approved && token && (
         // Hidden rather than unmounted while selecting files, so going back

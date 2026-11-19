@@ -53,7 +53,7 @@ import {
   CFDB_PROCESSED_FILE_TYPE,
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
-  fetchCfdbSelectedFiles,
+  fetchCfdbFilesByLocalIds,
   getCfdbDccSlug,
   getDccAccessionExample,
   getDccShortName,
@@ -67,6 +67,7 @@ import {
   useCfdbFileLookup,
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
 import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
@@ -771,6 +772,7 @@ function AddToWorkspaceButton({
   const { data: projectsData } = useGetProjects();
   const projects = projectsData?.items ?? [];
   const { mutateAsync: createDataset } = useCreateDataset();
+  const { toastError } = useSnackbarActions();
   // The Browse Library opens from a workspace page; default the dropdown
   // to that workspace so the user usually doesn't need to change it.
   const { projectId: currentProjectId } = useParams({ strict: false });
@@ -798,7 +800,20 @@ function AddToWorkspaceButton({
 
     // Selection can include files that aren't in the currently-rendered
     // page of `useCfdbDccFiles`, so ask CFDB for the full set by id.
-    const selectedFiles = await fetchCfdbSelectedFiles(Array.from(selectedIds));
+    let selectedFiles: CfdbFile[] = [];
+    try {
+      selectedFiles = await fetchCfdbFilesByLocalIds(Array.from(selectedIds));
+    } catch {
+      // Handled below with the short result.
+    }
+    // Keep the dialog as it is if cfdb couldn't return every file: closing
+    // would throw away the selection, and an Explore conversation with it.
+    if (selectedFiles.length < selectedIds.size) {
+      toastError(
+        "Couldn’t load the selected files from the library. Try again.",
+      );
+      return;
+    }
 
     const buildDataset = (file: CfdbFile) => {
       const assembly =
@@ -900,7 +915,7 @@ function AddToWorkspaceButton({
     );
 
     onDone();
-  }, [selectedProject, selectedIds, createDataset, onDone]);
+  }, [selectedProject, selectedIds, createDataset, onDone, toastError]);
 
   const disabled = selectedIds.size === 0 || !selectedProject;
   const projectColor = selectedProject

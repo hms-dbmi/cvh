@@ -527,7 +527,8 @@ async function fetchDccFilesPage(
 
 /**
  * Fetch CFDB files by `localId`, throwing if cfdb can't be reached so the
- * caller can say so. Explore's file selection uses this directly.
+ * caller can say so. Adding to a workspace uses it because a selection can
+ * include files outside the rows loaded so far; Explore lists its matches.
  */
 export async function fetchCfdbFilesByLocalIds(
   localIds: string[],
@@ -584,16 +585,6 @@ export function useCfdbFileLookup(dccName: string | undefined, query: string) {
     enabled: !!dccName && trimmed.length > 0,
     staleTime: 1000 * 60 * 10,
   });
-}
-
-/**
- * Fetch CFDB files for a known set of `localId`s. Used by the "add to
- * project" flow because the user's selection can include files that
- * aren't in the currently-rendered page of `useCfdbDccFiles`, so we
- * can't rely on the cached list. A failed lookup returns no files.
- */
-export function fetchCfdbSelectedFiles(localIds: string[]) {
-  return fetchCfdbFilesByLocalIds(localIds).catch(() => []);
 }
 
 /**
