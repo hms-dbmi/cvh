@@ -92,7 +92,7 @@ test("Explore asks for AI access before showing the chat", async ({ page }) => {
   await expect(
     page.getByRole("dialog", { name: "Leave this library?" }),
   ).toBeHidden();
-  await expect(dialog.getByText("4D NUCLEOME DATA COORDINATION")).toBeVisible();
+  await expect(dialog.getByRole("tab", { name: /Explore/ })).toBeHidden();
 });
 
 test("a long Explore conversation scrolls inside the chat, not the page", async ({
@@ -158,11 +158,15 @@ test("after a chat message, leaving the library asks first", async ({
 
   await back.click();
   await confirm.getByRole("button", { name: "Leave" }).click();
-  await expect(library).toBeVisible();
+  // The library's header repeats its name, so check its tabs are gone, once
+  // the confirm has closed and the library dialog is no longer aria-hidden.
+  await expect(confirm).toBeHidden();
+  const explore = dialog.getByRole("tab", { name: /Explore/ });
+  await expect(explore).toBeHidden();
 
   // Leaving reset the conversation, so the next visit leaves right away.
   await library.click();
   await back.click();
   await expect(confirm).toBeHidden();
-  await expect(library).toBeVisible();
+  await expect(explore).toBeHidden();
 });
