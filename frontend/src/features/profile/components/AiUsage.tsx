@@ -31,7 +31,7 @@ const CONTACT_EMAIL = "hidive@hms.harvard.edu";
 // stylesheet uppercases every h2 globally, so undo that here.
 export const LABEL_SX = { fontWeight: 500, textTransform: "none" } as const;
 // Usage at or above this share of the monthly credits is "near limit".
-const NEAR_LIMIT_PERCENT = 85;
+export const NEAR_LIMIT_PERCENT = 85;
 
 const COLORS = {
   info: "#3B73E0",
@@ -275,7 +275,8 @@ function approvedContent(
   };
 }
 
-function useAiUsageContent() {
+// Also used by the Data Library's Explore tab, which shows the same banners.
+export function useAiUsageContent() {
   const { data: access, isError } = useGetYacAccess();
   const { mutate, isPending } = useRequestYacAccess();
   // Set up on every render, but only fetches for approved users.

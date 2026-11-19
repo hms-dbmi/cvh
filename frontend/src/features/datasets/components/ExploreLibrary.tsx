@@ -1,0 +1,191 @@
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import { useQuery } from "@tanstack/react-query";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import {
+  fetchCfdbSelectedFiles,
+  getDccShortName,
+  isCfdbFileSupported,
+} from "@/api/cfdb";
+import {
+  useGetYacAccess,
+  useYacToken,
+  useYacUsage,
+} from "@/features/profile/api/useYacAccess";
+import {
+  NEAR_LIMIT_PERCENT,
+  useAiUsageContent,
+} from "@/features/profile/components/AiUsage";
+import type { DccType } from "../../../../cfdb-types";
+import { DatasetRow, FileTableHead } from "./CfdbFileTable";
+
+const ExploreChat = lazy(() => import("./ExploreChat"));
+
+// Selecting from more files than this isn't useful; ask for more filters.
+export const MAX_EXPLORE_FILES = 100;
+
+const noop = () => {};
+
+function Loading() {
+  return (
+    <Stack alignItems="center" py={4}>
+      <CircularProgress />
+    </Stack>
+  );
+}
+
+// Explore: ask YAC about the library, narrow it with charts and filters, then
+// pick from the files left. `step` is driven by the dialog's bottom bar.
+export default function ExploreLibrary({
+  dcc,
+  step,
+  fileIds,
+  onFileIdsChange,
+  selectedIds,
+  setSelectedIds,
+}: {
+  dcc: DccType;
+  step: "find" | "select";
+  fileIds: string[] | null;
+  onFileIdsChange: (fileIds: string[] | null) => void;
+  selectedIds: Set<string>;
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+}) {
+  const { data: access } = useGetYacAccess();
+  const approved = access?.status === "approved";
+  const { data: usage, error: usageError } = useYacUsage(approved);
+  const { data: token } = useYacToken(approved);
+  const aiContent = useAiUsageContent();
+
+  // Not approved, a sign-in or usage problem, or near the monthly limit: the
+  // profile's banner says what's going on and what to do.
+  const showBanner =
+    !approved ||
+    !!usageError ||
+    (usage !== undefined && usage.percent_used >= NEAR_LIMIT_PERCENT);
+
+  if (!access) return <Loading />;
+
+  return (
+    <Stack spacing={2} sx={{ height: "100%" }}>
+      {showBanner && aiContent?.body}
+      {approved && token && (
+        // Hidden rather than unmounted while selecting files, so going back
+        // keeps the conversation and charts.
+        <Box
+          sx={{
+            display: step === "find" ? "block" : "none",
+            flex: 1,
+            minHeight: 560,
+          }}
+        >
+          <Suspense fallback={<Loading />}>
+            <ExploreChat
+              token={token}
+              dcc={getDccShortName(dcc)}
+              onFileIdsChange={onFileIdsChange}
+            />
+          </Suspense>
+        </Box>
+      )}
+      {step === "select" && fileIds && (
+        <ExploreFileTable
+          fileIds={fileIds}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+        />
+      )}
+    </Stack>
+  );
+}
+
+function ExploreFileTable({
+  fileIds,
+  selectedIds,
+  setSelectedIds,
+}: {
+  fileIds: string[];
+  selectedIds: Set<string>;
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+}) {
+  const { data: files, isLoading } = useQuery({
+    queryKey: ["cfdb-files-by-id", fileIds],
+    queryFn: () => fetchCfdbSelectedFiles(fileIds),
+  });
+
+  // Same rule as Browse: only formats CVH can visualize are selectable.
+  const selectableIds = useMemo(
+    () =>
+      new Set((files ?? []).filter(isCfdbFileSupported).map((f) => f.localId)),
+    [files],
+  );
+
+  const handleToggle = useCallback(
+    (id: string) => {
+      if (!selectableIds.has(id)) return;
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    },
+    [selectableIds, setSelectedIds],
+  );
+
+  const handleToggleAll = useCallback(() => {
+    setSelectedIds((prev) =>
+      prev.size === selectableIds.size ? new Set() : new Set(selectableIds),
+    );
+  }, [selectableIds, setSelectedIds]);
+
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const handleToggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  if (isLoading || !files) return <Loading />;
+
+  return (
+    <TableContainer sx={{ maxHeight: 640, overflow: "auto" }}>
+      <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
+        <FileTableHead
+          selectableCount={selectableIds.size}
+          selectedCount={selectedIds.size}
+          onToggleAll={handleToggleAll}
+        />
+        <TableBody>
+          {files.map((file, index) => (
+            <DatasetRow
+              key={file.localId}
+              file={file}
+              selected={selectedIds.has(file.localId)}
+              disabled={!selectableIds.has(file.localId)}
+              expanded={expandedIds.has(file.localId)}
+              onToggle={handleToggle}
+              onToggleExpanded={handleToggleExpanded}
+              // At most 100 rows, so no virtualizer to measure for.
+              measureRef={noop}
+              dataIndex={index}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}

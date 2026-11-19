@@ -51,3 +51,30 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
     },
   });
 });
+
+test("Explore asks for AI access before showing the chat", async ({ page }) => {
+  await gotoWorkspace(page, PROJECT_ID);
+  await page.getByRole("button", { name: "Browse Library" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByText("4D NUCLEOME DATA COORDINATION").click();
+
+  await dialog.getByRole("tab", { name: /Explore/ }).click();
+
+  // The mocked user hasn't asked for access yet: the profile's banner, and
+  // nothing to select until the chat's filters narrow the files.
+  await expect(
+    dialog.getByText("AI features aren’t enabled for your account."),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Request Access" }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Continue to Select Files" }),
+  ).toBeDisabled();
+
+  // Back on Browse, the file table is still there.
+  await dialog.getByRole("tab", { name: "Browse" }).click();
+  await expect(
+    dialog.getByRole("row").filter({ hasText: "e2e-track.bigwig" }),
+  ).toBeVisible();
+});

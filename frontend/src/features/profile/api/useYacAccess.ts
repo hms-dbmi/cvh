@@ -58,28 +58,50 @@ const SIGN_IN_ERRORS = [
 
 export class YacSignInRequired extends Error {}
 
+const tokenKey = ["yac-token"];
+
+function useGetYacToken() {
+  const { getAccessTokenSilently } = useAuth0();
+  return async () => {
+    try {
+      return await getAccessTokenSilently({
+        authorizationParams: { audience: YAC_AUDIENCE },
+      });
+    } catch (e) {
+      const code = (e as { error?: string }).error;
+      if (code && SIGN_IN_ERRORS.includes(code)) {
+        throw new YacSignInRequired(code);
+      }
+      throw e;
+    }
+  };
+}
+
+// The YAC token for components that call YAC themselves (Explore's chat).
+// Auth0 caches it and renews it near expiry, so asking every few minutes
+// keeps a fresh one in hand without extra sign-ins.
+function useYacToken(enabled: boolean) {
+  const getToken = useGetYacToken();
+  return useQuery({
+    queryKey: tokenKey,
+    enabled: enabled && yacConfigured,
+    retry: false,
+    refetchInterval: 5 * 60 * 1000,
+    queryFn: getToken,
+  });
+}
+
 // This month's AI spending, from the YAC service with a YAC token (only
 // people with access can get one). Off until the YAC settings are set.
 function useYacUsage(enabled: boolean) {
-  const { getAccessTokenSilently } = useAuth0();
+  const getToken = useGetYacToken();
   return useQuery({
     queryKey: usageKey,
     enabled: enabled && yacConfigured,
     // A 403 or a sign-in error won't heal on retry.
     retry: false,
     queryFn: async (): Promise<YacUsage> => {
-      let token: string;
-      try {
-        token = await getAccessTokenSilently({
-          authorizationParams: { audience: YAC_AUDIENCE },
-        });
-      } catch (e) {
-        const code = (e as { error?: string }).error;
-        if (code && SIGN_IN_ERRORS.includes(code)) {
-          throw new YacSignInRequired(code);
-        }
-        throw e;
-      }
+      const token = await getToken();
       const response = await fetch(`${YAC_URL}/v1/yac/usage`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -105,6 +127,7 @@ function useYacSignIn() {
       return; // Closed or blocked popup: keep the sign-in prompt.
     }
     queryClient.invalidateQueries({ queryKey: usageKey });
+    queryClient.invalidateQueries({ queryKey: tokenKey });
   };
 }
 
@@ -112,6 +135,8 @@ export {
   useGetYacAccess,
   useRequestYacAccess,
   useYacSignIn,
+  useYacToken,
   useYacUsage,
+  YAC_URL,
   yacConfigured,
 };

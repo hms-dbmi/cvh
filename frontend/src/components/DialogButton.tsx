@@ -28,6 +28,8 @@ interface CoreFormDialogProps {
   text: DialogText;
   actionButtons?: ReactNode;
   closeButtonProps?: Partial<ButtonProps>;
+  // Fill the window, for content that needs more room than "md".
+  fullScreen?: boolean;
 }
 
 type ActionProps =
@@ -64,6 +66,7 @@ export default function DialogButton({
   onClose,
   onOpen,
   closeButtonProps,
+  fullScreen = false,
   buttonProps,
   menuItemProps,
   children,
@@ -122,6 +125,7 @@ export default function DialogButton({
         }
         fullWidth
         maxWidth="md"
+        fullScreen={fullScreen}
         sx={{
           ".MuiDialog-paper": {
             padding: 2,

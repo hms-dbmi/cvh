@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Button, { type ButtonProps } from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
 import Grid from "@mui/material/Grid2";
@@ -15,15 +16,18 @@ import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
+import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
 import {
   ArrowLeft,
   ArrowSquareOut,
+  Binoculars,
   CaretDown,
   CaretRight,
   CaretUp,
@@ -31,6 +35,7 @@ import {
   Info,
   MagnifyingGlass,
   Plus,
+  Table as TableIcon,
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -63,9 +68,11 @@ import {
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
+import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
 import { useCreateDataset } from "../api/useDatasets";
 import { DatasetRow, FileTableHead } from "./CfdbFileTable";
+import ExploreLibrary, { MAX_EXPLORE_FILES } from "./ExploreLibrary";
 
 function DccCard({ dcc, onClick }: { dcc: DccType; onClick: () => void }) {
   return (
@@ -342,12 +349,10 @@ function FilterDropdown({
 
 function DccDetailView({
   dcc,
-  onBack,
   selectedIds,
   setSelectedIds,
 }: {
   dcc: DccType;
-  onBack: () => void;
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
@@ -531,51 +536,6 @@ function DccDetailView({
   return (
     <Stack sx={{ height: "100%" }}>
       <Box sx={{ flex: 1, overflow: "auto", px: 3, pt: 1 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.5}
-          onClick={onBack}
-          sx={{
-            color: "#657681",
-            fontSize: 14,
-            cursor: "pointer",
-            lineHeight: "20px",
-            letterSpacing: "0.25px",
-            mb: 1,
-            "&:hover": { color: "#4E5A63" },
-          }}
-        >
-          <ArrowLeft size={14} />
-          <span>Back to Data Catalogs</span>
-        </Stack>
-
-        <Typography
-          variant="h5"
-          sx={{
-            fontSize: 22,
-            fontWeight: 500,
-            lineHeight: "28px",
-            mb: 1,
-          }}
-        >
-          {dcc.dccName}
-        </Typography>
-
-        {dcc.dccDescription && (
-          <Typography
-            sx={{
-              fontSize: 16,
-              lineHeight: "24px",
-              letterSpacing: "0.5px",
-              color: "#010101",
-              mb: 2,
-            }}
-          >
-            {dcc.dccDescription}
-          </Typography>
-        )}
-
         <Box
           sx={{
             bgcolor: "#EFF3F5",
@@ -1078,6 +1038,114 @@ function AddToWorkspaceButton({
   );
 }
 
+type LibraryTab = "browse" | "explore";
+type ExploreStep = "find" | "select";
+
+const BACK_LINK_SX = {
+  color: "#657681",
+  fontSize: 14,
+  cursor: "pointer",
+  lineHeight: "20px",
+  letterSpacing: "0.25px",
+  mb: 1,
+  background: "none",
+  border: "none",
+  p: 0,
+  alignSelf: "flex-start",
+  "&:hover": { color: "#4E5A63" },
+} as const;
+
+function LibraryHeader({
+  dcc,
+  backLabel,
+  onBack,
+  tab,
+  onTabChange,
+}: {
+  dcc: DccType;
+  backLabel: string;
+  onBack: () => void;
+  tab: LibraryTab;
+  onTabChange: (tab: LibraryTab) => void;
+}) {
+  return (
+    <Stack sx={{ px: 3, pt: 1 }}>
+      <Stack
+        component="button"
+        type="button"
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        onClick={onBack}
+        sx={BACK_LINK_SX}
+      >
+        <ArrowLeft size={14} />
+        <span>{backLabel}</span>
+      </Stack>
+      <Typography
+        variant="h5"
+        sx={{ fontSize: 22, fontWeight: 500, lineHeight: "28px", mb: 1 }}
+      >
+        {dcc.dccName}
+      </Typography>
+      {dcc.dccDescription && (
+        <Typography
+          sx={{
+            fontSize: 16,
+            lineHeight: "24px",
+            letterSpacing: "0.5px",
+            color: "#010101",
+            mb: 2,
+          }}
+        >
+          {dcc.dccDescription}
+        </Typography>
+      )}
+      {/* Explore needs the YAC service; without it there's only Browse. */}
+      {yacConfigured && (
+        <Tabs
+          value={tab}
+          onChange={(_, value: LibraryTab) => onTabChange(value)}
+          sx={{ mb: 2, borderBottom: "1px solid #CAD5DA" }}
+        >
+          <Tab
+            value="browse"
+            label="Browse"
+            icon={<TableIcon size={16} />}
+            iconPosition="start"
+            sx={{ textTransform: "none", minHeight: 48 }}
+          />
+          <Tab
+            value="explore"
+            label={
+              <Stack direction="row" spacing={1} alignItems="center">
+                <span>Explore</span>
+                <Chip label="Beta" size="small" variant="outlined" />
+              </Stack>
+            }
+            icon={<Binoculars size={16} />}
+            iconPosition="start"
+            sx={{ textTransform: "none", minHeight: 48 }}
+          />
+        </Tabs>
+      )}
+    </Stack>
+  );
+}
+
+const COUNT_SX = {
+  fontSize: 14,
+  fontWeight: 500,
+  color: "#4E5A63",
+  letterSpacing: "0.28px",
+  mr: "auto",
+  order: -1,
+} as const;
+
+function plural(count: number, noun: string) {
+  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 export default function BrowseLibraryButton({
   buttonProps,
 }: {
@@ -1086,18 +1154,81 @@ export default function BrowseLibraryButton({
   const [open, setOpen] = useState(false);
   const [selectedDcc, setSelectedDcc] = useState<DccType | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<LibraryTab>("browse");
+  const [exploreStep, setExploreStep] = useState<ExploreStep>("find");
+  // The files Explore's filters leave, or null while no filter reaches them.
+  const [exploreFileIds, setExploreFileIds] = useState<string[] | null>(null);
+  // Mounted on first visit and kept, so switching tabs keeps the chat.
+  const [exploreOpened, setExploreOpened] = useState(false);
   const { data: dccs, isLoading } = useCfdbDccs();
+
+  const resetLibrary = useCallback(() => {
+    setSelectedIds(new Set());
+    setTab("browse");
+    setExploreStep("find");
+    setExploreFileIds(null);
+    setExploreOpened(false);
+  }, []);
 
   const handleClose = useCallback(() => {
     setSelectedDcc(null);
-    setSelectedIds(new Set());
-  }, []);
+    resetLibrary();
+  }, [resetLibrary]);
 
   const handleAddDone = useCallback(() => {
-    setSelectedIds(new Set());
     setSelectedDcc(null);
+    resetLibrary();
     setOpen(false);
+  }, [resetLibrary]);
+
+  const handleTabChange = useCallback((value: LibraryTab) => {
+    // Each tab picks its own files; don't carry a selection across.
+    setSelectedIds(new Set());
+    setTab(value);
+    if (value === "explore") setExploreOpened(true);
   }, []);
+
+  const selecting = tab === "browse" || exploreStep === "select";
+  const matched = exploreFileIds?.length ?? 0;
+  const canSelectMatched =
+    exploreFileIds !== null && matched > 0 && matched <= MAX_EXPLORE_FILES;
+
+  let actionButtons: React.ReactNode;
+  if (selectedDcc && selecting) {
+    actionButtons = (
+      <>
+        <Typography sx={COUNT_SX}>
+          {plural(selectedIds.size, "Dataset")} Selected
+        </Typography>
+        <AddToWorkspaceButton
+          selectedIds={selectedIds}
+          onDone={handleAddDone}
+        />
+      </>
+    );
+  } else if (selectedDcc) {
+    actionButtons = (
+      <>
+        <Typography sx={COUNT_SX}>
+          {exploreFileIds === null
+            ? "Ask in the chat, interact with a chart, or add a filter."
+            : `${plural(matched, "File")} Matched${
+                matched > MAX_EXPLORE_FILES
+                  ? ` · Filter to ${MAX_EXPLORE_FILES} or fewer to select files`
+                  : ""
+              }`}
+        </Typography>
+        <Button
+          variant="contained"
+          disabled={!canSelectMatched}
+          onClick={() => setExploreStep("select")}
+          sx={{ padding: "12px 16px", borderRadius: "8px" }}
+        >
+          Continue to Select Files
+        </Button>
+      </>
+    );
+  }
 
   return (
     <DialogButton
@@ -1109,30 +1240,9 @@ export default function BrowseLibraryButton({
       }}
       isForm={false}
       onClose={handleClose}
+      fullScreen={!!selectedDcc}
       closeButtonProps={selectedDcc ? { sx: { display: "none" } } : undefined}
-      actionButtons={
-        selectedDcc ? (
-          <>
-            <Typography
-              sx={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: "#4E5A63",
-                letterSpacing: "0.28px",
-                mr: "auto",
-                order: -1,
-              }}
-            >
-              {selectedIds.size} Dataset{selectedIds.size === 1 ? "" : "s"}{" "}
-              Selected
-            </Typography>
-            <AddToWorkspaceButton
-              selectedIds={selectedIds}
-              onDone={handleAddDone}
-            />
-          </>
-        ) : undefined
-      }
+      actionButtons={actionButtons}
       buttonProps={{
         startIcon: <Database size={20} />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
@@ -1140,12 +1250,53 @@ export default function BrowseLibraryButton({
       }}
     >
       {selectedDcc ? (
-        <DccDetailView
-          dcc={selectedDcc}
-          onBack={() => setSelectedDcc(null)}
-          selectedIds={selectedIds}
-          setSelectedIds={setSelectedIds}
-        />
+        <Stack sx={{ height: "100%" }}>
+          <LibraryHeader
+            dcc={selectedDcc}
+            backLabel={
+              tab === "explore" && exploreStep === "select"
+                ? "Back to Explore"
+                : "Back to Data Catalogs"
+            }
+            onBack={() => {
+              if (tab === "explore" && exploreStep === "select") {
+                setSelectedIds(new Set());
+                setExploreStep("find");
+              } else {
+                setSelectedDcc(null);
+                resetLibrary();
+              }
+            }}
+            tab={tab}
+            onTabChange={handleTabChange}
+          />
+          <Box sx={{ display: tab === "browse" ? "contents" : "none" }}>
+            <DccDetailView
+              dcc={selectedDcc}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+            />
+          </Box>
+          {exploreOpened && (
+            <Box
+              sx={{
+                display: tab === "explore" ? "flex" : "none",
+                flexDirection: "column",
+                flex: 1,
+                px: 3,
+              }}
+            >
+              <ExploreLibrary
+                dcc={selectedDcc}
+                step={exploreStep}
+                fileIds={exploreFileIds}
+                onFileIdsChange={setExploreFileIds}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
+              />
+            </Box>
+          )}
+        </Stack>
       ) : (
         <Box sx={{ mt: 2 }}>
           {isLoading && (
