@@ -1,9 +1,11 @@
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
+import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import {
@@ -29,6 +31,24 @@ const ExploreChat = lazy(() => import("./ExploreChat"));
 export const MAX_EXPLORE_FILES = 100;
 
 const noop = () => {};
+
+export function plural(count: number, noun: string) {
+  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+// The bottom bar while finding files: how many the filters leave, and whether
+// that's few enough to pick from. Nothing to say until a filter reaches Files.
+export function exploreSummary(fileIds: string[] | null) {
+  if (fileIds === null) return { label: null, canContinue: false };
+  const matched = fileIds.length;
+  return {
+    label:
+      matched > MAX_EXPLORE_FILES
+        ? `${plural(matched, "File")} Matched · Filter to ${MAX_EXPLORE_FILES} or fewer to select files`
+        : `${plural(matched, "File")} Matched`,
+    canContinue: matched > 0 && matched <= MAX_EXPLORE_FILES,
+  };
+}
 
 function Loading() {
   return (
@@ -68,11 +88,13 @@ export default function ExploreLibrary({
     !!usageError ||
     (usage !== undefined && usage.percent_used >= NEAR_LIMIT_PERCENT);
 
-  if (!access) return <Loading />;
+  // Still loading, or the request failed (the profile content says so).
+  if (!access) return aiContent?.body ?? <Loading />;
 
   return (
     <Stack spacing={2} sx={{ height: "100%" }}>
       {showBanner && aiContent?.body}
+      {approved && !token && !usageError && <Loading />}
       {approved && token && (
         // Hidden rather than unmounted while selecting files, so going back
         // keeps the conversation and charts.
@@ -103,7 +125,7 @@ export default function ExploreLibrary({
   );
 }
 
-function ExploreFileTable({
+export function ExploreFileTable({
   fileIds,
   selectedIds,
   setSelectedIds,
@@ -112,7 +134,12 @@ function ExploreFileTable({
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
-  const { data: files, isLoading } = useQuery({
+  const {
+    data: files,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["cfdb-files-by-id", fileIds],
     queryFn: () => fetchCfdbSelectedFiles(fileIds),
   });
@@ -159,6 +186,16 @@ function ExploreFileTable({
     });
   }, []);
 
+  if (isError) {
+    return (
+      <Stack direction="row" spacing={2} alignItems="center" py={2}>
+        <Typography variant="body2">Couldn’t load these files.</Typography>
+        <Button variant="outlined" onClick={() => refetch()}>
+          Try Again
+        </Button>
+      </Stack>
+    );
+  }
   if (isLoading || !files) return <Loading />;
 
   return (

@@ -72,7 +72,7 @@ import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
 import { useCreateDataset } from "../api/useDatasets";
 import { DatasetRow, FileTableHead } from "./CfdbFileTable";
-import ExploreLibrary, { MAX_EXPLORE_FILES } from "./ExploreLibrary";
+import ExploreLibrary, { exploreSummary, plural } from "./ExploreLibrary";
 
 function DccCard({ dcc, onClick }: { dcc: DccType; onClick: () => void }) {
   return (
@@ -1142,10 +1142,6 @@ const COUNT_SX = {
   order: -1,
 } as const;
 
-function plural(count: number, noun: string) {
-  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
-}
-
 export default function BrowseLibraryButton({
   buttonProps,
 }: {
@@ -1189,9 +1185,7 @@ export default function BrowseLibraryButton({
   }, []);
 
   const selecting = tab === "browse" || exploreStep === "select";
-  const matched = exploreFileIds?.length ?? 0;
-  const canSelectMatched =
-    exploreFileIds !== null && matched > 0 && matched <= MAX_EXPLORE_FILES;
+  const summary = exploreSummary(exploreFileIds);
 
   let actionButtons: React.ReactNode;
   if (selectedDcc && selecting) {
@@ -1209,18 +1203,11 @@ export default function BrowseLibraryButton({
   } else if (selectedDcc) {
     actionButtons = (
       <>
-        <Typography sx={COUNT_SX}>
-          {exploreFileIds === null
-            ? "Ask in the chat, interact with a chart, or add a filter."
-            : `${plural(matched, "File")} Matched${
-                matched > MAX_EXPLORE_FILES
-                  ? ` · Filter to ${MAX_EXPLORE_FILES} or fewer to select files`
-                  : ""
-              }`}
-        </Typography>
+        {/* Kept when empty: it pushes the button to the right. */}
+        <Typography sx={COUNT_SX}>{summary.label}</Typography>
         <Button
           variant="contained"
-          disabled={!canSelectMatched}
+          disabled={!summary.canContinue}
           onClick={() => setExploreStep("select")}
           sx={{ padding: "12px 16px", borderRadius: "8px" }}
         >
