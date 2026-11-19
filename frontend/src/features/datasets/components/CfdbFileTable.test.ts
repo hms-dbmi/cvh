@@ -38,4 +38,11 @@ describe("toggleAllInView", () => {
     expect([...next]).toEqual(["f0", "f1"]);
     expect(leftOut).toBe(0);
   });
+
+  it("reports the rows in view as left out at the limit when none are ticked", () => {
+    const full = new Set(ids(0, 3));
+    const { next, leftOut } = toggleAllInView(full, ids(5, 7), 3);
+    expect(next).toEqual(full);
+    expect(leftOut).toBe(2);
+  });
 });

@@ -31,7 +31,9 @@ export function toggleAllInView(
   const allTicked = inView.length > 0 && inView.every((id) => selected.has(id));
   if (allTicked || selected.size >= max) {
     for (const id of inView) next.delete(id);
-    return { next, leftOut: 0 };
+    // At the limit with none in view ticked, say why nothing was added.
+    const noneTicked = !inView.some((id) => selected.has(id));
+    return { next, leftOut: noneTicked ? inView.length : 0 };
   }
   let leftOut = 0;
   for (const id of inView) {
