@@ -117,7 +117,7 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
     Declined or revoked people contact us; approving their request again
     restores access."""
 
-    list_display = ("email", "name", "status", "requested_at", "decided_at")
+    list_display = ("email", "name", "user", "status", "requested_at", "decided_at")
     list_select_related = ("user",)
     list_filter = ("status",)
     search_fields = ("user__username", "user__email")
@@ -134,7 +134,7 @@ class YacAccessRequestAdmin(admin.ModelAdmin):
         "decided_by",
     )
 
-    # The user's username is their Auth0 ID, so show who they are instead.
+    # The user's username is their Auth0 ID, so also show who they are.
     @admin.display(ordering="user__email")
     def email(self, access):
         return access.user.email
