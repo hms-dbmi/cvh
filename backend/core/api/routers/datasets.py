@@ -74,9 +74,9 @@ def create_dataset(request, dataset: DatasetIn):
     summary="Add datasets to a workspace in one request",
     description=(
         "Creates up to 500 datasets in a workspace, all or none. Files already"
-        " in the workspace for the same tool (by cfdb DCC and ID when given,"
-        " else by source URL) are skipped and counted in `skipped`."
-        " Requires write access."
+        " in the workspace for the same tool are skipped and counted in"
+        " `skipped`: matched by source URL, and for files sent with a cfdb DCC"
+        " and ID also by those. Requires write access."
     ),
 )
 def create_datasets(request, payload: DatasetsBulkIn):
@@ -92,10 +92,13 @@ def create_datasets(request, payload: DatasetsBulkIn):
     created = 0
     with transaction.atomic():
         # Lock the workspace so two adds at once (a double click) can't both
-        # miss the other's files and create duplicates.
-        # (The base manager: the default one groups for counts, which Postgres
-        # can't lock.)
-        Project._base_manager.select_for_update().filter(pk=project.pk).first()
+        # miss the other's files and create duplicates. no_key: other saves
+        # that only reference the workspace (datasets, visualizations) don't
+        # wait on it. (The base manager: the default one groups for counts,
+        # which Postgres can't lock.)
+        Project._base_manager.select_for_update(no_key=True).filter(
+            pk=project.pk
+        ).first()
         existing = Dataset.objects.filter(
             Q(source_url__in=[row["source_url"] for row in rows])
             | Q(cfdb_id__in=[row["cfdb_id"] for row in rows if row.get("cfdb_id")]),
