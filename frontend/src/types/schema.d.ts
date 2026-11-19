@@ -156,6 +156,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add datasets to a workspace in one request
+         * @description Creates up to 500 datasets in a workspace, all or none. Datasets whose source URL is already in the workspace for the same tool are skipped and counted in `skipped`. Requires write access.
+         */
+        post: operations["api_routers_datasets_create_datasets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/examples": {
         parameters: {
             query?: never;
@@ -1305,6 +1325,29 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** DatasetsBulkOut */
+        DatasetsBulkOut: {
+            /** Created */
+            created: components["schemas"]["DatasetWithTagsOut"][];
+            /** Skipped */
+            skipped: number;
+        };
+        /** DatasetsBulkIn */
+        DatasetsBulkIn: {
+            /**
+             * Workspace Uuid
+             * Format: uuid4
+             */
+            workspace_uuid: string;
+            /**
+             * Tool
+             * @default gosling
+             * @enum {string}
+             */
+            tool: "gosling" | "vitessce";
+            /** Datasets */
+            datasets: (components["schemas"]["GoslingDatasetSimple"] | components["schemas"]["GoslingDesignerBam"] | components["schemas"]["GoslingDesignerMultiVec"] | components["schemas"]["GoslingDesignerIndex"] | components["schemas"]["GoslingDesignerBEDB"] | components["schemas"]["GoslingDesignerCSV"] | components["schemas"]["VitessceDataset"])[];
+        };
         /** ExampleDatasetIn */
         ExampleDatasetIn: {
             /**
@@ -2075,6 +2118,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetWithTagsOut"];
+                };
+            };
+        };
+    };
+    api_routers_datasets_create_datasets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetsBulkIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetsBulkOut"];
                 };
             };
         };
