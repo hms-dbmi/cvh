@@ -167,7 +167,7 @@ export interface paths {
         put?: never;
         /**
          * Add datasets to a workspace in one request
-         * @description Creates up to 500 datasets in a workspace, all or none. Datasets whose source URL is already in the workspace for the same tool are skipped and counted in `skipped`. Requires write access.
+         * @description Creates up to 500 datasets in a workspace, all or none. Files already in the workspace for the same tool (by cfdb DCC and ID when given, else by source URL) are skipped and counted in `skipped`. Requires write access.
          */
         post: operations["api_routers_datasets_create_datasets"];
         delete?: never;
@@ -1328,7 +1328,7 @@ export interface components {
         /** DatasetsBulkOut */
         DatasetsBulkOut: {
             /** Created */
-            created: components["schemas"]["DatasetWithTagsOut"][];
+            created: number;
             /** Skipped */
             skipped: number;
         };
