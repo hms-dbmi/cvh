@@ -12,6 +12,38 @@ import {
   getFileAccession,
 } from "../../../api/cfdb";
 
+// Most files one add to a workspace may hold, in Browse and Explore alike:
+// enough for a study, few enough to review and keep a workspace usable.
+export const MAX_ADD_FILES = 100;
+
+/**
+ * The header checkbox acts on the rows in view. With every row in view
+ * ticked, or no room left under the limit, it unticks them; otherwise it
+ * ticks them up to the limit, keeping earlier picks (including ones hidden
+ * by a filter). `leftOut` counts rows in view that didn't fit.
+ */
+export function toggleAllInView(
+  selected: Set<string>,
+  inView: string[],
+  max = MAX_ADD_FILES,
+): { next: Set<string>; leftOut: number } {
+  const next = new Set(selected);
+  const allTicked = inView.length > 0 && inView.every((id) => selected.has(id));
+  if (allTicked || selected.size >= max) {
+    for (const id of inView) next.delete(id);
+    // At the limit with none in view ticked, say why nothing was added.
+    const noneTicked = !inView.some((id) => selected.has(id));
+    return { next, leftOut: noneTicked ? inView.length : 0 };
+  }
+  let leftOut = 0;
+  for (const id of inView) {
+    if (next.has(id)) continue;
+    if (next.size < max) next.add(id);
+    else leftOut += 1;
+  }
+  return { next, leftOut };
+}
+
 // The Data Library's file table, shared by Browse and Explore's file selection.
 export function FileTableHead({
   selectableCount,

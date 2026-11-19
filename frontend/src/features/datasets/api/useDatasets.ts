@@ -1,14 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import useClient, { buildInvalidateGetQuery } from "@/api/client";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
+import plural from "@/utils/plural";
 
 const path = "/api/datasets";
 const workspacePath = "/api/workspaces/{workspace_uuid}/datasets";
 
-const invalidateGetQuery = buildInvalidateGetQuery([
-  path,
-  "/api/workspaces",
-]);
+const invalidateGetQuery = buildInvalidateGetQuery([path, "/api/workspaces"]);
 
 interface Page {
   count: number;
@@ -102,6 +100,31 @@ function useCreateDataset() {
     },
     onError: () => {
       toastError("Failed to create dataset.");
+    },
+  });
+}
+
+// Adds many datasets in one request: one toast and one refresh, rather than
+// one of each per file.
+function useCreateDatasets() {
+  const { toastSuccess, toastError } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("post", `${path}/bulk`, {
+    onSuccess: ({ created, skipped }) => {
+      const already = `${skipped.toLocaleString()} ${skipped === 1 ? "was" : "were"} already in the workspace.`;
+      if (created === 0) {
+        toastSuccess(`Nothing new to add: ${already}`);
+        return;
+      }
+      toastSuccess(
+        `Added ${plural(created, "dataset")}.${skipped > 0 ? ` ${already}` : ""}`,
+      );
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      // No "try again": a retry can't fix missing access or a bad file.
+      toastError("Failed to add datasets.");
     },
   });
 }
@@ -209,6 +232,7 @@ function useGetProjectDatasetTags(workspace_uuid: string) {
 
 export {
   useCreateDataset,
+  useCreateDatasets,
   useDeleteDataset,
   useGetDataset,
   useGetPaginatedProjectDatasets,

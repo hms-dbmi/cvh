@@ -354,6 +354,165 @@ class CreateResponseTests(TestCase):
         self.assertEqual(body["tags"], [])
 
 
+class BulkCreateDatasetsTests(TestCase):
+    """POST /api/datasets/bulk adds many files to a workspace in one request:
+    all or none, skipping files already there."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember
+
+        self.user = User.objects.create(username="owner", email="owner@example.com")
+        self.project = Project.objects.create(name="Mine", user_key=self.user)
+        ProjectMember.objects.create(
+            project_key=self.project, user_key=self.user, permissions=3
+        )
+        auth_patch = patch("api.auth.Authorized.authenticate", return_value=self.user)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+
+    def _bulk(self, datasets, workspace=None):
+        return self.client.post(
+            "/api/datasets/bulk",
+            data={
+                "workspace_uuid": str(workspace or self.project.uuid),
+                "datasets": datasets,
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+
+    @staticmethod
+    def _bigwig(name):
+        return {
+            "name": name,
+            "source_url": f"https://example.com/{name}",
+            "file_type": "bigwig",
+            "data_type": "bigwig",
+            "assembly": "hg38",
+        }
+
+    def test_creates_every_dataset_with_cfdb_urls(self):
+        bam = {
+            "name": "reads.bam",
+            "file_type": "bam",
+            "data_type": "bam",
+            "assembly": "hg38",
+            "cfdb_dcc": "encode",
+            "cfdb_id": "ENCFF1",
+        }
+        response = self._bulk([self._bigwig("a.bw"), bam])
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), {"created": 2, "skipped": 0})
+        created = Dataset.objects.get(name="reads.bam")
+        self.assertTrue(created.source_url.endswith("/data/encode/ENCFF1"))
+        self.assertTrue(created.index_url.endswith("/index/encode/ENCFF1"))
+        # Created one by one, so save() still marks cfdb files for processing.
+        self.assertEqual(created.processing_status, "needed")
+
+    def test_skips_files_already_in_the_workspace(self):
+        self._bulk([self._bigwig("a.bw")])
+
+        response = self._bulk(
+            [self._bigwig("a.bw"), self._bigwig("b.bw"), self._bigwig("b.bw")]
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["skipped"], 2)
+        self.assertEqual(
+            sorted(Dataset.objects.values_list("name", flat=True)), ["a.bw", "b.bw"]
+        )
+
+    def test_skips_are_per_tool(self):
+        self._bulk([self._bigwig("a.bw")])
+
+        response = self.client.post(
+            "/api/datasets/bulk",
+            data={
+                "workspace_uuid": str(self.project.uuid),
+                "tool": "vitessce",
+                "datasets": [self._bigwig("a.bw")],
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+
+        self.assertEqual(response.json(), {"created": 1, "skipped": 0})
+        self.assertEqual(Dataset.objects.filter(name="a.bw").count(), 2)
+
+    def test_cfdb_files_match_by_id_after_a_url_change(self):
+        from django.test import override_settings
+
+        bam = {
+            "name": "reads.bam",
+            "file_type": "bam",
+            "data_type": "bam",
+            "assembly": "hg38",
+            "cfdb_dcc": "encode",
+            "cfdb_id": "ENCFF1",
+        }
+        with override_settings(CFDB_BASE_URL="https://old-cfdb.example"):
+            self._bulk([bam])
+        with override_settings(CFDB_BASE_URL="https://new-cfdb.example"):
+            response = self._bulk([bam])
+
+        self.assertEqual(response.json(), {"created": 0, "skipped": 1})
+
+    def test_a_failure_partway_through_adds_none(self):
+        real_save = Dataset.save
+        calls = []
+
+        def save_then_fail(dataset, *args, **kwargs):
+            calls.append(dataset.name)
+            if len(calls) == 2:
+                raise RuntimeError("database went away")
+            return real_save(dataset, *args, **kwargs)
+
+        self.client.raise_request_exception = False
+        with patch.object(Dataset, "save", save_then_fail):
+            response = self._bulk([self._bigwig("a.bw"), self._bigwig("b.bw")])
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(calls, ["a.bw", "b.bw"])  # the first was written
+        self.assertFalse(Dataset.objects.exists())  # and rolled back
+
+    def test_one_bad_dataset_adds_none(self):
+        bad = {**self._bigwig("bad.bam"), "file_type": "bam", "data_type": "bam"}
+        bad.update(cfdb_dcc="not-a-dcc", cfdb_id="X")
+
+        response = self._bulk([self._bigwig("a.bw"), bad])
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Dataset.objects.exists())
+
+    def test_needs_write_access(self):
+        from django.contrib.auth.models import User
+
+        from .models import Project, ProjectMember
+
+        other = User.objects.create(username="other", email="other@example.com")
+        theirs = Project.objects.create(name="Theirs", user_key=other)
+
+        response = self._bulk([self._bigwig("a.bw")], workspace=theirs.uuid)
+        self.assertEqual(response.status_code, 404)
+
+        # Read access isn't enough.
+        ProjectMember.objects.create(
+            project_key=theirs, user_key=self.user, permissions=1
+        )
+        response = self._bulk([self._bigwig("a.bw")], workspace=theirs.uuid)
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(Dataset.objects.exists())
+
+    def test_refuses_more_than_500(self):
+        response = self._bulk([self._bigwig(f"{i}.bw") for i in range(501)])
+
+        self.assertEqual(response.status_code, 422)
+        self.assertFalse(Dataset.objects.exists())
+
+
 class WorkspacePermissionsTests(TestCase):
     """GET /api/workspaces and /api/workspaces/<uuid> return the caller's
     permission level, so the frontend shows rename and delete only to

@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { DccType, DistinctFieldType } from "../../cfdb-types";
+import { SUPPORTED_DCCS } from "../features/datasets/dccs";
 
 const CFDB_API_URL = import.meta.env.VITE_CFDB_API_URL;
 
@@ -449,9 +450,12 @@ export function isCfdbFileSupported(file: CfdbFile): boolean {
   const goslingType =
     file.fileFormat?.id && CFDB_TO_GOSLING_FILE_TYPE[file.fileFormat.id];
   if (!goslingType) return false;
+  if (isBrowseLibraryReadyType(goslingType)) return true;
+  // Processing runs on cfdb for the libraries the backend accepts; a file
+  // from any other would fail the whole add.
   return (
-    isBrowseLibraryReadyType(goslingType) ||
-    isBrowseLibraryProcessableType(goslingType)
+    isBrowseLibraryProcessableType(goslingType) &&
+    (SUPPORTED_DCCS as readonly string[]).includes(getCfdbDccSlug(file))
   );
 }
 

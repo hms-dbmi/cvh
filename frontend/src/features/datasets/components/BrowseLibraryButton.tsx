@@ -75,12 +75,19 @@ import {
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import type { components } from "../../../types/schema";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
+import plural from "../../../utils/plural";
 import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
-import { useCreateDataset } from "../api/useDatasets";
-import { DatasetRow, FileTableHead } from "./CfdbFileTable";
-import ExploreLibrary, { exploreSummary, plural } from "./ExploreLibrary";
+import { useCreateDatasets } from "../api/useDatasets";
+import {
+  DatasetRow,
+  FileTableHead,
+  MAX_ADD_FILES,
+  toggleAllInView,
+} from "./CfdbFileTable";
+import ExploreLibrary, { exploreSummary } from "./ExploreLibrary";
 
 function DccCard({ dcc, onClick }: { dcc: DccType; onClick: () => void }) {
   return (
@@ -484,6 +491,9 @@ function DccDetailView({
     [selectableFiles],
   );
 
+  const { toastInfo } = useSnackbarActions();
+  const atLimit = selectedIds.size >= MAX_ADD_FILES;
+
   const handleToggle = useCallback(
     (id: string) => {
       // Defensive: ignore toggles on unsupported rows even if a future
@@ -493,7 +503,7 @@ function DccDetailView({
         const next = new Set(prev);
         if (next.has(id)) {
           next.delete(id);
-        } else {
+        } else if (next.size < MAX_ADD_FILES) {
           next.add(id);
         }
         return next;
@@ -503,12 +513,23 @@ function DccDetailView({
   );
 
   const handleToggleAll = useCallback(() => {
-    if (selectedIds.size === selectableFiles.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(selectableFiles.map((f) => f.localId)));
+    const { next, leftOut } = toggleAllInView(
+      selectedIds,
+      selectableFiles.map((f) => f.localId),
+    );
+    setSelectedIds(next);
+    if (leftOut > 0) {
+      toastInfo(
+        `You can add up to ${MAX_ADD_FILES} files at a time; ${plural(leftOut, "file")} ${leftOut === 1 ? "wasn't" : "weren't"} selected.`,
+      );
     }
-  }, [selectableFiles, selectedIds.size, setSelectedIds]);
+  }, [selectableFiles, selectedIds, setSelectedIds, toastInfo]);
+
+  // The header checkbox shows the rows in view, not picks under other filters.
+  const selectedInView = useMemo(
+    () => selectableFiles.filter((f) => selectedIds.has(f.localId)).length,
+    [selectableFiles, selectedIds],
+  );
 
   // Quick Dataset ID Lookup card is collapsible — starts open so the
   // search input is discoverable, but the user can hide it to give the
@@ -725,7 +746,7 @@ function DccDetailView({
             <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
               <FileTableHead
                 selectableCount={selectableFiles.length}
-                selectedCount={selectedIds.size}
+                selectedCount={selectedInView}
                 onToggleAll={handleToggleAll}
               />
               <TableBody>
@@ -743,7 +764,11 @@ function DccDetailView({
                       key={file.localId}
                       file={file}
                       selected={selectedIds.has(file.localId)}
-                      disabled={!selectableIds.has(file.localId)}
+                      // At the limit, only already-ticked rows can change.
+                      disabled={
+                        !selectableIds.has(file.localId) ||
+                        (atLimit && !selectedIds.has(file.localId))
+                      }
                       expanded={expandedIds.has(file.localId)}
                       onToggle={handleToggle}
                       onToggleExpanded={handleToggleExpanded}
@@ -769,6 +794,9 @@ function DccDetailView({
   );
 }
 
+// One dataset as the bulk-add endpoint accepts it.
+type NewDataset = components["schemas"]["DatasetsBulkIn"]["datasets"][number];
+
 function AddToWorkspaceButton({
   selectedIds,
   onDone,
@@ -778,7 +806,8 @@ function AddToWorkspaceButton({
 }) {
   const { data: projectsData } = useGetProjects();
   const projects = projectsData?.items ?? [];
-  const { mutateAsync: createDataset } = useCreateDataset();
+  const { mutateAsync: createDatasets } = useCreateDatasets();
+  const [adding, setAdding] = useState(false);
   const { toastError } = useSnackbarActions();
   // The Browse Library opens from a workspace page; default the dropdown
   // to that workspace so the user usually doesn't need to change it.
@@ -829,7 +858,10 @@ function AddToWorkspaceButton({
       return;
     }
 
-    const buildDataset = (file: CfdbFile) => {
+    const buildDataset = (file: CfdbFile): NewDataset | null => {
+      // Dataset names are capped at 100 characters; one longer filename
+      // would otherwise fail the whole add.
+      const name = file.filename.slice(0, 100);
       const assembly =
         (file.genomeAssembly as
           | "hg38"
@@ -848,7 +880,7 @@ function AddToWorkspaceButton({
 
       if (isTsv || isCsv) {
         return {
-          name: file.filename,
+          name,
           source_url: buildCfdbFileSourceUrl(file),
           data_type: "csv",
           assembly,
@@ -872,7 +904,7 @@ function AddToWorkspaceButton({
 
       if (goslingType && isBrowseLibraryReadyType(goslingType)) {
         return {
-          name: file.filename,
+          name,
           source_url: buildCfdbFileSourceUrl(file),
           data_type: goslingType,
           assembly,
@@ -891,47 +923,59 @@ function AddToWorkspaceButton({
         // input file via cfdb_id.
         const processedType =
           CFDB_PROCESSED_FILE_TYPE[goslingType] ?? goslingType;
+        // The processed type comes from a lookup table as a plain string;
+        // the backend validates it against the dataset union.
         return {
-          name: file.filename,
+          name,
           data_type: processedType,
           assembly,
           file_type: processedType,
           cfdb_dcc: getCfdbDccSlug(file),
           cfdb_id: file.localId,
-        };
+        } as NewDataset;
       }
 
       return null;
     };
 
-    await Promise.all(
-      Array.from(found.values())
-        .map((file) => ({ file, dataset: buildDataset(file) }))
-        .filter(
-          (
-            entry,
-          ): entry is {
-            file: CfdbFile;
-            dataset: NonNullable<ReturnType<typeof buildDataset>>;
-          } => entry.dataset !== null,
-        )
-        .map(({ dataset }) =>
-          createDataset({
-            body: {
-              workspace_uuid: selectedProject.uuid,
-              // @ts-expect-error Schema regen pending: index_url is now
-              // optional and cfdb_dcc/cfdb_id are new on the dataset union.
-              // Run `npm run gen-api-types` once the backend ships.
-              dataset,
-            },
-          }),
-        ),
-    );
+    const datasets = Array.from(found.values())
+      .map(buildDataset)
+      .filter((dataset) => dataset !== null);
+    if (datasets.length === 0) {
+      // Selection is gated on supported formats, so this is a backstop.
+      toastError("None of the selected files can be added to a workspace.");
+      return;
+    }
 
+    // One request, all or none: the server skips files already in the
+    // workspace, so retrying after a failure can't duplicate anything.
+    try {
+      await createDatasets({
+        // Library files have always been added as Gosling data sources.
+        body: {
+          workspace_uuid: selectedProject.uuid,
+          tool: "gosling",
+          datasets,
+        },
+      });
+    } catch {
+      return; // The hook's error toast says what happened.
+    }
     onDone();
-  }, [selectedProject, selectedIds, createDataset, onDone, toastError]);
+  }, [selectedProject, selectedIds, createDatasets, onDone, toastError]);
 
-  const disabled = selectedIds.size === 0 || !selectedProject;
+  // Disabled from the click until the add finishes, so a second click
+  // can't start another add.
+  const handleAddOnce = useCallback(async () => {
+    setAdding(true);
+    try {
+      await handleAdd();
+    } finally {
+      setAdding(false);
+    }
+  }, [handleAdd]);
+
+  const disabled = selectedIds.size === 0 || !selectedProject || adding;
   const projectColor = selectedProject
     ? generateAvatarColor(selectedProject.name)
     : generateAvatarColor("");
@@ -956,7 +1000,7 @@ function AddToWorkspaceButton({
         }}
       >
         <Button
-          onClick={handleAdd}
+          onClick={handleAddOnce}
           disabled={disabled}
           disableRipple
           sx={{
@@ -1274,6 +1318,7 @@ export default function BrowseLibraryButton({
       <>
         <Typography sx={COUNT_SX}>
           {plural(selectedIds.size, "Dataset")} Selected
+          {selectedIds.size >= MAX_ADD_FILES ? " (limit)" : ""}
         </Typography>
         <AddToWorkspaceButton
           selectedIds={selectedIds}

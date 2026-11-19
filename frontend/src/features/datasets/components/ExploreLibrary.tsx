@@ -25,19 +25,13 @@ import {
   UsageUnavailable,
   useAiUsageContent,
 } from "@/features/profile/components/AiUsage";
+import plural from "@/utils/plural";
 import type { DccType } from "../../../../cfdb-types";
-import { DatasetRow, FileTableHead } from "./CfdbFileTable";
+import { DatasetRow, FileTableHead, MAX_ADD_FILES } from "./CfdbFileTable";
 
 const ExploreChat = lazy(() => import("./ExploreChat"));
 
-// Selecting from more files than this isn't useful; ask for more filters.
-export const MAX_EXPLORE_FILES = 100;
-
 const noop = () => {};
-
-export function plural(count: number, noun: string) {
-  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
-}
 
 // The bottom bar while finding files: how many the filters leave, and whether
 // that's few enough to pick from. Nothing to say until a filter reaches Files.
@@ -46,10 +40,10 @@ export function exploreSummary(fileIds: string[] | null) {
   const matched = fileIds.length;
   return {
     label:
-      matched > MAX_EXPLORE_FILES
-        ? `${plural(matched, "File")} Matched · Filter to ${MAX_EXPLORE_FILES} or fewer to select files`
+      matched > MAX_ADD_FILES
+        ? `${plural(matched, "File")} Matched · Filter to ${MAX_ADD_FILES} or fewer to select files`
         : `${plural(matched, "File")} Matched`,
-    canContinue: matched > 0 && matched <= MAX_EXPLORE_FILES,
+    canContinue: matched > 0 && matched <= MAX_ADD_FILES,
   };
 }
 

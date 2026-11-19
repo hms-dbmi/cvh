@@ -329,6 +329,19 @@ class DatasetIn(Schema):
     dataset: GoslingDesignerModel
 
 
+# Most files one bulk add may create: enough for a library selection, small
+# enough for one request and one transaction.
+MAX_BULK_DATASETS = 500
+
+
+class DatasetsBulkIn(Schema):
+    workspace_uuid: UUID4
+    tool: Literal["gosling", "vitessce"] = "gosling"
+    datasets: list[GoslingDesignerModel] = Field(
+        min_length=1, max_length=MAX_BULK_DATASETS
+    )
+
+
 class ExampleDatasetIn(Schema):
     workspace_uuid: UUID4
     include_visualizations: bool
@@ -396,6 +409,13 @@ class TagOut(ModelSchema):
 
 class DatasetWithTagsOut(DatasetOut):
     tags: list[TagOut]
+
+
+class DatasetsBulkOut(Schema):
+    # How many datasets were added.
+    created: int
+    # Files already in the workspace (or repeated in the request), left as is.
+    skipped: int
 
 
 class AuthorOut(Schema):
