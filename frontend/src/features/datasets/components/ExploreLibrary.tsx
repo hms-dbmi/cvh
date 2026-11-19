@@ -162,11 +162,22 @@ export function ExploreFileTable({
     staleTime: Number.POSITIVE_INFINITY,
   });
 
+  // Only the files asked for, once each: the lookup isn't scoped to one
+  // library, so another library's file with the same ID can come back.
+  const listed = useMemo(() => {
+    const requested = new Set(fileIds);
+    const byId = new Map(
+      (files ?? [])
+        .filter((file) => requested.has(file.localId))
+        .map((file) => [file.localId, file]),
+    );
+    return Array.from(byId.values());
+  }, [files, fileIds]);
+
   // Same rule as Browse: only formats CVH can visualize are selectable.
   const selectableIds = useMemo(
-    () =>
-      new Set((files ?? []).filter(isCfdbFileSupported).map((f) => f.localId)),
-    [files],
+    () => new Set(listed.filter(isCfdbFileSupported).map((f) => f.localId)),
+    [listed],
   );
 
   const handleToggle = useCallback(
@@ -217,7 +228,7 @@ export function ExploreFileTable({
   if (isLoading || !files) return <Loading />;
 
   // YAC's copy of cfdb can be ahead of or behind cfdb itself.
-  const missing = fileIds.length - files.length;
+  const missing = new Set(fileIds).size - listed.length;
 
   return (
     <Stack spacing={1}>
@@ -236,7 +247,7 @@ export function ExploreFileTable({
             onToggleAll={handleToggleAll}
           />
           <TableBody>
-            {files.map((file, index) => (
+            {listed.map((file, index) => (
               <DatasetRow
                 key={file.localId}
                 file={file}

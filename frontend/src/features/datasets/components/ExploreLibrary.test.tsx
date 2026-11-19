@@ -159,6 +159,36 @@ describe("ExploreFileTable", () => {
     expect(await rowFor("a.bigwig")).toBeEnabled();
   });
 
+  it("treats a cfdb error with partial data as a failure", async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        Response.json({
+          data: { files: null },
+          errors: [{ message: "validation failed" }],
+        }),
+      ),
+    );
+    renderTable(["f-bigwig"]);
+
+    expect(
+      await screen.findByRole("button", { name: "Try Again" }),
+    ).toBeInTheDocument();
+  });
+
+  it("ignores files nobody asked for", async () => {
+    // Another library's file sharing an ID mustn't fill the missing slot.
+    const stranger = { ...fastq, localId: "f-other" } as CfdbFile;
+    fetchMock.mockImplementation(() => cfdbUp([bigwig, stranger]));
+    renderTable(["f-bigwig", "f-gone"]);
+
+    expect(
+      await screen.findByText(
+        "1 file matched in Explore isn’t in the library right now.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("b.fastq")).not.toBeInTheDocument();
+  });
+
   it("says when matched files aren't in cfdb", async () => {
     fetchMock.mockImplementation(() => cfdbUp([bigwig]));
     renderTable(["f-bigwig", "f-gone"]);

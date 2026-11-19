@@ -807,15 +807,22 @@ function AddToWorkspaceButton({
 
     // Selection can include files that aren't in the currently-rendered
     // page of `useCfdbDccFiles`, so ask CFDB for the full set by id.
-    let selectedFiles: CfdbFile[] = [];
+    let fetched: CfdbFile[] = [];
     try {
-      selectedFiles = await fetchCfdbFilesByLocalIds(Array.from(selectedIds));
+      fetched = await fetchCfdbFilesByLocalIds(Array.from(selectedIds));
     } catch {
-      // Handled below with the short result.
+      // Handled below as files that didn't come back.
     }
+    // Only the files asked for, once each: the lookup isn't scoped to one
+    // library, so another library's file with the same ID can come back.
+    const found = new Map(
+      fetched
+        .filter((file) => selectedIds.has(file.localId))
+        .map((file) => [file.localId, file]),
+    );
     // Keep the dialog as it is if cfdb couldn't return every file: closing
     // would throw away the selection, and an Explore conversation with it.
-    if (selectedFiles.length < selectedIds.size) {
+    if (found.size < selectedIds.size) {
       toastError(
         "Couldn’t load the selected files from the library. Try again.",
       );
@@ -898,7 +905,7 @@ function AddToWorkspaceButton({
     };
 
     await Promise.all(
-      selectedFiles
+      Array.from(found.values())
         .map((file) => ({ file, dataset: buildDataset(file) }))
         .filter(
           (
@@ -1340,16 +1347,18 @@ export default function BrowseLibraryButton({
               setSelectedIds={setBrowseSelectedIds}
             />
           </Box>
-          {exploreOpened && (
-            <Box
-              {...panelProps("explore")}
-              sx={{
-                display: tab === "explore" ? "flex" : "none",
-                flexDirection: "column",
-                flex: 1,
-                px: 3,
-              }}
-            >
+          {/* Always there, so the Explore tab's aria-controls has a target;
+              its contents load on the first visit. */}
+          <Box
+            {...panelProps("explore")}
+            sx={{
+              display: tab === "explore" ? "flex" : "none",
+              flexDirection: "column",
+              flex: 1,
+              px: 3,
+            }}
+          >
+            {exploreOpened && (
               <ExploreLibrary
                 dcc={selectedDcc}
                 selectingIds={selectingIds}
@@ -1357,8 +1366,8 @@ export default function BrowseLibraryButton({
                 selectedIds={exploreSelectedIds}
                 setSelectedIds={setExploreSelectedIds}
               />
-            </Box>
-          )}
+            )}
+          </Box>
           <Dialog
             open={pendingLeave !== null}
             onClose={() => setPendingLeave(null)}

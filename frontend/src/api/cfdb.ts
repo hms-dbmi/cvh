@@ -44,6 +44,8 @@ const DCC_DETAILS_QUERY_OLD = `query DccDetails($input: [FileMetadataInput!]) {
 async function fetchGraphQL(
   query: string,
   variables?: Record<string, unknown>,
+  // Throw on any GraphQL error, even alongside partial data.
+  strict = false,
 ) {
   const res = await fetch(`${CFDB_API_URL}/metadata`, {
     method: "POST",
@@ -57,9 +59,9 @@ async function fetchGraphQL(
 
   const json = await res.json();
 
-  // GraphQL can return partial data alongside errors.
-  // Only throw if there's no data at all.
-  if (json.errors?.length && !json.data) {
+  // GraphQL can return partial data alongside errors. Only throw if there's
+  // no data at all, unless the caller needs every row it asked for.
+  if (json.errors?.length && (strict || !json.data)) {
     throw new Error(json.errors[0].message);
   }
 
@@ -91,12 +93,13 @@ async function fetchFilesWithFallback<T = unknown>(
   queryNew: string,
   queryOld: string,
   variables: Record<string, unknown>,
+  strict = false,
 ): Promise<T[]> {
   try {
-    const data = await fetchGraphQL(queryNew, variables);
+    const data = await fetchGraphQL(queryNew, variables, strict);
     return readFilesItems<T>(data);
   } catch {
-    const data = await fetchGraphQL(queryOld, variables);
+    const data = await fetchGraphQL(queryOld, variables, strict);
     return readFilesItems<T>(data);
   }
 }
@@ -544,6 +547,8 @@ export async function fetchCfdbFilesByLocalIds(
         DCC_FILES_QUERY_NEW,
         DCC_FILES_QUERY_OLD,
         { input: [{ localId: ids }], pageSize: DCC_FILES_PAGE_SIZE },
+        // A partial answer would look like files missing from the library.
+        true,
       ),
     ),
   );
