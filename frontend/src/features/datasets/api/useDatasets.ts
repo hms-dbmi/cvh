@@ -112,15 +112,19 @@ function useCreateDatasets() {
   const client = useClient();
   return client.useMutation("post", `${path}/bulk`, {
     onSuccess: ({ created, skipped }) => {
-      const already =
-        skipped > 0
-          ? ` ${skipped.toLocaleString()} ${skipped === 1 ? "was" : "were"} already in the workspace.`
-          : "";
-      toastSuccess(`Added ${plural(created, "dataset")}.${already}`);
+      const already = `${skipped.toLocaleString()} ${skipped === 1 ? "was" : "were"} already in the workspace.`;
+      if (created === 0) {
+        toastSuccess(`Nothing new to add: ${already}`);
+        return;
+      }
+      toastSuccess(
+        `Added ${plural(created, "dataset")}.${skipped > 0 ? ` ${already}` : ""}`,
+      );
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {
-      toastError("Failed to add datasets. Nothing was added; try again.");
+      // No "try again": a retry can't fix missing access or a bad file.
+      toastError("Failed to add datasets. Nothing was added.");
     },
   });
 }
