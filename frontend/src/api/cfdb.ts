@@ -44,6 +44,8 @@ const DCC_DETAILS_QUERY_OLD = `query DccDetails($input: [FileMetadataInput!]) {
 async function fetchGraphQL(
   query: string,
   variables?: Record<string, unknown>,
+  // Throw on any GraphQL error, even alongside partial data.
+  strict = false,
 ) {
   const res = await fetch(`${CFDB_API_URL}/metadata`, {
     method: "POST",
@@ -57,9 +59,9 @@ async function fetchGraphQL(
 
   const json = await res.json();
 
-  // GraphQL can return partial data alongside errors.
-  // Only throw if there's no data at all.
-  if (json.errors?.length && !json.data) {
+  // GraphQL can return partial data alongside errors. Only throw if there's
+  // no data at all, unless the caller needs every row it asked for.
+  if (json.errors?.length && (strict || !json.data)) {
     throw new Error(json.errors[0].message);
   }
 
@@ -91,12 +93,13 @@ async function fetchFilesWithFallback<T = unknown>(
   queryNew: string,
   queryOld: string,
   variables: Record<string, unknown>,
+  strict = false,
 ): Promise<T[]> {
   try {
-    const data = await fetchGraphQL(queryNew, variables);
+    const data = await fetchGraphQL(queryNew, variables, strict);
     return readFilesItems<T>(data);
   } catch {
-    const data = await fetchGraphQL(queryOld, variables);
+    const data = await fetchGraphQL(queryOld, variables, strict);
     return readFilesItems<T>(data);
   }
 }
@@ -525,19 +528,31 @@ async function fetchDccFilesPage(
   }
 }
 
-async function fetchCfdbFilesByLocalIds(
+/**
+ * Fetch CFDB files by `localId`, throwing if cfdb can't be reached so the
+ * caller can say so. Adding to a workspace uses it because a selection can
+ * include files outside the rows loaded so far; Explore lists its matches.
+ */
+export async function fetchCfdbFilesByLocalIds(
   localIds: string[],
 ): Promise<CfdbFile[]> {
-  if (localIds.length === 0) return [];
-  try {
-    return await fetchFilesWithFallback<CfdbFile>(
-      DCC_FILES_QUERY_NEW,
-      DCC_FILES_QUERY_OLD,
-      { input: [{ localId: localIds }], pageSize: DCC_FILES_PAGE_SIZE },
-    );
-  } catch {
-    return [];
+  // cfdb returns at most one page per request, so ask a page of IDs at a time.
+  const batches: string[][] = [];
+  for (let i = 0; i < localIds.length; i += DCC_FILES_PAGE_SIZE) {
+    batches.push(localIds.slice(i, i + DCC_FILES_PAGE_SIZE));
   }
+  const pages = await Promise.all(
+    batches.map((ids) =>
+      fetchFilesWithFallback<CfdbFile>(
+        DCC_FILES_QUERY_NEW,
+        DCC_FILES_QUERY_OLD,
+        { input: [{ localId: ids }], pageSize: DCC_FILES_PAGE_SIZE },
+        // A partial answer would look like files missing from the library.
+        true,
+      ),
+    ),
+  );
+  return pages.flat();
 }
 
 /**
@@ -584,16 +599,6 @@ export function useCfdbFileLookup(dccName: string | undefined, query: string) {
     enabled: !!dccName && trimmed.length > 0,
     staleTime: 1000 * 60 * 10,
   });
-}
-
-/**
- * Fetch CFDB files for a known set of `localId`s. Used by the "add to
- * project" flow because the user's selection can include files that
- * aren't in the currently-rendered page of `useCfdbDccFiles`, so we
- * can't rely on the cached list.
- */
-export function fetchCfdbSelectedFiles(localIds: string[]) {
-  return fetchCfdbFilesByLocalIds(localIds);
 }
 
 /**

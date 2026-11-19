@@ -31,7 +31,7 @@ const CONTACT_EMAIL = "hidive@hms.harvard.edu";
 // stylesheet uppercases every h2 globally, so undo that here.
 export const LABEL_SX = { fontWeight: 500, textTransform: "none" } as const;
 // Usage at or above this share of the monthly credits is "near limit".
-const NEAR_LIMIT_PERCENT = 85;
+export const NEAR_LIMIT_PERCENT = 85;
 
 const COLORS = {
   info: "#3B73E0",
@@ -167,18 +167,23 @@ function CreditUsageBar({ usage }: { usage: YacUsage }) {
   );
 }
 
-function UsageUnavailable({
+// Explore reuses this with its own wording: signing in unlocks the chat there.
+export function UsageUnavailable({
   error,
   signIn,
+  signInTo = "see your usage",
+  unavailable = "Your AI usage is unavailable right now.",
 }: {
   error: Error;
   signIn: () => void;
+  signInTo?: string;
+  unavailable?: string;
 }) {
   if (error instanceof YacSignInRequired) {
     return (
       <Stack spacing={1} alignItems="flex-start">
         <Typography variant="body2">
-          Sign in to the AI service to see your usage.
+          Sign in to the AI service to {signInTo}.
         </Typography>
         <Button variant="outlined" onClick={signIn}>
           Sign In
@@ -188,7 +193,7 @@ function UsageUnavailable({
   }
   return (
     <Typography variant="body2">
-      Your AI usage is unavailable right now. If this continues, <ContactUs />.
+      {unavailable} If this continues, <ContactUs />.
     </Typography>
   );
 }
@@ -275,7 +280,8 @@ function approvedContent(
   };
 }
 
-function useAiUsageContent() {
+// Also used by the Data Library's Explore tab, which shows the same banners.
+export function useAiUsageContent() {
   const { data: access, isError } = useGetYacAccess();
   const { mutate, isPending } = useRequestYacAccess();
   // Set up on every render, but only fetches for approved users.

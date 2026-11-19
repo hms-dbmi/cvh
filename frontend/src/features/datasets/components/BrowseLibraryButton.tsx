@@ -1,9 +1,16 @@
 import Box from "@mui/material/Box";
 import Button, { type ButtonProps } from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid2";
+import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
@@ -15,33 +22,34 @@ import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
 import {
   ArrowLeft,
   ArrowSquareOut,
+  Binoculars,
   CaretDown,
   CaretRight,
   CaretUp,
   Database,
   Info,
-  LinkSimple,
   MagnifyingGlass,
   Plus,
+  Table as TableIcon,
+  X,
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
-  memo,
   useCallback,
   useDeferredValue,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -52,12 +60,10 @@ import {
   CFDB_PROCESSED_FILE_TYPE,
   CFDB_TO_GOSLING_FILE_TYPE,
   type CfdbFile,
-  fetchCfdbSelectedFiles,
-  firstCollectionWithField,
+  fetchCfdbFilesByLocalIds,
   getCfdbDccSlug,
   getDccAccessionExample,
   getDccShortName,
-  getFileAccession,
   isBrowseLibraryProcessableType,
   isBrowseLibraryReadyType,
   isCfdbFileSupported,
@@ -68,9 +74,13 @@ import {
   useCfdbFileLookup,
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
+import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
+import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
 import { useCreateDataset } from "../api/useDatasets";
+import { DatasetRow, FileTableHead } from "./CfdbFileTable";
+import ExploreLibrary, { exploreSummary, plural } from "./ExploreLibrary";
 
 function DccCard({ dcc, onClick }: { dcc: DccType; onClick: () => void }) {
   return (
@@ -347,12 +357,10 @@ function FilterDropdown({
 
 function DccDetailView({
   dcc,
-  onBack,
   selectedIds,
   setSelectedIds,
 }: {
   dcc: DccType;
-  onBack: () => void;
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
@@ -536,51 +544,6 @@ function DccDetailView({
   return (
     <Stack sx={{ height: "100%" }}>
       <Box sx={{ flex: 1, overflow: "auto", px: 3, pt: 1 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.5}
-          onClick={onBack}
-          sx={{
-            color: "#657681",
-            fontSize: 14,
-            cursor: "pointer",
-            lineHeight: "20px",
-            letterSpacing: "0.25px",
-            mb: 1,
-            "&:hover": { color: "#4E5A63" },
-          }}
-        >
-          <ArrowLeft size={14} />
-          <span>Back to Data Catalogs</span>
-        </Stack>
-
-        <Typography
-          variant="h5"
-          sx={{
-            fontSize: 22,
-            fontWeight: 500,
-            lineHeight: "28px",
-            mb: 1,
-          }}
-        >
-          {dcc.dccName}
-        </Typography>
-
-        {dcc.dccDescription && (
-          <Typography
-            sx={{
-              fontSize: 16,
-              lineHeight: "24px",
-              letterSpacing: "0.5px",
-              color: "#010101",
-              mb: 2,
-            }}
-          >
-            {dcc.dccDescription}
-          </Typography>
-        )}
-
         <Box
           sx={{
             bgcolor: "#EFF3F5",
@@ -760,44 +723,11 @@ function DccDetailView({
                 the layout past the viewport, so horizontal scroll is
                 expected here. */}
             <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    bgcolor: "#F5F7FA",
-                    "& th": {
-                      fontWeight: 500,
-                      fontSize: 14,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                      color: "#4E5A63",
-                      whiteSpace: "nowrap",
-                    },
-                  }}
-                >
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      disabled={selectableFiles.length === 0}
-                      checked={
-                        selectableFiles.length > 0 &&
-                        selectedIds.size === selectableFiles.length
-                      }
-                      indeterminate={
-                        selectedIds.size > 0 &&
-                        selectedIds.size < selectableFiles.length
-                      }
-                      onChange={handleToggleAll}
-                    />
-                  </TableCell>
-                  <TableCell>Dataset Name</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Assay Type</TableCell>
-                  <TableCell>Assay Target</TableCell>
-                  <TableCell>Assembly</TableCell>
-                  <TableCell>Collections</TableCell>
-                  <TableCell sx={{ minWidth: 300 }}>Description</TableCell>
-                </TableRow>
-              </TableHead>
+              <FileTableHead
+                selectableCount={selectableFiles.length}
+                selectedCount={selectedIds.size}
+                onToggleAll={handleToggleAll}
+              />
               <TableBody>
                 {/* Top spacer keeps the virtualized rows positioned at the
                     correct scroll offset without abandoning <tr> semantics. */}
@@ -839,209 +769,6 @@ function DccDetailView({
   );
 }
 
-// `React.memo` so toggling one checkbox doesn't re-render thousands of
-// rows. The parent passes a stable `onToggle` (useCallback) and the `file`
-// reference is stable across renders (React Query keeps the array identity
-// stable while the query is fresh), so a default shallow compare works.
-const DatasetRow = memo(function DatasetRow({
-  file,
-  selected,
-  disabled,
-  expanded,
-  onToggle,
-  onToggleExpanded,
-  measureRef,
-  dataIndex,
-}: {
-  file: CfdbFile;
-  selected: boolean;
-  disabled: boolean;
-  expanded: boolean;
-  onToggle: (id: string) => void;
-  onToggleExpanded: (id: string) => void;
-  measureRef: (el: HTMLElement | null) => void;
-  dataIndex: number;
-}) {
-  const assayTarget = firstCollectionWithField(file, "experimentTarget");
-  const description = firstCollectionWithField(file, "description");
-  const collections = file.collections ?? [];
-
-  const CELL_TEXT_SX = { fontSize: 14, color: "#4E5A63" } as const;
-
-  // Detect whether the clamped description is actually being cut off.
-  // If everything fits in two lines there's nothing to expand, so we
-  // suppress the "Show More" affordance. Only re-measure in the
-  // collapsed state — when expanded the clamp is off and heights match
-  // by definition.
-  const descRef = useRef<HTMLSpanElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-  useLayoutEffect(() => {
-    if (expanded) return;
-    const el = descRef.current;
-    if (!el) return;
-    setIsOverflowing(el.scrollHeight > el.clientHeight);
-  }, [description, expanded]);
-
-  return (
-    <TableRow hover ref={measureRef} data-index={dataIndex}>
-      <TableCell padding="checkbox">
-        <Checkbox
-          size="small"
-          checked={selected}
-          disabled={disabled}
-          onChange={() => onToggle(file.localId)}
-        />
-      </TableCell>
-      <TableCell>
-        <Stack sx={{ gap: "5px" }}>
-          <Typography
-            sx={{
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: 1.2,
-              color: "#010101",
-            }}
-          >
-            {file.filename}
-          </Typography>
-          {(() => {
-            const accession = getFileAccession(file);
-            return file.persistentId ? (
-              <Typography
-                component="a"
-                href={file.persistentId}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Open ${accession} on ${file.dcc.dccName}`}
-                // Stop the click from bubbling to the row (which would
-                // toggle the checkbox); the accession is a link, not a
-                // selection affordance.
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  fontSize: 12,
-                  fontWeight: 400,
-                  lineHeight: 1.2,
-                  color: "#010101",
-                  textDecoration: "underline",
-                  "&:hover": { color: "#4E5A63" },
-                }}
-              >
-                {accession}
-                <LinkSimple size={14} style={{ flexShrink: 0 }} />
-              </Typography>
-            ) : (
-              <Typography
-                sx={{
-                  fontSize: 12,
-                  fontWeight: 400,
-                  lineHeight: 1.2,
-                  color: "#010101",
-                }}
-              >
-                {accession}
-              </Typography>
-            );
-          })()}
-        </Stack>
-      </TableCell>
-      <TableCell>
-        <Typography sx={CELL_TEXT_SX}>
-          {file.fileFormat?.name ?? "—"}
-        </Typography>
-      </TableCell>
-      <TableCell>
-        <Typography sx={CELL_TEXT_SX}>{file.assayType?.name ?? "—"}</Typography>
-      </TableCell>
-      <TableCell>
-        <Typography sx={CELL_TEXT_SX}>{assayTarget ?? "—"}</Typography>
-      </TableCell>
-      <TableCell>
-        <Typography sx={CELL_TEXT_SX}>{file.genomeAssembly ?? "—"}</Typography>
-      </TableCell>
-      <TableCell>
-        {collections.length === 0 ? (
-          <Typography sx={CELL_TEXT_SX}>—</Typography>
-        ) : (
-          <Typography sx={CELL_TEXT_SX}>
-            {collections.map((c, i) => {
-              const label = c.abbreviation || c.name || c.localId;
-              return (
-                <span key={c.localId}>
-                  {i > 0 && ", "}
-                  {c.persistentId ? (
-                    <Typography
-                      component="a"
-                      href={c.persistentId}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      sx={{
-                        ...CELL_TEXT_SX,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 0.25,
-                        textDecoration: "underline",
-                        "&:hover": { color: "#010101" },
-                      }}
-                    >
-                      {label}
-                      <LinkSimple size={14} style={{ flexShrink: 0 }} />
-                    </Typography>
-                  ) : (
-                    label
-                  )}
-                </span>
-              );
-            })}
-          </Typography>
-        )}
-      </TableCell>
-      <TableCell sx={{ minWidth: 300, maxWidth: 400 }}>
-        {description ? (
-          <>
-            <Typography
-              ref={descRef}
-              sx={{
-                ...CELL_TEXT_SX,
-                display: "-webkit-box",
-                WebkitLineClamp: expanded ? "unset" : 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {description}
-            </Typography>
-            {(isOverflowing || expanded) && (
-              <Typography
-                component="button"
-                onClick={() => onToggleExpanded(file.localId)}
-                sx={{
-                  mt: 0.5,
-                  background: "none",
-                  border: "none",
-                  p: 0,
-                  cursor: "pointer",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "#010101",
-                  textDecoration: "underline",
-                }}
-              >
-                {expanded ? "Show Less" : "Show More"}
-              </Typography>
-            )}
-          </>
-        ) : (
-          <Typography sx={CELL_TEXT_SX}>—</Typography>
-        )}
-      </TableCell>
-    </TableRow>
-  );
-});
-
 function AddToWorkspaceButton({
   selectedIds,
   onDone,
@@ -1052,6 +779,7 @@ function AddToWorkspaceButton({
   const { data: projectsData } = useGetProjects();
   const projects = projectsData?.items ?? [];
   const { mutateAsync: createDataset } = useCreateDataset();
+  const { toastError } = useSnackbarActions();
   // The Browse Library opens from a workspace page; default the dropdown
   // to that workspace so the user usually doesn't need to change it.
   const { projectId: currentProjectId } = useParams({ strict: false });
@@ -1079,7 +807,27 @@ function AddToWorkspaceButton({
 
     // Selection can include files that aren't in the currently-rendered
     // page of `useCfdbDccFiles`, so ask CFDB for the full set by id.
-    const selectedFiles = await fetchCfdbSelectedFiles(Array.from(selectedIds));
+    let fetched: CfdbFile[] = [];
+    try {
+      fetched = await fetchCfdbFilesByLocalIds(Array.from(selectedIds));
+    } catch {
+      // Handled below as files that didn't come back.
+    }
+    // Only the files asked for, once each: the lookup isn't scoped to one
+    // library, so another library's file with the same ID can come back.
+    const found = new Map(
+      fetched
+        .filter((file) => selectedIds.has(file.localId))
+        .map((file) => [file.localId, file]),
+    );
+    // Keep the dialog as it is if cfdb couldn't return every file: closing
+    // would throw away the selection, and an Explore conversation with it.
+    if (found.size < selectedIds.size) {
+      toastError(
+        "Couldn’t load the selected files from the library. Try again.",
+      );
+      return;
+    }
 
     const buildDataset = (file: CfdbFile) => {
       const assembly =
@@ -1157,7 +905,7 @@ function AddToWorkspaceButton({
     };
 
     await Promise.all(
-      selectedFiles
+      Array.from(found.values())
         .map((file) => ({ file, dataset: buildDataset(file) }))
         .filter(
           (
@@ -1181,7 +929,7 @@ function AddToWorkspaceButton({
     );
 
     onDone();
-  }, [selectedProject, selectedIds, createDataset, onDone]);
+  }, [selectedProject, selectedIds, createDataset, onDone, toastError]);
 
   const disabled = selectedIds.size === 0 || !selectedProject;
   const projectColor = selectedProject
@@ -1319,6 +1067,136 @@ function AddToWorkspaceButton({
   );
 }
 
+type LibraryTab = "browse" | "explore";
+
+// Ties each tab's content to its tab for screen readers; no tabs, no panels.
+function panelProps(tab: LibraryTab) {
+  return yacConfigured
+    ? {
+        role: "tabpanel",
+        id: `library-panel-${tab}`,
+        "aria-labelledby": `library-tab-${tab}`,
+      }
+    : {};
+}
+
+const BACK_LINK_SX = {
+  color: "#657681",
+  fontSize: 14,
+  cursor: "pointer",
+  lineHeight: "20px",
+  letterSpacing: "0.25px",
+  mb: 1,
+  background: "none",
+  border: "none",
+  p: 0,
+  alignSelf: "flex-start",
+  "&:hover": { color: "#4E5A63" },
+} as const;
+
+function LibraryHeader({
+  dcc,
+  backLabel,
+  onBack,
+  onClose,
+  tab,
+  onTabChange,
+}: {
+  dcc: DccType;
+  backLabel: string;
+  onBack: () => void;
+  // Full screen has no backdrop to click, so close is a visible button.
+  onClose: () => void;
+  tab: LibraryTab;
+  onTabChange: (tab: LibraryTab) => void;
+}) {
+  return (
+    <Stack sx={{ px: 3, pt: 1 }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+      >
+        <Stack
+          component="button"
+          type="button"
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          onClick={onBack}
+          sx={BACK_LINK_SX}
+        >
+          <ArrowLeft size={14} />
+          <span>{backLabel}</span>
+        </Stack>
+        <IconButton aria-label="Close" onClick={onClose} size="small">
+          <X size={20} />
+        </IconButton>
+      </Stack>
+      <Typography
+        variant="h5"
+        sx={{ fontSize: 22, fontWeight: 500, lineHeight: "28px", mb: 1 }}
+      >
+        {dcc.dccName}
+      </Typography>
+      {dcc.dccDescription && (
+        <Typography
+          sx={{
+            fontSize: 16,
+            lineHeight: "24px",
+            letterSpacing: "0.5px",
+            color: "#010101",
+            mb: 2,
+          }}
+        >
+          {dcc.dccDescription}
+        </Typography>
+      )}
+      {/* Explore needs the YAC service; without it there's only Browse. */}
+      {yacConfigured && (
+        <Tabs
+          value={tab}
+          onChange={(_, value: LibraryTab) => onTabChange(value)}
+          sx={{ mb: 2, borderBottom: "1px solid #CAD5DA" }}
+        >
+          <Tab
+            value="browse"
+            id="library-tab-browse"
+            aria-controls="library-panel-browse"
+            label="Browse"
+            icon={<TableIcon size={16} />}
+            iconPosition="start"
+            sx={{ textTransform: "none", minHeight: 48 }}
+          />
+          <Tab
+            value="explore"
+            id="library-tab-explore"
+            aria-controls="library-panel-explore"
+            label={
+              <Stack direction="row" spacing={1} alignItems="center">
+                <span>Explore</span>
+                <Chip label="Beta" size="small" variant="outlined" />
+              </Stack>
+            }
+            icon={<Binoculars size={16} />}
+            iconPosition="start"
+            sx={{ textTransform: "none", minHeight: 48 }}
+          />
+        </Tabs>
+      )}
+    </Stack>
+  );
+}
+
+const COUNT_SX = {
+  fontSize: 14,
+  fontWeight: 500,
+  color: "#4E5A63",
+  letterSpacing: "0.28px",
+  mr: "auto",
+  order: -1,
+} as const;
+
 export default function BrowseLibraryButton({
   buttonProps,
 }: {
@@ -1326,19 +1204,95 @@ export default function BrowseLibraryButton({
 } = {}) {
   const [open, setOpen] = useState(false);
   const [selectedDcc, setSelectedDcc] = useState<DccType | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // One selection per tab, so switching tabs neither mixes nor loses them.
+  const [browseSelectedIds, setBrowseSelectedIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [exploreSelectedIds, setExploreSelectedIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [tab, setTab] = useState<LibraryTab>("browse");
+  // The files to select from, copied when Continue is clicked; null while
+  // finding. A copy, so a late update from the chat can't change the list.
+  const [selectingIds, setSelectingIds] = useState<string[] | null>(null);
+  // The files Explore's filters leave, or null while no filter reaches them.
+  const [exploreFileIds, setExploreFileIds] = useState<string[] | null>(null);
+  // Mounted on first visit and kept, so switching tabs keeps the chat.
+  const [exploreOpened, setExploreOpened] = useState(false);
+  // Leaving a library throws its Explore conversation away; this holds the
+  // leave waiting for the user to confirm.
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const { data: dccs, isLoading } = useCfdbDccs();
+  const selectedIds = tab === "browse" ? browseSelectedIds : exploreSelectedIds;
+
+  const resetLibrary = useCallback(() => {
+    setBrowseSelectedIds(new Set());
+    setExploreSelectedIds(new Set());
+    setTab("browse");
+    setSelectingIds(null);
+    setExploreFileIds(null);
+    setExploreOpened(false);
+  }, []);
 
   const handleClose = useCallback(() => {
     setSelectedDcc(null);
-    setSelectedIds(new Set());
-  }, []);
+    resetLibrary();
+  }, [resetLibrary]);
 
   const handleAddDone = useCallback(() => {
-    setSelectedIds(new Set());
     setSelectedDcc(null);
+    resetLibrary();
     setOpen(false);
+  }, [resetLibrary]);
+
+  const handleTabChange = useCallback((value: LibraryTab) => {
+    setTab(value);
+    if (value === "explore") setExploreOpened(true);
   }, []);
+
+  const leaveLibrary = (leave: () => void) =>
+    exploreOpened ? setPendingLeave(() => leave) : leave();
+  const backToCatalogs = () => {
+    setSelectedDcc(null);
+    resetLibrary();
+  };
+  const closeLibrary = () => {
+    handleClose();
+    setOpen(false);
+  };
+
+  const selecting = tab === "browse" || selectingIds !== null;
+  const summary = exploreSummary(exploreFileIds);
+
+  let actionButtons: React.ReactNode;
+  if (selectedDcc && selecting) {
+    actionButtons = (
+      <>
+        <Typography sx={COUNT_SX}>
+          {plural(selectedIds.size, "Dataset")} Selected
+        </Typography>
+        <AddToWorkspaceButton
+          selectedIds={selectedIds}
+          onDone={handleAddDone}
+        />
+      </>
+    );
+  } else if (selectedDcc) {
+    actionButtons = (
+      <>
+        {/* Kept when empty: it pushes the button to the right. */}
+        <Typography sx={COUNT_SX}>{summary.label}</Typography>
+        <Button
+          variant="contained"
+          disabled={!summary.canContinue}
+          onClick={() => setSelectingIds(exploreFileIds)}
+          sx={{ padding: "12px 16px", borderRadius: "8px" }}
+        >
+          Continue to Select Files
+        </Button>
+      </>
+    );
+  }
 
   return (
     <DialogButton
@@ -1350,30 +1304,12 @@ export default function BrowseLibraryButton({
       }}
       isForm={false}
       onClose={handleClose}
+      fullScreen={!!selectedDcc}
+      // The chat's inputs cancel edits with Escape without stopping it, and
+      // closing throws away the conversation, from either tab.
+      disableEscapeKeyDown={!!selectedDcc && exploreOpened}
       closeButtonProps={selectedDcc ? { sx: { display: "none" } } : undefined}
-      actionButtons={
-        selectedDcc ? (
-          <>
-            <Typography
-              sx={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: "#4E5A63",
-                letterSpacing: "0.28px",
-                mr: "auto",
-                order: -1,
-              }}
-            >
-              {selectedIds.size} Dataset{selectedIds.size === 1 ? "" : "s"}{" "}
-              Selected
-            </Typography>
-            <AddToWorkspaceButton
-              selectedIds={selectedIds}
-              onDone={handleAddDone}
-            />
-          </>
-        ) : undefined
-      }
+      actionButtons={actionButtons}
       buttonProps={{
         startIcon: <Database size={20} />,
         sx: { border: "1px solid #C8CCCE", borderRadius: "8px" },
@@ -1381,12 +1317,81 @@ export default function BrowseLibraryButton({
       }}
     >
       {selectedDcc ? (
-        <DccDetailView
-          dcc={selectedDcc}
-          onBack={() => setSelectedDcc(null)}
-          selectedIds={selectedIds}
-          setSelectedIds={setSelectedIds}
-        />
+        <Stack sx={{ height: "100%" }}>
+          <LibraryHeader
+            dcc={selectedDcc}
+            backLabel={
+              tab === "explore" && selectingIds !== null
+                ? "Back to Explore"
+                : "Back to Data Catalogs"
+            }
+            onBack={() => {
+              if (tab === "explore" && selectingIds !== null) {
+                setExploreSelectedIds(new Set());
+                setSelectingIds(null);
+              } else {
+                leaveLibrary(backToCatalogs);
+              }
+            }}
+            onClose={() => leaveLibrary(closeLibrary)}
+            tab={tab}
+            onTabChange={handleTabChange}
+          />
+          <Box
+            {...panelProps("browse")}
+            sx={{ display: tab === "browse" ? "block" : "none" }}
+          >
+            <DccDetailView
+              dcc={selectedDcc}
+              selectedIds={browseSelectedIds}
+              setSelectedIds={setBrowseSelectedIds}
+            />
+          </Box>
+          {/* Always there, so the Explore tab's aria-controls has a target;
+              its contents load on the first visit. */}
+          <Box
+            {...panelProps("explore")}
+            sx={{
+              display: tab === "explore" ? "flex" : "none",
+              flexDirection: "column",
+              flex: 1,
+              px: 3,
+            }}
+          >
+            {exploreOpened && (
+              <ExploreLibrary
+                dcc={selectedDcc}
+                selectingIds={selectingIds}
+                onFileIdsChange={setExploreFileIds}
+                selectedIds={exploreSelectedIds}
+                setSelectedIds={setExploreSelectedIds}
+              />
+            )}
+          </Box>
+          <Dialog
+            open={pendingLeave !== null}
+            onClose={() => setPendingLeave(null)}
+          >
+            <DialogTitle>Leave this library?</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Your Explore conversation and charts will be lost.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPendingLeave(null)}>Stay</Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  pendingLeave?.();
+                  setPendingLeave(null);
+                }}
+              >
+                Leave
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Stack>
       ) : (
         <Box sx={{ mt: 2 }}>
           {isLoading && (
