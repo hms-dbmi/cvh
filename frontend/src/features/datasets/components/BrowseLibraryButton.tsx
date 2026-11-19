@@ -4,7 +4,13 @@ import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid2";
+import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
@@ -36,6 +42,7 @@ import {
   MagnifyingGlass,
   Plus,
   Table as TableIcon,
+  X,
 } from "@phosphor-icons/react";
 import { useParams } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -1084,28 +1091,40 @@ function LibraryHeader({
   dcc,
   backLabel,
   onBack,
+  onClose,
   tab,
   onTabChange,
 }: {
   dcc: DccType;
   backLabel: string;
   onBack: () => void;
+  // Full screen has no backdrop to click, so close is a visible button.
+  onClose: () => void;
   tab: LibraryTab;
   onTabChange: (tab: LibraryTab) => void;
 }) {
   return (
     <Stack sx={{ px: 3, pt: 1 }}>
       <Stack
-        component="button"
-        type="button"
         direction="row"
-        alignItems="center"
-        spacing={0.5}
-        onClick={onBack}
-        sx={BACK_LINK_SX}
+        justifyContent="space-between"
+        alignItems="flex-start"
       >
-        <ArrowLeft size={14} />
-        <span>{backLabel}</span>
+        <Stack
+          component="button"
+          type="button"
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          onClick={onBack}
+          sx={BACK_LINK_SX}
+        >
+          <ArrowLeft size={14} />
+          <span>{backLabel}</span>
+        </Stack>
+        <IconButton aria-label="Close" onClick={onClose} size="small">
+          <X size={20} />
+        </IconButton>
       </Stack>
       <Typography
         variant="h5"
@@ -1178,7 +1197,13 @@ export default function BrowseLibraryButton({
 } = {}) {
   const [open, setOpen] = useState(false);
   const [selectedDcc, setSelectedDcc] = useState<DccType | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // One selection per tab, so switching tabs neither mixes nor loses them.
+  const [browseSelectedIds, setBrowseSelectedIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [exploreSelectedIds, setExploreSelectedIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [tab, setTab] = useState<LibraryTab>("browse");
   // The files to select from, copied when Continue is clicked; null while
   // finding. A copy, so a late update from the chat can't change the list.
@@ -1187,10 +1212,15 @@ export default function BrowseLibraryButton({
   const [exploreFileIds, setExploreFileIds] = useState<string[] | null>(null);
   // Mounted on first visit and kept, so switching tabs keeps the chat.
   const [exploreOpened, setExploreOpened] = useState(false);
+  // Leaving a library throws its Explore conversation away; this holds the
+  // leave waiting for the user to confirm.
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const { data: dccs, isLoading } = useCfdbDccs();
+  const selectedIds = tab === "browse" ? browseSelectedIds : exploreSelectedIds;
 
   const resetLibrary = useCallback(() => {
-    setSelectedIds(new Set());
+    setBrowseSelectedIds(new Set());
+    setExploreSelectedIds(new Set());
     setTab("browse");
     setSelectingIds(null);
     setExploreFileIds(null);
@@ -1209,11 +1239,20 @@ export default function BrowseLibraryButton({
   }, [resetLibrary]);
 
   const handleTabChange = useCallback((value: LibraryTab) => {
-    // Each tab picks its own files; don't carry a selection across.
-    setSelectedIds(new Set());
     setTab(value);
     if (value === "explore") setExploreOpened(true);
   }, []);
+
+  const leaveLibrary = (leave: () => void) =>
+    exploreOpened ? setPendingLeave(() => leave) : leave();
+  const backToCatalogs = () => {
+    setSelectedDcc(null);
+    resetLibrary();
+  };
+  const closeLibrary = () => {
+    handleClose();
+    setOpen(false);
+  };
 
   const selecting = tab === "browse" || selectingIds !== null;
   const summary = exploreSummary(exploreFileIds);
@@ -1281,13 +1320,13 @@ export default function BrowseLibraryButton({
             }
             onBack={() => {
               if (tab === "explore" && selectingIds !== null) {
-                setSelectedIds(new Set());
+                setExploreSelectedIds(new Set());
                 setSelectingIds(null);
               } else {
-                setSelectedDcc(null);
-                resetLibrary();
+                leaveLibrary(backToCatalogs);
               }
             }}
+            onClose={() => leaveLibrary(closeLibrary)}
             tab={tab}
             onTabChange={handleTabChange}
           />
@@ -1297,8 +1336,8 @@ export default function BrowseLibraryButton({
           >
             <DccDetailView
               dcc={selectedDcc}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
+              selectedIds={browseSelectedIds}
+              setSelectedIds={setBrowseSelectedIds}
             />
           </Box>
           {exploreOpened && (
@@ -1315,11 +1354,34 @@ export default function BrowseLibraryButton({
                 dcc={selectedDcc}
                 selectingIds={selectingIds}
                 onFileIdsChange={setExploreFileIds}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
+                selectedIds={exploreSelectedIds}
+                setSelectedIds={setExploreSelectedIds}
               />
             </Box>
           )}
+          <Dialog
+            open={pendingLeave !== null}
+            onClose={() => setPendingLeave(null)}
+          >
+            <DialogTitle>Leave this library?</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Your Explore conversation and charts will be lost.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPendingLeave(null)}>Stay</Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  pendingLeave?.();
+                  setPendingLeave(null);
+                }}
+              >
+                Leave
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Stack>
       ) : (
         <Box sx={{ mt: 2 }}>

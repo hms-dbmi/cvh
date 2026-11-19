@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CfdbFile } from "@/api/cfdb";
+import { type CfdbFile, fetchCfdbFilesByLocalIds } from "@/api/cfdb";
 import { YacSignInRequired } from "@/features/profile/api/useYacAccess";
 import type { DccType } from "../../../../cfdb-types";
 import ExploreLibrary, {
@@ -120,6 +120,32 @@ describe("ExploreFileTable", () => {
     expect(await rowFor("b.fastq")).toBeDisabled();
     fireEvent.click(bigwigBox);
     expect(bigwigBox).toBeChecked();
+  });
+
+  it("selects all only the files CVH can visualize", async () => {
+    fetchMock.mockImplementation(() => cfdbUp([bigwig, fastq]));
+    renderTable();
+
+    const bigwigBox = await rowFor("a.bigwig");
+    fireEvent.click(screen.getAllByRole("checkbox")[0]);
+    expect(bigwigBox).toBeChecked();
+    expect(await rowFor("b.fastq")).not.toBeChecked();
+  });
+
+  it("asks cfdb for at most 500 IDs per request", async () => {
+    fetchMock.mockImplementation(async (_url: string, init: RequestInit) => {
+      const { variables } = JSON.parse(String(init.body));
+      const requested: string[] = variables.input[0].localId;
+      return Response.json({
+        data: {
+          files: { items: requested.map((id) => ({ ...bigwig, localId: id })) },
+        },
+      });
+    });
+
+    const files = await fetchCfdbFilesByLocalIds(ids(501));
+    expect(files).toHaveLength(501);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("offers a retry when cfdb can't be reached", async () => {

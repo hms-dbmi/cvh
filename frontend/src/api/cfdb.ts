@@ -533,12 +533,21 @@ async function fetchDccFilesPage(
 export async function fetchCfdbFilesByLocalIds(
   localIds: string[],
 ): Promise<CfdbFile[]> {
-  if (localIds.length === 0) return [];
-  return fetchFilesWithFallback<CfdbFile>(
-    DCC_FILES_QUERY_NEW,
-    DCC_FILES_QUERY_OLD,
-    { input: [{ localId: localIds }], pageSize: DCC_FILES_PAGE_SIZE },
+  // cfdb returns at most one page per request, so ask a page of IDs at a time.
+  const batches: string[][] = [];
+  for (let i = 0; i < localIds.length; i += DCC_FILES_PAGE_SIZE) {
+    batches.push(localIds.slice(i, i + DCC_FILES_PAGE_SIZE));
+  }
+  const pages = await Promise.all(
+    batches.map((ids) =>
+      fetchFilesWithFallback<CfdbFile>(
+        DCC_FILES_QUERY_NEW,
+        DCC_FILES_QUERY_OLD,
+        { input: [{ localId: ids }], pageSize: DCC_FILES_PAGE_SIZE },
+      ),
+    ),
   );
+  return pages.flat();
 }
 
 /**
