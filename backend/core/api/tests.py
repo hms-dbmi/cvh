@@ -821,7 +821,8 @@ class Auth0ManagementTests(TestCase):
         token.json.return_value = {"access_token": "mgmt", "expires_in": 86400}
         with (
             override_settings(
-                AUTH0_MGMT_DOMAIN="https://cvh-test.example/",
+                # No trailing slash: the URLs below still come out right.
+                AUTH0_MGMT_DOMAIN="https://cvh-test.example",
                 AUTH0_MGMT_CLIENT_ID="id",
                 AUTH0_MGMT_CLIENT_SECRET="secret",
                 YAC_AUTH0_ROLE_ID="rol_yac",
@@ -871,6 +872,29 @@ class Auth0ManagementTests(TestCase):
             self.assertRaisesMessage(
                 Auth0ManagementError,
                 "Auth0 token request failed (403). Service not enabled within domain",
+            ),
+        ):
+            grant_yac_role("google-oauth2|42")
+
+    def test_unexpected_error_body_still_reports_the_status(self):
+        from unittest.mock import MagicMock
+
+        from django.test import override_settings
+
+        from .yac_access import Auth0ManagementError, grant_yac_role
+
+        refused = MagicMock(ok=False, status_code=502)
+        refused.json.return_value = ["not", "an", "object"]
+        with (
+            override_settings(
+                AUTH0_MGMT_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_CLIENT_ID="id",
+                AUTH0_MGMT_CLIENT_SECRET="secret",
+                YAC_AUTH0_ROLE_ID="rol_yac",
+            ),
+            patch("api.yac_access.requests.post", return_value=refused),
+            self.assertRaisesMessage(
+                Auth0ManagementError, "Auth0 token request failed (502)."
             ),
         ):
             grant_yac_role("google-oauth2|42")

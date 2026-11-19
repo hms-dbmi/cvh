@@ -25,8 +25,15 @@ def _reason(response) -> str:
         body = response.json()
     except ValueError:
         return ""
+    if not isinstance(body, dict):
+        return ""
     reason = body.get("error_description") or body.get("message")
     return f" {reason}" if reason else ""
+
+
+def _base() -> str:
+    # Typed into an env file by hand, so accept it with or without the "/".
+    return settings.AUTH0_MGMT_DOMAIN.rstrip("/") + "/"
 
 
 def _token() -> str:
@@ -35,12 +42,12 @@ def _token() -> str:
     if not (settings.AUTH0_MGMT_CLIENT_ID and settings.AUTH0_MGMT_CLIENT_SECRET):
         raise Auth0ManagementError("AUTH0_MGMT_CLIENT_ID and _SECRET aren't set.")
     response = requests.post(
-        f"{settings.AUTH0_MGMT_DOMAIN}oauth/token",
+        f"{_base()}oauth/token",
         json={
             "grant_type": "client_credentials",
             "client_id": settings.AUTH0_MGMT_CLIENT_ID,
             "client_secret": settings.AUTH0_MGMT_CLIENT_SECRET,
-            "audience": f"{settings.AUTH0_MGMT_DOMAIN}api/v2/",
+            "audience": f"{_base()}api/v2/",
         },
         timeout=10,
     )
@@ -60,7 +67,7 @@ def _change_role(method: str, auth0_user_id: str) -> None:
     user = quote(auth0_user_id, safe="")
     response = requests.request(
         method,
-        f"{settings.AUTH0_MGMT_DOMAIN}api/v2/users/{user}/roles",
+        f"{_base()}api/v2/users/{user}/roles",
         json={"roles": [settings.YAC_AUTH0_ROLE_ID]},
         headers={"Authorization": f"Bearer {_token()}"},
         timeout=10,
