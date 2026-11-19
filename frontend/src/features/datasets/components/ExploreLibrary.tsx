@@ -59,18 +59,16 @@ function Loading() {
 }
 
 // Explore: ask YAC about the library, narrow it with charts and filters, then
-// pick from the files left. `step` is driven by the dialog's bottom bar.
+// pick from the files left (`selectingIds`, set by the dialog's bottom bar).
 export default function ExploreLibrary({
   dcc,
-  step,
-  fileIds,
+  selectingIds,
   onFileIdsChange,
   selectedIds,
   setSelectedIds,
 }: {
   dcc: DccType;
-  step: "find" | "select";
-  fileIds: string[] | null;
+  selectingIds: string[] | null;
   onFileIdsChange: (fileIds: string[] | null) => void;
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -100,7 +98,7 @@ export default function ExploreLibrary({
         // keeps the conversation and charts.
         <Box
           sx={{
-            display: step === "find" ? "block" : "none",
+            display: selectingIds === null ? "block" : "none",
             flex: 1,
             minHeight: 560,
           }}
@@ -114,9 +112,9 @@ export default function ExploreLibrary({
           </Suspense>
         </Box>
       )}
-      {step === "select" && fileIds && (
+      {selectingIds && (
         <ExploreFileTable
-          fileIds={fileIds}
+          fileIds={selectingIds}
           selectedIds={selectedIds}
           setSelectedIds={setSelectedIds}
         />

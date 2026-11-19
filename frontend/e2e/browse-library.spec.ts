@@ -72,6 +72,14 @@ test("Explore asks for AI access before showing the chat", async ({ page }) => {
     dialog.getByRole("button", { name: "Continue to Select Files" }),
   ).toBeDisabled();
 
+  // Escape belongs to the chat's inputs here; it mustn't close the dialog.
+  // (Closing resets to Browse at once, before the dialog fades out.)
+  await page.keyboard.press("Escape");
+  await expect(dialog.getByRole("tab", { name: /Explore/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+
   // Back on Browse, the file table is still there.
   await dialog.getByRole("tab", { name: "Browse" }).click();
   await expect(

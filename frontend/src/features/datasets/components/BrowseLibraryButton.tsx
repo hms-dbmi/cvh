@@ -1039,7 +1039,6 @@ function AddToWorkspaceButton({
 }
 
 type LibraryTab = "browse" | "explore";
-type ExploreStep = "find" | "select";
 
 const BACK_LINK_SX = {
   color: "#657681",
@@ -1151,7 +1150,9 @@ export default function BrowseLibraryButton({
   const [selectedDcc, setSelectedDcc] = useState<DccType | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [tab, setTab] = useState<LibraryTab>("browse");
-  const [exploreStep, setExploreStep] = useState<ExploreStep>("find");
+  // The files to select from, copied when Continue is clicked; null while
+  // finding. A copy, so a late update from the chat can't change the list.
+  const [selectingIds, setSelectingIds] = useState<string[] | null>(null);
   // The files Explore's filters leave, or null while no filter reaches them.
   const [exploreFileIds, setExploreFileIds] = useState<string[] | null>(null);
   // Mounted on first visit and kept, so switching tabs keeps the chat.
@@ -1161,7 +1162,7 @@ export default function BrowseLibraryButton({
   const resetLibrary = useCallback(() => {
     setSelectedIds(new Set());
     setTab("browse");
-    setExploreStep("find");
+    setSelectingIds(null);
     setExploreFileIds(null);
     setExploreOpened(false);
   }, []);
@@ -1184,7 +1185,7 @@ export default function BrowseLibraryButton({
     if (value === "explore") setExploreOpened(true);
   }, []);
 
-  const selecting = tab === "browse" || exploreStep === "select";
+  const selecting = tab === "browse" || selectingIds !== null;
   const summary = exploreSummary(exploreFileIds);
 
   let actionButtons: React.ReactNode;
@@ -1208,7 +1209,7 @@ export default function BrowseLibraryButton({
         <Button
           variant="contained"
           disabled={!summary.canContinue}
-          onClick={() => setExploreStep("select")}
+          onClick={() => setSelectingIds(exploreFileIds)}
           sx={{ padding: "12px 16px", borderRadius: "8px" }}
         >
           Continue to Select Files
@@ -1228,6 +1229,9 @@ export default function BrowseLibraryButton({
       isForm={false}
       onClose={handleClose}
       fullScreen={!!selectedDcc}
+      // The chat's inputs cancel edits with Escape without stopping it, and
+      // closing here would throw away the conversation.
+      disableEscapeKeyDown={!!selectedDcc && tab === "explore"}
       closeButtonProps={selectedDcc ? { sx: { display: "none" } } : undefined}
       actionButtons={actionButtons}
       buttonProps={{
@@ -1241,14 +1245,14 @@ export default function BrowseLibraryButton({
           <LibraryHeader
             dcc={selectedDcc}
             backLabel={
-              tab === "explore" && exploreStep === "select"
+              tab === "explore" && selectingIds !== null
                 ? "Back to Explore"
                 : "Back to Data Catalogs"
             }
             onBack={() => {
-              if (tab === "explore" && exploreStep === "select") {
+              if (tab === "explore" && selectingIds !== null) {
                 setSelectedIds(new Set());
-                setExploreStep("find");
+                setSelectingIds(null);
               } else {
                 setSelectedDcc(null);
                 resetLibrary();
@@ -1275,8 +1279,7 @@ export default function BrowseLibraryButton({
             >
               <ExploreLibrary
                 dcc={selectedDcc}
-                step={exploreStep}
-                fileIds={exploreFileIds}
+                selectingIds={selectingIds}
                 onFileIdsChange={setExploreFileIds}
                 selectedIds={selectedIds}
                 setSelectedIds={setSelectedIds}

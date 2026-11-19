@@ -30,6 +30,8 @@ interface CoreFormDialogProps {
   closeButtonProps?: Partial<ButtonProps>;
   // Fill the window, for content that needs more room than "md".
   fullScreen?: boolean;
+  // Keep the dialog open on Escape, for content that uses Escape itself.
+  disableEscapeKeyDown?: boolean;
 }
 
 type ActionProps =
@@ -67,6 +69,7 @@ export default function DialogButton({
   onOpen,
   closeButtonProps,
   fullScreen = false,
+  disableEscapeKeyDown = false,
   buttonProps,
   menuItemProps,
   children,
@@ -126,6 +129,7 @@ export default function DialogButton({
         fullWidth
         maxWidth="md"
         fullScreen={fullScreen}
+        disableEscapeKeyDown={disableEscapeKeyDown}
         sx={{
           ".MuiDialog-paper": {
             padding: 2,
