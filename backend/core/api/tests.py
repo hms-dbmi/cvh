@@ -490,13 +490,19 @@ class BulkCreateDatasetsTests(TestCase):
     def test_needs_write_access(self):
         from django.contrib.auth.models import User
 
-        from .models import Project
+        from .models import Project, ProjectMember
 
         other = User.objects.create(username="other", email="other@example.com")
         theirs = Project.objects.create(name="Theirs", user_key=other)
 
         response = self._bulk([self._bigwig("a.bw")], workspace=theirs.uuid)
+        self.assertEqual(response.status_code, 404)
 
+        # Read access isn't enough.
+        ProjectMember.objects.create(
+            project_key=theirs, user_key=self.user, permissions=1
+        )
+        response = self._bulk([self._bigwig("a.bw")], workspace=theirs.uuid)
         self.assertEqual(response.status_code, 404)
         self.assertFalse(Dataset.objects.exists())
 

@@ -96,9 +96,13 @@ def create_datasets(request, payload: DatasetsBulkIn):
         # that only reference the workspace (datasets, visualizations) don't
         # wait on it. (The base manager: the default one groups for counts,
         # which Postgres can't lock.)
-        Project._base_manager.select_for_update(no_key=True).filter(
-            pk=project.pk
-        ).first()
+        locked = (
+            Project._base_manager.select_for_update(no_key=True)
+            .filter(pk=project.pk)
+            .first()
+        )
+        if locked is None:  # deleted since the access check
+            raise Http404("Failed to add datasets.")
         existing = Dataset.objects.filter(
             Q(source_url__in=[row["source_url"] for row in rows])
             | Q(cfdb_id__in=[row["cfdb_id"] for row in rows if row.get("cfdb_id")]),
