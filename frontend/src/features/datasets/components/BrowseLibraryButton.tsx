@@ -1321,7 +1321,7 @@ export default function BrowseLibraryButton({
       }}
     >
       {selectedDcc ? (
-        <Stack sx={{ height: "100%", minHeight: 0 }}>
+        <Stack sx={{ height: "100%" }}>
           <LibraryHeader
             dcc={selectedDcc}
             backLabel={

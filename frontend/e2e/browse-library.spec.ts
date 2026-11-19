@@ -108,13 +108,15 @@ test("a long Explore conversation scrolls inside the chat, not the page", async 
   await dialog.getByRole("tab", { name: /Explore/ }).click();
   const chat = page.locator(".udi-yac");
   await expect(chat).toBeVisible();
-
   const content = page.locator(".MuiDialogContent-root");
   const overflow = () =>
     content.evaluate((el) => el.scrollHeight - el.clientHeight);
-  const before = await overflow();
+  const chatHeight = () => chat.evaluate((el) => el.clientHeight);
+  const before = { overflow: await overflow(), chat: await chatHeight() };
 
-  // Stand-in for a long conversation: tall content inside the chat.
+  // Stand-in for a long session: tall content in udi-yac's outer layout,
+  // which (unlike its chat column) doesn't clip, as with a tall data panel
+  // or chart grid.
   await chat.evaluate((root) => {
     const tall = document.createElement("div");
     tall.style.height = "3000px";
@@ -122,5 +124,6 @@ test("a long Explore conversation scrolls inside the chat, not the page", async 
   });
 
   // The chat keeps its height and scrolls inside; the dialog doesn't grow.
-  expect(await overflow()).toBe(before);
+  expect(await chatHeight()).toBe(before.chat);
+  expect(await overflow()).toBe(before.overflow);
 });

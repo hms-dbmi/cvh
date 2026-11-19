@@ -236,7 +236,8 @@ export function ExploreFileTable({
   const missing = new Set(fileIds).size - listed.length;
 
   return (
-    <Stack spacing={1}>
+    // Fills the space left in the dialog; the table scrolls inside it.
+    <Stack spacing={1} sx={{ flex: 1, minHeight: 0 }}>
       {missing > 0 && (
         <Typography variant="body2">
           {missing === fileIds.length
@@ -244,7 +245,7 @@ export function ExploreFileTable({
             : `${plural(missing, "file")} matched in Explore ${missing === 1 ? "isn’t" : "aren’t"} in the library right now.`}
         </Typography>
       )}
-      <TableContainer sx={{ maxHeight: 640, overflow: "auto" }}>
+      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
         <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
           <FileTableHead
             selectableCount={selectableIds.size}
