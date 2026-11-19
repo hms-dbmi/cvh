@@ -96,7 +96,8 @@ export default function ExploreLibrary({
   if (!access) return aiContent?.body ?? <Loading />;
 
   return (
-    <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+    // useFlexGap: the hidden chat box mustn't leave a gap above the table.
+    <Stack spacing={2} useFlexGap sx={{ flex: 1, minHeight: 0 }}>
       {showBanner && aiContent?.body}
       {/* The usage banner covers a sign-in problem when usage fails too. A
           failed refresh with a token still in hand stays quiet unless it
@@ -245,7 +246,8 @@ export function ExploreFileTable({
             : `${plural(missing, "file")} matched in Explore ${missing === 1 ? "isn’t" : "aren’t"} in the library right now.`}
         </Typography>
       )}
-      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+      {/* Never shorter than a few rows; very short windows scroll instead. */}
+      <TableContainer sx={{ flex: 1, minHeight: 240, overflow: "auto" }}>
         <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
           <FileTableHead
             selectableCount={selectableIds.size}
