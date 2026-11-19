@@ -331,6 +331,9 @@ OIDC_ADMIN_ROLE_NAME = env.str("OIDC_ADMIN_ROLE_NAME", default="cvh_admin")
 # YAC access requests (api/yac_access.py). The admin service approves them by
 # adding the yac_user role through Auth0's Management API, as a
 # machine-to-machine app; its client secret comes from Secrets Manager.
+# The Management API only answers on the tenant's own domain
+# (https://<tenant>.us.auth0.com/), not a custom sign-in domain.
+AUTH0_MGMT_DOMAIN = env.str("AUTH0_MGMT_DOMAIN", default="") or AUTH0_DOMAIN
 AUTH0_MGMT_CLIENT_ID = env.str("AUTH0_MGMT_CLIENT_ID", default="")
 AUTH0_MGMT_CLIENT_SECRET = env.str("AUTH0_MGMT_CLIENT_SECRET", default="")
 YAC_AUTH0_ROLE_ID = env.str("YAC_AUTH0_ROLE_ID", default="")
