@@ -127,3 +127,42 @@ test("a long Explore conversation scrolls inside the chat, not the page", async 
   expect(await chatHeight()).toBe(before.chat);
   expect(await overflow()).toBe(before.overflow);
 });
+
+test("after a chat message, leaving the library asks first", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    Object.assign(window, { __e2eYacStatus: "approved" }),
+  );
+  await gotoWorkspace(page, PROJECT_ID);
+  await page.getByRole("button", { name: "Browse Library" }).click();
+  const dialog = page.getByRole("dialog").first();
+  const library = page.getByText("4D NUCLEOME DATA COORDINATION");
+  await library.click();
+  await dialog.getByRole("tab", { name: /Explore/ }).click();
+
+  // udi-yac reports message_sent as the message goes out, before any reply.
+  const question = page.getByPlaceholder("Ask a question...");
+  await question.fill("How many files are there?");
+  await question.press("Enter");
+
+  const back = dialog.getByRole("button", { name: "Back to Data Catalogs" });
+  const confirm = page.getByRole("dialog", { name: "Leave this library?" });
+  await back.click();
+  await confirm.getByRole("button", { name: "Stay" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(dialog.getByRole("tab", { name: /Explore/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+
+  await back.click();
+  await confirm.getByRole("button", { name: "Leave" }).click();
+  await expect(library).toBeVisible();
+
+  // Leaving reset the conversation, so the next visit leaves right away.
+  await library.click();
+  await back.click();
+  await expect(confirm).toBeHidden();
+  await expect(library).toBeVisible();
+});

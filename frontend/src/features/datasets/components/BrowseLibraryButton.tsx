@@ -1370,7 +1370,7 @@ export default function BrowseLibraryButton({
                 dcc={selectedDcc}
                 selectingIds={selectingIds}
                 onFileIdsChange={setExploreFileIds}
-                onMessageSent={() => setHasConversation(true)}
+                onConversationChange={setHasConversation}
                 selectedIds={exploreSelectedIds}
                 setSelectedIds={setExploreSelectedIds}
               />
