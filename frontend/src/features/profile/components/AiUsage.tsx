@@ -167,7 +167,7 @@ function CreditUsageBar({ usage }: { usage: YacUsage }) {
   );
 }
 
-function UsageUnavailable({
+export function UsageUnavailable({
   error,
   signIn,
 }: {

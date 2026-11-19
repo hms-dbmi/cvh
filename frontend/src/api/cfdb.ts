@@ -525,19 +525,19 @@ async function fetchDccFilesPage(
   }
 }
 
-async function fetchCfdbFilesByLocalIds(
+/**
+ * Fetch CFDB files by `localId`, throwing if cfdb can't be reached so the
+ * caller can say so. Explore's file selection uses this directly.
+ */
+export async function fetchCfdbFilesByLocalIds(
   localIds: string[],
 ): Promise<CfdbFile[]> {
   if (localIds.length === 0) return [];
-  try {
-    return await fetchFilesWithFallback<CfdbFile>(
-      DCC_FILES_QUERY_NEW,
-      DCC_FILES_QUERY_OLD,
-      { input: [{ localId: localIds }], pageSize: DCC_FILES_PAGE_SIZE },
-    );
-  } catch {
-    return [];
-  }
+  return fetchFilesWithFallback<CfdbFile>(
+    DCC_FILES_QUERY_NEW,
+    DCC_FILES_QUERY_OLD,
+    { input: [{ localId: localIds }], pageSize: DCC_FILES_PAGE_SIZE },
+  );
 }
 
 /**
@@ -590,10 +590,10 @@ export function useCfdbFileLookup(dccName: string | undefined, query: string) {
  * Fetch CFDB files for a known set of `localId`s. Used by the "add to
  * project" flow because the user's selection can include files that
  * aren't in the currently-rendered page of `useCfdbDccFiles`, so we
- * can't rely on the cached list.
+ * can't rely on the cached list. A failed lookup returns no files.
  */
 export function fetchCfdbSelectedFiles(localIds: string[]) {
-  return fetchCfdbFilesByLocalIds(localIds);
+  return fetchCfdbFilesByLocalIds(localIds).catch(() => []);
 }
 
 /**

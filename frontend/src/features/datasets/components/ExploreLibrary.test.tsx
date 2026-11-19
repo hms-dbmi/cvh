@@ -1,15 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CfdbFile } from "@/api/cfdb";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { type CfdbFile, fetchCfdbSelectedFiles } from "@/api/cfdb";
 import { ExploreFileTable, exploreSummary } from "./ExploreLibrary";
 
-const fetchFiles = vi.hoisted(() => vi.fn());
-vi.mock("@/api/cfdb", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/api/cfdb")>()),
-  fetchCfdbSelectedFiles: fetchFiles,
-}));
+// The real cfdb lookup runs; only the network is faked, so a failure here is
+// one the app can actually see.
+const cfdbUp = (files: CfdbFile[]) =>
+  Promise.resolve(Response.json({ data: { files: { items: files } } }));
+const cfdbDown = () => Promise.reject(new TypeError("Failed to fetch"));
 
 const dcc = { id: "dcc", dccName: "ENCODE", dccAbbreviation: "ENCODE" };
 const bigwig = {
@@ -61,13 +61,13 @@ function Table({ fileIds }: { fileIds: string[] }) {
   );
 }
 
-function renderTable() {
+function renderTable(fileIds = ["f-bigwig", "f-fastq"]) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <Table fileIds={["f-bigwig", "f-fastq"]} />
+      <Table fileIds={fileIds} />
     </QueryClientProvider>,
   );
 }
@@ -79,25 +79,47 @@ const rowFor = async (filename: string) => {
 };
 
 describe("ExploreFileTable", () => {
-  beforeEach(() => fetchFiles.mockReset());
+  const fetchMock = vi.fn();
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
+  });
+  afterEach(() => vi.unstubAllGlobals());
 
   it("selects only the files CVH can visualize", async () => {
-    fetchFiles.mockResolvedValue([bigwig, fastq]);
+    fetchMock.mockImplementation(() => cfdbUp([bigwig, fastq]));
     renderTable();
 
     const bigwigBox = await rowFor("a.bigwig");
     expect(await rowFor("b.fastq")).toBeDisabled();
     fireEvent.click(bigwigBox);
     expect(bigwigBox).toBeChecked();
-    expect(fetchFiles).toHaveBeenCalledWith(["f-bigwig", "f-fastq"]);
   });
 
-  it("offers a retry when the files can't be loaded", async () => {
-    fetchFiles.mockRejectedValueOnce(new Error("cfdb down"));
-    fetchFiles.mockResolvedValue([bigwig]);
-    renderTable();
+  it("offers a retry when cfdb can't be reached", async () => {
+    let up = false;
+    fetchMock.mockImplementation(() => (up ? cfdbUp([bigwig]) : cfdbDown()));
+    renderTable(["f-bigwig"]);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Try Again" }));
+    const retry = await screen.findByRole("button", { name: "Try Again" });
+    up = true;
+    fireEvent.click(retry);
     expect(await rowFor("a.bigwig")).toBeEnabled();
+  });
+
+  it("says when matched files aren't in cfdb", async () => {
+    fetchMock.mockImplementation(() => cfdbUp([bigwig]));
+    renderTable(["f-bigwig", "f-gone"]);
+
+    expect(
+      await screen.findByText(
+        "1 file matched in Explore isn’t in the library right now.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("still lets Add to Workspace treat a failed lookup as no files", async () => {
+    fetchMock.mockImplementation(cfdbDown);
+    await expect(fetchCfdbSelectedFiles(["f-bigwig"])).resolves.toEqual([]);
   });
 });

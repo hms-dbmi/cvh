@@ -9,17 +9,19 @@ import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import {
-  fetchCfdbSelectedFiles,
+  fetchCfdbFilesByLocalIds,
   getDccShortName,
   isCfdbFileSupported,
 } from "@/api/cfdb";
 import {
   useGetYacAccess,
+  useYacSignIn,
   useYacToken,
   useYacUsage,
 } from "@/features/profile/api/useYacAccess";
 import {
   NEAR_LIMIT_PERCENT,
+  UsageUnavailable,
   useAiUsageContent,
 } from "@/features/profile/components/AiUsage";
 import type { DccType } from "../../../../cfdb-types";
@@ -76,7 +78,8 @@ export default function ExploreLibrary({
   const { data: access } = useGetYacAccess();
   const approved = access?.status === "approved";
   const { data: usage, error: usageError } = useYacUsage(approved);
-  const { data: token } = useYacToken(approved);
+  const { data: token, error: tokenError } = useYacToken(approved);
+  const signIn = useYacSignIn();
   const aiContent = useAiUsageContent();
 
   // Not approved, a sign-in or usage problem, or near the monthly limit: the
@@ -92,7 +95,11 @@ export default function ExploreLibrary({
   return (
     <Stack spacing={2} sx={{ height: "100%" }}>
       {showBanner && aiContent?.body}
-      {approved && !token && !usageError && <Loading />}
+      {/* The usage banner covers a sign-in problem when usage fails too. */}
+      {approved && tokenError && !usageError && (
+        <UsageUnavailable error={tokenError} signIn={signIn} />
+      )}
+      {approved && !token && !usageError && !tokenError && <Loading />}
       {approved && token && (
         // Hidden rather than unmounted while selecting files, so going back
         // keeps the conversation and charts.
@@ -139,7 +146,9 @@ export function ExploreFileTable({
     refetch,
   } = useQuery({
     queryKey: ["cfdb-files-by-id", fileIds],
-    queryFn: () => fetchCfdbSelectedFiles(fileIds),
+    queryFn: () => fetchCfdbFilesByLocalIds(fileIds),
+    // A fixed list: never refetch behind the user's back mid-selection.
+    staleTime: Number.POSITIVE_INFINITY,
   });
 
   // Same rule as Browse: only formats CVH can visualize are selectable.
@@ -184,7 +193,7 @@ export function ExploreFileTable({
     });
   }, []);
 
-  if (isError) {
+  if (isError && !files) {
     return (
       <Stack direction="row" spacing={2} alignItems="center" py={2}>
         <Typography variant="body2">Couldn’t load these files.</Typography>
@@ -196,31 +205,43 @@ export function ExploreFileTable({
   }
   if (isLoading || !files) return <Loading />;
 
+  // YAC's copy of cfdb can be ahead of or behind cfdb itself.
+  const missing = fileIds.length - files.length;
+
   return (
-    <TableContainer sx={{ maxHeight: 640, overflow: "auto" }}>
-      <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
-        <FileTableHead
-          selectableCount={selectableIds.size}
-          selectedCount={selectedIds.size}
-          onToggleAll={handleToggleAll}
-        />
-        <TableBody>
-          {files.map((file, index) => (
-            <DatasetRow
-              key={file.localId}
-              file={file}
-              selected={selectedIds.has(file.localId)}
-              disabled={!selectableIds.has(file.localId)}
-              expanded={expandedIds.has(file.localId)}
-              onToggle={handleToggle}
-              onToggleExpanded={handleToggleExpanded}
-              // At most 100 rows, so no virtualizer to measure for.
-              measureRef={noop}
-              dataIndex={index}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <Stack spacing={1}>
+      {missing > 0 && (
+        <Typography variant="body2">
+          {missing === fileIds.length
+            ? "None of these files are in the library right now."
+            : `${plural(missing, "file")} matched in Explore ${missing === 1 ? "isn’t" : "aren’t"} in the library right now.`}
+        </Typography>
+      )}
+      <TableContainer sx={{ maxHeight: 640, overflow: "auto" }}>
+        <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
+          <FileTableHead
+            selectableCount={selectableIds.size}
+            selectedCount={selectedIds.size}
+            onToggleAll={handleToggleAll}
+          />
+          <TableBody>
+            {files.map((file, index) => (
+              <DatasetRow
+                key={file.localId}
+                file={file}
+                selected={selectedIds.has(file.localId)}
+                disabled={!selectableIds.has(file.localId)}
+                expanded={expandedIds.has(file.localId)}
+                onToggle={handleToggle}
+                onToggleExpanded={handleToggleExpanded}
+                // At most 100 rows, so no virtualizer to measure for.
+                measureRef={noop}
+                dataIndex={index}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Stack>
   );
 }

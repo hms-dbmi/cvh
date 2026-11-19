@@ -1040,6 +1040,17 @@ function AddToWorkspaceButton({
 
 type LibraryTab = "browse" | "explore";
 
+// Ties each tab's content to its tab for screen readers; no tabs, no panels.
+function panelProps(tab: LibraryTab) {
+  return yacConfigured
+    ? {
+        role: "tabpanel",
+        id: `library-panel-${tab}`,
+        "aria-labelledby": `library-tab-${tab}`,
+      }
+    : {};
+}
+
 const BACK_LINK_SX = {
   color: "#657681",
   fontSize: 14,
@@ -1109,6 +1120,8 @@ function LibraryHeader({
         >
           <Tab
             value="browse"
+            id="library-tab-browse"
+            aria-controls="library-panel-browse"
             label="Browse"
             icon={<TableIcon size={16} />}
             iconPosition="start"
@@ -1116,6 +1129,8 @@ function LibraryHeader({
           />
           <Tab
             value="explore"
+            id="library-tab-explore"
+            aria-controls="library-panel-explore"
             label={
               <Stack direction="row" spacing={1} alignItems="center">
                 <span>Explore</span>
@@ -1230,8 +1245,8 @@ export default function BrowseLibraryButton({
       onClose={handleClose}
       fullScreen={!!selectedDcc}
       // The chat's inputs cancel edits with Escape without stopping it, and
-      // closing here would throw away the conversation.
-      disableEscapeKeyDown={!!selectedDcc && tab === "explore"}
+      // closing throws away the conversation, from either tab.
+      disableEscapeKeyDown={!!selectedDcc && exploreOpened}
       closeButtonProps={selectedDcc ? { sx: { display: "none" } } : undefined}
       actionButtons={actionButtons}
       buttonProps={{
@@ -1261,7 +1276,10 @@ export default function BrowseLibraryButton({
             tab={tab}
             onTabChange={handleTabChange}
           />
-          <Box sx={{ display: tab === "browse" ? "contents" : "none" }}>
+          <Box
+            {...panelProps("browse")}
+            sx={{ display: tab === "browse" ? "block" : "none" }}
+          >
             <DccDetailView
               dcc={selectedDcc}
               selectedIds={selectedIds}
@@ -1270,6 +1288,7 @@ export default function BrowseLibraryButton({
           </Box>
           {exploreOpened && (
             <Box
+              {...panelProps("explore")}
               sx={{
                 display: tab === "explore" ? "flex" : "none",
                 flexDirection: "column",

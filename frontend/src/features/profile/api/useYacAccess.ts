@@ -78,15 +78,15 @@ function useGetYacToken() {
 }
 
 // The YAC token for components that call YAC themselves (Explore's chat).
-// Auth0 caches it and renews it near expiry, so asking every few minutes
-// keeps a fresh one in hand without extra sign-ins.
+// Auth0 serves it from cache and renews it in the last 60 seconds before
+// expiry, so asking more often than that never hands over an expired one.
 function useYacToken(enabled: boolean) {
   const getToken = useGetYacToken();
   return useQuery({
     queryKey: tokenKey,
     enabled: enabled && yacConfigured,
     retry: false,
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: 30 * 1000,
     queryFn: getToken,
   });
 }
