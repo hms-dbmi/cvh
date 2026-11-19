@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import useClient, { buildInvalidateGetQuery } from "@/api/client";
 import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
+import plural from "@/utils/plural";
 
 const path = "/api/datasets";
 const workspacePath = "/api/workspaces/{workspace_uuid}/datasets";
@@ -103,10 +104,6 @@ function useCreateDataset() {
   });
 }
 
-function plural(count: number, noun: string) {
-  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
-}
-
 // Adds many datasets in one request: one toast and one refresh, rather than
 // one of each per file.
 function useCreateDatasets() {
@@ -119,7 +116,7 @@ function useCreateDatasets() {
         skipped > 0
           ? ` ${skipped.toLocaleString()} ${skipped === 1 ? "was" : "were"} already in the workspace.`
           : "";
-      toastSuccess(`Added ${plural(created.length, "dataset")}.${already}`);
+      toastSuccess(`Added ${plural(created, "dataset")}.${already}`);
       queryClient.invalidateQueries({ predicate: invalidateGetQuery });
     },
     onError: () => {

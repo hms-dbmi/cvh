@@ -12,6 +12,10 @@ import {
   getFileAccession,
 } from "../../../api/cfdb";
 
+// Most files one add to a workspace may hold, in Browse and Explore alike:
+// enough for a study, few enough to review and keep a workspace usable.
+export const MAX_ADD_FILES = 100;
+
 // The Data Library's file table, shared by Browse and Explore's file selection.
 export function FileTableHead({
   selectableCount,

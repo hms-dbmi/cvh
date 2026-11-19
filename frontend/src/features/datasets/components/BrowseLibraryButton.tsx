@@ -77,11 +77,12 @@ import DialogButton from "../../../components/DialogButton";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
 import type { components } from "../../../types/schema";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
+import plural from "../../../utils/plural";
 import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
 import { useCreateDatasets } from "../api/useDatasets";
-import { DatasetRow, FileTableHead } from "./CfdbFileTable";
-import ExploreLibrary, { exploreSummary, plural } from "./ExploreLibrary";
+import { DatasetRow, FileTableHead, MAX_ADD_FILES } from "./CfdbFileTable";
+import ExploreLibrary, { exploreSummary } from "./ExploreLibrary";
 
 function DccCard({ dcc, onClick }: { dcc: DccType; onClick: () => void }) {
   return (
@@ -485,6 +486,9 @@ function DccDetailView({
     [selectableFiles],
   );
 
+  const { toastInfo } = useSnackbarActions();
+  const atLimit = selectedIds.size >= MAX_ADD_FILES;
+
   const handleToggle = useCallback(
     (id: string) => {
       // Defensive: ignore toggles on unsupported rows even if a future
@@ -494,7 +498,7 @@ function DccDetailView({
         const next = new Set(prev);
         if (next.has(id)) {
           next.delete(id);
-        } else {
+        } else if (next.size < MAX_ADD_FILES) {
           next.add(id);
         }
         return next;
@@ -503,13 +507,25 @@ function DccDetailView({
     [selectableIds, setSelectedIds],
   );
 
+  // Selects up to the limit, in table order; with a full selection (or
+  // every file ticked), clears it instead.
   const handleToggleAll = useCallback(() => {
-    if (selectedIds.size === selectableFiles.length) {
+    if (
+      selectedIds.size > 0 &&
+      (atLimit || selectedIds.size === selectableFiles.length)
+    ) {
       setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(selectableFiles.map((f) => f.localId)));
+      return;
     }
-  }, [selectableFiles, selectedIds.size, setSelectedIds]);
+    setSelectedIds(
+      new Set(selectableFiles.slice(0, MAX_ADD_FILES).map((f) => f.localId)),
+    );
+    if (selectableFiles.length > MAX_ADD_FILES) {
+      toastInfo(
+        `Selected the first ${MAX_ADD_FILES} files. You can add up to ${MAX_ADD_FILES} at a time.`,
+      );
+    }
+  }, [atLimit, selectableFiles, selectedIds.size, setSelectedIds, toastInfo]);
 
   // Quick Dataset ID Lookup card is collapsible — starts open so the
   // search input is discoverable, but the user can hide it to give the
@@ -744,7 +760,11 @@ function DccDetailView({
                       key={file.localId}
                       file={file}
                       selected={selectedIds.has(file.localId)}
-                      disabled={!selectableIds.has(file.localId)}
+                      // At the limit, only already-ticked rows can change.
+                      disabled={
+                        !selectableIds.has(file.localId) ||
+                        (atLimit && !selectedIds.has(file.localId))
+                      }
                       expanded={expandedIds.has(file.localId)}
                       onToggle={handleToggle}
                       onToggleExpanded={handleToggleExpanded}
@@ -914,6 +934,11 @@ function AddToWorkspaceButton({
     const datasets = Array.from(found.values())
       .map(buildDataset)
       .filter((dataset) => dataset !== null);
+    if (datasets.length === 0) {
+      // Selection is gated on supported formats, so this is a backstop.
+      toastError("None of the selected files can be added to a workspace.");
+      return;
+    }
 
     // One request, all or none: the server skips files already in the
     // workspace, so retrying after a failure can't duplicate anything.
@@ -1282,6 +1307,7 @@ export default function BrowseLibraryButton({
       <>
         <Typography sx={COUNT_SX}>
           {plural(selectedIds.size, "Dataset")} Selected
+          {selectedIds.size >= MAX_ADD_FILES ? " (limit)" : ""}
         </Typography>
         <AddToWorkspaceButton
           selectedIds={selectedIds}

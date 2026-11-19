@@ -404,12 +404,7 @@ export const handlers = [
     const body = (await request.clone().json()) as { datasets: unknown[] };
     await recordRequest("POST", "/api/datasets/bulk", request);
     return HttpResponse.json(
-      {
-        created: body.datasets.map((_, i) => ({
-          uuid: `00000000-0000-0000-0000-0000000004${String(i).padStart(2, "0")}`,
-        })),
-        skipped: 0,
-      },
+      { created: body.datasets.length, skipped: 0 },
       { status: 201 },
     );
   }),
