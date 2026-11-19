@@ -405,9 +405,7 @@ class BulkCreateDatasetsTests(TestCase):
         response = self._bulk([self._bigwig("a.bw"), bam])
 
         self.assertEqual(response.status_code, 201)
-        body = response.json()
-        self.assertEqual(body["skipped"], 0)
-        self.assertEqual([d["name"] for d in body["created"]], ["a.bw", "reads.bam"])
+        self.assertEqual(response.json(), {"created": 2, "skipped": 0})
         created = Dataset.objects.get(name="reads.bam")
         self.assertTrue(created.source_url.endswith("/data/encode/ENCFF1"))
         self.assertTrue(created.index_url.endswith("/index/encode/ENCFF1"))
@@ -426,6 +424,59 @@ class BulkCreateDatasetsTests(TestCase):
         self.assertEqual(
             sorted(Dataset.objects.values_list("name", flat=True)), ["a.bw", "b.bw"]
         )
+
+    def test_skips_are_per_tool(self):
+        self._bulk([self._bigwig("a.bw")])
+
+        response = self.client.post(
+            "/api/datasets/bulk",
+            data={
+                "workspace_uuid": str(self.project.uuid),
+                "tool": "vitessce",
+                "datasets": [self._bigwig("a.bw")],
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer test-token",
+        )
+
+        self.assertEqual(response.json(), {"created": 1, "skipped": 0})
+        self.assertEqual(Dataset.objects.filter(name="a.bw").count(), 2)
+
+    def test_cfdb_files_match_by_id_after_a_url_change(self):
+        from django.test import override_settings
+
+        bam = {
+            "name": "reads.bam",
+            "file_type": "bam",
+            "data_type": "bam",
+            "assembly": "hg38",
+            "cfdb_dcc": "encode",
+            "cfdb_id": "ENCFF1",
+        }
+        with override_settings(CFDB_BASE_URL="https://old-cfdb.example"):
+            self._bulk([bam])
+        with override_settings(CFDB_BASE_URL="https://new-cfdb.example"):
+            response = self._bulk([bam])
+
+        self.assertEqual(response.json(), {"created": 0, "skipped": 1})
+
+    def test_a_failure_partway_through_adds_none(self):
+        real_save = Dataset.save
+        calls = []
+
+        def save_then_fail(dataset, *args, **kwargs):
+            calls.append(dataset.name)
+            if len(calls) == 2:
+                raise RuntimeError("database went away")
+            return real_save(dataset, *args, **kwargs)
+
+        self.client.raise_request_exception = False
+        with patch.object(Dataset, "save", save_then_fail):
+            response = self._bulk([self._bigwig("a.bw"), self._bigwig("b.bw")])
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(calls, ["a.bw", "b.bw"])  # the first was written
+        self.assertFalse(Dataset.objects.exists())  # and rolled back
 
     def test_one_bad_dataset_adds_none(self):
         bad = {**self._bigwig("bad.bam"), "file_type": "bam", "data_type": "bam"}

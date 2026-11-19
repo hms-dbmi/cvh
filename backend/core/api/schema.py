@@ -412,8 +412,9 @@ class DatasetWithTagsOut(DatasetOut):
 
 
 class DatasetsBulkOut(Schema):
-    created: list[DatasetWithTagsOut]
-    # Files already in the workspace (same source URL and tool), left as is.
+    # How many datasets were added.
+    created: int
+    # Files already in the workspace (or repeated in the request), left as is.
     skipped: int
 
 

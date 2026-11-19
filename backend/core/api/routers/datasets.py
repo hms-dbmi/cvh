@@ -73,9 +73,10 @@ def create_dataset(request, dataset: DatasetIn):
     response={201: DatasetsBulkOut},
     summary="Add datasets to a workspace in one request",
     description=(
-        "Creates up to 500 datasets in a workspace, all or none. Datasets"
-        " whose source URL is already in the workspace for the same tool"
-        " are skipped and counted in `skipped`. Requires write access."
+        "Creates up to 500 datasets in a workspace, all or none. Files already"
+        " in the workspace for the same tool (by cfdb DCC and ID when given,"
+        " else by source URL) are skipped and counted in `skipped`."
+        " Requires write access."
     ),
 )
 def create_datasets(request, payload: DatasetsBulkIn):
@@ -88,28 +89,39 @@ def create_datasets(request, payload: DatasetsBulkIn):
         raise Http404("Failed to add datasets.") from None
 
     rows = [_dataset_fields(d, payload_dict["tool"]) for d in payload_dict["datasets"]]
-    created = []
+    created = 0
     with transaction.atomic():
         # Lock the workspace so two adds at once (a double click) can't both
         # miss the other's files and create duplicates.
         # (The base manager: the default one groups for counts, which Postgres
         # can't lock.)
         Project._base_manager.select_for_update().filter(pk=project.pk).first()
-        seen = set(
-            Dataset.objects.filter(
-                project_key=project,
-                tool=payload_dict["tool"],
-                source_url__in=[row["source_url"] for row in rows],
-            ).values_list("source_url", flat=True)
-        )
+        existing = Dataset.objects.filter(
+            Q(source_url__in=[row["source_url"] for row in rows])
+            | Q(cfdb_id__in=[row["cfdb_id"] for row in rows if row.get("cfdb_id")]),
+            project_key=project,
+            tool=payload_dict["tool"],
+        ).values("source_url", "cfdb_dcc", "cfdb_id")
+        seen = {key for row in existing for key in _file_keys(row)}
         for fields in rows:
-            if fields["source_url"] in seen:
+            keys = _file_keys(fields)
+            if keys & seen:
                 continue
-            seen.add(fields["source_url"])
+            seen |= keys
             # One at a time: Dataset.save() sets the processing status, which
             # bulk_create would skip.
-            created.append(Dataset.objects.create(**fields, project_key=project))
-    return 201, {"created": created, "skipped": len(rows) - len(created)}
+            Dataset.objects.create(**fields, project_key=project)
+            created += 1
+    return 201, {"created": created, "skipped": len(rows) - created}
+
+
+def _file_keys(fields: dict) -> set:
+    """What makes a file the same one again: its source URL, and for cfdb
+    files also the DCC and ID, which survive a change of cfdb's base URL."""
+    keys = {("url", fields["source_url"])}
+    if fields.get("cfdb_dcc") and fields.get("cfdb_id"):
+        keys.add(("cfdb", fields["cfdb_dcc"], fields["cfdb_id"]))
+    return keys
 
 
 def _dataset_fields(dataset: dict, tool: str) -> dict:
