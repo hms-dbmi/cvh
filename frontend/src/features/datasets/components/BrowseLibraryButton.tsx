@@ -81,7 +81,12 @@ import plural from "../../../utils/plural";
 import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
 import { useCreateDatasets } from "../api/useDatasets";
-import { DatasetRow, FileTableHead, MAX_ADD_FILES } from "./CfdbFileTable";
+import {
+  DatasetRow,
+  FileTableHead,
+  MAX_ADD_FILES,
+  toggleAllInView,
+} from "./CfdbFileTable";
 import ExploreLibrary, { exploreSummary } from "./ExploreLibrary";
 
 function DccCard({ dcc, onClick }: { dcc: DccType; onClick: () => void }) {
@@ -507,25 +512,24 @@ function DccDetailView({
     [selectableIds, setSelectedIds],
   );
 
-  // Selects up to the limit, in table order; with a full selection (or
-  // every file ticked), clears it instead.
   const handleToggleAll = useCallback(() => {
-    if (
-      selectedIds.size > 0 &&
-      (atLimit || selectedIds.size === selectableFiles.length)
-    ) {
-      setSelectedIds(new Set());
-      return;
-    }
-    setSelectedIds(
-      new Set(selectableFiles.slice(0, MAX_ADD_FILES).map((f) => f.localId)),
+    const { next, leftOut } = toggleAllInView(
+      selectedIds,
+      selectableFiles.map((f) => f.localId),
     );
-    if (selectableFiles.length > MAX_ADD_FILES) {
+    setSelectedIds(next);
+    if (leftOut > 0) {
       toastInfo(
-        `Selected the first ${MAX_ADD_FILES} files. You can add up to ${MAX_ADD_FILES} at a time.`,
+        `You can add up to ${MAX_ADD_FILES} files at a time; ${plural(leftOut, "file")} ${leftOut === 1 ? "wasn't" : "weren't"} selected.`,
       );
     }
-  }, [atLimit, selectableFiles, selectedIds.size, setSelectedIds, toastInfo]);
+  }, [selectableFiles, selectedIds, setSelectedIds, toastInfo]);
+
+  // The header checkbox shows the rows in view, not picks under other filters.
+  const selectedInView = useMemo(
+    () => selectableFiles.filter((f) => selectedIds.has(f.localId)).length,
+    [selectableFiles, selectedIds],
+  );
 
   // Quick Dataset ID Lookup card is collapsible — starts open so the
   // search input is discoverable, but the user can hide it to give the
@@ -742,7 +746,7 @@ function DccDetailView({
             <Table size="small" stickyHeader sx={{ minWidth: 1200 }}>
               <FileTableHead
                 selectableCount={selectableFiles.length}
-                selectedCount={selectedIds.size}
+                selectedCount={selectedInView}
                 onToggleAll={handleToggleAll}
               />
               <TableBody>
