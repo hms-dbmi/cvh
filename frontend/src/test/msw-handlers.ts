@@ -400,6 +400,19 @@ export const handlers = [
       { status: 201 },
     );
   }),
+  http.post(`${apiUrl}/api/datasets/bulk`, async ({ request }) => {
+    const body = (await request.clone().json()) as { datasets: unknown[] };
+    await recordRequest("POST", "/api/datasets/bulk", request);
+    return HttpResponse.json(
+      {
+        created: body.datasets.map((_, i) => ({
+          uuid: `00000000-0000-0000-0000-0000000004${String(i).padStart(2, "0")}`,
+        })),
+        skipped: 0,
+      },
+      { status: 201 },
+    );
+  }),
   http.post(
     `${apiUrl}/api/workspaces/:uuid/members`,
     async ({ request, params }) => {

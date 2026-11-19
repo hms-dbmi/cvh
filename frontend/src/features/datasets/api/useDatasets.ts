@@ -5,10 +5,7 @@ import { useSnackbarActions } from "@/components/Snackbar/useSnackbarStore";
 const path = "/api/datasets";
 const workspacePath = "/api/workspaces/{workspace_uuid}/datasets";
 
-const invalidateGetQuery = buildInvalidateGetQuery([
-  path,
-  "/api/workspaces",
-]);
+const invalidateGetQuery = buildInvalidateGetQuery([path, "/api/workspaces"]);
 
 interface Page {
   count: number;
@@ -102,6 +99,31 @@ function useCreateDataset() {
     },
     onError: () => {
       toastError("Failed to create dataset.");
+    },
+  });
+}
+
+function plural(count: number, noun: string) {
+  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+// Adds many datasets in one request: one toast and one refresh, rather than
+// one of each per file.
+function useCreateDatasets() {
+  const { toastSuccess, toastError } = useSnackbarActions();
+  const queryClient = useQueryClient();
+  const client = useClient();
+  return client.useMutation("post", `${path}/bulk`, {
+    onSuccess: ({ created, skipped }) => {
+      const already =
+        skipped > 0
+          ? ` ${skipped.toLocaleString()} ${skipped === 1 ? "was" : "were"} already in the workspace.`
+          : "";
+      toastSuccess(`Added ${plural(created.length, "dataset")}.${already}`);
+      queryClient.invalidateQueries({ predicate: invalidateGetQuery });
+    },
+    onError: () => {
+      toastError("Failed to add datasets. Nothing was added; try again.");
     },
   });
 }
@@ -209,6 +231,7 @@ function useGetProjectDatasetTags(workspace_uuid: string) {
 
 export {
   useCreateDataset,
+  useCreateDatasets,
   useDeleteDataset,
   useGetDataset,
   useGetPaginatedProjectDatasets,

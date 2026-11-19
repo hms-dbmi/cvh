@@ -75,10 +75,11 @@ import {
 } from "../../../api/cfdb";
 import DialogButton from "../../../components/DialogButton";
 import { useSnackbarActions } from "../../../components/Snackbar/useSnackbarStore";
+import type { components } from "../../../types/schema";
 import generateAvatarColor from "../../../utils/generateAvatarColor";
 import { yacConfigured } from "../../profile/api/useYacAccess";
 import useGetProjects from "../../projects/api/useProjects";
-import { useCreateDataset } from "../api/useDatasets";
+import { useCreateDatasets } from "../api/useDatasets";
 import { DatasetRow, FileTableHead } from "./CfdbFileTable";
 import ExploreLibrary, { exploreSummary, plural } from "./ExploreLibrary";
 
@@ -769,6 +770,9 @@ function DccDetailView({
   );
 }
 
+// One dataset as the bulk-add endpoint accepts it.
+type NewDataset = components["schemas"]["DatasetsBulkIn"]["datasets"][number];
+
 function AddToWorkspaceButton({
   selectedIds,
   onDone,
@@ -778,7 +782,8 @@ function AddToWorkspaceButton({
 }) {
   const { data: projectsData } = useGetProjects();
   const projects = projectsData?.items ?? [];
-  const { mutateAsync: createDataset } = useCreateDataset();
+  const { mutateAsync: createDatasets } = useCreateDatasets();
+  const [adding, setAdding] = useState(false);
   const { toastError } = useSnackbarActions();
   // The Browse Library opens from a workspace page; default the dropdown
   // to that workspace so the user usually doesn't need to change it.
@@ -829,7 +834,7 @@ function AddToWorkspaceButton({
       return;
     }
 
-    const buildDataset = (file: CfdbFile) => {
+    const buildDataset = (file: CfdbFile): NewDataset | null => {
       const assembly =
         (file.genomeAssembly as
           | "hg38"
@@ -891,6 +896,8 @@ function AddToWorkspaceButton({
         // input file via cfdb_id.
         const processedType =
           CFDB_PROCESSED_FILE_TYPE[goslingType] ?? goslingType;
+        // The processed type comes from a lookup table as a plain string;
+        // the backend validates it against the dataset union.
         return {
           name: file.filename,
           data_type: processedType,
@@ -898,40 +905,45 @@ function AddToWorkspaceButton({
           file_type: processedType,
           cfdb_dcc: getCfdbDccSlug(file),
           cfdb_id: file.localId,
-        };
+        } as NewDataset;
       }
 
       return null;
     };
 
-    await Promise.all(
-      Array.from(found.values())
-        .map((file) => ({ file, dataset: buildDataset(file) }))
-        .filter(
-          (
-            entry,
-          ): entry is {
-            file: CfdbFile;
-            dataset: NonNullable<ReturnType<typeof buildDataset>>;
-          } => entry.dataset !== null,
-        )
-        .map(({ dataset }) =>
-          createDataset({
-            body: {
-              workspace_uuid: selectedProject.uuid,
-              // @ts-expect-error Schema regen pending: index_url is now
-              // optional and cfdb_dcc/cfdb_id are new on the dataset union.
-              // Run `npm run gen-api-types` once the backend ships.
-              dataset,
-            },
-          }),
-        ),
-    );
+    const datasets = Array.from(found.values())
+      .map(buildDataset)
+      .filter((dataset) => dataset !== null);
 
+    // One request, all or none: the server skips files already in the
+    // workspace, so retrying after a failure can't duplicate anything.
+    try {
+      await createDatasets({
+        // Library files have always been added as Gosling data sources.
+        body: {
+          workspace_uuid: selectedProject.uuid,
+          tool: "gosling",
+          datasets,
+        },
+      });
+    } catch {
+      return; // The hook's error toast says what happened.
+    }
     onDone();
-  }, [selectedProject, selectedIds, createDataset, onDone, toastError]);
+  }, [selectedProject, selectedIds, createDatasets, onDone, toastError]);
 
-  const disabled = selectedIds.size === 0 || !selectedProject;
+  // Disabled from the click until the add finishes, so a second click
+  // can't start another add.
+  const handleAddOnce = useCallback(async () => {
+    setAdding(true);
+    try {
+      await handleAdd();
+    } finally {
+      setAdding(false);
+    }
+  }, [handleAdd]);
+
+  const disabled = selectedIds.size === 0 || !selectedProject || adding;
   const projectColor = selectedProject
     ? generateAvatarColor(selectedProject.name)
     : generateAvatarColor("");
@@ -956,7 +968,7 @@ function AddToWorkspaceButton({
         }}
       >
         <Button
-          onClick={handleAdd}
+          onClick={handleAddOnce}
           disabled={disabled}
           disableRipple
           sx={{

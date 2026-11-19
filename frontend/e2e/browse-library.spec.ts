@@ -7,7 +7,7 @@ const BIGWIG_LOCAL_ID = "e2e-bigwig-1";
 // Per CFDB_DCC_URL_SLUG in src/api/cfdb.ts: GraphQL `4DN_DCIC` → `/data/4dn`.
 const EXPECTED_SOURCE_URL = `${CFDB_API_URL}/data/4dn/${BIGWIG_LOCAL_ID}`;
 
-test("adding a bigwig from the data library posts /api/datasets with the CFDB source url", async ({
+test("adding a bigwig from the data library posts it to /api/datasets/bulk with the CFDB source url", async ({
   page,
 }) => {
   await gotoWorkspace(page, PROJECT_ID);
@@ -36,18 +36,22 @@ test("adding a bigwig from the data library posts /api/datasets with the CFDB so
   // pre-selected via the URL.
   await dialog.getByRole("button", { name: "Add to" }).click();
 
+  // One bulk request for the whole selection.
   await expect.poll(() => readRequests(page)).toContainEqual({
     method: "POST",
-    path: "/api/datasets",
+    path: "/api/datasets/bulk",
     body: {
       workspace_uuid: PROJECT_ID,
-      dataset: {
-        name: "e2e-track.bigwig",
-        source_url: EXPECTED_SOURCE_URL,
-        data_type: "bigwig",
-        assembly: "hg38",
-        file_type: "bigwig",
-      },
+      tool: "gosling",
+      datasets: [
+        {
+          name: "e2e-track.bigwig",
+          source_url: EXPECTED_SOURCE_URL,
+          data_type: "bigwig",
+          assembly: "hg38",
+          file_type: "bigwig",
+        },
+      ],
     },
   });
 });
