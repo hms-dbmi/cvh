@@ -93,3 +93,33 @@ test("Explore asks for AI access before showing the chat", async ({ page }) => {
     dialog.getByRole("row").filter({ hasText: "e2e-track.bigwig" }),
   ).toBeVisible();
 });
+
+test("a long Explore conversation scrolls inside the chat, not the page", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    Object.assign(window, { __e2eYacStatus: "approved" }),
+  );
+  await gotoWorkspace(page, PROJECT_ID);
+  await page.getByRole("button", { name: "Browse Library" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByText("4D NUCLEOME DATA COORDINATION").click();
+  await dialog.getByRole("tab", { name: /Explore/ }).click();
+  const chat = page.locator(".udi-yac");
+  await expect(chat).toBeVisible();
+
+  const content = page.locator(".MuiDialogContent-root");
+  const overflow = () =>
+    content.evaluate((el) => el.scrollHeight - el.clientHeight);
+  const before = await overflow();
+
+  // Stand-in for a long conversation: tall content inside the chat.
+  await chat.evaluate((root) => {
+    const tall = document.createElement("div");
+    tall.style.height = "3000px";
+    root.firstElementChild?.appendChild(tall);
+  });
+
+  // The chat keeps its height and scrolls inside; the dialog doesn't grow.
+  expect(await overflow()).toBe(before);
+});

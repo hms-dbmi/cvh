@@ -1317,7 +1317,7 @@ export default function BrowseLibraryButton({
       }}
     >
       {selectedDcc ? (
-        <Stack sx={{ height: "100%" }}>
+        <Stack sx={{ height: "100%", minHeight: 0 }}>
           <LibraryHeader
             dcc={selectedDcc}
             backLabel={
@@ -1355,6 +1355,9 @@ export default function BrowseLibraryButton({
               display: tab === "explore" ? "flex" : "none",
               flexDirection: "column",
               flex: 1,
+              // Let it shrink to the space left, so the chat scrolls inside
+              // itself instead of growing the whole dialog.
+              minHeight: 0,
               px: 3,
             }}
           >

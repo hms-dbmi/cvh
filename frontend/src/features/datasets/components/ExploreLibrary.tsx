@@ -94,7 +94,7 @@ export default function ExploreLibrary({
   if (!access) return aiContent?.body ?? <Loading />;
 
   return (
-    <Stack spacing={2} sx={{ height: "100%" }}>
+    <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
       {showBanner && aiContent?.body}
       {/* The usage banner covers a sign-in problem when usage fails too. A
           failed refresh with a token still in hand stays quiet unless it
@@ -117,8 +117,10 @@ export default function ExploreLibrary({
         <Box
           sx={{
             display: selectingIds === null ? "block" : "none",
+            // UDIChat fills its parent, so the parent needs a set height:
+            // the space left in the dialog, never less than 420px.
             flex: 1,
-            minHeight: 560,
+            minHeight: 420,
           }}
         >
           <Suspense fallback={<Loading />}>
