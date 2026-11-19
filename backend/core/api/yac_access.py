@@ -18,24 +18,35 @@ class Auth0ManagementError(Exception):
     pass
 
 
+def _reason(response) -> str:
+    # The token endpoint explains in `error_description`, the Management API
+    # in `message`; either tells the admin what to fix without Auth0's logs.
+    try:
+        body = response.json()
+    except ValueError:
+        return ""
+    reason = body.get("error_description") or body.get("message")
+    return f" {reason}" if reason else ""
+
+
 def _token() -> str:
     if token := cache.get(TOKEN_CACHE_KEY):
         return token
     if not (settings.AUTH0_MGMT_CLIENT_ID and settings.AUTH0_MGMT_CLIENT_SECRET):
         raise Auth0ManagementError("AUTH0_MGMT_CLIENT_ID and _SECRET aren't set.")
     response = requests.post(
-        f"{settings.AUTH0_DOMAIN}oauth/token",
+        f"{settings.AUTH0_MGMT_DOMAIN}oauth/token",
         json={
             "grant_type": "client_credentials",
             "client_id": settings.AUTH0_MGMT_CLIENT_ID,
             "client_secret": settings.AUTH0_MGMT_CLIENT_SECRET,
-            "audience": f"{settings.AUTH0_DOMAIN}api/v2/",
+            "audience": f"{settings.AUTH0_MGMT_DOMAIN}api/v2/",
         },
         timeout=10,
     )
     if not response.ok:
         raise Auth0ManagementError(
-            f"Auth0 token request failed ({response.status_code})."
+            f"Auth0 token request failed ({response.status_code}).{_reason(response)}"
         )
     body = response.json()
     # Renew a minute early so a request never carries an expiring token.
@@ -46,9 +57,10 @@ def _token() -> str:
 def _change_role(method: str, auth0_user_id: str) -> None:
     if not settings.YAC_AUTH0_ROLE_ID:
         raise Auth0ManagementError("YAC_AUTH0_ROLE_ID isn't set.")
+    user = quote(auth0_user_id, safe="")
     response = requests.request(
         method,
-        f"{settings.AUTH0_DOMAIN}api/v2/users/{quote(auth0_user_id, safe='')}/roles",
+        f"{settings.AUTH0_MGMT_DOMAIN}api/v2/users/{user}/roles",
         json={"roles": [settings.YAC_AUTH0_ROLE_ID]},
         headers={"Authorization": f"Bearer {_token()}"},
         timeout=10,
@@ -60,6 +72,7 @@ def _change_role(method: str, auth0_user_id: str) -> None:
             cache.delete(TOKEN_CACHE_KEY)
         raise Auth0ManagementError(
             f"Auth0 refused the role change ({response.status_code})."
+            + _reason(response)
         )
 
 

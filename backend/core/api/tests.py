@@ -821,7 +821,7 @@ class Auth0ManagementTests(TestCase):
         token.json.return_value = {"access_token": "mgmt", "expires_in": 86400}
         with (
             override_settings(
-                AUTH0_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_DOMAIN="https://cvh-test.example/",
                 AUTH0_MGMT_CLIENT_ID="id",
                 AUTH0_MGMT_CLIENT_SECRET="secret",
                 YAC_AUTH0_ROLE_ID="rol_yac",
@@ -835,6 +835,10 @@ class Auth0ManagementTests(TestCase):
             grant_yac_role("google-oauth2|43")
 
         post.assert_called_once()  # the token is reused
+        self.assertEqual(
+            post.call_args.kwargs["json"]["audience"],
+            "https://cvh-test.example/api/v2/",
+        )
         method, url = call.call_args.args
         self.assertEqual(method, "POST")
         self.assertEqual(
@@ -843,6 +847,33 @@ class Auth0ManagementTests(TestCase):
         self.assertEqual(call.call_args.kwargs["json"], {"roles": ["rol_yac"]})
         headers = call.call_args.kwargs["headers"]
         self.assertEqual(headers["Authorization"], "Bearer mgmt")
+
+    def test_refused_token_request_shows_auth0s_reason(self):
+        from unittest.mock import MagicMock
+
+        from django.test import override_settings
+
+        from .yac_access import Auth0ManagementError, grant_yac_role
+
+        refused = MagicMock(ok=False, status_code=403)
+        refused.json.return_value = {
+            "error": "access_denied",
+            "error_description": "Service not enabled within domain",
+        }
+        with (
+            override_settings(
+                AUTH0_MGMT_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_CLIENT_ID="id",
+                AUTH0_MGMT_CLIENT_SECRET="secret",
+                YAC_AUTH0_ROLE_ID="rol_yac",
+            ),
+            patch("api.yac_access.requests.post", return_value=refused),
+            self.assertRaisesMessage(
+                Auth0ManagementError,
+                "Auth0 token request failed (403). Service not enabled within domain",
+            ),
+        ):
+            grant_yac_role("google-oauth2|42")
 
     def test_refused_token_is_dropped_from_the_cache(self):
         from unittest.mock import MagicMock
@@ -855,7 +886,7 @@ class Auth0ManagementTests(TestCase):
         cache.set(TOKEN_CACHE_KEY, "old", 3600)
         with (
             override_settings(
-                AUTH0_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_DOMAIN="https://cvh-test.example/",
                 YAC_AUTH0_ROLE_ID="rol_yac",
             ),
             patch(
@@ -875,7 +906,7 @@ class Auth0ManagementTests(TestCase):
 
         with (
             override_settings(
-                AUTH0_DOMAIN="https://cvh-test.example/",
+                AUTH0_MGMT_DOMAIN="https://cvh-test.example/",
                 AUTH0_MGMT_CLIENT_ID="id",
                 AUTH0_MGMT_CLIENT_SECRET="secret",
                 YAC_AUTH0_ROLE_ID="rol_yac",
