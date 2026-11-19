@@ -31,9 +31,6 @@ import { DatasetRow, FileTableHead, MAX_ADD_FILES } from "./CfdbFileTable";
 
 const ExploreChat = lazy(() => import("./ExploreChat"));
 
-// Selecting from more files than this isn't useful; ask for more filters.
-export const MAX_EXPLORE_FILES = MAX_ADD_FILES;
-
 const noop = () => {};
 
 // The bottom bar while finding files: how many the filters leave, and whether
@@ -43,10 +40,10 @@ export function exploreSummary(fileIds: string[] | null) {
   const matched = fileIds.length;
   return {
     label:
-      matched > MAX_EXPLORE_FILES
-        ? `${plural(matched, "File")} Matched · Filter to ${MAX_EXPLORE_FILES} or fewer to select files`
+      matched > MAX_ADD_FILES
+        ? `${plural(matched, "File")} Matched · Filter to ${MAX_ADD_FILES} or fewer to select files`
         : `${plural(matched, "File")} Matched`,
-    canContinue: matched > 0 && matched <= MAX_EXPLORE_FILES,
+    canContinue: matched > 0 && matched <= MAX_ADD_FILES,
   };
 }
 
