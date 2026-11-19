@@ -47,7 +47,10 @@ export default function ExploreChat({
       filters={filters}
       cohort={{ entity: FILES, fields: ["file_id"] }}
       onEvent={(name) => {
-        if (name === "message_sent") onConversationChange(true);
+        // A sent message or an imported session is work leaving would lose.
+        if (name === "message_sent" || name === "session_imported") {
+          onConversationChange(true);
+        }
         if (name === "conversation_reset") onConversationChange(false);
       }}
       onCohortChange={(cohort: UDICohort | null) =>

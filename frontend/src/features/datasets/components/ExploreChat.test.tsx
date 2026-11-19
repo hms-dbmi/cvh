@@ -53,5 +53,7 @@ describe("ExploreChat", () => {
     expect(onConversationChange).toHaveBeenLastCalledWith(true);
     props().onEvent?.("conversation_reset");
     expect(onConversationChange).toHaveBeenLastCalledWith(false);
+    props().onEvent?.("session_imported");
+    expect(onConversationChange).toHaveBeenLastCalledWith(true);
   });
 });
