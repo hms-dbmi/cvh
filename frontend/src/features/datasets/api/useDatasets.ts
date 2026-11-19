@@ -124,7 +124,7 @@ function useCreateDatasets() {
     },
     onError: () => {
       // No "try again": a retry can't fix missing access or a bad file.
-      toastError("Failed to add datasets. Nothing was added.");
+      toastError("Failed to add datasets.");
     },
   });
 }
