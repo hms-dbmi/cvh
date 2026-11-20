@@ -1,3 +1,4 @@
+import { Archive, File, Person, TestTube } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { UDIChat, type UDICohort, type UDIFilter } from "udi-yac";
 import "udi-yac/style.css";
@@ -7,6 +8,15 @@ import { YAC_URL } from "@/features/profile/api/useYacAccess";
 // cfdb's local_id, the same ID Browse selects and adds to workspaces.
 const PACKAGE = "cfdb";
 const FILES = "Files";
+
+// udi-yac matches icons by the package's exact entity names, and its built-in
+// ones are lowercase, so without these every entity gets its default icon.
+const ENTITY_ICONS = {
+  [FILES]: File,
+  Collections: Archive,
+  Biosamples: TestTube,
+  Subjects: Person,
+};
 
 // Loaded lazily: udi-yac bundles its own chart toolkit (~1.2 MB).
 export default function ExploreChat({
@@ -44,6 +54,7 @@ export default function ExploreChat({
       remotePackage={PACKAGE}
       authToken={token}
       allowApiKey={false}
+      entityIcons={ENTITY_ICONS}
       filters={filters}
       cohort={{ entity: FILES, fields: ["file_id"] }}
       onEvent={(name) => {
